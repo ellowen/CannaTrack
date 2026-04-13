@@ -1,0 +1,74 @@
+-- CannaTrack — Schema inicial
+-- Etapa 2: descomentar y correr cuando se conecte Supabase
+
+-- Brands (marcas de fertilizantes)
+-- CREATE TABLE brands (
+--   id TEXT PRIMARY KEY,
+--   name TEXT NOT NULL,
+--   logo_url TEXT,
+--   website TEXT,
+--   plan TEXT CHECK (plan IN ('listing', 'whitelabel')),
+--   active_until TIMESTAMPTZ
+-- );
+
+-- Nutrition tables (tablas nutricionales por marca)
+-- CREATE TABLE nutrition_tables (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   name TEXT NOT NULL,
+--   brand_id TEXT REFERENCES brands(id),
+--   access_tier TEXT CHECK (access_tier IN ('free', 'pro')) DEFAULT 'free',
+--   is_official BOOLEAN DEFAULT false,
+--   genetic_types TEXT[] NOT NULL,
+--   vege_weeks JSONB NOT NULL,
+--   flora_weeks JSONB NOT NULL,
+--   created_at TIMESTAMPTZ DEFAULT now(),
+--   notes TEXT
+-- );
+
+-- Plants
+-- CREATE TABLE plants (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+--   name TEXT NOT NULL,
+--   genetics TEXT NOT NULL,
+--   genetic_type TEXT CHECK (genetic_type IN ('feminized', 'autoflower', 'regular')),
+--   sex TEXT CHECK (sex IN ('unknown', 'female', 'male')) DEFAULT 'unknown',
+--   start_date DATE NOT NULL,
+--   flora_start_date DATE,
+--   auto_flower_total_days INTEGER DEFAULT 75,
+--   location TEXT CHECK (location IN ('indoor', 'outdoor')),
+--   pot_count INTEGER DEFAULT 1,
+--   pot_volume_liters NUMERIC,
+--   nutrition_table_id UUID REFERENCES nutrition_tables(id),
+--   status TEXT CHECK (status IN ('active', 'harvested', 'discarded')) DEFAULT 'active',
+--   notes TEXT,
+--   created_at TIMESTAMPTZ DEFAULT now()
+-- );
+
+-- Scheduled tasks
+-- CREATE TABLE scheduled_tasks (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   plant_id UUID REFERENCES plants(id) ON DELETE CASCADE,
+--   type TEXT CHECK (type IN ('nutrition', 'irrigation', 'foliar', 'observation', 'harvest')),
+--   scheduled_date DATE NOT NULL,
+--   cycle TEXT CHECK (cycle IN ('vege', 'flora')),
+--   week INTEGER,
+--   stage TEXT,
+--   products JSONB DEFAULT '[]',
+--   ec_min NUMERIC, ec_max NUMERIC,
+--   ph_min NUMERIC, ph_max NUMERIC,
+--   completed BOOLEAN DEFAULT false,
+--   completed_at TIMESTAMPTZ,
+--   completion_notes TEXT
+-- );
+
+-- Photos
+-- CREATE TABLE photos (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   plant_id UUID REFERENCES plants(id) ON DELETE CASCADE,
+--   url TEXT NOT NULL,
+--   week INTEGER,
+--   ai_analyzed BOOLEAN DEFAULT false,
+--   ai_result JSONB,
+--   created_at TIMESTAMPTZ DEFAULT now()
+-- );

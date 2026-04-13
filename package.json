@@ -1,0 +1,12 @@
+{
+  "name": "cannatrack",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "test": "npm run test --prefix frontend",
+    "demo": "npm run demo --prefix frontend",
+    "type-check": "npm run type-check --prefix frontend"
+  }
+}
