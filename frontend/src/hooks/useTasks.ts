@@ -1,12 +1,28 @@
-/**
- * useTasks — tareas de una planta
- *
- * Returns:
- * - todayTasks: ScheduledTask[]          tareas de hoy
- * - upcomingTasks: ScheduledTask[]       próximas 7 tareas
- * - completeTask(id, notes?)             marcar como completada
- * - getTasksForPlant(plantId)            todas las tareas de una planta
- *
- * Implementar en Etapa 1
- */
-export {}
+import { useTaskStore } from '@/store/taskStore'
+import { getTasksForDate, getUpcomingTasks } from '@/lib/nutrition-utils'
+import type { ScheduledTask } from '@/types/plant'
+
+export function useTasks(plantId?: string) {
+  const { tasks, completeTask, resetTasksForPlant } = useTaskStore()
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const filteredTasks = plantId ? tasks.filter((t) => t.plantId === plantId) : tasks
+
+  const todayTasks = getTasksForDate(filteredTasks, today)
+  const upcomingTasks = getUpcomingTasks(filteredTasks, today, 7)
+
+  function getTasksForPlant(pId: string): ScheduledTask[] {
+    return tasks.filter((t) => t.plantId === pId)
+  }
+
+  return {
+    tasks: filteredTasks,
+    todayTasks,
+    upcomingTasks,
+    completeTask,
+    resetTasksForPlant,
+    getTasksForPlant,
+  }
+}

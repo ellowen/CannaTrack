@@ -1,1 +1,2 @@
-export {} // exportar cuando se implementen en Etapa 1
+export { default as TaskItem } from './TaskItem'
+export { default as WeekView } from './WeekView'

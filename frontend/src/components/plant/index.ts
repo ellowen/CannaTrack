@@ -1,1 +1,3 @@
-export {} // exportar cuando se implementen en Etapa 1
+export { default as PlantCard } from './PlantCard'
+export { default as PlantForm } from './PlantForm'
+export type { PlantFormValues } from './PlantForm'

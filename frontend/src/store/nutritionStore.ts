@@ -1,10 +1,13 @@
-/**
- * nutritionStore — tablas nutricionales disponibles (Zustand)
- *
- * State: tables: NutritionTable[]
- * Inicializado con REVEGETAR_TABLE en plan free
- * En Etapa 2: carga tablas desde Supabase según plan del usuario
- *
- * Implementar en Etapa 1
- */
-export {}
+import { create } from 'zustand'
+import type { NutritionTable } from '@/types/plant'
+import { REVEGETAR_TABLE } from '@/data/revegetar-table'
+
+interface NutritionStore {
+  tables: NutritionTable[]
+  addTable: (table: NutritionTable) => void
+}
+
+export const useNutritionStore = create<NutritionStore>()((set) => ({
+  tables: [REVEGETAR_TABLE],
+  addTable: (table) => set((s) => ({ tables: [...s.tables, table] })),
+}))

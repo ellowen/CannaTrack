@@ -1,10 +1,59 @@
-/**
- * taskStore — estado global de tareas (Zustand)
- * Persistencia: localStorage (Etapa 1) → Supabase (Etapa 2)
- *
- * State: tasks: ScheduledTask[]
- * Actions: setTasks, completeTask, resetTasksForPlant
- *
- * Implementar en Etapa 1
- */
-export {}
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { ScheduledTask } from '@/types/plant'
+
+const dateReviver = (_: string, value: unknown): unknown => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    return new Date(value)
+  }
+  return value
+}
+
+interface TaskStore {
+  tasks: ScheduledTask[]
+  setTasks: (plantId: string, tasks: ScheduledTask[]) => void
+  completeTask: (id: string, notes?: string) => void
+  resetTasksForPlant: (plantId: string) => void
+}
+
+export const useTaskStore = create<TaskStore>()(
+  persist(
+    (set) => ({
+      tasks: [],
+      setTasks: (plantId, newTasks) =>
+        set((s) => ({
+          tasks: [
+            ...s.tasks.filter((t) => t.plantId !== plantId),
+            ...newTasks,
+          ],
+        })),
+      completeTask: (id, notes) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  completed: true,
+                  completedAt: new Date(),
+                  completionNotes: notes,
+                }
+              : t
+          ),
+        })),
+      resetTasksForPlant: (plantId) =>
+        set((s) => ({ tasks: s.tasks.filter((t) => t.plantId !== plantId) })),
+    }),
+    {
+      name: 'cannatrack-tasks',
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name)
+          return str ? JSON.parse(str, dateReviver) : null
+        },
+        setItem: (name, value) =>
+          localStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => localStorage.removeItem(name),
+      },
+    }
+  )
+)

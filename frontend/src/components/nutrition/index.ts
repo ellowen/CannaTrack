@@ -1,1 +1,2 @@
-export {} // exportar cuando se implementen en Etapa 1
+export { default as NutritionCard } from './NutritionCard'
+export { default as DoseList } from './DoseList'
