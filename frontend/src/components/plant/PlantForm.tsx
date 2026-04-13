@@ -1,8 +1,18 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui'
+import { Button, Badge } from '@/components/ui'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
 import type { GeneticType, PlantSex } from '@/types/plant'
+
+const stageLabels: Record<string, string> = {
+  rooting: 'Enraizamiento',
+  growth: 'Crecimiento',
+  preflower: 'Prefloración',
+  stretch: 'Estiramiento',
+  bulking: 'Engorde',
+  ripening: 'Maduración',
+  flushing: 'Limpieza',
+}
 
 export interface PlantFormValues {
   name: string
@@ -36,6 +46,7 @@ export default function PlantForm({ onSubmit, loading }: PlantFormProps) {
   const { potVolumeLiters } = useUserStore()
 
   const today = new Date().toISOString().slice(0, 10)
+  const [showSchedule, setShowSchedule] = useState(false)
 
   const [values, setValues] = useState<PlantFormValues>({
     name: '',
@@ -213,6 +224,86 @@ export default function PlantForm({ onSubmit, loading }: PlantFormProps) {
           className={`${fieldClass} resize-none`}
         />
       </div>
+
+      {/* Nutrition table schedule preview */}
+      {(() => {
+        const table = availableTables.find((t) => t.id === values.nutritionTableId)
+        if (!table) return null
+        return (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowSchedule((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                Cronograma nutricional — {table.name.split('—')[0].trim()}
+              </span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className={`w-4 h-4 text-gray-400 transition-transform ${showSchedule ? 'rotate-180' : ''}`}
+              >
+                <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {showSchedule && (
+              <div className="px-4 py-3 space-y-4 bg-white">
+                {/* VEGE */}
+                <div>
+                  <p className="text-xs font-semibold text-brand-600 uppercase tracking-wide mb-2">
+                    Vegetativo · {table.vegeWeeks.length} semanas
+                  </p>
+                  <div className="space-y-2">
+                    {table.vegeWeeks.map((week) => (
+                      <div key={week.week} className="flex gap-2 items-start">
+                        <Badge variant="green" className="shrink-0 mt-0.5">V{week.week}</Badge>
+                        <div className="min-w-0">
+                          <span className="text-xs text-gray-500 capitalize">
+                            {stageLabels[week.stage] ?? week.stage}
+                          </span>
+                          <p className="text-xs text-gray-700 leading-relaxed">
+                            {week.products.length > 0
+                              ? week.products.map((p) => p.name).join(' · ')
+                              : '—'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* FLORA */}
+                <div>
+                  <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">
+                    Floración · {table.floraWeeks.length} semanas
+                  </p>
+                  <div className="space-y-2">
+                    {table.floraWeeks.map((week) => (
+                      <div key={week.week} className="flex gap-2 items-start">
+                        <Badge variant="amber" className="shrink-0 mt-0.5">F{week.week}</Badge>
+                        <div className="min-w-0">
+                          <span className="text-xs text-gray-500 capitalize">
+                            {stageLabels[week.stage] ?? week.stage}
+                          </span>
+                          <p className="text-xs text-gray-700 leading-relaxed">
+                            {week.products.length > 0
+                              ? week.products.map((p) => p.name).join(' · ')
+                              : 'Solo agua'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <Button type="submit" className="w-full" size="lg" disabled={loading}>
         {loading ? 'Creando...' : 'Crear planta'}

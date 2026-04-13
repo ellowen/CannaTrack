@@ -4,7 +4,6 @@ import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
 
 const typeLabels: Record<string, string> = {
-  nutrition: 'Nutrición',
   irrigation: 'Riego',
   observation: 'Observación',
   foliar: 'Foliar',
@@ -25,16 +24,24 @@ interface TaskItemProps {
   showDate?: boolean
 }
 
+function getMainLabel(task: ScheduledTask): string {
+  if (task.type === 'nutrition') {
+    if (task.products.length === 0) return 'Solo agua'
+    return task.products.map((p) => p.name).join(' · ')
+  }
+  return typeLabels[task.type] ?? task.type
+}
+
 export default function TaskItem({ task, onComplete, showDate = false }: TaskItemProps) {
   return (
     <div className={clsx('flex items-center gap-3 py-2.5', task.completed && 'opacity-50')}>
       <div className={clsx('w-2 h-2 rounded-full shrink-0 mt-0.5', typeColors[task.type] ?? 'bg-gray-300')} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={clsx('text-sm font-medium', task.completed && 'line-through text-gray-400')}>
-            {typeLabels[task.type] ?? task.type}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={clsx('text-sm font-medium truncate', task.completed && 'line-through text-gray-400')}>
+            {getMainLabel(task)}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 shrink-0">
             {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`}
           </span>
         </div>
