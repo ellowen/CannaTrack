@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
+import { useNutritionStore } from '@/store/nutritionStore'
 import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
-import { REVEGETAR_TABLE } from '@/data/revegetar-table'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -21,6 +21,7 @@ export default function Settings() {
   const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
+  const { tables } = useNutritionStore()
   const [nameInput, setNameInput] = useState(name)
   const [volumeInput, setVolumeInput] = useState(potVolumeLiters)
   const [saved, setSaved] = useState(false)
@@ -30,8 +31,9 @@ export default function Settings() {
   function handleRegenerate() {
     const activePlants = plants.filter((p) => p.status === 'active')
     for (const plant of activePlants) {
-      const newTasks = generatePlantSchedule(plant, REVEGETAR_TABLE)
-      setTasks(plant.id, newTasks)
+      const table = tables.find((t) => t.id === plant.nutritionTableId)
+      if (!table) continue
+      setTasks(plant.id, generatePlantSchedule(plant, table))
     }
     setRegenDone(true)
     setTimeout(() => setRegenDone(false), 3000)
