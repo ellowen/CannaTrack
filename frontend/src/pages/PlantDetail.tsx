@@ -27,7 +27,7 @@ export default function PlantDetail() {
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
-  const { tasks, todayTasks, upcomingTasks } = useTasks(id)
+  const { tasks, todayTasks, upcomingTasks, overdueTasks } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -278,6 +278,23 @@ export default function PlantDetail() {
             />
           </div>
         </section>
+
+        {/* Tareas vencidas */}
+        {overdueTasks.length > 0 && (
+          <section className="space-y-2">
+            <p className="text-xs font-bold text-red-500 uppercase tracking-widest">⚠️ Vencidas · {overdueTasks.length}</p>
+            <div className="bg-app-card rounded-2xl border border-red-200 dark:border-red-900/50 shadow-card divide-y divide-app-border px-2">
+              {overdueTasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onComplete={() => setCompletingTask(task)}
+                  showDate
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Tareas de hoy */}
         {todayTasks.length > 0 && (

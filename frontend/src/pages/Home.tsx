@@ -34,7 +34,7 @@ export default function Home() {
   const [historialOpen, setHistorialOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
-  const { todayTasks } = useTasks()
+  const { todayTasks, overdueTasks } = useTasks()
   const { completeTask } = useTaskStore()
 
   const handleRefresh = useCallback(() => {
@@ -109,6 +109,42 @@ export default function Home() {
           {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
         </h1>
       </div>
+
+      {/* Sección VENCIDAS */}
+      {plants.length > 0 && overdueTasks.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">
+            ⚠️ Vencidas · {overdueTasks.length}
+          </h2>
+          <div className="bg-app-card rounded-2xl border border-red-200 dark:border-red-900/50 shadow-card overflow-hidden">
+            {overdueTasks.map((task, i) => (
+              <div
+                key={task.id}
+                className={`flex items-center gap-3 px-4 py-3.5 ${i < overdueTasks.length - 1 ? 'border-b border-app-border' : ''}`}
+              >
+                <button
+                  onClick={() => { hapticLight(); navigate(`/plants/${task.plantId}`) }}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left tap-highlight-none"
+                >
+                  <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink-1">{taskTypeLabel[task.type] ?? task.type}</p>
+                    <p className="text-xs text-red-400 mt-0.5 font-medium">
+                      {format(task.scheduledDate, "d MMM", { locale: es })} · {getPlantName(task.plantId)}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { hapticLight(); setCompletingTask(task) }}
+                  className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                >
+                  Hecho
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Sección HOY */}
       {plants.length > 0 && todayTasks.length > 0 && (

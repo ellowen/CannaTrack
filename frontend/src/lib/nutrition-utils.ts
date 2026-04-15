@@ -40,6 +40,27 @@ export function getTasksForDate(
 }
 
 /**
+ * Devuelve tareas pendientes cuya fecha es anterior a hoy (vencidas).
+ * Ordenadas de más antigua a más reciente.
+ * Se excluyen las de tipo 'harvest' — no tiene sentido marcarlas como vencidas.
+ */
+export function getOverdueTasks(
+  tasks: ScheduledTask[],
+  today: Date,
+): ScheduledTask[] {
+  const inicio = today.getTime()
+  return tasks
+    .filter(
+      (t) =>
+        !t.completed &&
+        t.type !== 'harvest' &&
+        t.scheduledDate.getTime() < inicio &&
+        !mismodia(t.scheduledDate, today),
+    )
+    .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
+}
+
+/**
  * Devuelve las próximas N tareas desde una fecha, ordenadas por fecha.
  * Solo incluye tareas no completadas cuya fecha es >= fromDate.
  */

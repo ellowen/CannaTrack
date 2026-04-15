@@ -1,5 +1,5 @@
 import { useTaskStore } from '@/store/taskStore'
-import { getTasksForDate, getUpcomingTasks } from '@/lib/nutrition-utils'
+import { getTasksForDate, getUpcomingTasks, getOverdueTasks } from '@/lib/nutrition-utils'
 import type { ScheduledTask } from '@/types/plant'
 
 export function useTasks(plantId?: string) {
@@ -12,6 +12,7 @@ export function useTasks(plantId?: string) {
 
   const todayTasks = getTasksForDate(filteredTasks, today)
   const upcomingTasks = getUpcomingTasks(filteredTasks, today, 7)
+  const overdueTasks = getOverdueTasks(filteredTasks, today)
 
   function getTasksForPlant(pId: string): ScheduledTask[] {
     return tasks.filter((t) => t.plantId === pId)
@@ -21,6 +22,7 @@ export function useTasks(plantId?: string) {
     tasks: filteredTasks,
     todayTasks,
     upcomingTasks,
+    overdueTasks,
     completeTask,
     resetTasksForPlant,
     getTasksForPlant,
