@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
+import { usePlantStore } from '@/store/plantStore'
+import { useTaskStore } from '@/store/taskStore'
 import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission } from '@/lib/notifications'
+import { generatePlantSchedule } from '@/lib/nutrition-engine'
+import { REVEGETAR_TABLE } from '@/data/revegetar-table'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -15,10 +19,23 @@ const themeOptions: { value: ThemePreference; label: string; icon: string }[] = 
 
 export default function Settings() {
   const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
+  const { plants } = usePlantStore()
+  const { setTasks } = useTaskStore()
   const [nameInput, setNameInput] = useState(name)
   const [volumeInput, setVolumeInput] = useState(potVolumeLiters)
   const [saved, setSaved] = useState(false)
+  const [regenDone, setRegenDone] = useState(false)
   const notifBlocked = 'Notification' in window && Notification.permission === 'denied'
+
+  function handleRegenerate() {
+    const activePlants = plants.filter((p) => p.status === 'active')
+    for (const plant of activePlants) {
+      const newTasks = generatePlantSchedule(plant, REVEGETAR_TABLE)
+      setTasks(plant.id, newTasks)
+    }
+    setRegenDone(true)
+    setTimeout(() => setRegenDone(false), 3000)
+  }
 
   async function handleNotifToggle() {
     if (notificationsEnabled) {
@@ -172,6 +189,33 @@ export default function Settings() {
               <span className="text-sm text-ink-2 font-semibold">{value}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Herramientas */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Herramientas</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink-1">Regenerar calendarios</p>
+              <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
+                Recalcula todas las tareas de tus plantas activas. Útil si actualizaste la app.
+              </p>
+            </div>
+            <button
+              onClick={handleRegenerate}
+              disabled={regenDone || plants.filter((p) => p.status === 'active').length === 0}
+              className={clsx(
+                'shrink-0 text-xs font-bold px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all disabled:opacity-40',
+                regenDone
+                  ? 'bg-brand-subtle text-brand-500 border border-brand-border'
+                  : 'bg-app-elevated text-ink-2 border border-app-border-strong'
+              )}
+            >
+              {regenDone ? '✓ Listo' : '↻ Regenerar'}
+            </button>
+          </div>
         </div>
       </section>
 

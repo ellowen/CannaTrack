@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(cat C:\\\\\\\\Users\\\\\\\\Ellowen\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Dev-CannaTrack\\\\\\\\d071924d-a6f2-4ec7-b7ee-7ddc56edbe81\\\\\\\\tasks\\\\\\\\b67vx1vc3.output)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(grep -l \"persist\\\\|localStorage\" src/store/*.ts)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

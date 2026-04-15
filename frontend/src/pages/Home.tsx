@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
@@ -28,6 +28,7 @@ const taskTypeLabel: Record<string, string> = {
 }
 
 export default function Home() {
+  const navigate = useNavigate()
   const { name } = useUserStore()
   const { plants, allPlants } = usePlants()
   const [historialOpen, setHistorialOpen] = useState(false)
@@ -137,20 +138,31 @@ export default function Home() {
             <div className="space-y-3">
               {taskGroups.map(({ plant: p, tasks: pts }) => (
                 <div key={p?.id ?? 'unknown'} className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
-                  {/* Cabecera de planta */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-app-elevated border-b border-app-border">
+                  {/* Cabecera de planta — tappable */}
+                  <Link
+                    to={p ? `/plants/${p.id}` : '#'}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-app-elevated border-b border-app-border tap-highlight-none active:bg-app-card transition-colors"
+                  >
                     <span className="text-sm">🌿</span>
                     <span className="text-xs font-bold text-ink-2 truncate">{p?.name ?? '—'}</span>
                     <span className="ml-auto text-[10px] font-semibold text-ink-4">
                       {pts.length} tarea{pts.length > 1 ? 's' : ''}
                     </span>
-                  </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-ink-4 shrink-0">
+                      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
                   {pts.map((task, i) => (
                     <div key={task.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < pts.length - 1 ? 'border-b border-app-border' : ''}`}>
-                      <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
-                      <p className="text-sm font-semibold text-ink-1 flex-1 min-w-0 truncate">
-                        {taskTypeLabel[task.type] ?? task.type}
-                      </p>
+                      <button
+                        onClick={() => { hapticLight(); navigate(`/plants/${task.plantId}`) }}
+                        className="flex items-center gap-3 flex-1 min-w-0 text-left tap-highlight-none"
+                      >
+                        <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
+                        <p className="text-sm font-semibold text-ink-1 truncate">
+                          {taskTypeLabel[task.type] ?? task.type}
+                        </p>
+                      </button>
                       <button
                         onClick={() => { hapticLight(); setCompletingTask(task) }}
                         className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
@@ -167,11 +179,16 @@ export default function Home() {
             <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
               {pendingTasks.map((task, i) => (
                 <div key={task.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < pendingTasks.length - 1 ? 'border-b border-app-border' : ''}`}>
-                  <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink-1">{taskTypeLabel[task.type] ?? task.type}</p>
-                    <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
-                  </div>
+                  <button
+                    onClick={() => { hapticLight(); navigate(`/plants/${task.plantId}`) }}
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left tap-highlight-none"
+                  >
+                    <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-ink-1">{taskTypeLabel[task.type] ?? task.type}</p>
+                      <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
+                    </div>
+                  </button>
                   <button
                     onClick={() => { hapticLight(); setCompletingTask(task) }}
                     className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
