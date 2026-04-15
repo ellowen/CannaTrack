@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
+import { hapticSuccess } from '@/lib/haptics'
 
 interface MeasurementSheetProps {
   isOpen: boolean
@@ -18,6 +20,9 @@ export default function MeasurementSheet({
   const [ph, setPh] = useState('')
   const [temp, setTemp] = useState('')
   const [showTemp, setShowTemp] = useState(false)
+
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } =
+    useSwipeToDismiss({ onDismiss: onClose })
 
   useEffect(() => {
     if (isOpen) { setEc(''); setPh(''); setTemp(''); setShowTemp(false) }
@@ -47,6 +52,7 @@ export default function MeasurementSheet({
 
   function handleSave() {
     if (!canSave) return
+    hapticSuccess()
     onSave({ ec: ecNum, ph: phNum, tempCelsius: temp ? parseFloat(temp) : undefined })
     onClose()
   }
@@ -58,6 +64,10 @@ export default function MeasurementSheet({
         onClick={onClose}
       />
       <div
+        ref={sheetRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         className={`fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div className="bg-app-card rounded-t-3xl shadow-card-lg">
