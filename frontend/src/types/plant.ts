@@ -97,6 +97,7 @@ export interface Plant {
   potVolumeLiters?: number
   nutritionTableId: string
   availableProducts?: string[]   // undefined = usar todos los productos de la tabla
+  customProducts?: ProductDose[] // productos del usuario, no ligados a ninguna tabla
   status: PlantStatus
   notes?: string
 }

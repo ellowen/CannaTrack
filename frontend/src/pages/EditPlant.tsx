@@ -35,6 +35,7 @@ export default function EditPlant() {
     nutritionTableId:    plant.nutritionTableId,
     autoFlowerTotalDays: plant.autoFlowerTotalDays ?? 75,
     availableProducts:   plant.availableProducts,
+    customProducts:      plant.customProducts ?? [],
     notes:               plant.notes ?? '',
   }
 
@@ -56,6 +57,7 @@ export default function EditPlant() {
       nutritionTableId:    values.nutritionTableId,
       autoFlowerTotalDays: values.autoFlowerTotalDays,
       availableProducts:   values.availableProducts,
+      customProducts:      values.customProducts.length > 0 ? values.customProducts : undefined,
       notes:               values.notes || undefined,
     })
     navigate(`/plants/${plantId}`, { replace: true })

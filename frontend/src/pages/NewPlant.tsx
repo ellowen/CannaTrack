@@ -21,6 +21,7 @@ export default function NewPlant() {
       nutritionTableId: values.nutritionTableId,
       autoFlowerTotalDays: values.autoFlowerTotalDays,
       availableProducts: values.availableProducts,
+      customProducts: values.customProducts.length > 0 ? values.customProducts : undefined,
       status: 'active',
       notes: values.notes || undefined,
     })

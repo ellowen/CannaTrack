@@ -21,6 +21,11 @@ function crearTareaNutricion(
   fecha: Date,
   ciclo: CyclePhase,
 ): ScheduledTask {
+  // Combinar productos de la tabla + productos propios del usuario
+  const products = [
+    ...week.products,
+    ...(plant.customProducts ?? []),
+  ]
   return {
     id: nextId(),
     plantId: plant.id,
@@ -29,7 +34,7 @@ function crearTareaNutricion(
     cycle: ciclo,
     week: week.week,
     stage: week.stage,
-    products: week.products,
+    products,
     ecMin: week.ecMin,
     ecMax: week.ecMax,
     phMin: week.phMin,

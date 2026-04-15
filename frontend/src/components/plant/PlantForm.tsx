@@ -49,6 +49,7 @@ export interface PlantFormValues {
   nutritionTableId: string
   autoFlowerTotalDays: number
   availableProducts: string[] | undefined
+  customProducts: ProductDose[]
   notes: string
 }
 
@@ -172,9 +173,16 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     nutritionTableId: availableTables[0]?.id ?? '',
     autoFlowerTotalDays: 75,
     availableProducts: undefined,
+    customProducts: [],
     notes: '',
     ...initialValues,
   })
+
+  // Estado del formulario inline para nuevo producto personalizado
+  const [newProduct, setNewProduct] = useState<{ name: string; dose: string; unit: 'ml' | 'gr' }>({
+    name: '', dose: '', unit: 'ml',
+  })
+  const [addingProduct, setAddingProduct] = useState(false)
 
   function set<K extends keyof PlantFormValues>(field: K, value: PlantFormValues[K]) {
     setValues((v) => ({ ...v, [field]: value }))
@@ -463,6 +471,130 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             </div>
           )
         })()}
+
+        {/* Productos propios del usuario */}
+        <div className="rounded-2xl border border-app-border overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-app-elevated">
+            <div className="flex items-center gap-2.5">
+              <span className={clsx(
+                'w-2 h-2 rounded-full',
+                values.customProducts.length > 0 ? 'bg-brand-400' : 'bg-app-border-strong'
+              )} />
+              <span className="text-sm font-medium text-ink-1">Mis productos propios</span>
+            </div>
+            <span className="text-xs text-ink-4">
+              {values.customProducts.length > 0 ? `${values.customProducts.length} agregado${values.customProducts.length > 1 ? 's' : ''}` : 'Opcional'}
+            </span>
+          </div>
+
+          <div className="border-t border-app-border bg-app-card px-4 py-3 space-y-2">
+            <p className="text-xs text-ink-4 leading-relaxed">
+              Agregá productos de cualquier marca que no estén en la tabla. Se incluirán en todas las tareas de nutrición.
+            </p>
+
+            {/* Lista de productos ya agregados */}
+            {values.customProducts.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 bg-app-elevated rounded-xl px-3 py-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-ink-1 truncate">{p.name}</p>
+                  <p className="text-xs text-ink-3">{p.maxDose} {p.unit}/L</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => set('customProducts', values.customProducts.filter((_, j) => j !== i))}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-4 hover:text-red-500 hover:bg-red-50 transition-colors tap-highlight-none"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+
+            {/* Formulario inline para agregar */}
+            {addingProduct ? (
+              <div className="rounded-xl border border-brand-border bg-brand-subtle/40 p-3 space-y-2.5">
+                <input
+                  type="text"
+                  placeholder="Nombre del producto *"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct((v) => ({ ...v, name: e.target.value }))}
+                  className={fieldClass}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Dosis (por litro)"
+                    min={0.1}
+                    step={0.1}
+                    value={newProduct.dose}
+                    onChange={(e) => setNewProduct((v) => ({ ...v, dose: e.target.value }))}
+                    className={clsx(fieldClass, 'flex-1')}
+                  />
+                  <div className="flex rounded-xl border border-app-border overflow-hidden shrink-0">
+                    {(['ml', 'gr'] as const).map((u) => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => setNewProduct((v) => ({ ...v, unit: u }))}
+                        className={clsx(
+                          'px-3.5 text-sm font-semibold transition-colors tap-highlight-none',
+                          newProduct.unit === u
+                            ? 'bg-brand-400 text-white'
+                            : 'bg-app-card text-ink-3'
+                        )}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setAddingProduct(false); setNewProduct({ name: '', dose: '', unit: 'ml' }) }}
+                    className="flex-1 py-2 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-card tap-highlight-none active:scale-95 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!newProduct.name.trim() || !newProduct.dose}
+                    onClick={() => {
+                      const dose = parseFloat(newProduct.dose)
+                      if (!newProduct.name.trim() || isNaN(dose) || dose <= 0) return
+                      const product: ProductDose = {
+                        name: newProduct.name.trim(),
+                        line: 'BIO',   // línea genérica para productos del usuario
+                        unit: newProduct.unit,
+                        minDose: dose,
+                        maxDose: dose,
+                      }
+                      set('customProducts', [...values.customProducts, product])
+                      setNewProduct({ name: '', dose: '', unit: 'ml' })
+                      setAddingProduct(false)
+                    }}
+                    className="flex-[2] py-2 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-95 transition-all disabled:opacity-40"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingProduct(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-app-border-strong text-sm font-semibold text-ink-3 hover:border-brand-border hover:text-brand-400 tap-highlight-none active:scale-[0.98] transition-all"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+                  <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                </svg>
+                Agregar producto propio
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Preview cronograma */}
         {table && (() => {
