@@ -3,6 +3,7 @@ import { useWeekLog } from '@/hooks/useWeekLog'
 import type { WeekLog } from '@/types/weekLog'
 import WeekLogCard from './WeekLogCard'
 import WeekLogSheet from './WeekLogSheet'
+import { PhotoLightbox } from '@/components/gallery'
 
 interface DiarySectionProps {
   plantId: string
@@ -11,8 +12,14 @@ interface DiarySectionProps {
 
 export default function DiarySection({ plantId, currentWeekLabel }: DiarySectionProps) {
   const { logs, addLog, updateLog, deleteLog } = useWeekLog(plantId)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<WeekLog | undefined>(undefined)
+  const [sheetOpen, setSheetOpen]         = useState(false)
+  const [editing, setEditing]             = useState<WeekLog | undefined>(undefined)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  // Solo entradas con foto, en orden cronológico ascendente
+  const photosOnly = [...logs]
+    .filter((l) => l.photoDataUrl)
+    .sort((a, b) => a.logDate.getTime() - b.logDate.getTime())
 
   function openNew() {
     setEditing(undefined)
@@ -22,6 +29,16 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
   function openEdit(log: WeekLog) {
     setEditing(log)
     setSheetOpen(true)
+  }
+
+  function handleCardClick(log: WeekLog) {
+    if (log.photoDataUrl) {
+      // Abrir lightbox en la foto correspondiente
+      const idx = photosOnly.findIndex((p) => p.id === log.id)
+      if (idx !== -1) { setLightboxIndex(idx); return }
+    }
+    // Sin foto → abrir editor
+    openEdit(log)
   }
 
   function handleSave(data: { notes: string; photoDataUrl?: string }) {
@@ -70,7 +87,7 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {logs.map((log) => (
-              <WeekLogCard key={log.id} log={log} onClick={() => openEdit(log)} />
+              <WeekLogCard key={log.id} log={log} onClick={() => handleCardClick(log)} />
             ))}
           </div>
         )}
@@ -84,6 +101,18 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
         onDelete={editing ? () => deleteLog(editing.id) : undefined}
         onClose={() => setSheetOpen(false)}
       />
+
+      {lightboxIndex !== null && photosOnly.length > 0 && (
+        <PhotoLightbox
+          photos={photosOnly}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onEdit={(log) => {
+            setLightboxIndex(null)
+            openEdit(log)
+          }}
+        />
+      )}
     </>
   )
 }

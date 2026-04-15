@@ -125,7 +125,9 @@
 }
 
 @layer utilities {
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-bottom    { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+  .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .tap-highlight-none { -webkit-tap-highlight-color: transparent; }
   .tabular { font-variant-numeric: tabular-nums; }
 }
@@ -145,3 +147,9 @@
 .cal-slide-left  { animation: cal-slide-left  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 .cal-slide-right { animation: cal-slide-right 0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 .task-in { animation: task-in 0.18s ease-out both; }
+
+@keyframes lightbox-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lightbox-in { animation: lightbox-in 0.18s ease-out both; }
