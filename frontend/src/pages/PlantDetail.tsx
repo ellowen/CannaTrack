@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -17,6 +18,8 @@ export default function PlantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getPlantById, startFlora, harvestPlant, discardPlant } = usePlants()
+  const [floraPickerOpen, setFloraPickerOpen] = useState(false)
+  const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const { todayTasks, upcomingTasks, completeTask } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
@@ -185,15 +188,68 @@ export default function PlantDetail() {
               <span className="text-3xl">🌸</span>
               <div>
                 <p className="text-sm font-bold text-flora-text mb-0.5">¡Vegetativo completado!</p>
-                <p className="text-sm text-ink-3">Ya pasaron las 6 semanas. ¿Iniciás floración hoy?</p>
+                <p className="text-sm text-ink-3">
+                  {floraPickerOpen
+                    ? 'Elegí la fecha en que cambiaste el fotoperiodo.'
+                    : 'Ya pasaron las 6 semanas. ¿Cuándo iniciaste la floración?'}
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => startFlora(plant.id, new Date())}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
-            >
-              🌸 Iniciar floración hoy
-            </button>
+
+            {floraPickerOpen ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">
+                    Fecha de inicio de floración
+                  </label>
+                  <input
+                    type="date"
+                    value={floraDateInput}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setFloraDateInput(e.target.value)}
+                    className="w-full rounded-xl border border-flora-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-flora-border transition-colors shadow-card"
+                  />
+                  <p className="text-xs text-ink-4 mt-1.5">
+                    Podés backdatear si ya cambiaste el fotoperiodo.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setFloraPickerOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-card tap-highlight-none active:scale-95 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      const [y, m, d] = floraDateInput.split('-').map(Number)
+                      startFlora(plant.id, new Date(y, m - 1, d))
+                      setFloraPickerOpen(false)
+                    }}
+                    className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+                  >
+                    🌸 Confirmar floración
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    startFlora(plant.id, new Date())
+                  }}
+                  className="flex-1 py-3 rounded-xl border border-flora-border text-flora-text font-bold text-sm tap-highlight-none active:scale-95 transition-all bg-app-card"
+                >
+                  Hoy
+                </button>
+                <button
+                  onClick={() => setFloraPickerOpen(true)}
+                  className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+                >
+                  🌸 Elegir fecha
+                </button>
+              </div>
+            )}
           </div>
         )}
 

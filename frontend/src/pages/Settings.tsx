@@ -174,6 +174,32 @@ export default function Settings() {
           ))}
         </div>
       </section>
+
+      {/* Zona de peligro */}
+      <section className="pb-2">
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Zona de peligro</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink-1">Borrar todos los datos</p>
+              <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
+                Elimina plantas, tareas, fotos y mediciones. No se puede deshacer.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (!confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')) return
+                const keys = ['cannatrack-plants', 'cannatrack-tasks', 'cannatrack-weeklogs', 'cannatrack-measurements']
+                keys.forEach((k) => localStorage.removeItem(k))
+                window.location.reload()
+              }}
+              className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
+            >
+              Borrar todo
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
