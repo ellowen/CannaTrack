@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { format, differenceInDays } from 'date-fns'
+import { format, differenceInDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
@@ -9,7 +9,7 @@ import { useUserStore } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { Button } from '@/components/ui'
 import { NutritionCard } from '@/components/nutrition'
-import { TaskItem } from '@/components/calendar'
+import { TaskItem, WeekView } from '@/components/calendar'
 import { CompleteTaskSheet, IrrigationCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
@@ -25,7 +25,7 @@ export default function PlantDetail() {
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
-  const { todayTasks, upcomingTasks } = useTasks(id)
+  const { tasks, todayTasks, upcomingTasks } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -65,6 +65,9 @@ export default function PlantDetail() {
   const refTask = todayNutrition[0] ?? upcomingTasks.find((t) => t.type === 'nutrition')
   const todayOther = todayTasks.filter((t) => t.type !== 'nutrition')
   const upcoming = upcomingTasks.filter((t) => !todayTasks.some((d) => d.id === t.id))
+
+  // Semana actual para WeekView
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }) // lunes
 
   return (
     <div className="pb-8">
@@ -257,6 +260,21 @@ export default function PlantDetail() {
             )}
           </div>
         )}
+
+        {/* Vista semanal */}
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">📅 Esta semana</p>
+          </div>
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-2 py-2">
+            <WeekView
+              tasks={tasks}
+              weekStart={weekStart}
+              today={today}
+              selectedDate={today}
+            />
+          </div>
+        </section>
 
         {/* Tareas de hoy */}
         {todayTasks.length > 0 && (

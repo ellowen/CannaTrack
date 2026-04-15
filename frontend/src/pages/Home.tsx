@@ -7,8 +7,10 @@ import { useTasks } from '@/hooks/useTasks'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
 import { PlantCard } from '@/components/plant'
+import { CompleteTaskSheet } from '@/components/tasks'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
+import type { ScheduledTask } from '@/types/plant'
 
 const taskTypeIcon: Record<string, string> = {
   nutrition:   '🍃',
@@ -30,6 +32,7 @@ export default function Home() {
   const { plants, allPlants } = usePlants()
   const [historialOpen, setHistorialOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const { todayTasks } = useTasks()
   const { completeTask } = useTaskStore()
 
@@ -63,6 +66,7 @@ export default function Home() {
   void refreshKey // consumed by today recalc
 
   return (
+    <>
     <div
       ref={containerRef}
       onTouchStart={onTouchStart}
@@ -121,7 +125,7 @@ export default function Home() {
                   <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
                 </div>
                 <button
-                  onClick={() => { hapticLight(); completeTask(task.id) }}
+                  onClick={() => { hapticLight(); setCompletingTask(task) }}
                   className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Hecho
@@ -258,5 +262,13 @@ export default function Home() {
       )}
 
     </div>
+
+    {/* Sheet de completado — accesible desde Home también */}
+    <CompleteTaskSheet
+      task={completingTask}
+      onConfirm={(taskId, notes) => completeTask(taskId, notes)}
+      onClose={() => setCompletingTask(null)}
+    />
+    </>
   )
 }

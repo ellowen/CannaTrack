@@ -4,18 +4,24 @@ import { addMonths, format, isSameDay, isSameMonth, startOfMonth } from 'date-fn
 import { es } from 'date-fns/locale'
 import { useTasks } from '@/hooks/useTasks'
 import { usePlants } from '@/hooks/usePlants'
+import { useTaskStore } from '@/store/taskStore'
 import { MonthCalendar, TaskTimeline } from '@/components/calendar'
+import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
+import { hapticLight } from '@/lib/haptics'
+import type { ScheduledTask } from '@/types/plant'
 
 export default function Calendar() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const [month, setMonth]       = useState(() => startOfMonth(today))
-  const [selected, setSelected] = useState(today)
-  const [animDir, setAnimDir]   = useState<'left' | 'right' | null>(null)
+  const [month, setMonth]           = useState(() => startOfMonth(today))
+  const [selected, setSelected]     = useState(today)
+  const [animDir, setAnimDir]       = useState<'left' | 'right' | null>(null)
+  const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
 
-  const { tasks, completeTask } = useTasks()
+  const { tasks } = useTasks()
+  const { completeTask } = useTaskStore()
   const { plants } = usePlants()
 
   const selectedTasks = getTasksForDate(tasks, selected)
@@ -191,9 +197,20 @@ export default function Calendar() {
         <TaskTimeline
           tasks={selectedTasks}
           getPlantName={getPlantName}
-          onComplete={completeTask}
+          onComplete={(id) => {
+            hapticLight()
+            const task = selectedTasks.find((t) => t.id === id) ?? null
+            setCompletingTask(task)
+          }}
         />
       </div>
+
+      {/* Sheet de completado con nota */}
+      <CompleteTaskSheet
+        task={completingTask}
+        onConfirm={(taskId, notes) => completeTask(taskId, notes)}
+        onClose={() => setCompletingTask(null)}
+      />
     </div>
   )
 }
