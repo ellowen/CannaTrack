@@ -1,12 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
 import { PlantCard } from '@/components/plant'
-import { differenceInDays } from 'date-fns'
 
 const taskTypeIcon: Record<string, string> = {
   nutrition:   '🍃',
@@ -26,6 +26,7 @@ const taskTypeLabel: Record<string, string> = {
 export default function Home() {
   const { name } = useUserStore()
   const { plants, allPlants } = usePlants()
+  const [historialOpen, setHistorialOpen] = useState(false)
   const { todayTasks } = useTasks()
   const { completeTask } = useTaskStore()
 
@@ -38,6 +39,7 @@ export default function Home() {
   const doneTasks = todayTasks.filter((t) => t.completed)
   const allDone = todayTasks.length > 0 && pendingTasks.length === 0
 
+  const archivedPlants = allPlants.filter((p) => p.status === 'harvested' || p.status === 'discarded')
   const harvestedCount = allPlants.filter((p) => p.status === 'harvested').length
   const longestGrowDays = plants.length > 0
     ? Math.max(...plants.map((p) => differenceInDays(today, p.startDate)))
@@ -161,6 +163,60 @@ export default function Home() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Historial — cosechadas y descartadas */}
+      {archivedPlants.length > 0 && (
+        <section className="mt-6">
+          <button
+            onClick={() => setHistorialOpen((v) => !v)}
+            className="w-full flex items-center justify-between mb-3 tap-highlight-none"
+          >
+            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">
+              Historial · {archivedPlants.length}
+            </h2>
+            <svg
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+              className={`w-4 h-4 text-ink-4 transition-transform duration-200 ${historialOpen ? 'rotate-180' : ''}`}
+            >
+              <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {historialOpen && (
+            <div className="space-y-2 task-in">
+              {archivedPlants.map((plant) => {
+                const isHarvested = plant.status === 'harvested'
+                const growDays = differenceInDays(new Date(), plant.startDate)
+                return (
+                  <Link
+                    key={plant.id}
+                    to={`/plants/${plant.id}`}
+                    className="flex items-center gap-3 bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 tap-highlight-none active:scale-[0.987] transition-all"
+                  >
+                    <span className="text-2xl shrink-0">{isHarvested ? '✂️' : '🗑️'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-ink-2 truncate">{plant.name}</p>
+                      <p className="text-xs text-ink-4 truncate">{plant.genetics}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        isHarvested
+                          ? 'bg-vege-bg text-vege-text border-vege-border'
+                          : 'bg-app-elevated text-ink-4 border-app-border'
+                      }`}>
+                        {isHarvested ? 'Cosechada' : 'Descartada'}
+                      </span>
+                      <p className="text-[11px] text-ink-4 mt-1">
+                        {growDays}d · {format(plant.startDate, "d MMM yyyy", { locale: es })}
+                      </p>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </section>
       )}
 
     </div>
