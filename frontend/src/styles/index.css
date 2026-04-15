@@ -87,6 +87,8 @@
     --gradient-flora-card: linear-gradient(135deg, #261500 0%, #2A1A00 100%);
   }
 
+  html { overflow-x: hidden; }
+
   html, body, #root {
     font-family: Inter, system-ui, sans-serif;
     font-size: 16px;
@@ -153,3 +155,31 @@
   to   { opacity: 1; }
 }
 .lightbox-in { animation: lightbox-in 0.18s ease-out both; }
+
+/* ── Transiciones de página ────────────────────────────── */
+@keyframes page-enter-right {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-enter-left {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-enter-up {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes page-enter-down {
+  from { opacity: 0; transform: translateY(-24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.page-enter-right { animation: page-enter-right 0.26s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page-enter-left  { animation: page-enter-left  0.26s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page-enter-up    { animation: page-enter-up    0.30s cubic-bezier(0.22,0.61,0.36,1) both; }
+.page-enter-down  { animation: page-enter-down  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page-fade-in     { animation: page-fade-in     0.18s ease-out both; }

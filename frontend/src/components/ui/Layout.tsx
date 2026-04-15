@@ -1,10 +1,13 @@
 import { NavLink, Link, Outlet } from 'react-router-dom'
 import { clsx } from 'clsx'
+import { usePageTransition } from '@/hooks/usePageTransition'
 
 export default function Layout() {
+  const { animClass, locationKey } = usePageTransition()
+
   return (
     <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col">
-      <main className="flex-1 pb-24 max-w-lg mx-auto w-full">
+      <main key={locationKey} className={clsx('flex-1 pb-24 max-w-lg mx-auto w-full', animClass)}>
         <Outlet />
       </main>
 
