@@ -6,21 +6,26 @@ import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
+import { useTaskStore } from '@/store/taskStore'
 import { Button } from '@/components/ui'
 import { NutritionCard } from '@/components/nutrition'
 import { TaskItem } from '@/components/calendar'
+import { CompleteTaskSheet, IrrigationCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
+import type { ScheduledTask } from '@/types/plant'
 
 export default function PlantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getPlantById, startFlora, harvestPlant, discardPlant } = usePlants()
+  const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
-  const { todayTasks, upcomingTasks, completeTask } = useTasks(id)
+  const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
+  const { todayTasks, upcomingTasks } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -253,42 +258,67 @@ export default function PlantDetail() {
           </div>
         )}
 
-        {/* Nutrición de hoy */}
-        {todayNutrition.length > 0 && (
-          <section>
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">🍃 Nutrición de hoy</p>
-            <div className="space-y-3">
-              {todayNutrition.map((task) => (
-                <div key={task.id}>
-                  <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
-                  {!task.completed && (
-                    <button
-                      onClick={() => completeTask(task.id)}
-                      className="mt-2 w-full py-3 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
-                    >
-                      ✓ Marcar como completada
-                    </button>
-                  )}
-                  {task.completed && (
-                    <div className="mt-2 w-full py-2.5 rounded-xl bg-brand-subtle border border-brand-border text-brand-500 font-semibold text-sm text-center">
-                      ✅ Completada
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Tareas de hoy */}
+        {todayTasks.length > 0 && (
+          <section className="space-y-3">
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">⚡ Hoy</p>
 
-        {/* Otras tareas de hoy */}
-        {todayOther.length > 0 && (
-          <section>
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Otras tareas hoy</p>
-            <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
-              {todayOther.map((task) => (
-                <TaskItem key={task.id} task={task} onComplete={completeTask} />
-              ))}
-            </div>
+            {/* Nutrición */}
+            {todayNutrition.map((task) => (
+              <div key={task.id}>
+                <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
+                {!task.completed ? (
+                  <button
+                    onClick={() => setCompletingTask(task)}
+                    className="mt-2 w-full py-3 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
+                  >
+                    ✓ Marcar como completada
+                  </button>
+                ) : (
+                  <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
+                    <span className="text-sm font-semibold text-brand-400">✅ Completada</span>
+                    {task.completionNotes && (
+                      <span className="text-xs text-ink-3 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Riegos puros */}
+            {todayOther.filter((t) => t.type === 'irrigation').map((task) => (
+              <div key={task.id}>
+                <IrrigationCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
+                {!task.completed ? (
+                  <button
+                    onClick={() => setCompletingTask(task)}
+                    className="mt-2 w-full py-3 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
+                  >
+                    💧 Riego completado
+                  </button>
+                ) : (
+                  <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
+                    <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
+                    {task.completionNotes && (
+                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Observaciones y otras */}
+            {todayOther.filter((t) => t.type !== 'irrigation').length > 0 && (
+              <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
+                {todayOther.filter((t) => t.type !== 'irrigation').map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onComplete={() => setCompletingTask(task)}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -341,6 +371,13 @@ export default function PlantDetail() {
           </p>
         )}
       </div>
+
+      {/* Sheet de completado con nota */}
+      <CompleteTaskSheet
+        task={completingTask}
+        onConfirm={(taskId, notes) => storeCompleteTask(taskId, notes)}
+        onClose={() => setCompletingTask(null)}
+      />
     </div>
   )
 }
