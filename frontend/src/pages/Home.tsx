@@ -53,6 +53,14 @@ export default function Home() {
   const doneTasks = todayTasks.filter((t) => t.completed)
   const allDone = todayTasks.length > 0 && pendingTasks.length === 0
 
+  // Agrupar pendientes por planta (solo cuando hay > 1 planta con tareas)
+  const plantIdsWithTasks = [...new Set(pendingTasks.map((t) => t.plantId))]
+  const multiPlant = plantIdsWithTasks.length > 1
+  const taskGroups = plantIdsWithTasks.map((plantId) => ({
+    plant: plants.find((p) => p.id === plantId),
+    tasks: pendingTasks.filter((t) => t.plantId === plantId),
+  }))
+
   const archivedPlants = allPlants.filter((p) => p.status === 'harvested' || p.status === 'discarded')
   const harvestedCount = allPlants.filter((p) => p.status === 'harvested').length
   const longestGrowDays = plants.length > 0
@@ -106,52 +114,82 @@ export default function Home() {
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">
-              Hoy · {pendingTasks.length > 0 ? `${pendingTasks.length} pendiente${pendingTasks.length > 1 ? 's' : ''}` : 'Todo al día ✓'}
+              ⚡ Hoy · {pendingTasks.length > 0
+                ? `${pendingTasks.length} pendiente${pendingTasks.length > 1 ? 's' : ''}`
+                : 'Todo al día ✓'}
             </h2>
+            {doneTasks.length > 0 && pendingTasks.length > 0 && (
+              <span className="text-[11px] font-semibold text-brand-400">
+                {doneTasks.length} ✓
+              </span>
+            )}
           </div>
 
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
-            {/* Pending tasks */}
-            {pendingTasks.map((task, i) => (
-              <div
-                key={task.id}
-                className={`flex items-center gap-3 px-4 py-3.5 ${i < pendingTasks.length - 1 ? 'border-b border-app-border' : ''}`}
-              >
-                <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-ink-1">
-                    {taskTypeLabel[task.type] ?? task.type}
-                  </p>
-                  <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
+          {/* All done */}
+          {allDone ? (
+            <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5 text-center">
+              <p className="text-3xl mb-2">🎉</p>
+              <p className="text-sm font-bold text-brand-400">¡Todo al día!</p>
+              <p className="text-xs text-ink-3 mt-0.5">Buen trabajo por hoy</p>
+            </div>
+          ) : multiPlant ? (
+            /* Vista agrupada por planta */
+            <div className="space-y-3">
+              {taskGroups.map(({ plant: p, tasks: pts }) => (
+                <div key={p?.id ?? 'unknown'} className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
+                  {/* Cabecera de planta */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-app-elevated border-b border-app-border">
+                    <span className="text-sm">🌿</span>
+                    <span className="text-xs font-bold text-ink-2 truncate">{p?.name ?? '—'}</span>
+                    <span className="ml-auto text-[10px] font-semibold text-ink-4">
+                      {pts.length} tarea{pts.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {pts.map((task, i) => (
+                    <div key={task.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < pts.length - 1 ? 'border-b border-app-border' : ''}`}>
+                      <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
+                      <p className="text-sm font-semibold text-ink-1 flex-1 min-w-0 truncate">
+                        {taskTypeLabel[task.type] ?? task.type}
+                      </p>
+                      <button
+                        onClick={() => { hapticLight(); setCompletingTask(task) }}
+                        className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                      >
+                        Hecho
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => { hapticLight(); setCompletingTask(task) }}
-                  className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
-                >
-                  Hecho
-                </button>
-              </div>
-            ))}
-
-            {/* Done tasks summary */}
-            {doneTasks.length > 0 && (
-              <div className={`px-4 py-3 flex items-center gap-2 bg-app-elevated ${pendingTasks.length > 0 ? 'border-t border-app-border' : ''}`}>
-                <span className="text-base">✅</span>
-                <span className="text-xs text-ink-3 font-medium">
-                  {doneTasks.length} completada{doneTasks.length > 1 ? 's' : ''}
-                </span>
-              </div>
-            )}
-
-            {/* All done state */}
-            {allDone && (
-              <div className="px-4 py-4 text-center">
-                <p className="text-2xl mb-1">🎉</p>
-                <p className="text-sm font-semibold text-brand-500">¡Todo al día!</p>
-                <p className="text-xs text-ink-3 mt-0.5">Buen trabajo por hoy</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            /* Vista plana — 1 sola planta */
+            <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
+              {pendingTasks.map((task, i) => (
+                <div key={task.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < pendingTasks.length - 1 ? 'border-b border-app-border' : ''}`}>
+                  <span className="text-xl shrink-0">{taskTypeIcon[task.type] ?? '📌'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink-1">{taskTypeLabel[task.type] ?? task.type}</p>
+                    <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
+                  </div>
+                  <button
+                    onClick={() => { hapticLight(); setCompletingTask(task) }}
+                    className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                  >
+                    Hecho
+                  </button>
+                </div>
+              ))}
+              {doneTasks.length > 0 && (
+                <div className="px-4 py-3 flex items-center gap-2 bg-app-elevated border-t border-app-border">
+                  <span className="text-base">✅</span>
+                  <span className="text-xs text-ink-3 font-medium">
+                    {doneTasks.length} completada{doneTasks.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 

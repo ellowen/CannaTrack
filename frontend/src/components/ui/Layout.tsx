@@ -1,10 +1,21 @@
-import { NavLink, Link, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
 
 export default function Layout() {
   const { animClass, locationKey } = usePageTransition()
+  const navigate = useNavigate()
+
+  // Redirigir después del onboarding (flag puesto por Onboarding.tsx)
+  useEffect(() => {
+    const target = localStorage.getItem('ct-redirect')
+    if (target) {
+      localStorage.removeItem('ct-redirect')
+      navigate(target, { replace: true })
+    }
+  }, [])
 
   return (
     <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col">

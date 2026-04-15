@@ -83,6 +83,29 @@ function crearTareaRiego(
   }
 }
 
+function crearTareaFoliar(
+  plant: Plant,
+  week: NutritionWeek,
+  fecha: Date,
+  ciclo: CyclePhase,
+): ScheduledTask {
+  // Los productos foliares son los customProducts marcados como foliar
+  // o bien el spray plain water con pH ajustado
+  return {
+    id: nextId(),
+    plantId: plant.id,
+    type: 'foliar',
+    scheduledDate: fecha,
+    cycle: ciclo,
+    week: week.week,
+    stage: week.stage,
+    products: plant.customProducts ?? [],
+    phMin: week.phMin,
+    phMax: week.phMax,
+    completed: false,
+  }
+}
+
 function crearTareaCosecha(
   plant: Plant,
   week: NutritionWeek,
@@ -118,6 +141,10 @@ function generarTareasSemana(
   const tareas: ScheduledTask[] = []
   const esFlushing = week.stage === 'flushing'
 
+  // Etapas donde se recomienda foliar (vegetativo activo + inicio de floración)
+  const ETAPAS_FOLIAR = new Set(['growth', 'preflower', 'stretch'])
+  const aplicarFoliar = ETAPAS_FOLIAR.has(week.stage)
+
   if (esFlushing) {
     // Semanas F7/F8: solo agua — tres riegos simples
     tareas.push(crearTareaRiego(plant, week, inicioSemana, ciclo))
@@ -127,6 +154,10 @@ function generarTareasSemana(
     // Semana normal: nutrición + observación el día 0, riegos en días 2 y 4
     tareas.push(crearTareaNutricion(plant, week, inicioSemana, ciclo))
     tareas.push(crearTareaObservacion(plant, week, inicioSemana, ciclo))
+    // Foliar el día 1 (mañana siguiente a la nutrición) en etapas activas
+    if (aplicarFoliar) {
+      tareas.push(crearTareaFoliar(plant, week, addDays(inicioSemana, 1), ciclo))
+    }
     tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 2), ciclo))
     tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 4), ciclo))
   }

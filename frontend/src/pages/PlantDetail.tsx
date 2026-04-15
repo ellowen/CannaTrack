@@ -10,7 +10,7 @@ import { useTaskStore } from '@/store/taskStore'
 import { Button } from '@/components/ui'
 import { NutritionCard } from '@/components/nutrition'
 import { TaskItem, WeekView } from '@/components/calendar'
-import { CompleteTaskSheet, IrrigationCard } from '@/components/tasks'
+import { CompleteTaskSheet, IrrigationCard, FoliarCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
 import { HarvestSheet } from '@/components/plant'
@@ -63,9 +63,10 @@ export default function PlantDetail() {
     : 'Completada'
 
   const todayNutrition = todayTasks.filter((t) => t.type === 'nutrition')
+  const todayFoliar    = todayTasks.filter((t) => t.type === 'foliar')
   // EC/pH ranges: from today's nutrition task if available, else upcoming nutrition
   const refTask = todayNutrition[0] ?? upcomingTasks.find((t) => t.type === 'nutrition')
-  const todayOther = todayTasks.filter((t) => t.type !== 'nutrition')
+  const todayOther = todayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar')
   const upcoming = upcomingTasks.filter((t) => !todayTasks.some((d) => d.id === t.id))
 
   // Semana actual para WeekView
@@ -315,6 +316,28 @@ export default function PlantDetail() {
                     className="mt-2 w-full py-3 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
                   >
                     💧 Riego completado
+                  </button>
+                ) : (
+                  <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
+                    <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
+                    {task.completionNotes && (
+                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Foliar */}
+            {todayFoliar.map((task) => (
+              <div key={task.id}>
+                <FoliarCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
+                {!task.completed ? (
+                  <button
+                    onClick={() => setCompletingTask(task)}
+                    className="mt-2 w-full py-3 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
+                  >
+                    🌫️ Foliar completado
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">

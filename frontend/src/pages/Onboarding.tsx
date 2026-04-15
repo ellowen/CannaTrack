@@ -17,8 +17,9 @@ export default function Onboarding() {
   function handleFinish() {
     hapticSuccess()
     setName(nameInput.trim() || 'Cultivador')
+    // Layout detecta el flag y navega a /plants/new
+    localStorage.setItem('ct-redirect', '/plants/new')
     setOnboarded(true)
-    // App.tsx re-renderiza con RouterProvider → Home
   }
 
   return (
