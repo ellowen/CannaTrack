@@ -82,7 +82,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => completeTask(task.id)}
-                  className="shrink-0 text-xs font-bold text-brand-500 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                  className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Hecho
                 </button>
@@ -163,18 +163,6 @@ export default function Home() {
         </>
       )}
 
-      {/* FAB */}
-      {plants.length > 0 && (
-        <Link
-          to="/plants/new"
-          className="fixed bottom-24 right-4 w-14 h-14 bg-brand-400 text-white rounded-2xl shadow-glow-brand flex items-center justify-center transition-all active:scale-95 tap-highlight-none z-10 hover:bg-brand-500"
-          aria-label="Agregar planta"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-6 h-6">
-            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-          </svg>
-        </Link>
-      )}
     </div>
   )
 }

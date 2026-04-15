@@ -25,6 +25,12 @@ export default function WeekLogCard({ log, onClick }: WeekLogCardProps) {
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          {/* Expand hint */}
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/30 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-3.5 h-3.5 opacity-80">
+              <path d="M15 3h6m0 0v6m0-6l-7 7M9 21H3m0 0v-6m0 6l7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
           {/* Week badge over photo */}
           <span
             className="absolute bottom-2.5 left-3 text-[11px] font-bold text-white px-2.5 py-1 rounded-full"
