@@ -4,12 +4,17 @@ import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
 import { useTasks } from '@/hooks/useTasks'
+import { usePlantStore } from '@/store/plantStore'
+import { notifyPendingTasks } from '@/lib/notifications'
+import { useUserStore } from '@/store/userStore'
 
 export default function Layout() {
   const { animClass, locationKey } = usePageTransition()
   const navigate = useNavigate()
   const { todayTasks, overdueTasks } = useTasks()
   const pendingCount = todayTasks.filter((t) => !t.completed).length + overdueTasks.length
+  const { plants } = usePlantStore()
+  const { notificationsEnabled } = useUserStore()
 
   // Redirigir después del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
@@ -19,6 +24,15 @@ export default function Layout() {
       navigate(target, { replace: true })
     }
   }, [])
+
+  // Notificación diaria al abrir la app
+  useEffect(() => {
+    if (!notificationsEnabled) return
+    const pending = [...todayTasks.filter((t) => !t.completed), ...overdueTasks]
+    if (pending.length === 0) return
+    const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '—')
+    notifyPendingTasks(pending.length, plantNames)
+  }, [notificationsEnabled])
 
   return (
     <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col">

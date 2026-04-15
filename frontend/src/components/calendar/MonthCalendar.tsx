@@ -59,8 +59,10 @@ export default function MonthCalendar({
           const isToday  = isSameDay(day, today)
           const isSel    = isSameDay(day, selectedDate)
           const dayTasks = getTasksForDate(tasks, day)
-          const pending  = dayTasks.filter((t) => !t.completed)
+          const pending  = dayTasks.filter((t) => !t.completed && t.type !== 'harvest')
           const allDone  = dayTasks.length > 0 && pending.length === 0
+          const isPast   = day < today && !isToday
+          const isOverdue = isPast && pending.length > 0
 
           // Tipos únicos de tareas pendientes (máx 4 puntos)
           const types = [...new Set(pending.map((t) => t.type))].slice(0, 4)
@@ -80,6 +82,7 @@ export default function MonthCalendar({
                 'w-8 h-8 flex items-center justify-center rounded-full text-sm font-black transition-all duration-150',
                 isSel  ? 'bg-brand-400 text-white shadow-glow-brand scale-110'
                 : isToday ? 'ring-2 ring-brand-400 text-brand-400'
+                : isOverdue ? 'text-red-500'
                 : inMonth ? 'text-ink-1'
                 : 'text-ink-4 opacity-30',
               )}>

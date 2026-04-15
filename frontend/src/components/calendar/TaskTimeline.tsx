@@ -11,6 +11,9 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; color: string; 
 const FALLBACK = { icon: '📌', label: 'Tarea', color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)' }
 
 function getDetail(task: ScheduledTask): string | null {
+  if (task.type === 'irrigation') {
+    return task.phMin ? `pH objetivo ${task.phMin}–${task.phMax} · Solo agua` : 'Solo agua limpia'
+  }
   if (task.type !== 'nutrition') return null
   if (task.products.length === 0) return 'Solo agua — semana de limpieza'
   if (task.products.length <= 3) return task.products.map((p) => p.name).join(' · ')
@@ -79,14 +82,23 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete }: TaskTi
                 <div className="bg-app-card px-4 py-3">
                   {/* Fila principal */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base leading-none shrink-0">{cfg.icon}</span>
-                      <span className={clsx(
-                        'text-sm font-bold',
-                        isDone ? 'line-through text-ink-4' : 'text-ink-1'
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base leading-none shrink-0">{cfg.icon}</span>
+                        <span className={clsx(
+                          'text-sm font-bold',
+                          isDone ? 'line-through text-ink-4' : 'text-ink-1'
+                        )}>
+                          {cfg.label}
+                        </span>
+                      </div>
+                      {/* Nombre de planta — prominente debajo del tipo */}
+                      <p className={clsx(
+                        'text-xs font-semibold mt-0.5 ml-7 truncate',
+                        isDone ? 'text-ink-4' : 'text-ink-2'
                       )}>
-                        {cfg.label}
-                      </span>
+                        🌿 {getPlantName(task.plantId)}
+                      </p>
                     </div>
 
                     {/* Badges derecha */}
@@ -103,23 +115,16 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete }: TaskTi
                   {/* Detalle de productos */}
                   {detail && (
                     <p className={clsx(
-                      'text-xs mt-1.5 leading-relaxed',
+                      'text-xs mt-1.5 leading-relaxed ml-7',
                       isDone ? 'text-ink-4' : 'text-ink-3'
                     )}>
                       {detail}
                     </p>
                   )}
 
-                  {/* Planta + acción */}
-                  <div className="flex items-center justify-between mt-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px]">🌿</span>
-                      <span className="text-[11px] font-semibold text-ink-3 truncate max-w-[130px]">
-                        {getPlantName(task.plantId)}
-                      </span>
-                    </div>
-
-                    {!isDone && onComplete ? (
+                  {/* Acción */}
+                  {!isDone && onComplete ? (
+                    <div className="flex justify-end mt-2.5">
                       <button
                         onClick={() => onComplete(task.id)}
                         className="text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all tap-highlight-none active:scale-95"
@@ -127,10 +132,12 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete }: TaskTi
                       >
                         Hecho ✓
                       </button>
-                    ) : isDone ? (
+                    </div>
+                  ) : isDone ? (
+                    <div className="flex justify-end mt-2.5">
                       <span className="text-[11px] font-semibold text-brand-400">Completado</span>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>

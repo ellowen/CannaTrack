@@ -14,7 +14,7 @@ import { CompleteTaskSheet, IrrigationCard, FoliarCard } from '@/components/task
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
 import { HarvestSheet } from '@/components/plant'
-import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress } from '@/lib/nutrition-utils'
+import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress, getTasksForDate } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
 
@@ -27,6 +27,7 @@ export default function PlantDetail() {
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date())
   const { tasks, todayTasks, upcomingTasks, overdueTasks } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
@@ -62,15 +63,19 @@ export default function PlantDetail() {
     ? currentWeek.cycle === 'vege' ? `VEGE S${currentWeek.week}` : `FLORA F${currentWeek.week}`
     : 'Completada'
 
-  const todayNutrition = todayTasks.filter((t) => t.type === 'nutrition')
-  const todayFoliar    = todayTasks.filter((t) => t.type === 'foliar')
   // EC/pH ranges: from today's nutrition task if available, else upcoming nutrition
-  const refTask = todayNutrition[0] ?? upcomingTasks.find((t) => t.type === 'nutrition')
-  const todayOther = todayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar')
+  const refTask = todayTasks.find((t) => t.type === 'nutrition') ?? upcomingTasks.find((t) => t.type === 'nutrition')
   const upcoming = upcomingTasks.filter((t) => !todayTasks.some((d) => d.id === t.id))
 
   // Semana actual para WeekView
   const weekStart = startOfWeek(today, { weekStartsOn: 1 }) // lunes
+
+  // Día seleccionado en el WeekView (distinto de today)
+  const isSelectedToday = selectedDay.toDateString() === today.toDateString()
+  const selectedDayTasks = isSelectedToday ? todayTasks : getTasksForDate(tasks, selectedDay)
+  const selectedDayLabel = isSelectedToday
+    ? '⚡ Hoy'
+    : format(selectedDay, "EEE d 'de' MMM", { locale: es })
 
   return (
     <div className="pb-8">
@@ -274,7 +279,8 @@ export default function PlantDetail() {
               tasks={tasks}
               weekStart={weekStart}
               today={today}
-              selectedDate={today}
+              selectedDate={selectedDay}
+              onDayClick={(d) => setSelectedDay(d)}
             />
           </div>
         </section>
@@ -296,13 +302,13 @@ export default function PlantDetail() {
           </section>
         )}
 
-        {/* Tareas de hoy */}
-        {todayTasks.length > 0 && (
+        {/* Tareas del día seleccionado */}
+        {selectedDayTasks.length > 0 && (
           <section className="space-y-3">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">⚡ Hoy</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
 
             {/* Nutrición */}
-            {todayNutrition.map((task) => (
+            {selectedDayTasks.filter((t) => t.type === 'nutrition').map((task) => (
               <div key={task.id}>
                 <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
                 {!task.completed ? (
@@ -324,7 +330,7 @@ export default function PlantDetail() {
             ))}
 
             {/* Riegos puros */}
-            {todayOther.filter((t) => t.type === 'irrigation').map((task) => (
+            {selectedDayTasks.filter((t) => t.type === 'irrigation').map((task) => (
               <div key={task.id}>
                 <IrrigationCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
                 {!task.completed ? (
@@ -346,7 +352,7 @@ export default function PlantDetail() {
             ))}
 
             {/* Foliar */}
-            {todayFoliar.map((task) => (
+            {selectedDayTasks.filter((t) => t.type === 'foliar').map((task) => (
               <div key={task.id}>
                 <FoliarCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
                 {!task.completed ? (
@@ -368,9 +374,9 @@ export default function PlantDetail() {
             ))}
 
             {/* Observaciones y otras */}
-            {todayOther.filter((t) => t.type !== 'irrigation').length > 0 && (
+            {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').length > 0 && (
               <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
-                {todayOther.filter((t) => t.type !== 'irrigation').map((task) => (
+                {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -383,10 +389,12 @@ export default function PlantDetail() {
         )}
 
         {/* Sin tareas */}
-        {todayTasks.length === 0 && (
+        {selectedDayTasks.length === 0 && (
           <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5 text-center">
             <p className="text-2xl mb-2">🌤️</p>
-            <p className="text-sm text-ink-3">Sin tareas para hoy</p>
+            <p className="text-sm text-ink-3">
+              {isSelectedToday ? 'Sin tareas para hoy' : 'Sin tareas este día'}
+            </p>
           </div>
         )}
 

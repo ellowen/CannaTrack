@@ -13,7 +13,7 @@ interface PlantCardProps {
 
 export default function PlantCard({ plant }: PlantCardProps) {
   const navigate = useNavigate()
-  const { todayTasks } = useTasks(plant.id)
+  const { todayTasks, overdueTasks } = useTasks(plant.id)
   const latestPhoto = useWeekLogStore((s) =>
     s.logs
       .filter((l) => l.plantId === plant.id && l.photoDataUrl)
@@ -30,6 +30,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
   const needsFlora = awaitingFloraStart(plant)
   const cycleProgress = getCycleProgress(plant, today)
   const pendingToday = todayTasks.filter((t) => !t.completed).length
+  const overdueCount = overdueTasks.length
   const isFlora = currentWeek?.cycle === 'flora'
 
   const stageEmoji = currentWeek ? (STAGE_EMOJIS[currentWeek.stage] ?? '🌱') : '✂️'
@@ -124,6 +125,11 @@ export default function PlantCard({ plant }: PlantCardProps) {
 
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
+          {overdueCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-500 border border-red-200 dark:border-red-900/50 px-2.5 py-1 rounded-full">
+              ⚠️ {overdueCount} vencida{overdueCount > 1 ? 's' : ''}
+            </span>
+          )}
           {pendingToday > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-subtle text-brand-500 border border-brand-border px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
@@ -135,7 +141,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
               🌸 Iniciar floración
             </span>
           )}
-          {pendingToday === 0 && !needsFlora && (
+          {overdueCount === 0 && pendingToday === 0 && !needsFlora && (
             <span className="text-xs text-ink-4 font-medium">✓ Al día</span>
           )}
         </div>
