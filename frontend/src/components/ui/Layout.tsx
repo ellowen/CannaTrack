@@ -1,6 +1,7 @@
 import { NavLink, Link, Outlet } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
+import InstallBanner from './InstallBanner'
 
 export default function Layout() {
   const { animClass, locationKey } = usePageTransition()
@@ -10,6 +11,8 @@ export default function Layout() {
       <main key={locationKey} className={clsx('flex-1 pb-24 max-w-lg mx-auto w-full', animClass)}>
         <Outlet />
       </main>
+
+      <InstallBanner />
 
       <nav className="fixed bottom-0 left-0 right-0 z-20">
         <div className="max-w-lg mx-auto">

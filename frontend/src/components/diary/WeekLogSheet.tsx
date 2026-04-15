@@ -3,6 +3,8 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { WeekLog } from '@/types/weekLog'
 import { resizeImageFile } from '@/lib/image-utils'
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
+import { hapticSuccess } from '@/lib/haptics'
 
 interface WeekLogSheetProps {
   isOpen: boolean
@@ -26,6 +28,7 @@ export default function WeekLogSheet({
   const [photo, setPhoto] = useState<string | undefined>(undefined)
   const [loadingPhoto, setLoadingPhoto] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeToDismiss({ onDismiss: onClose })
 
   // Sync form state when sheet opens
   useEffect(() => {
@@ -57,6 +60,7 @@ export default function WeekLogSheet({
   }
 
   function handleSave() {
+    hapticSuccess()
     onSave({ notes: notes.trim(), photoDataUrl: photo })
     onClose()
   }
@@ -76,9 +80,13 @@ export default function WeekLogSheet({
 
       {/* Sheet */}
       <div
+        ref={sheetRef}
         className={`fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto transition-transform duration-300 ease-out ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <div className="bg-app-card rounded-t-3xl shadow-card-lg overflow-hidden">
           {/* Handle */}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
+import { hapticSuccess, hapticLight } from '@/lib/haptics'
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutrición',
@@ -27,6 +29,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   const [notes, setNotes] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isOpen = task !== null
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeToDismiss({ onDismiss: onClose })
 
   // Limpiar notas al abrir con nueva tarea
   useEffect(() => {
@@ -44,6 +47,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
 
   function handleConfirm(skipNotes = false) {
     if (!task) return
+    hapticSuccess()
     onConfirm(task.id, skipNotes ? undefined : (notes.trim() || undefined))
     onClose()
   }
@@ -63,7 +67,13 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] lightbox-in" />
 
       {/* Sheet */}
-      <div className="relative w-full max-w-lg page-enter-up">
+      <div
+        ref={sheetRef}
+        className="relative w-full max-w-lg page-enter-up"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="bg-app-card rounded-t-3xl border-t border-app-border shadow-card-lg px-5 pt-4 pb-8"
           style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px) + 1rem)' }}
         >
@@ -100,7 +110,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
           {/* Acciones */}
           <div className="flex gap-3 mt-4">
             <button
-              onClick={() => handleConfirm(true)}
+              onClick={() => { hapticLight(); handleConfirm(true) }}
               className="flex-1 py-3 rounded-2xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
             >
               Saltar

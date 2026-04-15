@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -7,6 +7,8 @@ import { useTasks } from '@/hooks/useTasks'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
 import { PlantCard } from '@/components/plant'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { hapticLight, hapticSuccess } from '@/lib/haptics'
 
 const taskTypeIcon: Record<string, string> = {
   nutrition:   '🍃',
@@ -27,10 +29,19 @@ export default function Home() {
   const { name } = useUserStore()
   const { plants, allPlants } = usePlants()
   const [historialOpen, setHistorialOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const { todayTasks } = useTasks()
   const { completeTask } = useTaskStore()
 
-  const today = new Date()
+  const handleRefresh = useCallback(() => {
+    hapticSuccess()
+    setRefreshKey((k) => k + 1)
+  }, [])
+  const { containerRef, onTouchStart, onTouchMove, onTouchEnd, pullProgress, refreshing } =
+    usePullToRefresh({ onRefresh: handleRefresh })
+
+  // refreshKey fuerza re-cálculo de "today"
+  const today = new Date() // eslint-disable-line react-hooks/exhaustive-deps
   const hour = today.getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
   const dateLabel = format(today, "EEEE d 'de' MMMM", { locale: es })
@@ -49,8 +60,35 @@ export default function Home() {
     return plants.find((p) => p.id === plantId)?.name ?? '—'
   }
 
+  void refreshKey // consumed by today recalc
+
   return (
-    <div className="px-4 pt-8 pb-6">
+    <div
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="px-4 pt-8 pb-6"
+    >
+      {/* Pull-to-refresh indicator */}
+      {(pullProgress > 0 || refreshing) && (
+        <div
+          className="flex justify-center transition-all duration-200"
+          style={{ marginBottom: refreshing ? 12 : `${(pullProgress * 12)}px`, marginTop: -28 }}
+        >
+          <div className={`w-8 h-8 rounded-full border-2 border-brand-400 flex items-center justify-center transition-all ${
+            refreshing ? 'animate-spin border-t-transparent' : ''
+          }`}
+            style={{ opacity: pullProgress, transform: `rotate(${pullProgress * 180}deg)` }}
+          >
+            {!refreshing && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4 text-brand-400">
+                <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-7">
         <p className="text-xs text-ink-3 uppercase tracking-widest mb-1 capitalize">{dateLabel}</p>
@@ -83,7 +121,7 @@ export default function Home() {
                   <p className="text-xs text-ink-3 mt-0.5 truncate">{getPlantName(task.plantId)}</p>
                 </div>
                 <button
-                  onClick={() => completeTask(task.id)}
+                  onClick={() => { hapticLight(); completeTask(task.id) }}
                   className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Hecho

@@ -4,7 +4,7 @@ import { router } from '@/router'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
-import { registerServiceWorker, notifyPendingTasks } from '@/lib/notifications'
+import { notifyPendingTasks } from '@/lib/notifications'
 
 function applyTheme(preference: ThemePreference) {
   const root = document.documentElement
@@ -34,9 +34,6 @@ export default function App() {
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [theme])
-
-  // Registrar SW una vez
-  useEffect(() => { registerServiceWorker() }, [])
 
   // Notificación de tareas pendientes hoy
   useEffect(() => {

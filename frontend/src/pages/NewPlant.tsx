@@ -2,12 +2,14 @@ import { useNavigate, Link } from 'react-router-dom'
 import { usePlants } from '@/hooks/usePlants'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
+import { hapticSuccess } from '@/lib/haptics'
 
 export default function NewPlant() {
   const navigate = useNavigate()
   const { addPlant } = usePlants()
 
   function handleSubmit(values: PlantFormValues) {
+    hapticSuccess()
     const [year, month, day] = values.startDate.split('-').map(Number)
     const plant = addPlant({
       name: values.name,
