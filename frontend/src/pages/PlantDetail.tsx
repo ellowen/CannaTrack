@@ -13,6 +13,7 @@ import { TaskItem, WeekView } from '@/components/calendar'
 import { CompleteTaskSheet, IrrigationCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
+import { HarvestSheet } from '@/components/plant'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -25,6 +26,7 @@ export default function PlantDetail() {
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
+  const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const { tasks, todayTasks, upcomingTasks } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
@@ -364,22 +366,9 @@ export default function PlantDetail() {
         <DiarySection plantId={plant.id} currentWeekLabel={cycleTag} />
 
         {/* Acciones */}
-        <div className="pt-2 space-y-2 border-t border-app-border">
-          <Button variant="secondary" className="w-full" onClick={() => {
-            if (confirm(`¿Confirmar cosecha de "${plant.name}"?`)) {
-              harvestPlant(plant.id)
-              navigate('/')
-            }
-          }}>
-            ✂️ Cosechar planta
-          </Button>
-          <Button variant="danger" className="w-full" onClick={() => {
-            if (confirm(`¿Descartar "${plant.name}"?`)) {
-              discardPlant(plant.id)
-              navigate('/')
-            }
-          }}>
-            Descartar
+        <div className="pt-2 border-t border-app-border">
+          <Button variant="secondary" className="w-full" onClick={() => setHarvestSheetOpen(true)}>
+            ✂️ Finalizar cultivo
           </Button>
         </div>
 
@@ -396,6 +385,16 @@ export default function PlantDetail() {
         onConfirm={(taskId, notes) => storeCompleteTask(taskId, notes)}
         onClose={() => setCompletingTask(null)}
       />
+
+      {/* Sheet de cosecha / descarte */}
+      {harvestSheetOpen && (
+        <HarvestSheet
+          plant={plant}
+          onConfirmHarvest={() => { harvestPlant(plant.id); navigate('/') }}
+          onConfirmDiscard={() => { discardPlant(plant.id); navigate('/') }}
+          onClose={() => setHarvestSheetOpen(false)}
+        />
+      )}
     </div>
   )
 }
