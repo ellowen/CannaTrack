@@ -3,10 +3,13 @@ import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
+import { useTasks } from '@/hooks/useTasks'
 
 export default function Layout() {
   const { animClass, locationKey } = usePageTransition()
   const navigate = useNavigate()
+  const { todayTasks, overdueTasks } = useTasks()
+  const pendingCount = todayTasks.filter((t) => !t.completed).length + overdueTasks.length
 
   // Redirigir después del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function Layout() {
 
               <NavLink to="/" end className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Inicio">
+                  <NavItem active={isActive} label="Inicio" badge={pendingCount}>
                     <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
                       <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -87,10 +90,11 @@ export default function Layout() {
   )
 }
 
-function NavItem({ label, icon, active, children }: {
+function NavItem({ label, icon, active, badge, children }: {
   label: string
   icon?: React.ReactNode
   active: boolean
+  badge?: number
   children?: React.ReactNode
 }) {
   return (
@@ -98,7 +102,14 @@ function NavItem({ label, icon, active, children }: {
       'flex flex-col items-center pt-2.5 pb-2 gap-1 transition-colors duration-150',
       active ? 'text-brand-400' : 'text-ink-4'
     )}>
-      {children ?? icon}
+      <div className="relative">
+        {children ?? icon}
+        {badge != null && badge > 0 && (
+          <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center px-0.5 leading-none">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className={clsx(
         'text-[10px] font-semibold tracking-wide',
         active ? 'text-brand-400' : 'text-ink-4'
