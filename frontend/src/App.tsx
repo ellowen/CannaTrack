@@ -5,6 +5,7 @@ import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
+import Onboarding from '@/pages/Onboarding'
 
 function applyTheme(preference: ThemePreference) {
   const root = document.documentElement
@@ -22,8 +23,16 @@ function applyTheme(preference: ThemePreference) {
 export default function App() {
   const theme = useUserStore((s) => s.theme)
   const notificationsEnabled = useUserStore((s) => s.notificationsEnabled)
+  const onboarded = useUserStore((s) => s.onboarded)
+  const storedName = useUserStore((s) => s.name)
+  const setOnboarded = useUserStore((s) => s.setOnboarded)
   const tasks = useTaskStore((s) => s.tasks)
   const plants = usePlantStore((s) => s.plants)
+
+  // Migración síncrona: usuarios que ya tenían nombre guardado antes del campo onboarded
+  if (!onboarded && storedName && storedName !== '') {
+    setOnboarded(true)
+  }
 
   // Aplicar tema
   useEffect(() => {
@@ -56,6 +65,8 @@ export default function App() {
 
     notifyPendingTasks(pending.length, plantNames)
   }, [notificationsEnabled, tasks, plants])
+
+  if (!onboarded) return <Onboarding />
 
   return <RouterProvider router={router} />
 }

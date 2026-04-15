@@ -97,7 +97,7 @@ export default function Home() {
       <div className="mb-7">
         <p className="text-xs text-ink-3 uppercase tracking-widest mb-1 capitalize">{dateLabel}</p>
         <h1 className="text-3xl font-black text-ink-1 leading-tight">
-          {greeting}, {name.split(' ')[0]} 👋
+          {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
         </h1>
       </div>
 
