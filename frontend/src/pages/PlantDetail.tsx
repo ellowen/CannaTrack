@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
@@ -77,15 +77,26 @@ export default function PlantDetail() {
           {stageEmoji}
         </div>
 
-        {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="relative w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white mb-5 tap-highlight-none active:scale-95 transition-all"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        {/* Barra de navegación: volver + editar */}
+        <div className="relative flex items-center justify-between mb-5">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white tap-highlight-none active:scale-95 transition-all"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+              <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <Link
+            to={`/plants/${plant.id}/edit`}
+            className="flex items-center gap-1.5 text-[13px] font-bold text-white bg-white/20 backdrop-blur-sm border border-white/20 px-3.5 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+              <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Editar
+          </Link>
+        </div>
 
         <div className="relative">
           <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white mb-2 tracking-wide">

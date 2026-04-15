@@ -54,6 +54,8 @@ export interface PlantFormValues {
 
 interface PlantFormProps {
   onSubmit: (values: PlantFormValues) => void
+  initialValues?: Partial<PlantFormValues>
+  submitLabel?: string
   loading?: boolean
 }
 
@@ -149,7 +151,7 @@ function StepIndicator({ current }: { current: number }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export default function PlantForm({ onSubmit, loading }: PlantFormProps) {
+export default function PlantForm({ onSubmit, initialValues, submitLabel, loading }: PlantFormProps) {
   const { availableTables } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -171,6 +173,7 @@ export default function PlantForm({ onSubmit, loading }: PlantFormProps) {
     autoFlowerTotalDays: 75,
     availableProducts: undefined,
     notes: '',
+    ...initialValues,
   })
 
   function set<K extends keyof PlantFormValues>(field: K, value: PlantFormValues[K]) {
@@ -570,7 +573,7 @@ export default function PlantForm({ onSubmit, loading }: PlantFormProps) {
                 <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </>
-          ) : loading ? 'Creando...' : 'Crear planta'}
+          ) : loading ? 'Guardando...' : (submitLabel ?? 'Crear planta')}
         </Button>
       </div>
     </form>

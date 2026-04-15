@@ -61,11 +61,27 @@ export function usePlants() {
     return plants.find((p) => p.id === id)
   }
 
+  /** Edita los datos de una planta y regenera el calendario nutricional. */
+  function editPlant(id: string, data: Omit<Plant, 'id' | 'status'>): void {
+    const existing = plants.find((p) => p.id === id)
+    if (!existing) return
+    const updated: Plant = { ...existing, ...data }
+    updatePlant(id, data)
+    const table = tables.find((t) => t.id === updated.nutritionTableId)
+    if (table) {
+      const effective = updated.availableProducts
+        ? applyProductFilter(table, updated.availableProducts)
+        : table
+      setTasks(id, generatePlantSchedule(updated, effective))
+    }
+  }
+
   return {
     plants: plants.filter((p) => p.status === 'active'),
     allPlants: plants,
     addPlant,
     updatePlant,
+    editPlant,
     removePlant,
     discardPlant,
     harvestPlant,
