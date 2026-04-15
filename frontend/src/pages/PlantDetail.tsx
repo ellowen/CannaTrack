@@ -260,7 +260,7 @@ export default function PlantDetail() {
             <div className="space-y-3">
               {todayNutrition.map((task) => (
                 <div key={task.id}>
-                  <NutritionCard task={task} potVolumeLiters={potLiters} />
+                  <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
                   {!task.completed && (
                     <button
                       onClick={() => completeTask(task.id)}
