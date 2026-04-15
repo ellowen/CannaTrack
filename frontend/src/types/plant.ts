@@ -1,3 +1,27 @@
+// Etiquetas de etapa para mostrar en UI
+export const STAGE_LABELS: Record<string, string> = {
+  rooting:   'Enraizamiento',
+  growth:    'Crecimiento',
+  preflower: 'Prefloración',
+  stretch:   'Estiramiento',
+  bulking:   'Engorde',
+  ripening:  'Maduración',
+  flushing:  'Limpieza',
+  harvested: 'Cosechada',
+}
+
+// Emojis de etapa — identidad visual de cada fase
+export const STAGE_EMOJIS: Record<string, string> = {
+  rooting:   '🌱',
+  growth:    '🌿',
+  preflower: '🔆',
+  stretch:   '🚀',
+  bulking:   '💪',
+  ripening:  '🍯',
+  flushing:  '💧',
+  harvested: '✂️',
+}
+
 // Marcas y acceso
 export type AccessTier = 'free' | 'pro'
 export type BrandPlan = 'listing' | 'whitelabel'
@@ -72,6 +96,7 @@ export interface Plant {
   potCount: number
   potVolumeLiters?: number
   nutritionTableId: string
+  availableProducts?: string[]   // undefined = usar todos los productos de la tabla
   status: PlantStatus
   notes?: string
 }

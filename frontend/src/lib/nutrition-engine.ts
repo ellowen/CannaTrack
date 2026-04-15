@@ -9,9 +9,8 @@ import type {
 
 // ─── Generadores de ID ───────────────────────────────────────────────────────
 
-let _idCounter = 0
 function nextId(): string {
-  return `task-${++_idCounter}-${Math.random().toString(36).slice(2, 6)}`
+  return crypto.randomUUID()
 }
 
 // ─── Constructores de tareas ─────────────────────────────────────────────────

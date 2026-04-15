@@ -1,4 +1,4 @@
-import { addDays } from 'date-fns'
+import { addDays, differenceInDays } from 'date-fns'
 import type {
   Plant,
   ScheduledTask,
@@ -181,6 +181,31 @@ export function awaitingFloraStart(plant: Plant): boolean {
 
   const diasDesdeInicio = diasEntre(plant.startDate, new Date())
   return diasDesdeInicio >= 42 // 6 semanas × 7 días
+}
+
+/**
+ * Devuelve el porcentaje de avance en el ciclo actual (0–1).
+ * Vege: días desde inicio / 42 (6 semanas). Flora: días desde floraStart / 56 (8 semanas).
+ * Retorna null si no hay información suficiente.
+ */
+export function getCycleProgress(
+  plant: Plant,
+  date: Date,
+): { progress: number; phase: CyclePhase } | null {
+  if (plant.status !== 'active') return null
+
+  const floraBase =
+    plant.floraStartDate ??
+    (plant.geneticType === 'autoflower' ? addDays(plant.startDate, 35) : null)
+
+  if (floraBase && date >= floraBase) {
+    const days = differenceInDays(date, floraBase)
+    return { progress: Math.min(days / 56, 1), phase: 'flora' }
+  }
+
+  const days = differenceInDays(date, plant.startDate)
+  const maxDays = plant.geneticType === 'autoflower' ? 35 : 42
+  return { progress: Math.min(days / maxDays, 0.97), phase: 'vege' }
 }
 
 /**

@@ -1,13 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ScheduledTask } from '@/types/plant'
-
-const dateReviver = (_: string, value: unknown): unknown => {
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
-    return new Date(value)
-  }
-  return value
-}
+import { dateReviver } from '@/lib/storage'
 
 interface TaskStore {
   tasks: ScheduledTask[]

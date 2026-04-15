@@ -1,2 +1,5 @@
 export { default as TaskItem } from './TaskItem'
 export { default as WeekView } from './WeekView'
+export { default as CalendarTaskCard } from './CalendarTaskCard'
+export { default as MonthCalendar } from './MonthCalendar'
+export { default as TaskTimeline } from './TaskTimeline'

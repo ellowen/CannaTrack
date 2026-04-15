@@ -2,7 +2,21 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
-import type { Plant } from '@/types/plant'
+import type { Plant, NutritionTable } from '@/types/plant'
+
+function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
+  return {
+    ...table,
+    vegeWeeks: table.vegeWeeks.map((w) => ({
+      ...w,
+      products: w.products.filter((p) => available.includes(p.name)),
+    })),
+    floraWeeks: table.floraWeeks.map((w) => ({
+      ...w,
+      products: w.products.filter((p) => available.includes(p.name)),
+    })),
+  }
+}
 
 export function usePlants() {
   const { plants, addPlant: storeAdd, updatePlant, removePlant } = usePlantStore()
@@ -14,7 +28,10 @@ export function usePlants() {
     storeAdd(plant)
     const table = tables.find((t) => t.id === plant.nutritionTableId)
     if (table) {
-      setTasks(plant.id, generatePlantSchedule(plant, table))
+      const effective = plant.availableProducts
+        ? applyProductFilter(table, plant.availableProducts)
+        : table
+      setTasks(plant.id, generatePlantSchedule(plant, effective))
     }
     return plant
   }
@@ -33,7 +50,10 @@ export function usePlants() {
     updatePlant(id, { floraStartDate })
     const table = tables.find((t) => t.id === plant.nutritionTableId)
     if (table) {
-      setTasks(id, generatePlantSchedule({ ...plant, floraStartDate }, table))
+      const effective = plant.availableProducts
+        ? applyProductFilter(table, plant.availableProducts)
+        : table
+      setTasks(id, generatePlantSchedule({ ...plant, floraStartDate }, effective))
     }
   }
 

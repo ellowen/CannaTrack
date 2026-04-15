@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="44" fill="#2A8E39"/>
+  <!-- Stem -->
+  <line x1="96" y1="152" x2="96" y2="100" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <!-- Left root -->
+  <path d="M96 136 C84 128 64 132 60 144" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- Right root -->
+  <path d="M96 136 C108 128 128 132 132 144" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- Main center leaf -->
+  <path d="M96 100 C96 72 78 44 54 40 C50 68 66 92 96 100Z" fill="white"/>
+  <path d="M96 100 C96 72 114 44 138 40 C142 68 126 92 96 100Z" fill="white" opacity="0.85"/>
+  <!-- Top leaf -->
+  <path d="M96 72 C96 54 106 38 120 36 C118 52 110 66 96 72Z" fill="white" opacity="0.65"/>
+  <path d="M96 72 C96 54 86 38 72 36 C74 52 82 66 96 72Z" fill="white" opacity="0.65"/>
+</svg>

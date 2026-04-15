@@ -1,0 +1,16 @@
+{
+  "name": "CannaTrack",
+  "short_name": "CannaTrack",
+  "description": "Seguimiento profesional de cultivos de cannabis",
+  "theme_color": "#2A8E39",
+  "background_color": "#F3F8EF",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "lang": "es"
+}

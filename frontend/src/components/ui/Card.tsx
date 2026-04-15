@@ -10,8 +10,13 @@ export default function Card({ children, className, onClick }: CardProps) {
   return (
     <div
       className={clsx(
-        'bg-white rounded-xl border border-gray-100 shadow-sm p-4',
-        onClick && 'cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]',
+        'bg-app-card rounded-2xl border border-app-border shadow-card p-4',
+        'tap-highlight-none',
+        onClick && [
+          'cursor-pointer',
+          'active:scale-[0.987] active:shadow-card',
+          'hover:shadow-card-md transition-all duration-150',
+        ],
         className
       )}
       onClick={onClick}
