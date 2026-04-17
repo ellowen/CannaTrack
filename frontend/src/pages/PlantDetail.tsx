@@ -13,7 +13,8 @@ import { TaskItem, WeekView } from '@/components/calendar'
 import { CompleteTaskSheet, IrrigationCard, FoliarCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
-import { HarvestSheet } from '@/components/plant'
+import { HarvestSheet, ProgressRing } from '@/components/plant'
+import { calculatePlantHealth, healthColor } from '@/lib/gamification'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress, getTasksForDate } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -62,6 +63,14 @@ export default function PlantDetail() {
   const cycleTag = currentWeek
     ? currentWeek.cycle === 'vege' ? `VEGE S${currentWeek.week}` : `FLORA F${currentWeek.week}`
     : 'Completada'
+
+  const health = calculatePlantHealth(tasks)
+  const hColor = healthColor(health)
+  const healthGradient = hColor === 'green'
+    ? 'linear-gradient(90deg, #4ADE80, #22C55E)'
+    : hColor === 'yellow'
+    ? 'linear-gradient(90deg, #FCD34D, #F59E0B)'
+    : 'linear-gradient(90deg, #F87171, #EF4444)'
 
   // EC/pH ranges: from today's nutrition task if available, else upcoming nutrition
   const refTask = todayTasks.find((t) => t.type === 'nutrition') ?? upcomingTasks.find((t) => t.type === 'nutrition')
@@ -156,35 +165,53 @@ export default function PlantDetail() {
           ))}
         </div>
 
-        {/* Progreso del ciclo */}
+        {/* Progress Ring + salud */}
         {cycleProgress && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{stageEmoji}</span>
-                <div>
-                  <p className="text-sm font-bold text-ink-1">{stageLabel}</p>
-                  <p className="text-xs text-ink-3">{isFlora ? 'Floración' : 'Vegetativo'}</p>
-                </div>
-              </div>
-              <span className="text-2xl font-black text-ink-1 tabular">
-                {Math.round(cycleProgress.progress * 100)}%
-              </span>
-            </div>
-            <div className="h-2.5 rounded-full bg-app-elevated overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${cycleProgress.progress * 100}%`,
-                  background: isFlora ? 'var(--gradient-flora-bar)' : 'var(--gradient-vege-bar)',
-                }}
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5">
+            <div className="flex items-center gap-5">
+              {/* Ring */}
+              <ProgressRing
+                progress={cycleProgress.progress}
+                size={120}
+                strokeWidth={9}
+                color={isFlora ? '#FF9500' : '#4ADE80'}
+                bgColor="var(--app-elevated)"
+                centerEmoji={stageEmoji}
+                label={`${Math.round(cycleProgress.progress * 100)}%`}
               />
+
+              {/* Info lateral */}
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-black text-ink-1">{stageLabel}</p>
+                <p className="text-xs text-ink-3 mb-3">{isFlora ? 'Floración' : 'Vegetativo'}</p>
+
+                {/* Salud */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-ink-3">Salud</span>
+                    <span className={`text-[11px] font-black tabular ${
+                      hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
+                    }`}>{health}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${health}%`, background: healthGradient }}
+                    />
+                  </div>
+                </div>
+
+                {harvestDate && (
+                  <div className="text-xs text-ink-3">
+                    <span className="text-ink-4">Cosecha est.</span>
+                    <br />
+                    <span className="font-semibold text-ink-2">
+                      {format(harvestDate, "d 'de' MMMM", { locale: es })}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            {harvestDate && (
-              <p className="text-xs text-ink-3 mt-2">
-                📅 Cosecha est.: {format(harvestDate, "d 'de' MMMM yyyy", { locale: es })}
-              </p>
-            )}
           </div>
         )}
 
