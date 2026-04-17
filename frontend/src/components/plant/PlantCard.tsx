@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom'
 import { differenceInDays } from 'date-fns'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress } from '@/lib/nutrition-utils'
 import { useTasks } from '@/hooks/useTasks'
+import { useTaskStore } from '@/store/taskStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import type { Plant } from '@/types/plant'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
+import { calculatePlantHealth, healthColor } from '@/lib/gamification'
 
 
 interface PlantCardProps {
@@ -20,6 +22,10 @@ export default function PlantCard({ plant }: PlantCardProps) {
       .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())[0]
       ?.photoDataUrl
   )
+
+  const allTasks = useTaskStore((s) => s.tasks.filter((t) => t.plantId === plant.id))
+  const health = calculatePlantHealth(allTasks)
+  const hColor = healthColor(health)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -100,28 +106,56 @@ export default function PlantCard({ plant }: PlantCardProps) {
           )}
         </div>
 
-        {/* Progress bar del ciclo */}
-        {cycleProgress && (
-          <div className="mb-3">
-            <div className="h-2 rounded-full bg-app-elevated overflow-hidden">
+        {/* Barras: ciclo + salud */}
+        <div className="mb-3 space-y-2">
+          {cycleProgress && (
+            <div>
+              <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${cycleProgress.progress * 100}%`,
+                    background: isFlora ? 'var(--gradient-flora-bar)' : 'var(--gradient-vege-bar)',
+                  }}
+                />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-ink-4">
+                  {isFlora ? 'Floración' : 'Vegetativo'}
+                </span>
+                <span className="text-[10px] text-ink-4 tabular">
+                  {Math.round(cycleProgress.progress * 100)}%
+                </span>
+              </div>
+            </div>
+          )}
+          {/* Barra de salud */}
+          <div>
+            <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
-                  width: `${cycleProgress.progress * 100}%`,
-                  background: isFlora ? 'var(--gradient-flora-bar)' : 'var(--gradient-vege-bar)',
+                  width: `${health}%`,
+                  background: hColor === 'green'
+                    ? 'linear-gradient(90deg, #4ADE80, #22C55E)'
+                    : hColor === 'yellow'
+                    ? 'linear-gradient(90deg, #FCD34D, #F59E0B)'
+                    : 'linear-gradient(90deg, #F87171, #EF4444)',
                 }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[11px] text-ink-4">
-                {isFlora ? 'Floración' : 'Vegetativo'}
-              </span>
-              <span className="text-[11px] text-ink-3 font-semibold tabular">
-                {Math.round(cycleProgress.progress * 100)}%
+              <span className="text-[10px] text-ink-4">Salud</span>
+              <span className={`text-[10px] font-bold tabular ${
+                hColor === 'green' ? 'text-green-500'
+                : hColor === 'yellow' ? 'text-amber-500'
+                : 'text-red-500'
+              }`}>
+                {health}%
               </span>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">

@@ -10,6 +10,7 @@ import { PlantCard } from '@/components/plant'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
+import { getLevelInfo } from '@/lib/gamification'
 import type { ScheduledTask } from '@/types/plant'
 
 const taskTypeIcon: Record<string, string> = {
@@ -29,7 +30,8 @@ const taskTypeLabel: Record<string, string> = {
 
 export default function Home() {
   const navigate = useNavigate()
-  const { name } = useUserStore()
+  const { name, streak, totalXP } = useUserStore()
+  const levelInfo = getLevelInfo(totalXP)
   const { plants, allPlants } = usePlants()
   const [historialOpen, setHistorialOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -105,9 +107,45 @@ export default function Home() {
       {/* Header */}
       <div className="mb-7">
         <p className="text-xs text-ink-3 uppercase tracking-widest mb-1 capitalize">{dateLabel}</p>
-        <h1 className="text-3xl font-black text-ink-1 leading-tight">
-          {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl font-black text-ink-1 leading-tight">
+            {greeting}{name ? `, ${name.split(' ')[0]}` : ''}
+          </h1>
+          {/* Streak badge */}
+          <div className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 shrink-0 ${
+            streak >= 7
+              ? 'bg-amber-500/15 border border-amber-500/30'
+              : streak > 0
+              ? 'bg-app-card border border-app-border'
+              : 'bg-app-card border border-app-border'
+          }`}>
+            <span className={`text-xl ${streak >= 7 ? 'streak-fire' : ''}`}>🔥</span>
+            <div className="text-right">
+              <p className={`text-lg font-black tabular leading-none ${streak >= 7 ? 'text-amber-500' : 'text-ink-1'}`}>
+                {streak}
+              </p>
+              <p className="text-[9px] font-bold text-ink-4 leading-none mt-0.5">
+                {streak === 1 ? 'DIA' : 'DIAS'}
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Nivel del cultivador */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-sm">{levelInfo.current.emoji}</span>
+          <span className="text-xs font-semibold text-ink-3">{levelInfo.current.name}</span>
+          {levelInfo.next && (
+            <>
+              <div className="flex-1 h-1 rounded-full bg-app-border overflow-hidden max-w-[80px]">
+                <div
+                  className="h-full rounded-full bg-violet-500 transition-all duration-700"
+                  style={{ width: `${levelInfo.progressToNext * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-ink-4">{levelInfo.next.name}</span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Sección VENCIDAS */}

@@ -4,6 +4,8 @@ import type { ScheduledTask } from '@/types/plant'
 import { hapticSuccess, hapticLight } from '@/lib/haptics'
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
 import { useMeasurementStore } from '@/store/measurementStore'
+import { useUserStore } from '@/store/userStore'
+import { XP } from '@/lib/gamification'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutrición',
@@ -33,8 +35,10 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   const [notes, setNotes]   = useState('')
   const [ec, setEc]         = useState('')
   const [ph, setPh]         = useState('')
+  const [xpReward, setXpReward] = useState<{ xpGained: number; streakBonus: number; newStreak: number } | null>(null)
   const textareaRef         = useRef<HTMLTextAreaElement>(null)
   const addMeasurement      = useMeasurementStore((s) => s.addLog)
+  const addXP               = useUserStore((s) => s.addXP)
 
   const isOpen        = task !== null
   const showMeasure   = task ? MEASUREMENT_TYPES.has(task.type) : false
@@ -60,13 +64,18 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
     if (!task) return
     hapticSuccess()
 
-    // Guardar medición EC/pH si fue ingresada
     if (!skipAll && hasMeasure) {
       addMeasurement({ plantId: task.plantId, logDate: new Date(), ec: ecNum, ph: phNum })
     }
 
+    const baseXP = !skipAll && hasMeasure ? XP.COMPLETE_WITH_MEASUREMENT : XP.COMPLETE_TASK
+    const reward = addXP(baseXP)
+    setXpReward(reward)
+
     onConfirm(task.id, skipAll ? undefined : (notes.trim() || undefined))
-    onClose()
+
+    // Cerrar despues de mostrar el XP reward
+    setTimeout(onClose, 1400)
   }
 
   if (!isOpen) return null
@@ -112,9 +121,33 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
         onTouchEnd={onTouchEnd}
       >
         <div
-          className="bg-app-card rounded-t-3xl border-t border-app-border shadow-card-lg px-5 pt-4"
+          className="bg-app-card rounded-t-3xl border-t border-app-border shadow-card-lg px-5 pt-4 overflow-hidden"
           style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px) + 1rem)' }}
         >
+          {/* Pantalla de XP reward — superpuesta */}
+          {xpReward && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-app-card rounded-t-3xl xp-reward-in z-10">
+              <div className="text-5xl mb-3 animate-bounce-once">✅</div>
+              <p className="text-2xl font-black text-ink-1 mb-1">Tarea completada</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-3xl font-black text-brand-400 xp-pop">
+                  +{xpReward.xpGained} XP
+                </span>
+              </div>
+              {xpReward.streakBonus > 0 && (
+                <p className="text-sm font-bold text-amber-500 mt-2">
+                  🔥 Bonus de racha +{xpReward.streakBonus} XP
+                </p>
+              )}
+              <div className="flex items-center gap-1.5 mt-3 bg-app-elevated rounded-full px-4 py-2">
+                <span className="text-lg">🔥</span>
+                <span className="text-sm font-bold text-ink-1">
+                  {xpReward.newStreak} {xpReward.newStreak === 1 ? 'día' : 'días'} seguidos
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Handle */}
           <div className="w-10 h-1 rounded-full bg-app-border mx-auto mb-5" />
 
