@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "CannaTrack",
+    "slug": "cannatrack",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "cannatrack",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0C1410"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cannatrack.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0C1410"
+      },
+      "package": "com.cannatrack.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-haptics",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CannaTrack necesita acceso a tus fotos para el diario de cultivo."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
