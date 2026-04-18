@@ -1,0 +1,131 @@
+import { useState, useEffect } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { router, useLocalSearchParams } from 'expo-router'
+import * as ImagePicker from 'expo-image-picker'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+export default function DiaryScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { user } = useAuth()
+  const [logs, setLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [newNotes, setNewNotes] = useState('')
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      if (!id || !user) return
+      const { data } = await supabase
+        .from('week_logs')
+        .select('*')
+        .eq('plant_id', id)
+        .eq('user_id', user.id)
+        .order('log_date', { ascending: false })
+      setLogs((data ?? []).map((row: any) => ({
+        id: row.id,
+        weekLabel: row.week_label,
+        logDate: new Date(row.log_date),
+        notes: row.notes ?? '',
+        photoUrl: row.photo_url,
+      })))
+      setLoading(false)
+    }
+    load()
+  }, [id, user])
+
+  async function pickImage() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    })
+    if (!result.canceled) setSelectedImage(result.assets[0].uri)
+  }
+
+  async function handleSaveLog() {
+    if (!id || !user || (!newNotes.trim() && !selectedImage)) return
+    setUploading(true)
+    try {
+      let photoUrl: string | undefined
+      if (selectedImage) {
+        const response = await fetch(selectedImage)
+        const blob = await response.blob()
+        const fileName = Date.now() + '.jpg'
+        const { error: uploadErr } = await supabase.storage.from('plant-photos').upload(fileName, blob)
+        if (uploadErr) throw uploadErr
+        photoUrl = supabase.storage.from('plant-photos').getPublicUrl(fileName).data.publicUrl
+      }
+      await supabase.from('week_logs').insert({
+        plant_id: id,
+        user_id: user.id,
+        week_label: 'Semana 1',
+        log_date: new Date().toISOString().split('T')[0],
+        notes: newNotes.trim(),
+        photo_url: photoUrl,
+      })
+      setNewNotes('')
+      setSelectedImage(null)
+      const { data } = await supabase.from('week_logs').select('*').eq('plant_id', id).order('log_date', { ascending: false })
+      setLogs((data ?? []).map((row: any) => ({ id: row.id, weekLabel: row.week_label, logDate: new Date(row.log_date), notes: row.notes ?? '', photoUrl: row.photo_url })))
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color="#52CC64" size="large" /></SafeAreaView>
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
+          </TouchableOpacity>
+          <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginLeft: 12 }}>Diario</Text>
+        </View>
+
+        <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
+          {selectedImage && <Image source={{ uri: selectedImage }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12 }} />}
+          <TouchableOpacity
+            onPress={pickImage}
+            style={{ backgroundColor: '#1A3D1E', borderWidth: 2, borderColor: '#2A5A2E', borderStyle: 'dashed', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 }}
+          >
+            <Text style={{ color: '#52CC64', fontSize: 24 }}>📸</Text>
+            <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14, marginTop: 4 }}>{selectedImage ? 'Cambiar foto' : 'Agregar foto'}</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={{ backgroundColor: '#0C1410', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, color: '#E4F2E7', fontSize: 14, minHeight: 100, marginBottom: 12 }}
+            placeholder="Notas..."
+            placeholderTextColor="#3A5040"
+            value={newNotes}
+            onChangeText={setNewNotes}
+            multiline
+          />
+          <TouchableOpacity onPress={handleSaveLog} disabled={uploading} style={{ backgroundColor: '#52CC64', borderRadius: 12, paddingVertical: 12, alignItems: 'center', opacity: uploading ? 0.4 : 1 }}>
+            {uploading ? <ActivityIndicator color="white" size="small" /> : <Text style={{ color: 'white', fontWeight: '800' }}>Guardar entrada</Text>}
+          </TouchableOpacity>
+        </View>
+
+        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 12 }}>HISTORIAL</Text>
+        {logs.map(log => (
+          <View key={log.id} style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ color: '#E4F2E7', fontWeight: '700' }}>{log.weekLabel}</Text>
+              <Text style={{ color: '#728C74', fontSize: 12 }}>{format(log.logDate, 'd MMM', { locale: es })}</Text>
+            </View>
+            {log.photoUrl && <Image source={{ uri: log.photoUrl }} style={{ width: '100%', height: 150, borderRadius: 12, marginBottom: 8 }} />}
+            {log.notes && <Text style={{ color: '#728C74', fontSize: 13 }}>{log.notes}</Text>}
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
