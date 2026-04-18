@@ -36,12 +36,19 @@ export interface Brand {
 }
 
 // Tablas nutricionales
-export type ProductLine = 'BIO' | 'ECO' | 'LIFE' | 'FUEL'
+// ProductLine es string libre: cada tabla declara sus propias líneas en NutritionTable.lines
+export type ProductLine = string
 export type CyclePhase = 'vege' | 'flora'
 export type PlantStage =
   | 'rooting' | 'growth' | 'preflower'
   | 'stretch' | 'bulking' | 'ripening' | 'flushing'
   | 'harvested'
+
+export interface NutritionLine {
+  id: string          // ej: 'BIO', 'FUEL', 'Profesional'
+  name: string        // nombre legible para mostrar
+  colorClass: string  // clases Tailwind para el badge (text/bg/border + dark:)
+}
 
 export interface ProductDose {
   name: string
@@ -71,6 +78,7 @@ export interface NutritionTable {
   accessTier: AccessTier
   isOfficial: boolean
   geneticTypes: GeneticType[]
+  lines: NutritionLine[]   // líneas declaradas por la tabla (BIO/FUEL/... o Profesional/Medio/...)
   vegeWeeks: NutritionWeek[]
   floraWeeks: NutritionWeek[]
   createdAt: Date

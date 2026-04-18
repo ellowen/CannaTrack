@@ -337,7 +337,7 @@ export default function PlantDetail() {
             {/* Nutrición */}
             {selectedDayTasks.filter((t) => t.type === 'nutrition').map((task) => (
               <div key={task.id}>
-                <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} />
+                <NutritionCard task={task} potVolumeLiters={potLiters} potCount={plant.potCount} table={table} />
                 {!task.completed ? (
                   <button
                     onClick={() => setCompletingTask(task)}

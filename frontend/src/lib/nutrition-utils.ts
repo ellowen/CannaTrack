@@ -5,9 +5,57 @@ import type {
   CyclePhase,
   PlantStage,
   NutritionTable,
+  NutritionLine,
   ProductDose,
+  ProductLine,
   AccessTier,
 } from '../types/plant'
+
+// ─── Colores por línea ────────────────────────────────────────────────────────
+
+/** Color neutro de fallback si la línea no está declarada en la tabla */
+const FALLBACK_LINE_COLOR =
+  'text-ink-2 bg-app-elevated border-app-border dark:text-ink-2 dark:bg-app-elevated dark:border-app-border'
+
+/** Colores por defecto para líneas conocidas (REVEGETAR) */
+const DEFAULT_LINE_COLORS: Record<string, string> = {
+  BIO:  'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-900/60',
+  FUEL: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60',
+  LIFE: 'text-violet-700 bg-violet-50 border-violet-200 dark:text-violet-400 dark:bg-violet-950/40 dark:border-violet-900/60',
+  ECO:  'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/60',
+}
+
+/**
+ * Devuelve las clases Tailwind del badge para una línea de producto.
+ * Orden de precedencia: tabla.lines > DEFAULT_LINE_COLORS > fallback neutro.
+ */
+export function getLineColor(
+  line: ProductLine,
+  table?: NutritionTable | null,
+): string {
+  const declared = table?.lines.find((l) => l.id === line)
+  if (declared) return declared.colorClass
+  return DEFAULT_LINE_COLORS[line] ?? FALLBACK_LINE_COLOR
+}
+
+/**
+ * Devuelve el nombre legible de una línea.
+ * Si la tabla la declaró usa el `name`, si no cae al id.
+ */
+export function getLineName(
+  line: ProductLine,
+  table?: NutritionTable | null,
+): string {
+  return table?.lines.find((l) => l.id === line)?.name ?? line
+}
+
+/** Resuelve el objeto NutritionLine para una línea (o null si no existe) */
+export function resolveLine(
+  line: ProductLine,
+  table?: NutritionTable | null,
+): NutritionLine | null {
+  return table?.lines.find((l) => l.id === line) ?? null
+}
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 

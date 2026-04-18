@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
@@ -21,7 +22,19 @@ export default function Settings() {
   const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
-  const { tables } = useNutritionStore()
+  const { tables, removeTable } = useNutritionStore()
+  const customTables = tables.filter((t) => !t.isOfficial)
+  const officialTables = tables.filter((t) => t.isOfficial)
+
+  function handleDeleteTable(tableId: string, tableName: string) {
+    const plantsUsingTable = plants.filter((p) => p.nutritionTableId === tableId && p.status === 'active')
+    if (plantsUsingTable.length > 0) {
+      alert(`No se puede eliminar: ${plantsUsingTable.length} planta${plantsUsingTable.length > 1 ? 's' : ''} activa${plantsUsingTable.length > 1 ? 's' : ''} la usa${plantsUsingTable.length > 1 ? 'n' : ''}.`)
+      return
+    }
+    if (!confirm(`¿Eliminar la tabla "${tableName}"? No se puede deshacer.`)) return
+    removeTable(tableId)
+  }
   const [nameInput, setNameInput] = useState(name)
   const [volumeInput, setVolumeInput] = useState(potVolumeLiters)
   const [saved, setSaved] = useState(false)
@@ -144,6 +157,63 @@ export default function Settings() {
           <Button className="w-full" onClick={handleSave} variant={saved ? 'secondary' : 'primary'}>
             {saved ? '✓ Guardado' : 'Guardar cambios'}
           </Button>
+        </div>
+      </section>
+
+      {/* Tablas nutricionales */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Tablas nutricionales</p>
+          <Link
+            to="/nutrition/new?returnTo=/settings"
+            className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+          >
+            + Nueva
+          </Link>
+        </div>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border overflow-hidden">
+          {officialTables.map((t) => (
+            <div key={t.id} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink-1 truncate">{t.name}</p>
+                <p className="text-[11px] text-ink-4 mt-0.5">
+                  Oficial · {t.vegeWeeks.length} sem vege · {t.floraWeeks.length} sem flora
+                </p>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-subtle text-brand-500 border border-brand-border shrink-0">
+                OFICIAL
+              </span>
+            </div>
+          ))}
+          {customTables.map((t) => (
+            <div key={t.id} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink-1 truncate">{t.name}</p>
+                <p className="text-[11px] text-ink-4 mt-0.5">
+                  Custom · {t.vegeWeeks.length} sem vege · {t.floraWeeks.length} sem flora
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  to={`/nutrition/new?edit=${t.id}&returnTo=/settings`}
+                  className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-app-border text-ink-2 tap-highlight-none active:scale-95"
+                >
+                  Editar
+                </Link>
+                <button
+                  onClick={() => handleDeleteTable(t.id, t.name)}
+                  className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 tap-highlight-none active:scale-95"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+          {customTables.length === 0 && (
+            <div className="px-4 py-3 text-xs text-ink-4 italic">
+              Sin tablas personalizadas. Creá una desde "+ Nueva".
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,19 +1,14 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
-import type { ScheduledTask } from '@/types/plant'
+import type { ScheduledTask, NutritionTable } from '@/types/plant'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
+import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 
 interface NutritionCardProps {
   task: ScheduledTask
   potVolumeLiters: number
   potCount?: number
-}
-
-const LINE_COLORS: Record<string, string> = {
-  BIO:  'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-900/60',
-  FUEL: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60',
-  LIFE: 'text-violet-700 bg-violet-50 border-violet-200 dark:text-violet-400 dark:bg-violet-950/40 dark:border-violet-900/60',
-  ECO:  'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/60',
+  table?: NutritionTable | null  // tabla de la planta para resolver colores de línea
 }
 
 function fmt(n: number): string {
@@ -21,7 +16,7 @@ function fmt(n: number): string {
   return parseFloat(n.toFixed(1)).toString()
 }
 
-export default function NutritionCard({ task, potVolumeLiters, potCount = 1 }: NutritionCardProps) {
+export default function NutritionCard({ task, potVolumeLiters, potCount = 1, table }: NutritionCardProps) {
   const defaultLiters = potVolumeLiters * potCount
   const [liters, setLiters] = useState(defaultLiters)
 
@@ -124,9 +119,9 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1 }: N
                 <li key={product.name} className="flex items-center gap-3">
                   <span className={clsx(
                     'shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border tracking-wide',
-                    LINE_COLORS[product.line] ?? 'text-ink-3 bg-app-elevated border-app-border'
+                    getLineColor(product.line, table)
                   )}>
-                    {product.line}
+                    {getLineName(product.line, table)}
                   </span>
                   <span className="flex-1 text-sm text-ink-1 truncate">{product.name}</span>
                   <div className="text-right shrink-0">

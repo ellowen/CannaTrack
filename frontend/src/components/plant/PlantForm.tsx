@@ -1,19 +1,14 @@
 import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { Button, Badge } from '@/components/ui'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
 import type { GeneticType, PlantSex, NutritionTable, ProductDose, NutritionWeek } from '@/types/plant'
 import { STAGE_LABELS } from '@/types/plant'
+import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 import { clsx } from 'clsx'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const LINE_COLORS: Record<string, string> = {
-  BIO:  'text-green-700 bg-green-50 border-green-200',
-  FUEL: 'text-blue-700 bg-blue-50 border-blue-200',
-  LIFE: 'text-violet-700 bg-violet-50 border-violet-200',
-  ECO:  'text-amber-700 bg-amber-50 border-amber-200',
-}
 
 function getProductsByLine(table: NutritionTable): Record<string, ProductDose[]> {
   const seen = new Set<string>()
@@ -155,6 +150,7 @@ function StepIndicator({ current }: { current: number }) {
 export default function PlantForm({ onSubmit, initialValues, submitLabel, loading }: PlantFormProps) {
   const { availableTables } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
+  const location = useLocation()
 
   const today = new Date().toISOString().slice(0, 10)
   const [step, setStep] = useState(1)
@@ -366,9 +362,22 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
     return (
       <div className="space-y-4">
-        {availableTables.length > 1 && (
-          <div>
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
             <label className={labelClass}>Tabla nutricional</label>
+            <Link
+              to={`/nutrition/new?returnTo=${encodeURIComponent(location.pathname)}`}
+              onClick={(e) => {
+                if (values.name.trim() && !confirm('Vas a salir del formulario. Se perderán los datos ingresados. ¿Continuar?')) {
+                  e.preventDefault()
+                }
+              }}
+              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+            >
+              + Crear propia
+            </Link>
+          </div>
+          {availableTables.length > 1 ? (
             <select
               value={values.nutritionTableId}
               onChange={(e) => {
@@ -379,12 +388,16 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             >
               {availableTables.map((t) => (
                 <option key={t.id} value={t.id} className="bg-app-elevated">
-                  {t.name}
+                  {t.name}{!t.isOfficial ? ' (custom)' : ''}
                 </option>
               ))}
             </select>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-ink-3 px-3 py-2.5 rounded-xl bg-app-elevated border border-app-border">
+              {availableTables[0]?.name ?? 'Sin tablas disponibles'}
+            </p>
+          )}
+        </div>
 
         {/* Selector de productos */}
         {table && (() => {
@@ -445,9 +458,9 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                       <div key={line}>
                         <span className={clsx(
                           'inline-flex text-[11px] font-bold px-2 py-0.5 rounded border mb-2.5',
-                          LINE_COLORS[line] ?? 'text-ink-3 bg-app-elevated border-app-border'
+                          getLineColor(line, table)
                         )}>
-                          {line}
+                          {getLineName(line, table)}
                         </span>
                         <div className="space-y-2">
                           {products.map((p) => (

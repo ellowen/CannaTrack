@@ -7,6 +7,7 @@ import EditPlant from '@/pages/EditPlant'
 import Calendar from '@/pages/Calendar'
 import Settings from '@/pages/Settings'
 import Profile from '@/pages/Profile'
+import CustomTable from '@/pages/CustomTable'
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: 'calendar', element: <Calendar /> },
       { path: 'settings', element: <Settings /> },
       { path: 'profile', element: <Profile /> },
+      { path: 'nutrition/new', element: <CustomTable /> },
     ],
   },
 ])

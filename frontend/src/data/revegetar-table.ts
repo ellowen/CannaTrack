@@ -7,6 +7,12 @@ export const REVEGETAR_TABLE: NutritionTable = {
   accessTier: 'free',
   isOfficial: true,
   geneticTypes: ['feminized', 'autoflower', 'regular'],
+  lines: [
+    { id: 'BIO',  name: 'BIO',  colorClass: 'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-900/60' },
+    { id: 'FUEL', name: 'FUEL', colorClass: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60' },
+    { id: 'LIFE', name: 'LIFE', colorClass: 'text-violet-700 bg-violet-50 border-violet-200 dark:text-violet-400 dark:bg-violet-950/40 dark:border-violet-900/60' },
+    { id: 'ECO',  name: 'ECO',  colorClass: 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/60' },
+  ],
   createdAt: new Date('2024-01-01'),
 
   // ─── CICLO VEGETATIVO ───────────────────────────────────────────────────

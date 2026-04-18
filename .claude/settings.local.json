@@ -8,7 +8,8 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(grep -l \"persist\\\\|localStorage\" src/store/*.ts)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(xargs ls *)"
     ]
   }
 }
