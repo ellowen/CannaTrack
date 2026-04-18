@@ -87,6 +87,9 @@ export default function PlantDetailScreen() {
                   {isFlora ? 'FLORA' : 'VEGE'}
                 </Text>
               </View>
+              <TouchableOpacity onPress={() => router.push(`/plants/${id}/edit`)} style={{ backgroundColor: '#0D2010', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: '#52CC64', fontSize: 16 }}>⚙️</Text>
+              </TouchableOpacity>
             </View>
           </View>
           <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900' }}>{plant.name}</Text>
@@ -178,6 +181,26 @@ export default function PlantDetailScreen() {
               <Text style={{ color: '#728C74', marginTop: 8, fontSize: 14 }}>Sin tareas pendientes</Text>
             </View>
           )}
+
+          <View style={{ gap: 12 }}>
+            <Text style={sectionLabel}>📱 ACCIONES RÁPIDAS</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/diary`)}
+                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 20, marginBottom: 4 }}>📸</Text>
+                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Diario</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/measurements`)}
+                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 20, marginBottom: 4 }}>📊</Text>
+                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Medida</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

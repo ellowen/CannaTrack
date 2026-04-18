@@ -99,6 +99,13 @@ export default function ProfileScreen() {
           ))}
         </View>
 
+        <TouchableOpacity
+          onPress={() => router.push('/settings')}
+          style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center' }}
+        >
+          <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>⚙️ Configuración</Text>
+        </TouchableOpacity>
+
         <View style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center' }}>
           <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Plan Free</Text>
         </View>
