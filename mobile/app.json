@@ -25,7 +25,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-haptics",
       [
         "expo-image-picker",
         {
