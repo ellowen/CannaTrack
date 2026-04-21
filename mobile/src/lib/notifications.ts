@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
+
+const isExpoGo = Constants.appOwnership === 'expo'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,7 +15,8 @@ Notifications.setNotificationHandler({
 })
 
 export async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) return null
+  // Push tokens require a dev build — skip silently in Expo Go
+  if (!Device.isDevice || isExpoGo) return null
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -29,8 +33,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   if (final !== 'granted') return null
 
-  const token = await Notifications.getExpoPushTokenAsync()
-  return token.data
+  try {
+    const token = await Notifications.getExpoPushTokenAsync()
+    return token.data
+  } catch {
+    return null
+  }
 }
 
 export async function scheduleDailyReminder(hour = 9, minute = 0) {
