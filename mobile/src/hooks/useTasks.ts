@@ -45,7 +45,7 @@ function rowToTask(row: Record<string, unknown>): ScheduledTask {
     scheduledDate: new Date(row.scheduled_date as string),
     cycle:         row.cycle as ScheduledTask['cycle'],
     week:          row.week as number,
-    stage:         (row.stage as string) ?? '',
+    stage:         (row.stage as ScheduledTask['stage']) ?? 'rooting',
     products:      (row.products as ScheduledTask['products']) ?? [],
     ecMin:         (row.ec_min as number) ?? undefined,
     ecMax:         (row.ec_max as number) ?? undefined,

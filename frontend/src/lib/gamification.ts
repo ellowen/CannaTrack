@@ -1,4 +1,4 @@
-import type { ScheduledTask } from '@/types/plant'
+import type { ScheduledTask } from '../types/plant'
 
 // ── XP por acción ──────────────────────────────────────────
 export const XP = {

@@ -153,7 +153,7 @@ export default function HomeScreen() {
                     {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
                   </Text>
                   <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    🪴 {plant.potsCount} × {plant.potLiters}L
+                    🪴 {plant.potCount} × {plant.potVolumeLiters ?? 11}L
                   </Text>
                 </View>
               </TouchableOpacity>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
+import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import type { Session } from '@supabase/supabase-js'
 
 export default function RootLayout() {
@@ -11,8 +12,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s)
+      if (s) {
+        const token = await registerForPushNotifications()
+        if (token) {
+          await supabase.from('profiles').update({ push_token: token }).eq('id', s.user.id)
+          await scheduleDailyReminder(9, 0)
+        }
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
