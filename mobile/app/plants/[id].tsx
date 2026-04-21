@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
+import { startFloraPhase } from '@shared/lib/nutrition-engine'
+import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -34,6 +36,47 @@ export default function PlantDetailScreen() {
     }
     load()
   }, [id])
+
+  async function handleStartFlora() {
+    if (!plant) return
+    Alert.alert(
+      'Iniciar floración',
+      'El calendario de nutrición se recalcula desde hoy. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar',
+          onPress: async () => {
+            const floraStartDate = new Date()
+            const newTasks = startFloraPhase(plant, floraStartDate, REVEGETAR_TABLE)
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
+            if (newTasks.length > 0) {
+              await supabase.from('scheduled_tasks').insert(
+                newTasks.map(t => ({
+                  plant_id:       plant.id,
+                  user_id:        authUser?.id,
+                  type:           t.type,
+                  scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+                  cycle:          t.cycle,
+                  week:           t.week,
+                  stage:          t.stage,
+                  products:       t.products,
+                  ec_min:         t.ecMin ?? null,
+                  ec_max:         t.ecMax ?? null,
+                  ph_min:         t.phMin ?? null,
+                  ph_max:         t.phMax ?? null,
+                }))
+              )
+            }
+            await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
+            setPlant({ ...plant, floraStartDate })
+            setTasks(newTasks)
+          },
+        },
+      ]
+    )
+  }
 
   async function completeTask(taskId: string) {
     await supabase
@@ -180,6 +223,18 @@ export default function PlantDetailScreen() {
               <Text style={{ fontSize: 32 }}>🌤️</Text>
               <Text style={{ color: '#728C74', marginTop: 8, fontSize: 14 }}>Sin tareas pendientes</Text>
             </View>
+          )}
+
+          {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
+            <TouchableOpacity
+              onPress={handleStartFlora}
+              style={{ backgroundColor: '#A855F7', borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '900', fontSize: 15 }}>🌸 Iniciar floración</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 3 }}>
+                Recalcula el calendario desde hoy
+              </Text>
+            </TouchableOpacity>
           )}
 
           <View style={{ gap: 12 }}>
