@@ -10,7 +10,6 @@ module.exports = function (api) {
           '@shared': '../frontend/src',
         },
       }],
-      'nativewind/babel',
     ],
   }
 }

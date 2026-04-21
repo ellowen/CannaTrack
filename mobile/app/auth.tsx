@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthScreen() {
@@ -19,7 +18,6 @@ export default function AuthScreen() {
         : await supabase.auth.signUp({ email, password })
 
       if (error) Alert.alert('Error', error.message)
-      else router.replace('/(tabs)')
     } finally {
       setLoading(false)
     }
