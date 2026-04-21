@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<{ xp: number; notificationsEnabled: boolean } | null>(null)
+  const [profile, setProfile] = useState<{ xp: number; notificationsEnabled: boolean; streak: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [plantCount, setPlantCount] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
@@ -16,7 +16,7 @@ export default function ProfileScreen() {
     async function load() {
       if (!user) return
       const [{ data: p }, { data: plants }, { data: tasks }] = await Promise.all([
-        supabase.from('profiles').select('xp, notifications_enabled').eq('id', user.id).single(),
+        supabase.from('profiles').select('xp, notifications_enabled, streak_days').eq('id', user.id).single(),
         supabase.from('plants').select('*').eq('user_id', user.id),
         supabase.from('scheduled_tasks')
           .select('*')
@@ -24,7 +24,7 @@ export default function ProfileScreen() {
           .eq('completed', true)
           .gte('completed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
       ])
-      if (p) setProfile({ xp: p.xp ?? 0, notificationsEnabled: p.notifications_enabled ?? true })
+      if (p) setProfile({ xp: p.xp ?? 0, notificationsEnabled: p.notifications_enabled ?? true, streak: p.streak_days ?? 0 })
       setPlantCount(plants?.length ?? 0)
       setCompletedToday(tasks?.length ?? 0)
       setLoading(false)
@@ -35,7 +35,7 @@ export default function ProfileScreen() {
   async function toggleNotifications(enabled: boolean) {
     if (!user) return
     await supabase.from('profiles').update({ notifications_enabled: enabled }).eq('id', user.id)
-    if (profile) setProfile({ ...profile, notificationsEnabled: enabled })
+    setProfile(p => p ? { ...p, notificationsEnabled: enabled } : p)
   }
 
   async function handleSignOut() {
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
           {[
             { label: 'Plantas', value: plantCount, emoji: '🌱' },
             { label: 'Hoy', value: completedToday, emoji: '✅' },
-            { label: 'Racha', value: 7, emoji: '🔥' },
+            { label: 'Racha', value: profile.streak, emoji: '🔥' },
           ].map(s => (
             <View key={s.label} style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}>
               <Text style={{ fontSize: 20 }}>{s.emoji}</Text>

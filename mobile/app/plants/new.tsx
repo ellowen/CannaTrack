@@ -52,13 +52,11 @@ export default function NewPlantScreen() {
         sex:              'unknown',
         startDate,
         location:         'indoor',
-        potsCount:        1,
-        potLiters:        11,
+        potCount:         1,
+        potVolumeLiters:  11,
         nutritionTableId: 'revegetar',
         availableProducts: [],
         status:           'active',
-        notes:            '',
-        tasks:            [],
       }
 
       const tasks = generatePlantSchedule(plant, REVEGETAR_TABLE)

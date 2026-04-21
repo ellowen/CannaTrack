@@ -39,12 +39,11 @@ function rowToPlant(row: Record<string, unknown>): Plant {
     floraStartDate:      row.flora_start_date ? new Date(row.flora_start_date as string) : undefined,
     autoFlowerTotalDays: (row.auto_flower_total_days as number) ?? 75,
     location:            (row.location as Plant['location']) ?? 'indoor',
-    potsCount:           (row.pot_count as number) ?? 1,
-    potLiters:           (row.pot_volume_liters as number) ?? 11,
+    potCount:            (row.pot_count as number) ?? 1,
+    potVolumeLiters:     (row.pot_volume_liters as number) ?? 11,
     nutritionTableId:    (row.nutrition_table_id as string) ?? 'revegetar',
     availableProducts:   (row.available_products as string[]) ?? [],
     status:              (row.status as Plant['status']) ?? 'active',
     notes:               (row.notes as string) ?? '',
-    tasks:               [],
   }
 }

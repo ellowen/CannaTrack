@@ -117,12 +117,17 @@ export default function HomeScreen() {
 
         {plants.length === 0 ? (
           <TouchableOpacity
-            onPress={() => router.push('/plants/new')}
-            style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 2, borderColor: '#1C2E1E', borderStyle: 'dashed', padding: 40, alignItems: 'center' }}
+            onPress={() => router.push('/onboarding')}
+            style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 2, borderColor: '#52CC64', borderStyle: 'dashed', padding: 40, alignItems: 'center' }}
           >
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>🌱</Text>
-            <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 15 }}>Agregar primera planta</Text>
-            <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 4 }}>El calendario se genera automaticamente</Text>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
+            <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Crear primera planta</Text>
+            <Text style={{ color: '#728C74', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 18 }}>
+              Te guiamos paso a paso para configurar{'\n'}tu calendario de cultivo
+            </Text>
+            <View style={{ marginTop: 16, backgroundColor: '#52CC64', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 }}>
+              <Text style={{ color: '#0C1410', fontWeight: '800', fontSize: 14 }}>Empezar →</Text>
+            </View>
           </TouchableOpacity>
         ) : (
           <View style={{ gap: 12 }}>
@@ -153,7 +158,7 @@ export default function HomeScreen() {
                     {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
                   </Text>
                   <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    🪴 {plant.potsCount} × {plant.potLiters}L
+                    🪴 {plant.potCount} × {plant.potVolumeLiters}L
                   </Text>
                 </View>
               </TouchableOpacity>

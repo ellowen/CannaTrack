@@ -99,7 +99,7 @@ export default function PlantDetailScreen() {
             <Text style={{ color: '#6DC278', fontSize: 12 }}>
               {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
             </Text>
-            <Text style={{ color: '#6DC278', fontSize: 12 }}>🪴 {plant.potsCount} × {plant.potLiters}L</Text>
+            <Text style={{ color: '#6DC278', fontSize: 12 }}>🪴 {plant.potCount} × {plant.potVolumeLiters}L</Text>
           </View>
         </View>
 
@@ -234,13 +234,12 @@ function rowToPlant(row: Record<string, unknown>): Plant {
     startDate:        new Date(row.start_date as string),
     floraStartDate:   row.flora_start_date ? new Date(row.flora_start_date as string) : undefined,
     location:         (row.location as Plant['location']) ?? 'indoor',
-    potsCount:        (row.pot_count as number) ?? 1,
-    potLiters:        (row.pot_volume_liters as number) ?? 11,
+    potCount:         (row.pot_count as number) ?? 1,
+    potVolumeLiters:  (row.pot_volume_liters as number) ?? 11,
     nutritionTableId: (row.nutrition_table_id as string) ?? 'revegetar',
     availableProducts: (row.available_products as string[]) ?? [],
     status:           (row.status as Plant['status']) ?? 'active',
     notes:            (row.notes as string) ?? '',
-    tasks:            [],
   }
 }
 
@@ -252,7 +251,7 @@ function rowToTask(row: Record<string, unknown>): ScheduledTask {
     scheduledDate: new Date(row.scheduled_date as string),
     cycle:         row.cycle as ScheduledTask['cycle'],
     week:          row.week as number,
-    stage:         (row.stage as string) ?? '',
+    stage:         (row.stage as ScheduledTask['stage']) ?? 'rooting',
     products:      (row.products as ScheduledTask['products']) ?? [],
     ecMin:         row.ec_min as number,
     ecMax:         row.ec_max as number,
