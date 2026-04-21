@@ -5,6 +5,8 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
+import { awardXP, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
@@ -20,6 +22,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const { user } = useAuth()
   const [plant, setPlant]   = useState<Plant | null>(null)
   const [tasks, setTasks]   = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,13 +52,12 @@ export default function PlantDetailScreen() {
           onPress: async () => {
             const floraStartDate = new Date()
             const newTasks = startFloraPhase(plant, floraStartDate, REVEGETAR_TABLE)
-            const { data: { user: authUser } } = await supabase.auth.getUser()
             await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
             if (newTasks.length > 0) {
               await supabase.from('scheduled_tasks').insert(
                 newTasks.map(t => ({
                   plant_id:       plant.id,
-                  user_id:        authUser?.id,
+                  user_id:        user?.id,
                   type:           t.type,
                   scheduled_date: t.scheduledDate.toISOString().split('T')[0],
                   cycle:          t.cycle,
@@ -72,6 +74,7 @@ export default function PlantDetailScreen() {
             await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
             setPlant({ ...plant, floraStartDate })
             setTasks(newTasks)
+            if (user) awardXP(user.id, XP_VALUES.START_FLORA)
           },
         },
       ]
@@ -84,6 +87,7 @@ export default function PlantDetailScreen() {
       .update({ completed: true, completed_at: new Date().toISOString() })
       .eq('id', taskId)
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
+    if (user) awardXP(user.id, XP_VALUES.COMPLETE_TASK)
   }
 
   if (loading) return (

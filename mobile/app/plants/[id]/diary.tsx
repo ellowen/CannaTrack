@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { awardXP, XP_VALUES } from '@/lib/xp'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -71,6 +72,7 @@ export default function DiaryScreen() {
       })
       setNewNotes('')
       setSelectedImage(null)
+      if (user && photoUrl) awardXP(user.id, XP_VALUES.UPLOAD_PHOTO)
       const { data } = await supabase.from('week_logs').select('*').eq('plant_id', id).order('log_date', { ascending: false })
       setLogs((data ?? []).map((row: any) => ({ id: row.id, weekLabel: row.week_label, logDate: new Date(row.log_date), notes: row.notes ?? '', photoUrl: row.photo_url })))
     } catch (e) {
