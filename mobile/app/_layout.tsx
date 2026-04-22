@@ -40,7 +40,7 @@ export default function RootLayout() {
 
       if (event === 'SIGNED_IN') {
         await saveSessionForBiometric(s)
-        registerForPushNotifications()
+        void registerForPushNotifications(s.user.id)
       }
 
       // Re-schedule notificacion diaria si el usuario la tiene activada
@@ -74,8 +74,8 @@ export default function RootLayout() {
         <Stack.Screen name="plants/[id]/diary" />
         <Stack.Screen name="plants/[id]/measurements" />
         <Stack.Screen name="plants/[id]/timeline" />
-        <Stack.Screen name="plants/[id]/diagnosis" />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="achievements" />
       </Stack>
       <StatusBar style="light" />
     </>

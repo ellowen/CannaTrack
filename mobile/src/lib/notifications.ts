@@ -4,7 +4,7 @@ import Constants from 'expo-constants'
 
 const isExpoGo = Constants.appOwnership === 'expo'
 
-export async function registerForPushNotifications(): Promise<string | null> {
+export async function registerForPushNotifications(userId?: string): Promise<string | null> {
   if (!Device.isDevice || isExpoGo) return null
 
   const { status: existing } = await Notifications.getPermissionsAsync()
@@ -16,8 +16,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
   if (finalStatus !== 'granted') return null
 
   try {
-    const { data } = await Notifications.getExpoPushTokenAsync()
-    return data
+    const { data: token } = await Notifications.getExpoPushTokenAsync()
+    if (userId && token) {
+      const { supabase } = await import('./supabase')
+      void supabase.from('profiles').update({ push_token: token }).eq('id', userId)
+    }
+    return token
   } catch {
     return null
   }

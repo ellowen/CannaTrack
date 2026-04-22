@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { ScheduledTask } from '@shared/types/plant'
@@ -83,6 +84,10 @@ export default function CalendarScreen() {
       .update({ completed: true, completed_at: new Date().toISOString() })
       .eq('id', taskId)
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
+    if (user) {
+      void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+      void recordDailyActivity(user.id)
+    }
   }
 
   return (

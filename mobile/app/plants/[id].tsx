@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
@@ -28,7 +28,9 @@ export default function PlantDetailScreen() {
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
-  const [sheetTask, setSheetTask] = useState<{ id: string; type: string; week: number; cycle: string } | null>(null)
+  const [sheetTask, setSheetTask]     = useState<{ id: string; type: string; week: number; cycle: string } | null>(null)
+  const [harvestModal, setHarvestModal] = useState(false)
+  const [harvestGrams, setHarvestGrams] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -86,22 +88,21 @@ export default function PlantDetailScreen() {
 
   async function handleHarvest() {
     if (!plant) return
-    Alert.alert(
-      'Cosechar planta',
-      `Marcas "${plant.name}" como cosechada. Desaparecera del listado activo.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cosechar',
-          style: 'destructive',
-          onPress: async () => {
-            await supabase.from('plants').update({ status: 'harvested' }).eq('id', plant.id)
-            if (user) awardXP(user.id, XP_VALUES.HARVEST)
-            router.replace('/(tabs)')
-          },
-        },
-      ]
-    )
+    setHarvestGrams('')
+    setHarvestModal(true)
+  }
+
+  async function confirmHarvest() {
+    if (!plant) return
+    const grams = parseFloat(harvestGrams)
+    const harvestNote = !isNaN(grams) && grams > 0 ? `Cosecha: ${grams}g` : null
+    await supabase.from('plants').update({
+      status: 'harvested',
+      notes: harvestNote ?? plant.notes ?? null,
+    }).eq('id', plant.id)
+    if (user) void awardXP(user.id, XP_VALUES.HARVEST)
+    setHarvestModal(false)
+    router.replace('/(tabs)')
   }
 
   async function completeTask(taskId: string, notes?: string, ec?: number, ph?: number) {
@@ -202,6 +203,14 @@ export default function PlantDetailScreen() {
         </View>
 
         <View style={{ padding: 16, gap: 20 }}>
+
+          {/* Notas de la planta */}
+          {plant.notes ? (
+            <View style={{ backgroundColor: '#131D14', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, flexDirection: 'row', gap: 10 }}>
+              <Text style={{ fontSize: 16 }}>📝</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 19, flex: 1 }}>{plant.notes}</Text>
+            </View>
+          ) : null}
 
           {/* Tareas de hoy */}
           {todayTasks.length > 0 && (
@@ -379,20 +388,52 @@ export default function PlantDetailScreen() {
                 <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Timeline</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push(`/plants/${id}/diagnosis`)}
-              style={{ backgroundColor: '#1A0A1A', borderRadius: 12, borderWidth: 1, borderColor: '#3D1A4B', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-            >
-              <Text style={{ fontSize: 20 }}>🔍</Text>
-              <View>
-                <Text style={{ color: '#C084FC', fontWeight: '800', fontSize: 13 }}>Diagnostico IA</Text>
-                <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>Analiza tu planta con Claude Vision</Text>
-              </View>
-              <Text style={{ color: '#C084FC', fontSize: 18, marginLeft: 'auto' }}>→</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+      {/* Modal cosecha */}
+      <Modal visible={harvestModal} transparent animationType="slide" onRequestClose={() => setHarvestModal(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}
+        >
+          <View style={{ backgroundColor: '#131D14', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', marginBottom: 4 }}>🌾 Cosechar planta</Text>
+            <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 20 }}>
+              "{plant?.name}" pasara a cosechada y desaparecera del listado activo.
+            </Text>
+            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
+              Gramos cosechados (opcional)
+            </Text>
+            <TextInput
+              value={harvestGrams}
+              onChangeText={setHarvestGrams}
+              placeholder="ej: 45.5"
+              placeholderTextColor="#3A5040"
+              keyboardType="decimal-pad"
+              style={{
+                backgroundColor: '#0C1410', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E',
+                color: '#E4F2E7', fontSize: 16, padding: 14, marginBottom: 20,
+              }}
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setHarvestModal(false)}
+                style={{ flex: 1, backgroundColor: '#1A3D1E', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#52CC64', fontWeight: '700' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={confirmHarvest}
+                style={{ flex: 1, backgroundColor: '#4B1515', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#EF4444', fontWeight: '900' }}>Cosechar +100 XP</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <CompleteTaskSheet
         visible={!!sheetTask}
         task={sheetTask}

@@ -121,30 +121,27 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Logros desbloqueados */}
+        {/* Logros */}
         {unlocked.length > 0 && (
           <View style={{ marginBottom: 20 }}>
-            <Text style={sectionLabel}>🏅 LOGROS · {unlocked.length} / {unlocked.length + locked.length}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {unlocked.map(a => (
-                <View
-                  key={a.id}
-                  style={{ backgroundColor: '#131D14', borderRadius: 14, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, alignItems: 'center', width: '30%' }}
-                >
-                  <Text style={{ fontSize: 26 }}>{a.emoji}</Text>
-                  <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>{a.name}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={sectionLabel}>🏅 LOGROS · {unlocked.length} / {unlocked.length + locked.length}</Text>
+              <TouchableOpacity onPress={() => router.push('/achievements')}>
+                <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>Ver todos →</Text>
+              </TouchableOpacity>
+            </View>
+            {/* show first 6 unlocked as emoji row */}
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              {unlocked.slice(0, 6).map(a => (
+                <View key={a.id} style={{ backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#2A5A2E', width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 24 }}>{a.emoji}</Text>
                 </View>
               ))}
-              {/* Proximos bloqueados (primeros 3) */}
-              {locked.slice(0, 3).map(a => (
-                <View
-                  key={a.id}
-                  style={{ backgroundColor: '#0C1410', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center', width: '30%', opacity: 0.4 }}
-                >
-                  <Text style={{ fontSize: 26 }}>🔒</Text>
-                  <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>{a.name}</Text>
+              {locked.length > 0 && (
+                <View style={{ backgroundColor: '#0C1410', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', width: 52, height: 52, alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>+{locked.length}</Text>
                 </View>
-              ))}
+              )}
             </View>
           </View>
         )}

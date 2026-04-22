@@ -42,6 +42,7 @@ function Sparkline({ values, color, label }: { values: number[]; color: string; 
 export default function MeasurementsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
+  const [plantName, setPlantName] = useState('')
   const [history, setHistory]   = useState<Measurement[]>([])
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -56,6 +57,8 @@ export default function MeasurementsScreen() {
 
   async function load() {
     if (!id || !user) return
+    supabase.from('plants').select('name').eq('id', id).single()
+      .then(({ data }) => { if (data) setPlantName(data.name) })
     const { data } = await supabase
       .from('measurements')
       .select('*')
@@ -107,7 +110,10 @@ export default function MeasurementsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
           </TouchableOpacity>
-          <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', marginLeft: 12 }}>Mediciones</Text>
+          <View style={{ marginLeft: 12 }}>
+            <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Mediciones</Text>
+            {plantName ? <Text style={{ color: '#728C74', fontSize: 12 }}>{plantName}</Text> : null}
+          </View>
         </View>
 
         {/* Formulario */}
