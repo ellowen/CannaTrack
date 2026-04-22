@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -6,6 +7,7 @@ import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
@@ -20,8 +22,15 @@ export default function HomeScreen() {
   const { user } = useAuth()
   const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
   const { tasks, completeTask, refetch: refetchTasks } = useTodayTasks()
+  const [username, setUsername] = useState<string>('')
   const pending = tasks.filter(t => !t.completed)
   const today = new Date()
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('profiles').select('username').eq('id', user.id).single()
+      .then(({ data }) => setUsername(data?.username ?? user.email?.split('@')[0] ?? 'Cultivador'))
+  }, [user])
 
   const greeting = () => {
     const h = today.getHours()
@@ -47,7 +56,7 @@ export default function HomeScreen() {
             {format(today, "EEEE d 'de' MMMM", { locale: es })}
           </Text>
           <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900' }}>
-            {greeting()}, Cultivador
+            {greeting()}, {username || 'Cultivador'}
           </Text>
         </View>
 

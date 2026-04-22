@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { getLevelInfo } from '@shared/lib/gamification'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<{ xp: number; notificationsEnabled: boolean; streak: number; bestStreak: number } | null>(null)
+  const [profile, setProfile] = useState<{ xp: number; notificationsEnabled: boolean; streak: number; bestStreak: number; username: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [plantCount, setPlantCount] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
@@ -16,7 +17,7 @@ export default function ProfileScreen() {
     async function load() {
       if (!user) return
       const [{ data: p }, { data: plants }, { data: tasks }] = await Promise.all([
-        supabase.from('profiles').select('xp, notifications_enabled, streak_days, best_streak').eq('id', user.id).single(),
+        supabase.from('profiles').select('xp, notifications_enabled, streak_days, best_streak, username').eq('id', user.id).single(),
         supabase.from('plants').select('*').eq('user_id', user.id),
         supabase.from('scheduled_tasks')
           .select('*')
@@ -24,7 +25,7 @@ export default function ProfileScreen() {
           .eq('completed', true)
           .gte('completed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
       ])
-      if (p) setProfile({ xp: p.xp ?? 0, notificationsEnabled: p.notifications_enabled ?? true, streak: p.streak_days ?? 0, bestStreak: p.best_streak ?? 0 })
+      if (p) setProfile({ xp: p.xp ?? 0, notificationsEnabled: p.notifications_enabled ?? true, streak: p.streak_days ?? 0, bestStreak: p.best_streak ?? 0, username: p.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
       setPlantCount(plants?.length ?? 0)
       setCompletedToday(tasks?.length ?? 0)
       setLoading(false)
@@ -59,29 +60,36 @@ export default function ProfileScreen() {
     )
   }
 
-  const level = Math.floor(profile.xp / 100) + 1
-  const xpProgress = (profile.xp % 100) / 100
+  const { current: lvl, next: nextLvl, progressToNext } = getLevelInfo(profile.xp)
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        {/* Avatar + nombre */}
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A3D1E', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 40 }}>🌿</Text>
+            <Text style={{ fontSize: 40 }}>{lvl.emoji}</Text>
           </View>
           <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900' }}>
-            {user?.email?.split('@')[0] ?? 'Cultivador'}
+            {profile.username}
           </Text>
-          <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Nivel {level}</Text>
+          <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700', marginTop: 4 }}>
+            {lvl.emoji} {lvl.name} · Nivel {lvl.level}
+          </Text>
         </View>
 
+        {/* Barra XP */}
         <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700' }}>XP</Text>
-            <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>{profile.xp % 100}/100</Text>
+            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700' }}>
+              {profile.xp} XP total
+            </Text>
+            <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>
+              {nextLvl ? `${nextLvl.name} a los ${nextLvl.xpRequired} XP` : 'Nivel maximo 🏆'}
+            </Text>
           </View>
           <View style={{ height: 8, backgroundColor: '#1C2E1E', borderRadius: 4, overflow: 'hidden' }}>
-            <View style={{ height: '100%', backgroundColor: '#52CC64', width: `${xpProgress * 100}%` }} />
+            <View style={{ height: '100%', backgroundColor: '#52CC64', width: `${progressToNext * 100}%` }} />
           </View>
         </View>
 
