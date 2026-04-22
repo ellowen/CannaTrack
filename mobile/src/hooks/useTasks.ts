@@ -34,8 +34,8 @@ export function useTodayTasks() {
       .eq('id', taskId)
     setTasks(t => t.map(x => x.id === taskId ? { ...x, completed: true } : x))
     if (user) {
-      awardXP(user.id, XP_VALUES.COMPLETE_TASK)
-      recordDailyActivity(user.id)
+      void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+      void recordDailyActivity(user.id)
     }
   }
 
@@ -56,6 +56,8 @@ function rowToTask(row: Record<string, unknown>): ScheduledTask {
     ecMax:         (row.ec_max as number) ?? undefined,
     phMin:         (row.ph_min as number) ?? undefined,
     phMax:         (row.ph_max as number) ?? undefined,
-    completed:     (row.completed as boolean) ?? false,
+    completed:        (row.completed as boolean) ?? false,
+    completedAt:      row.completed_at ? new Date(row.completed_at as string) : undefined,
+    completionNotes:  (row.completion_notes as string) ?? undefined,
   }
 }

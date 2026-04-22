@@ -15,32 +15,55 @@ const TYPE_COLOR: Record<string, string> = {
 export default function CalendarScreen() {
   const { user } = useAuth()
   const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
+  const [displayMonth, setDisplayMonth] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
+  const [plantNames, setPlantNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const start = startOfMonth(selected)
-  const daysInMonth = getDaysInMonth(selected)
+  const start = startOfMonth(displayMonth)
+  const daysInMonth = getDaysInMonth(displayMonth)
   const firstDayOfWeek = start.getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(selected.getFullYear(), selected.getMonth(), i + 1))
+  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1))
+
+  function prevMonth() {
+    setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+  }
+
+  function nextMonth() {
+    setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
+  }
+
+  function goToday() {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    setDisplayMonth(d)
+    setSelected(d)
+  }
 
   useEffect(() => {
     async function load() {
       if (!user) return
       const monthStart = startOfDay(start)
-      const monthEnd = endOfDay(new Date(selected.getFullYear(), selected.getMonth() + 1, 0))
-      const { data } = await supabase
-        .from('scheduled_tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('scheduled_date', monthStart.toISOString())
-        .lte('scheduled_date', monthEnd.toISOString())
-      setTasks((data ?? []).map(rowToTask))
+      const monthEnd = endOfDay(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0))
+      const [{ data: taskData }, { data: plantData }] = await Promise.all([
+        supabase
+          .from('scheduled_tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('scheduled_date', monthStart.toISOString())
+          .lte('scheduled_date', monthEnd.toISOString()),
+        supabase.from('plants').select('id, name').eq('user_id', user.id),
+      ])
+      setTasks((taskData ?? []).map(rowToTask))
+      const nameMap: Record<string, string> = {}
+      for (const p of (plantData ?? [])) nameMap[p.id] = p.name
+      setPlantNames(nameMap)
       setLoading(false)
     }
     load()
-  }, [selected, user])
+  }, [displayMonth, user])
 
   const selectedTasks = tasks.filter(t => {
     const d = new Date(t.scheduledDate)
@@ -66,9 +89,22 @@ export default function CalendarScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <View style={{ flex: 1, flexDirection: 'column' }}>
         <View style={{ backgroundColor: '#1A3D1E', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-          <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-            {format(selected, 'MMMM yyyy', { locale: es })}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={{ color: '#52CC64', fontSize: 18, fontWeight: '700' }}>{'<'}</Text>
+            </TouchableOpacity>
+            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              {format(displayMonth, 'MMMM yyyy', { locale: es })}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={{ color: '#52CC64', fontSize: 18, fontWeight: '700' }}>{'>'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={goToday} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>Hoy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={{ flexDirection: 'row', marginBottom: 8, justifyContent: 'space-between' }}>
             {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
               <Text key={d} style={{ color: '#728C74', fontSize: 11, fontWeight: '700', width: '14.28%', textAlign: 'center' }}>
@@ -87,7 +123,12 @@ export default function CalendarScreen() {
               return (
                 <TouchableOpacity
                   key={day.getTime()}
-                  onPress={() => setSelected(day)}
+                  onPress={() => {
+                    setSelected(day)
+                    if (day.getMonth() !== displayMonth.getMonth() || day.getFullYear() !== displayMonth.getFullYear()) {
+                      setDisplayMonth(new Date(day.getFullYear(), day.getMonth(), 1))
+                    }
+                  }}
                   style={{
                     width: '14.28%', height: 50, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: isSelected ? '#52CC64' : isToday ? '#1C2E1E' : 'transparent',
@@ -134,10 +175,10 @@ export default function CalendarScreen() {
                       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TYPE_COLOR[task.type] }} />
                       <View>
                         <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
-                          {task.type === 'nutrition' ? 'Nutrición' : task.type === 'irrigation' ? 'Riego' : 'Tarea'}
+                          {task.type === 'nutrition' ? 'Nutricion' : task.type === 'irrigation' ? 'Riego' : task.type === 'foliar' ? 'Foliar' : task.type === 'harvest' ? 'Cosecha' : 'Observacion'}
                         </Text>
                         <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>
-                          V{task.week} · {task.stage}
+                          {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {plantNames[task.plantId] ?? '...'}
                         </Text>
                       </View>
                     </View>

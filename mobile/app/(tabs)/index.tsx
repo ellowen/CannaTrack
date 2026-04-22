@@ -22,14 +22,21 @@ export default function HomeScreen() {
   const { user } = useAuth()
   const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
   const { tasks, completeTask, refetch: refetchTasks } = useTodayTasks()
-  const [username, setUsername] = useState<string>('')
+  const [username, setUsername]         = useState<string>('')
+  const [streak, setStreak]             = useState(0)
+  const [harvested, setHarvested]       = useState<{ id: string; name: string; genetics: string }[]>([])
   const pending = tasks.filter(t => !t.completed)
   const today = new Date()
 
   useEffect(() => {
     if (!user) return
-    supabase.from('profiles').select('username').eq('id', user.id).single()
-      .then(({ data }) => setUsername(data?.username ?? user.email?.split('@')[0] ?? 'Cultivador'))
+    supabase.from('profiles').select('username, streak_days').eq('id', user.id).single()
+      .then(({ data }) => {
+        setUsername(data?.username ?? user.email?.split('@')[0] ?? 'Cultivador')
+        setStreak(data?.streak_days ?? 0)
+      })
+    supabase.from('plants').select('id, name, genetics').eq('user_id', user.id).eq('status', 'harvested').order('created_at', { ascending: false }).limit(5)
+      .then(({ data }) => setHarvested(data ?? []))
   }, [user])
 
   const greeting = () => {
@@ -52,9 +59,17 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 2, textTransform: 'capitalize' }}>
-            {format(today, "EEEE d 'de' MMMM", { locale: es })}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+            <Text style={{ color: '#728C74', fontSize: 13, textTransform: 'capitalize' }}>
+              {format(today, "EEEE d 'de' MMMM", { locale: es })}
+            </Text>
+            {streak > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1A0E00', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#3D2200' }}>
+                <Text style={{ fontSize: 13 }}>🔥</Text>
+                <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '800' }}>{streak}</Text>
+              </View>
+            )}
+          </View>
           <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900' }}>
             {greeting()}, {username || 'Cultivador'}
           </Text>
@@ -174,6 +189,29 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
+        {/* Cosechas */}
+        {harvested.length > 0 && (
+          <View style={{ marginTop: 8 }}>
+            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
+              ✂️ COSECHADAS · {harvested.length}
+            </Text>
+            <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+              {harvested.map((p, i) => (
+                <View key={p.id} style={{
+                  flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12,
+                  borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E', opacity: 0.6,
+                }}>
+                  <Text style={{ fontSize: 16, marginRight: 10 }}>✂️</Text>
+                  <View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '700' }}>{p.name}</Text>
+                    <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>{p.genetics}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   )

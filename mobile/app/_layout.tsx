@@ -4,7 +4,7 @@ import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
-import { registerForPushNotifications } from '@/lib/notifications'
+import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -43,6 +43,16 @@ export default function RootLayout() {
         registerForPushNotifications()
       }
 
+      // Re-schedule notificacion diaria si el usuario la tiene activada
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('notifications_enabled')
+        .eq('id', s.user.id)
+        .single()
+      if (prof?.notifications_enabled) {
+        void scheduleDailyReminder(9, 0)
+      }
+
       const dest = await resolvePostLoginRoute(s.user.id)
       router.replace(dest)
     })
@@ -61,6 +71,9 @@ export default function RootLayout() {
         <Stack.Screen name="plants/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plants/[id]" />
         <Stack.Screen name="plants/[id]/edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="plants/[id]/diary" />
+        <Stack.Screen name="plants/[id]/measurements" />
+        <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
     </>

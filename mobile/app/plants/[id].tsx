@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
+import { calculatePlantHealth } from '@shared/lib/gamification'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -81,6 +82,26 @@ export default function PlantDetailScreen() {
     )
   }
 
+  async function handleHarvest() {
+    if (!plant) return
+    Alert.alert(
+      'Cosechar planta',
+      `Marcas "${plant.name}" como cosechada. Desaparecera del listado activo.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cosechar',
+          style: 'destructive',
+          onPress: async () => {
+            await supabase.from('plants').update({ status: 'harvested' }).eq('id', plant.id)
+            if (user) awardXP(user.id, XP_VALUES.HARVEST)
+            router.replace('/(tabs)')
+          },
+        },
+      ]
+    )
+  }
+
   async function completeTask(taskId: string) {
     await supabase
       .from('scheduled_tasks')
@@ -119,7 +140,18 @@ export default function PlantDetailScreen() {
   }).slice(0, 5)
 
   const daysSinceStart = differenceInDays(today, plant.startDate)
-  const isFlora = !!plant.floraStartDate
+  const isFlora  = !!plant.floraStartDate
+  const health   = calculatePlantHealth(tasks)
+  const healthColor = health >= 75 ? '#52CC64' : health >= 45 ? '#F59E0B' : '#EF4444'
+
+  // Tarjeta de nutricion: tarea de nutricion mas cercana (hoy o proxima)
+  const nutritionTask = tasks
+    .filter(t => t.type === 'nutrition')
+    .sort((a, b) => {
+      const da = Math.abs(differenceInDays(new Date(a.scheduledDate), today))
+      const db = Math.abs(differenceInDays(new Date(b.scheduledDate), today))
+      return da - db
+    })[0] ?? null
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
@@ -144,12 +176,16 @@ export default function PlantDetailScreen() {
           </View>
           <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900' }}>{plant.name}</Text>
           <Text style={{ color: '#6DC278', fontSize: 14, marginTop: 2 }}>{plant.genetics}</Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
             <Text style={{ color: '#6DC278', fontSize: 12 }}>📅 Dia {daysSinceStart}</Text>
             <Text style={{ color: '#6DC278', fontSize: 12 }}>
               {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
             </Text>
             <Text style={{ color: '#6DC278', fontSize: 12 }}>🪴 {plant.potCount} × {plant.potVolumeLiters}L</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: healthColor }} />
+              <Text style={{ color: healthColor, fontSize: 12, fontWeight: '700' }}>Salud {health}%</Text>
+            </View>
           </View>
         </View>
 
@@ -244,8 +280,70 @@ export default function PlantDetailScreen() {
             </TouchableOpacity>
           )}
 
+          {/* Boton cosechar */}
+          {(plant.floraStartDate || plant.geneticType === 'autoflower') && (
+            <TouchableOpacity
+              onPress={handleHarvest}
+              style={{ backgroundColor: '#1A0A0A', borderRadius: 16, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#4B1515' }}
+            >
+              <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 15 }}>🌾 Cosechar</Text>
+              <Text style={{ color: 'rgba(239,68,68,0.6)', fontSize: 11, marginTop: 3 }}>
+                Marca esta planta como cosechada
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Nutricion de la semana */}
+          {nutritionTask && (nutritionTask.products?.length > 0 || nutritionTask.ecMin) && (
+            <View>
+              <Text style={sectionLabel}>
+                🧪 NUTRICION · {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
+              </Text>
+              <View style={card}>
+                {/* EC y pH */}
+                {(nutritionTask.ecMin || nutritionTask.phMin) && (
+                  <View style={{
+                    flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8,
+                    borderBottomWidth: nutritionTask.products?.length > 0 ? 1 : 0, borderBottomColor: '#1C2E1E',
+                  }}>
+                    {nutritionTask.ecMin != null && (
+                      <View style={{ flex: 1, backgroundColor: '#0D2010', borderRadius: 10, padding: 10, alignItems: 'center' }}>
+                        <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>EC</Text>
+                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', marginTop: 2 }}>
+                          {nutritionTask.ecMin}–{nutritionTask.ecMax}
+                        </Text>
+                      </View>
+                    )}
+                    {nutritionTask.phMin != null && (
+                      <View style={{ flex: 1, backgroundColor: '#0D2010', borderRadius: 10, padding: 10, alignItems: 'center' }}>
+                        <Text style={{ color: '#3B82F6', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>PH</Text>
+                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', marginTop: 2 }}>
+                          {nutritionTask.phMin}–{nutritionTask.phMax}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+                {/* Productos */}
+                {nutritionTask.products?.map((p: { name: string; minDose: number; maxDose: number; unit: string }, i: number) => (
+                  <View key={i} style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    paddingHorizontal: 14, paddingVertical: 11,
+                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
+                  }}>
+                    <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>
+                      {p.minDose !== p.maxDose ? `${p.minDose}–${p.maxDose}` : `${p.minDose}`}
+                      {' '}{p.unit}/L
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
           <View style={{ gap: 12 }}>
-            <Text style={sectionLabel}>📱 ACCIONES RÁPIDAS</Text>
+            <Text style={sectionLabel}>📱 ACCIONES RAPIDAS</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
                 onPress={() => router.push(`/plants/${id}/diary`)}

@@ -15,6 +15,9 @@ export default function NewPlantScreen() {
   const [name, setName]               = useState('')
   const [genetics, setGenetics]       = useState('')
   const [geneticType, setGeneticType] = useState<GeneticType>('feminized')
+  const [location, setLocation]       = useState<'indoor' | 'outdoor'>('indoor')
+  const [potCount, setPotCount]       = useState('1')
+  const [potVolume, setPotVolume]     = useState('11')
   const [loading, setLoading]         = useState(false)
 
   async function handleCreate() {
@@ -34,9 +37,9 @@ export default function NewPlantScreen() {
           start_date:        startDate.toISOString().split('T')[0],
           nutrition_table_id: 'revegetar',
           available_products: [],
-          location:          'indoor',
-          pot_count:         1,
-          pot_volume_liters: 11,
+          location,
+          pot_count:         parseInt(potCount),
+          pot_volume_liters: parseFloat(potVolume),
         })
         .select()
         .single()
@@ -51,9 +54,9 @@ export default function NewPlantScreen() {
         geneticType,
         sex:              'unknown',
         startDate,
-        location:         'indoor',
-        potCount:         1,
-        potVolumeLiters:  11,
+        location,
+        potCount:         parseInt(potCount),
+        potVolumeLiters:  parseFloat(potVolume),
         nutritionTableId: 'revegetar',
         availableProducts: [],
         status:           'active',
@@ -143,6 +146,54 @@ export default function NewPlantScreen() {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Ubicacion */}
+        <Text style={[labelStyle, { marginTop: 16 }]}>UBICACION</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 0 }}>
+          {(['indoor', 'outdoor'] as const).map(l => (
+            <TouchableOpacity
+              key={l}
+              onPress={() => setLocation(l)}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 14,
+                alignItems: 'center',
+                backgroundColor: location === l ? '#1A3D1E' : '#131D14',
+                borderWidth: 1,
+                borderColor: location === l ? '#52CC64' : '#1C2E1E',
+              }}
+            >
+              <Text style={{ color: location === l ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                {l === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Cantidad y volumen de macetas */}
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>CANTIDAD DE MACETAS</Text>
+            <TextInput
+              value={potCount}
+              onChangeText={setPotCount}
+              keyboardType="number-pad"
+              placeholderTextColor="#3A5040"
+              style={inputStyle}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>VOLUMEN (LITROS)</Text>
+            <TextInput
+              value={potVolume}
+              onChangeText={setPotVolume}
+              keyboardType="decimal-pad"
+              placeholderTextColor="#3A5040"
+              style={inputStyle}
+            />
+          </View>
         </View>
 
         {/* Boton */}

@@ -1,54 +1,68 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, Alert, Switch, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { getLevelInfo } from '@shared/lib/gamification'
+import { getLevelInfo, getAchievements } from '@shared/lib/gamification'
+import type { AchievementData } from '@shared/lib/gamification'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<{ xp: number; notificationsEnabled: boolean; streak: number; bestStreak: number; username: string } | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [plantCount, setPlantCount] = useState(0)
+  const [profile, setProfile]             = useState<{ xp: number; streak: number; bestStreak: number; username: string } | null>(null)
+  const [loading, setLoading]             = useState(true)
+  const [plantCount, setPlantCount]       = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
+  const [achievementData, setAchievementData] = useState<AchievementData | null>(null)
 
   useEffect(() => {
     async function load() {
       if (!user) return
-      const [{ data: p }, { data: plants }, { data: tasks }] = await Promise.all([
-        supabase.from('profiles').select('xp, notifications_enabled, streak_days, best_streak, username').eq('id', user.id).single(),
-        supabase.from('plants').select('*').eq('user_id', user.id),
-        supabase.from('scheduled_tasks')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('completed', true)
-          .gte('completed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+      const today0 = new Date(); today0.setHours(0, 0, 0, 0)
+
+      const [
+        { data: p },
+        { data: activePlants },
+        { data: harvestedPlants },
+        { data: tasksToday },
+        { count: totalTasks },
+        { count: measurements },
+        { count: photos },
+      ] = await Promise.all([
+        supabase.from('profiles').select('xp, streak_days, best_streak, username').eq('id', user.id).single(),
+        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
+        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'harvested'),
+        supabase.from('scheduled_tasks').select('id').eq('user_id', user.id).eq('completed', true)
+          .gte('completed_at', today0.toISOString()),
+        supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('completed', true),
+        supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id).not('photo_url', 'is', null),
       ])
-      if (p) setProfile({ xp: p.xp ?? 0, notificationsEnabled: p.notifications_enabled ?? true, streak: p.streak_days ?? 0, bestStreak: p.best_streak ?? 0, username: p.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
-      setPlantCount(plants?.length ?? 0)
-      setCompletedToday(tasks?.length ?? 0)
+
+      if (p) setProfile({ xp: p.xp ?? 0, streak: p.streak_days ?? 0, bestStreak: p.best_streak ?? 0, username: p.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
+      setPlantCount(activePlants?.length ?? 0)
+      setCompletedToday(tasksToday?.length ?? 0)
+
+      setAchievementData({
+        streak:               p?.streak_days ?? 0,
+        bestStreak:           p?.best_streak ?? 0,
+        totalXP:              p?.xp ?? 0,
+        totalTasksCompleted:  totalTasks ?? 0,
+        tasksWithMeasurement: measurements ?? 0,
+        harvestedPlants:      harvestedPlants?.length ?? 0,
+        activePlants:         activePlants?.length ?? 0,
+        totalPhotos:          photos ?? 0,
+      })
+
       setLoading(false)
     }
     load()
   }, [user])
 
-  async function toggleNotifications(enabled: boolean) {
-    if (!user) return
-    await supabase.from('profiles').update({ notifications_enabled: enabled }).eq('id', user.id)
-    setProfile(p => p ? { ...p, notificationsEnabled: enabled } : p)
-  }
-
   async function handleSignOut() {
-    Alert.alert('Cerrar sesión', '¿Estás seguro?', [
-      { text: 'Cancelar', onPress: () => {} },
-      {
-        text: 'Cerrar sesión',
-        onPress: async () => {
-          await supabase.auth.signOut()
-          router.replace('/auth')
-        },
-      },
+    Alert.alert('Cerrar sesion', '\u00bfEstas seguro?', [
+      { text: 'Cancelar' },
+      { text: 'Cerrar', style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
     ])
   }
 
@@ -61,83 +75,112 @@ export default function ProfileScreen() {
   }
 
   const { current: lvl, next: nextLvl, progressToNext } = getLevelInfo(profile.xp)
+  const { unlocked, locked } = achievementData ? getAchievements(achievementData) : { unlocked: [], locked: [] }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-        {/* Avatar + nombre */}
+
+        {/* Avatar + nivel */}
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A3D1E', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
             <Text style={{ fontSize: 40 }}>{lvl.emoji}</Text>
           </View>
-          <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900' }}>
-            {profile.username}
-          </Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900' }}>{profile.username}</Text>
           <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700', marginTop: 4 }}>
-            {lvl.emoji} {lvl.name} · Nivel {lvl.level}
+            {lvl.name} · Nivel {lvl.level}
           </Text>
         </View>
 
         {/* Barra XP */}
-        <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
+        <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700' }}>
-              {profile.xp} XP total
-            </Text>
+            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700' }}>{profile.xp} XP</Text>
             <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>
-              {nextLvl ? `${nextLvl.name} a los ${nextLvl.xpRequired} XP` : 'Nivel maximo 🏆'}
+              {nextLvl ? `→ ${nextLvl.name} (${nextLvl.xpRequired} XP)` : '🏆 Nivel maximo'}
             </Text>
           </View>
           <View style={{ height: 8, backgroundColor: '#1C2E1E', borderRadius: 4, overflow: 'hidden' }}>
-            <View style={{ height: '100%', backgroundColor: '#52CC64', width: `${progressToNext * 100}%` }} />
+            <View style={{ height: '100%', backgroundColor: '#52CC64', borderRadius: 4, width: `${Math.round(progressToNext * 100)}%` }} />
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+        {/* Stats */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
           {[
-            { label: 'Plantas',    value: plantCount,        emoji: '🌱' },
-            { label: 'Hoy',        value: completedToday,    emoji: '✅' },
-            { label: 'Racha',      value: profile.streak,    emoji: '🔥' },
-            { label: 'Mejor',      value: profile.bestStreak, emoji: '⚡' },
+            { label: 'Plantas',   value: plantCount,                   emoji: '🌱' },
+            { label: 'Hoy',       value: completedToday,               emoji: '✅' },
+            { label: 'Racha',     value: profile.streak,               emoji: '🔥' },
+            { label: 'Record',    value: profile.bestStreak,           emoji: '⚡' },
           ].map(s => (
             <View key={s.label} style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}>
-              <Text style={{ fontSize: 20 }}>{s.emoji}</Text>
-              <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', marginTop: 4 }}>{s.value}</Text>
-              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', marginTop: 2 }}>{s.label}</Text>
+              <Text style={{ fontSize: 18 }}>{s.emoji}</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', marginTop: 2 }}>{s.value}</Text>
+              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', marginTop: 1 }}>{s.label}</Text>
             </View>
           ))}
         </View>
 
+        {/* Logros desbloqueados */}
+        {unlocked.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={sectionLabel}>🏅 LOGROS · {unlocked.length} / {unlocked.length + locked.length}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {unlocked.map(a => (
+                <View
+                  key={a.id}
+                  style={{ backgroundColor: '#131D14', borderRadius: 14, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, alignItems: 'center', width: '30%' }}
+                >
+                  <Text style={{ fontSize: 26 }}>{a.emoji}</Text>
+                  <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>{a.name}</Text>
+                </View>
+              ))}
+              {/* Proximos bloqueados (primeros 3) */}
+              {locked.slice(0, 3).map(a => (
+                <View
+                  key={a.id}
+                  style={{ backgroundColor: '#0C1410', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center', width: '30%', opacity: 0.4 }}
+                >
+                  <Text style={{ fontSize: 26 }}>🔒</Text>
+                  <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>{a.name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Config + cuenta */}
         <TouchableOpacity
           onPress={() => router.push('/settings')}
-          style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center' }}
+          style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 14, marginBottom: 12, alignItems: 'center' }}
         >
-          <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>⚙️ Configuración</Text>
+          <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>⚙️ Configuracion</Text>
         </TouchableOpacity>
 
-        <View style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center' }}>
-          <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Plan Free</Text>
-        </View>
-
         <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>
-            <Switch
-              value={profile.notificationsEnabled}
-              onValueChange={toggleNotifications}
-              trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
-              thumbColor={profile.notificationsEnabled ? '#1A3D1E' : '#728C74'}
-            />
+          <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+            <Text style={{ color: '#E4F2E7', fontSize: 13 }}>{user?.email}</Text>
           </View>
           <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>Correo</Text>
-            <Text style={{ color: '#E4F2E7', fontSize: 14 }}>{user?.email}</Text>
+            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+            <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
           </View>
           <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
-            <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesión</Text>
+            <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   )
+}
+
+const sectionLabel = {
+  color: '#728C74' as const,
+  fontSize: 11,
+  fontWeight: '700' as const,
+  letterSpacing: 1.5,
+  textTransform: 'uppercase' as const,
+  marginBottom: 12,
 }

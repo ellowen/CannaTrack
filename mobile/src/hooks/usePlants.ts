@@ -16,6 +16,7 @@ export function usePlants() {
       .from('plants')
       .select('*')
       .eq('user_id', user.id)
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
 
     if (error) setError(error.message)

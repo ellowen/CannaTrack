@@ -16,6 +16,29 @@ interface Measurement {
   measuredAt: Date
 }
 
+function Sparkline({ values, color, label }: { values: number[]; color: string; label: string }) {
+  const last10 = values.slice(-10)
+  const min = Math.min(...last10)
+  const max = Math.max(...last10)
+  const range = max - min || 1
+  const lastVal = last10[last10.length - 1]
+  return (
+    <View style={{ flex: 1, padding: 14 }}>
+      <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>{label}</Text>
+      <Text style={{ color: color, fontSize: 22, fontWeight: '900', marginBottom: 8 }}>{lastVal.toFixed(label === 'EC' ? 2 : 1)}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 44 }}>
+        {last10.map((v, i) => (
+          <View key={i} style={{ width: 8, borderRadius: 4, backgroundColor: color, height: ((v - min) / range) * 40 + 4 }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+        <Text style={{ color: '#3A5040', fontSize: 9 }}>{min.toFixed(1)}</Text>
+        <Text style={{ color: '#3A5040', fontSize: 9 }}>{max.toFixed(1)}</Text>
+      </View>
+    </View>
+  )
+}
+
 export default function MeasurementsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
@@ -119,6 +142,22 @@ export default function MeasurementsScreen() {
             }
           </TouchableOpacity>
         </View>
+
+        {/* Sparklines */}
+        {(() => {
+          const ecValues = history.map(m => m.ec).filter((v): v is number => v != null).reverse()
+          const phValues = history.map(m => m.ph).filter((v): v is number => v != null).reverse()
+          const showEc = ecValues.length >= 2
+          const showPh = phValues.length >= 2
+          if (!showEc && !showPh) return null
+          return (
+            <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', marginBottom: 20 }}>
+              {showEc && <Sparkline values={ecValues} color="#52CC64" label="EC" />}
+              {showEc && showPh && <View style={{ width: 1, backgroundColor: '#1C2E1E', marginVertical: 14 }} />}
+              {showPh && <Sparkline values={phValues} color="#3B82F6" label="pH" />}
+            </View>
+          )
+        })()}
 
         {/* Historial */}
         <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
