@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import {
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  Modal, KeyboardAvoidingView, Platform, TextInput,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
-import { format, differenceInDays } from 'date-fns'
+import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,15 +26,25 @@ const TYPE_LABEL: Record<string, string> = {
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
 }
 
+function todayAsYMD(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
-  const [sheetTask, setSheetTask]     = useState<SheetTask | null>(null)
-  const [harvestModal, setHarvestModal] = useState(false)
-  const [liters, setLiters]           = useState(0)
+  const [sheetTask, setSheetTask]         = useState<SheetTask | null>(null)
+  const [harvestModal, setHarvestModal]   = useState(false)
+  const [liters, setLiters]               = useState(0)
+  const [floraDateModal, setFloraDateModal] = useState(false)
+  const [floraDateInput, setFloraDateInput] = useState(todayAsYMD())
 
   useEffect(() => {
     async function load() {
@@ -50,45 +63,47 @@ export default function PlantDetailScreen() {
     load()
   }, [id])
 
-  async function handleStartFlora() {
+  function handleStartFlora() {
     if (!plant) return
-    Alert.alert(
-      'Iniciar floración',
-      'El calendario de nutrición se recalcula desde hoy. Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            const floraStartDate = new Date()
-            const newTasks = startFloraPhase(plant, floraStartDate, REVEGETAR_TABLE)
-            await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
-            if (newTasks.length > 0) {
-              await supabase.from('scheduled_tasks').insert(
-                newTasks.map(t => ({
-                  plant_id:       plant.id,
-                  user_id:        user?.id,
-                  type:           t.type,
-                  scheduled_date: t.scheduledDate.toISOString().split('T')[0],
-                  cycle:          t.cycle,
-                  week:           t.week,
-                  stage:          t.stage,
-                  products:       t.products,
-                  ec_min:         t.ecMin ?? null,
-                  ec_max:         t.ecMax ?? null,
-                  ph_min:         t.phMin ?? null,
-                  ph_max:         t.phMax ?? null,
-                }))
-              )
-            }
-            await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
-            setPlant({ ...plant, floraStartDate })
-            setTasks(newTasks)
-            if (user) awardXP(user.id, XP_VALUES.START_FLORA)
-          },
-        },
-      ]
-    )
+    setFloraDateInput(todayAsYMD())
+    setFloraDateModal(true)
+  }
+
+  async function confirmFlora() {
+    if (!plant) return
+    // Validate YYYY-MM-DD
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(floraDateInput)
+    if (!match) return
+    const candidate = new Date(floraDateInput)
+    if (isNaN(candidate.getTime())) return
+
+    setFloraDateModal(false)
+
+    const floraStartDate = candidate
+    const newTasks = startFloraPhase(plant, floraStartDate, REVEGETAR_TABLE)
+    await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
+    if (newTasks.length > 0) {
+      await supabase.from('scheduled_tasks').insert(
+        newTasks.map(t => ({
+          plant_id:       plant.id,
+          user_id:        user?.id,
+          type:           t.type,
+          scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+          cycle:          t.cycle,
+          week:           t.week,
+          stage:          t.stage,
+          products:       t.products,
+          ec_min:         t.ecMin ?? null,
+          ec_max:         t.ecMax ?? null,
+          ph_min:         t.phMin ?? null,
+          ph_max:         t.phMax ?? null,
+        }))
+      )
+    }
+    await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
+    setPlant({ ...plant, floraStartDate })
+    setTasks(newTasks)
+    if (user) awardXP(user.id, XP_VALUES.START_FLORA)
   }
 
   async function handleHarvest() {
@@ -165,6 +180,18 @@ export default function PlantDetailScreen() {
   const health   = calculatePlantHealth(tasks)
   const healthColor = health >= 75 ? '#52CC64' : health >= 45 ? '#F59E0B' : '#EF4444'
 
+  // Fecha estimada de cosecha
+  const isAutoflower = plant.geneticType === 'autoflower'
+  let estimatedHarvest: Date | null = null
+  if (isAutoflower) {
+    estimatedHarvest = addDays(plant.startDate, plant.autoFlowerTotalDays ?? 77)
+  } else if (plant.floraStartDate) {
+    estimatedHarvest = addDays(plant.floraStartDate, 56)
+  }
+  const showHarvestChip = estimatedHarvest !== null
+  const daysToHarvest = estimatedHarvest ? differenceInDays(estimatedHarvest, today) : null
+  const harvestChipColor = daysToHarvest != null && daysToHarvest <= 14 ? '#C084FC' : '#6DC278'
+
   // Tarjeta de nutricion: tarea de nutricion mas cercana (hoy o proxima)
   const nutritionTask = tasks
     .filter(t => t.type === 'nutrition')
@@ -203,6 +230,11 @@ export default function PlantDetailScreen() {
               {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
             </Text>
             <Text style={{ color: '#6DC278', fontSize: 12 }}>🪴 {plant.potCount} × {plant.potVolumeLiters}L</Text>
+            {showHarvestChip && estimatedHarvest && (
+              <Text style={{ color: harvestChipColor, fontSize: 12 }}>
+                🌾 Cosecha ~{format(estimatedHarvest, 'd MMM', { locale: es })}
+              </Text>
+            )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: healthColor }} />
               <Text style={{ color: healthColor, fontSize: 12, fontWeight: '700' }}>Salud {health}%</Text>
@@ -477,6 +509,7 @@ export default function PlantDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
       <HarvestSheet
         visible={harvestModal}
         plant={plant}
@@ -491,6 +524,110 @@ export default function PlantDetailScreen() {
         onClose={() => setSheetTask(null)}
         onComplete={completeTask}
       />
+
+      {/* Modal: Iniciar floración */}
+      <Modal
+        visible={floraDateModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFloraDateModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1, justifyContent: 'flex-end' }}
+        >
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          <View style={{
+            backgroundColor: '#131D14',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            borderWidth: 1,
+            borderColor: '#1C2E1E',
+            padding: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+          }}>
+            {/* Handle */}
+            <View style={{ width: 36, height: 4, backgroundColor: '#1C2E1E', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+
+            <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', marginBottom: 6 }}>
+              Iniciar floracion
+            </Text>
+            <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 24, lineHeight: 18 }}>
+              El calendario se recalcula desde la fecha seleccionada
+            </Text>
+
+            {/* Input */}
+            <Text style={{ color: '#6DC278', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>
+              Fecha de inicio
+            </Text>
+            <TextInput
+              value={floraDateInput}
+              onChangeText={setFloraDateInput}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#3A5040"
+              keyboardType="numeric"
+              style={{
+                backgroundColor: '#0C1410',
+                borderWidth: 1,
+                borderColor: '#1C2E1E',
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                color: '#E4F2E7',
+                fontSize: 16,
+                fontWeight: '600',
+                marginBottom: 8,
+              }}
+            />
+            <Text style={{ color: '#3A5040', fontSize: 11, marginBottom: 20 }}>
+              Formato: AAAA-MM-DD (ej: 2025-04-15)
+            </Text>
+
+            {/* Warning */}
+            <View style={{
+              backgroundColor: '#1A0D00',
+              borderWidth: 1,
+              borderColor: '#3D2200',
+              borderRadius: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              marginBottom: 24,
+            }}>
+              <Text style={{ color: '#F59E0B', fontSize: 12 }}>
+                ⚠️ Esta accion no se puede deshacer
+              </Text>
+            </View>
+
+            {/* Buttons */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setFloraDateModal(false)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#1C2E1E',
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={confirmFlora}
+                style={{
+                  flex: 2,
+                  backgroundColor: '#A855F7',
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>Confirmar floracion</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -528,6 +665,7 @@ function rowToPlant(row: Record<string, unknown>): Plant {
     availableProducts: (row.available_products as string[]) ?? [],
     status:           (row.status as Plant['status']) ?? 'active',
     notes:            (row.notes as string) ?? '',
+    autoFlowerTotalDays: row.auto_flower_total_days != null ? (row.auto_flower_total_days as number) : undefined,
   }
 }
 

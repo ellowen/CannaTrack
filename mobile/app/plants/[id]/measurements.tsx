@@ -11,8 +11,7 @@ interface Measurement {
   id: string
   ec: number | null
   ph: number | null
-  tempCelsius: number | null
-  waterTemp: number | null
+  tempCelsius: number | null   // maps to water_temp in DB
   notes: string
   measuredAt: Date
 }
@@ -108,7 +107,7 @@ export default function MeasurementsScreen() {
       .then(({ data }) => { if (data) setPlantName(data.name) })
     const { data } = await supabase
       .from('measurements')
-      .select('id, ec, ph, water_temp, temp_celsius, notes, measured_at')
+      .select('id, ec, ph, water_temp, notes, measured_at')
       .eq('plant_id', id)
       .order('measured_at', { ascending: false })
       .limit(50)
@@ -116,8 +115,7 @@ export default function MeasurementsScreen() {
       id:          r.id,
       ec:          r.ec,
       ph:          r.ph,
-      tempCelsius: r.temp_celsius ?? null,
-      waterTemp:   r.water_temp ?? null,
+      tempCelsius: r.water_temp ?? null,
       notes:       r.notes ?? '',
       measuredAt:  new Date(r.measured_at),
     })))
@@ -138,7 +136,6 @@ export default function MeasurementsScreen() {
         ec:           ec   ? parseFloat(ec)   : null,
         ph:           ph   ? parseFloat(ph)   : null,
         water_temp:   temp ? parseFloat(temp) : null,
-        temp_celsius: temp ? parseFloat(temp) : null,
         notes:        notes.trim() || null,
       })
       setEc(''); setPh(''); setTemp(''); setNotes('')
@@ -301,12 +298,6 @@ export default function MeasurementsScreen() {
                       )}
                       {m.ph != null && (
                         <StatusBadge label="pH" value={m.ph} status={phStatus} decimals={1} />
-                      )}
-                      {m.waterTemp != null && m.tempCelsius == null && (
-                        <View style={chipStyle}>
-                          <Text style={chipLabelStyle}>°C</Text>
-                          <Text style={chipValueStyle}>{m.waterTemp}</Text>
-                        </View>
                       )}
                     </View>
                     {m.notes ? <Text style={{ color: '#728C74', fontSize: 12, marginTop: 6 }}>{m.notes}</Text> : null}

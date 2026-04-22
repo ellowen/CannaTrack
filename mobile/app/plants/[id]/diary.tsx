@@ -26,7 +26,6 @@ interface WeekLog {
 // Shape returned by Supabase
 type WeekLogRow = {
   id: string
-  week_key: string
   week_label: string
   notes: string | null
   photo_url: string | null
@@ -48,7 +47,7 @@ function calcWeekKey(startDate: Date, logDate: Date): string {
 function rowToLog(row: WeekLogRow): WeekLog {
   return {
     id:        row.id,
-    weekKey:   row.week_key ?? '',
+    weekKey:   row.week_label ?? '',
     weekLabel: row.week_label ?? '',
     notes:     row.notes ?? '',
     photoUrl:  row.photo_url ?? null,
@@ -133,7 +132,6 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
           .insert({
             plant_id:   plantId,
             user_id:    userId,
-            week_key:   weekLabel.replace('Semana ', ''),
             week_label: weekLabel,
             log_date:   today.toISOString().split('T')[0],
             notes:      notes.trim() || null,
