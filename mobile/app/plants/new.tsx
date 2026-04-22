@@ -9,16 +9,19 @@ import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
+type PlantSex = 'female' | 'male' | 'unknown'
 
 export default function NewPlantScreen() {
   const { user } = useAuth()
-  const [name, setName]               = useState('')
-  const [genetics, setGenetics]       = useState('')
-  const [geneticType, setGeneticType] = useState<GeneticType>('feminized')
-  const [location, setLocation]       = useState<'indoor' | 'outdoor'>('indoor')
-  const [potCount, setPotCount]       = useState('1')
-  const [potVolume, setPotVolume]     = useState('11')
-  const [loading, setLoading]         = useState(false)
+  const [name, setName]                         = useState('')
+  const [genetics, setGenetics]                 = useState('')
+  const [geneticType, setGeneticType]           = useState<GeneticType>('feminized')
+  const [sex, setSex]                           = useState<PlantSex>('unknown')
+  const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState('77')
+  const [location, setLocation]                 = useState<'indoor' | 'outdoor'>('indoor')
+  const [potCount, setPotCount]                 = useState('1')
+  const [potVolume, setPotVolume]               = useState('11')
+  const [loading, setLoading]                   = useState(false)
 
   async function handleCreate() {
     if (!name.trim() || !genetics.trim() || !user) return
@@ -26,45 +29,45 @@ export default function NewPlantScreen() {
     try {
       const startDate = new Date()
 
-      // Insertar planta
       const { data: plantRow, error: plantErr } = await supabase
         .from('plants')
         .insert({
-          user_id:           user.id,
-          name:              name.trim(),
-          genetics:          genetics.trim(),
-          genetic_type:      geneticType,
-          start_date:        startDate.toISOString().split('T')[0],
-          nutrition_table_id: 'revegetar',
-          available_products: [],
+          user_id:              user.id,
+          name:                 name.trim(),
+          genetics:             genetics.trim(),
+          genetic_type:         geneticType,
+          sex:                  geneticType === 'regular' ? sex : null,
+          auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
+          start_date:           startDate.toISOString().split('T')[0],
+          nutrition_table_id:   'revegetar',
+          available_products:   [],
           location,
-          pot_count:         parseInt(potCount),
-          pot_volume_liters: parseFloat(potVolume),
+          pot_count:            parseInt(potCount),
+          pot_volume_liters:    parseFloat(potVolume),
         })
         .select()
         .single()
 
       if (plantErr || !plantRow) throw plantErr
 
-      // Generar calendario con el motor (el mismo de la web)
       const plant: Plant = {
-        id:               plantRow.id,
-        name:             plantRow.name,
-        genetics:         plantRow.genetics,
+        id:                  plantRow.id,
+        name:                plantRow.name,
+        genetics:            plantRow.genetics,
         geneticType,
-        sex:              'unknown',
+        sex:                 geneticType === 'regular' ? sex : 'unknown',
+        autoFlowerTotalDays: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : undefined,
         startDate,
         location,
-        potCount:         parseInt(potCount),
-        potVolumeLiters:  parseFloat(potVolume),
-        nutritionTableId: 'revegetar',
-        availableProducts: [],
-        status:           'active',
+        potCount:            parseInt(potCount),
+        potVolumeLiters:     parseFloat(potVolume),
+        nutritionTableId:    'revegetar',
+        availableProducts:   [],
+        status:              'active',
       }
 
       const tasks = generatePlantSchedule(plant, REVEGETAR_TABLE)
 
-      // Insertar tareas generadas en batch
       if (tasks.length > 0) {
         await supabase.from('scheduled_tasks').insert(
           tasks.map(t => ({
@@ -147,6 +150,66 @@ export default function NewPlantScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Dias totales — solo autoflower */}
+        {geneticType === 'autoflower' && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={labelStyle}>DIAS TOTALES DE CULTIVO</Text>
+            <TextInput
+              value={autoFlowerTotalDays}
+              onChangeText={setAutoFlowerTotalDays}
+              keyboardType="number-pad"
+              placeholderTextColor="#3A5040"
+              style={inputStyle}
+            />
+            <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 6 }}>Tipico: 70-80 dias desde germinacion</Text>
+          </View>
+        )}
+
+        {/* Sexo — solo regular */}
+        {geneticType === 'regular' && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={labelStyle}>SEXO</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setSex('female')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'female' ? '#1A3D1E' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'female' ? '#52CC64' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'female' ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Hembra
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSex('male')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'male' ? '#1A2B3D' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'male' ? '#4A90D9' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'male' ? '#4A90D9' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Macho
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSex('unknown')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'unknown' ? '#1E1E1E' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'unknown' ? '#555555' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'unknown' ? '#AAAAAA' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Desconocido
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Ubicacion */}
         <Text style={[labelStyle, { marginTop: 16 }]}>UBICACION</Text>

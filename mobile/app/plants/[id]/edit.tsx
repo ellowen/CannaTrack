@@ -5,17 +5,24 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
+type GeneticType = 'feminized' | 'autoflower' | 'regular'
+type PlantSex = 'female' | 'male' | 'unknown'
+
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
-  const [name, setName]                     = useState('')
-  const [genetics, setGenetics]             = useState('')
-  const [location, setLocation]             = useState<'indoor' | 'outdoor'>('indoor')
-  const [potCount, setPotCount]             = useState('1')
-  const [potVolumeLiters, setPotVolumeLiters] = useState('11')
-  const [notes, setNotes]                   = useState('')
-  const [loading, setLoading]               = useState(true)
-  const [saving, setSaving]                 = useState(false)
+  const [name, setName]                         = useState('')
+  const [genetics, setGenetics]                 = useState('')
+  const [geneticType, setGeneticType]           = useState<GeneticType>('feminized')
+  const [sex, setSex]                           = useState<PlantSex>('unknown')
+  const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState('77')
+  const [startDate, setStartDate]               = useState('')
+  const [location, setLocation]                 = useState<'indoor' | 'outdoor'>('indoor')
+  const [potCount, setPotCount]                 = useState('1')
+  const [potVolumeLiters, setPotVolumeLiters]   = useState('11')
+  const [notes, setNotes]                       = useState('')
+  const [loading, setLoading]                   = useState(true)
+  const [saving, setSaving]                     = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -29,6 +36,10 @@ export default function EditPlantScreen() {
       if (data) {
         setName(data.name)
         setGenetics(data.genetics)
+        setGeneticType((data.genetic_type as GeneticType) ?? 'feminized')
+        setSex((data.sex as PlantSex) ?? 'unknown')
+        setAutoFlowerTotalDays(String(data.auto_flower_total_days ?? 77))
+        setStartDate(data.start_date ?? '')
         setLocation(data.location ?? 'indoor')
         setPotCount(String(data.pot_count ?? 1))
         setPotVolumeLiters(String(data.pot_volume_liters ?? 11))
@@ -46,12 +57,16 @@ export default function EditPlantScreen() {
       await supabase
         .from('plants')
         .update({
-          name:              name.trim(),
-          genetics:          genetics.trim(),
+          name:                 name.trim(),
+          genetics:             genetics.trim(),
+          genetic_type:         geneticType,
+          sex:                  geneticType === 'regular' ? sex : null,
+          auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
+          start_date:           startDate || null,
           location,
-          pot_count:         parseInt(potCount) || 1,
-          pot_volume_liters: parseFloat(potVolumeLiters) || 11,
-          notes:             notes.trim() || null,
+          pot_count:            parseInt(potCount) || 1,
+          pot_volume_liters:    parseFloat(potVolumeLiters) || 11,
+          notes:                notes.trim() || null,
         })
         .eq('id', id)
         .eq('user_id', user.id)
@@ -86,6 +101,106 @@ export default function EditPlantScreen() {
 
         <Text style={[lbl, { marginTop: 16 }]}>GENETICA</Text>
         <TextInput value={genetics} onChangeText={setGenetics} placeholderTextColor="#3A5040" style={inp} />
+
+        {/* Tipo de genetica */}
+        <Text style={[lbl, { marginTop: 16 }]}>TIPO</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {(['feminized', 'autoflower', 'regular'] as GeneticType[]).map(t => (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setGeneticType(t)}
+              style={{
+                flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                backgroundColor: geneticType === t ? '#1A3D1E' : '#131D14',
+                borderWidth: 1, borderColor: geneticType === t ? '#52CC64' : '#1C2E1E',
+              }}
+            >
+              <Text style={{ color: geneticType === t ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                {t === 'feminized' ? 'Feminizada' : t === 'autoflower' ? 'Auto' : 'Regular'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Dias totales — solo autoflower */}
+        {geneticType === 'autoflower' && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={lbl}>DIAS TOTALES DE CULTIVO</Text>
+            <TextInput
+              value={autoFlowerTotalDays}
+              onChangeText={setAutoFlowerTotalDays}
+              keyboardType="number-pad"
+              placeholderTextColor="#3A5040"
+              style={inp}
+            />
+            <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 6 }}>Tipico: 70-80 dias desde germinacion</Text>
+          </View>
+        )}
+
+        {/* Sexo — solo regular */}
+        {geneticType === 'regular' && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={lbl}>SEXO</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setSex('female')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'female' ? '#1A3D1E' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'female' ? '#52CC64' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'female' ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Hembra
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSex('male')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'male' ? '#1A2B3D' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'male' ? '#4A90D9' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'male' ? '#4A90D9' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Macho
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSex('unknown')}
+                style={{
+                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+                  backgroundColor: sex === 'unknown' ? '#1E1E1E' : '#131D14',
+                  borderWidth: 1, borderColor: sex === 'unknown' ? '#555555' : '#1C2E1E',
+                }}
+              >
+                <Text style={{ color: sex === 'unknown' ? '#AAAAAA' : '#728C74', fontWeight: '700', fontSize: 13 }}>
+                  Desconocido
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Fecha de inicio */}
+        <Text style={[lbl, { marginTop: 16 }]}>FECHA DE INICIO</Text>
+        <TextInput
+          value={startDate}
+          onChangeText={setStartDate}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor="#3A5040"
+          style={inp}
+        />
+
+        {/* Aviso regeneracion — aparece cuando cambia geneticType o startDate */}
+        <View style={{
+          marginTop: 10, backgroundColor: '#2A2200', borderRadius: 12,
+          borderWidth: 1, borderColor: '#5C4400', padding: 12,
+        }}>
+          <Text style={{ color: '#FFD166', fontSize: 13 }}>
+            ⚠️ Cambiar esto regenera el calendario de nutricion
+          </Text>
+        </View>
 
         <Text style={[lbl, { marginTop: 16 }]}>UBICACION</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>

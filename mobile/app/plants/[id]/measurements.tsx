@@ -11,9 +11,55 @@ interface Measurement {
   id: string
   ec: number | null
   ph: number | null
+  tempCelsius: number | null
   waterTemp: number | null
   notes: string
   measuredAt: Date
+}
+
+type RangeStatus = 'ok' | 'warn' | 'bad'
+
+function getRangeStatus(value: number, min: number, max: number): RangeStatus {
+  if (value >= min && value <= max) return 'ok'
+  const slack = (max - min) * 0.3
+  return Math.abs(value < min ? min - value : value - max) <= slack ? 'warn' : 'bad'
+}
+
+const EC_MIN  = 0.4
+const EC_MAX  = 1.8
+const PH_MIN  = 5.5
+const PH_MAX  = 7.0
+
+const statusBg: Record<RangeStatus, string>   = { ok: '#0D2E12', warn: '#2D1F00', bad: '#2D0808' }
+const statusBorder: Record<RangeStatus, string> = { ok: '#1C5E24', warn: '#7A4A00', bad: '#7A1010' }
+const statusText: Record<RangeStatus, string>  = { ok: '#52CC64', warn: '#F59E0B', bad: '#EF4444' }
+const statusDot: Record<RangeStatus, string>   = { ok: '#52CC64', warn: '#F59E0B', bad: '#EF4444' }
+const statusIcon: Record<RangeStatus, string>  = { ok: '✓', warn: '~', bad: '✕' }
+
+function StatusBadge({ label, value, status, decimals }: {
+  label: string
+  value: number
+  status: RangeStatus | null
+  decimals: number
+}) {
+  const bg     = status ? statusBg[status]     : '#1A3D1E'
+  const border = status ? statusBorder[status] : '#1C2E1E'
+  const text   = status ? statusText[status]   : '#52CC64'
+  const dot    = status ? statusDot[status]    : '#728C74'
+  const icon   = status ? statusIcon[status]   : null
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: bg, borderWidth: 1, borderColor: border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+      {icon && (
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
+      )}
+      <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: text, fontSize: 14, fontWeight: '800' }}>{value.toFixed(decimals)}</Text>
+      {icon && (
+        <Text style={{ color: dot, fontSize: 10, fontWeight: '700' }}>{icon}</Text>
+      )}
+    </View>
+  )
 }
 
 function Sparkline({ values, color, label }: { values: number[]; color: string; label: string }) {
@@ -43,13 +89,14 @@ export default function MeasurementsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const [plantName, setPlantName] = useState('')
-  const [history, setHistory]   = useState<Measurement[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [saving, setSaving]     = useState(false)
-  const [ec, setEc]             = useState('')
-  const [ph, setPh]             = useState('')
-  const [temp, setTemp]         = useState('')
-  const [notes, setNotes]       = useState('')
+  const [history, setHistory]     = useState<Measurement[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [saving, setSaving]       = useState(false)
+  const [showAll, setShowAll]     = useState(false)
+  const [ec, setEc]               = useState('')
+  const [ph, setPh]               = useState('')
+  const [temp, setTemp]           = useState('')
+  const [notes, setNotes]         = useState('')
 
   useEffect(() => {
     load()
@@ -61,17 +108,18 @@ export default function MeasurementsScreen() {
       .then(({ data }) => { if (data) setPlantName(data.name) })
     const { data } = await supabase
       .from('measurements')
-      .select('*')
+      .select('id, ec, ph, water_temp, temp_celsius, notes, measured_at')
       .eq('plant_id', id)
       .order('measured_at', { ascending: false })
-      .limit(20)
+      .limit(50)
     setHistory((data ?? []).map(r => ({
-      id:         r.id,
-      ec:         r.ec,
-      ph:         r.ph,
-      waterTemp:  r.water_temp,
-      notes:      r.notes ?? '',
-      measuredAt: new Date(r.measured_at),
+      id:          r.id,
+      ec:          r.ec,
+      ph:          r.ph,
+      tempCelsius: r.temp_celsius ?? null,
+      waterTemp:   r.water_temp ?? null,
+      notes:       r.notes ?? '',
+      measuredAt:  new Date(r.measured_at),
     })))
     setLoading(false)
   }
@@ -79,18 +127,19 @@ export default function MeasurementsScreen() {
   async function handleSave() {
     if (!id || !user) return
     if (!ec && !ph && !temp) {
-      Alert.alert('Atención', 'Ingresá al menos un valor')
+      Alert.alert('Atencion', 'Ingresa al menos un valor')
       return
     }
     setSaving(true)
     try {
       await supabase.from('measurements').insert({
-        plant_id:   id,
-        user_id:    user.id,
-        ec:         ec   ? parseFloat(ec)   : null,
-        ph:         ph   ? parseFloat(ph)   : null,
-        water_temp: temp ? parseFloat(temp) : null,
-        notes:      notes.trim() || null,
+        plant_id:     id,
+        user_id:      user.id,
+        ec:           ec   ? parseFloat(ec)   : null,
+        ph:           ph   ? parseFloat(ph)   : null,
+        water_temp:   temp ? parseFloat(temp) : null,
+        temp_celsius: temp ? parseFloat(temp) : null,
+        notes:        notes.trim() || null,
       })
       setEc(''); setPh(''); setTemp(''); setNotes('')
       await load()
@@ -100,6 +149,34 @@ export default function MeasurementsScreen() {
       setSaving(false)
     }
   }
+
+  function handleDelete(measurementId: string) {
+    Alert.alert(
+      'Eliminar medicion',
+      'Esta accion no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase
+              .from('measurements')
+              .delete()
+              .eq('id', measurementId)
+            if (error) {
+              Alert.alert('Error', error.message)
+            } else {
+              setHistory(prev => prev.filter(m => m.id !== measurementId))
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  const visibleHistory = showAll ? history : history.slice(0, 5)
+  const hiddenCount = history.length - 5
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
@@ -118,22 +195,22 @@ export default function MeasurementsScreen() {
 
         {/* Formulario */}
         <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
-          <Text style={label}>EC (mS/cm)</Text>
-          <TextInput value={ec} onChangeText={setEc} keyboardType="decimal-pad" placeholder="Ej: 1.2" placeholderTextColor="#3A5040" style={input} />
+          <Text style={labelStyle}>EC (mS/cm)</Text>
+          <TextInput value={ec} onChangeText={setEc} keyboardType="decimal-pad" placeholder="Ej: 1.2" placeholderTextColor="#3A5040" style={inputStyle} />
 
-          <Text style={label}>pH</Text>
-          <TextInput value={ph} onChangeText={setPh} keyboardType="decimal-pad" placeholder="Ej: 6.2" placeholderTextColor="#3A5040" style={input} />
+          <Text style={labelStyle}>pH</Text>
+          <TextInput value={ph} onChangeText={setPh} keyboardType="decimal-pad" placeholder="Ej: 6.2" placeholderTextColor="#3A5040" style={inputStyle} />
 
-          <Text style={label}>Temp. agua (°C)</Text>
-          <TextInput value={temp} onChangeText={setTemp} keyboardType="decimal-pad" placeholder="Ej: 22" placeholderTextColor="#3A5040" style={input} />
+          <Text style={labelStyle}>Temp. agua (°C)</Text>
+          <TextInput value={temp} onChangeText={setTemp} keyboardType="decimal-pad" placeholder="Ej: 22" placeholderTextColor="#3A5040" style={inputStyle} />
 
-          <Text style={label}>Notas</Text>
+          <Text style={labelStyle}>Notas</Text>
           <TextInput
             value={notes}
             onChangeText={setNotes}
             placeholder="Observaciones opcionales..."
             placeholderTextColor="#3A5040"
-            style={[input, { minHeight: 72, textAlignVertical: 'top' }]}
+            style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
             multiline
           />
 
@@ -151,16 +228,26 @@ export default function MeasurementsScreen() {
 
         {/* Sparklines */}
         {(() => {
-          const ecValues = history.map(m => m.ec).filter((v): v is number => v != null).reverse()
-          const phValues = history.map(m => m.ph).filter((v): v is number => v != null).reverse()
-          const showEc = ecValues.length >= 2
-          const showPh = phValues.length >= 2
-          if (!showEc && !showPh) return null
+          const ecValues   = history.map(m => m.ec).filter((v): v is number => v != null).reverse()
+          const phValues   = history.map(m => m.ph).filter((v): v is number => v != null).reverse()
+          const tempValues = history.map(m => m.tempCelsius).filter((v): v is number => v != null).reverse()
+          const showEc   = ecValues.length >= 2
+          const showPh   = phValues.length >= 2
+          const showTemp = tempValues.length >= 2
+          if (!showEc && !showPh && !showTemp) return null
+
+          const cols = [showEc, showPh, showTemp].filter(Boolean).length
+          const dividers: boolean[] = []
+          if (showEc && (showPh || showTemp)) dividers.push(true)
+          if (showPh && showTemp) dividers.push(true)
+
           return (
             <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', marginBottom: 20 }}>
               {showEc && <Sparkline values={ecValues} color="#52CC64" label="EC" />}
-              {showEc && showPh && <View style={{ width: 1, backgroundColor: '#1C2E1E', marginVertical: 14 }} />}
+              {showEc && (showPh || showTemp) && <View style={{ width: 1, backgroundColor: '#1C2E1E', marginVertical: 14 }} />}
               {showPh && <Sparkline values={phValues} color="#3B82F6" label="pH" />}
+              {showPh && showTemp && <View style={{ width: 1, backgroundColor: '#1C2E1E', marginVertical: 14 }} />}
+              {showTemp && <Sparkline values={tempValues} color="#60A5FA" label="TEMP" />}
             </View>
           )
         })()}
@@ -177,49 +264,75 @@ export default function MeasurementsScreen() {
             Sin mediciones registradas
           </Text>
         ) : (
-          <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-            {history.map((m, i) => (
-              <View key={m.id} style={{
-                padding: 14,
-                borderTopWidth: i > 0 ? 1 : 0,
-                borderTopColor: '#1C2E1E',
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#728C74', fontSize: 11 }}>
-                    {format(m.measuredAt, "d MMM · HH:mm", { locale: es })}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-                  {m.ec != null && (
-                    <View style={chip}>
-                      <Text style={chipLabel}>EC</Text>
-                      <Text style={chipValue}>{m.ec.toFixed(2)}</Text>
+          <>
+            <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+              {visibleHistory.map((m, i) => {
+                const ecStatus  = m.ec != null  ? getRangeStatus(m.ec,  EC_MIN, EC_MAX) : null
+                const phStatus  = m.ph != null  ? getRangeStatus(m.ph,  PH_MIN, PH_MAX) : null
+
+                return (
+                  <View key={m.id} style={{
+                    padding: 14,
+                    borderTopWidth: i > 0 ? 1 : 0,
+                    borderTopColor: '#1C2E1E',
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <View>
+                        <Text style={{ color: '#728C74', fontSize: 11 }}>
+                          {format(m.measuredAt, "d MMM · HH:mm", { locale: es })}
+                        </Text>
+                        {m.tempCelsius != null && (
+                          <Text style={{ color: '#60A5FA', fontSize: 11, marginTop: 2 }}>
+                            {'\uD83C\uDF21\uFE0F'} {m.tempCelsius}°C
+                          </Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleDelete(m.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{ backgroundColor: '#1C2E1E', borderRadius: 8, width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ fontSize: 14 }}>🗑️</Text>
+                      </TouchableOpacity>
                     </View>
-                  )}
-                  {m.ph != null && (
-                    <View style={chip}>
-                      <Text style={chipLabel}>pH</Text>
-                      <Text style={chipValue}>{m.ph.toFixed(1)}</Text>
+                    <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+                      {m.ec != null && (
+                        <StatusBadge label="EC" value={m.ec} status={ecStatus} decimals={2} />
+                      )}
+                      {m.ph != null && (
+                        <StatusBadge label="pH" value={m.ph} status={phStatus} decimals={1} />
+                      )}
+                      {m.waterTemp != null && m.tempCelsius == null && (
+                        <View style={chipStyle}>
+                          <Text style={chipLabelStyle}>°C</Text>
+                          <Text style={chipValueStyle}>{m.waterTemp}</Text>
+                        </View>
+                      )}
                     </View>
-                  )}
-                  {m.waterTemp != null && (
-                    <View style={chip}>
-                      <Text style={chipLabel}>°C</Text>
-                      <Text style={chipValue}>{m.waterTemp}</Text>
-                    </View>
-                  )}
-                </View>
-                {m.notes ? <Text style={{ color: '#728C74', fontSize: 12, marginTop: 6 }}>{m.notes}</Text> : null}
-              </View>
-            ))}
-          </View>
+                    {m.notes ? <Text style={{ color: '#728C74', fontSize: 12, marginTop: 6 }}>{m.notes}</Text> : null}
+                  </View>
+                )
+              })}
+            </View>
+
+            {history.length > 5 && (
+              <TouchableOpacity
+                onPress={() => setShowAll(!showAll)}
+                style={{ paddingVertical: 14, alignItems: 'center', marginTop: 4 }}
+              >
+                <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>
+                  {showAll ? 'Ver menos' : `Ver mas (${hiddenCount})`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-const label = {
+const labelStyle = {
   color: '#728C74' as const,
   fontSize: 11,
   fontWeight: '700' as const,
@@ -229,7 +342,7 @@ const label = {
   marginTop: 12,
 }
 
-const input = {
+const inputStyle = {
   backgroundColor: '#0C1410',
   borderWidth: 1,
   borderColor: '#1C2E1E',
@@ -240,7 +353,7 @@ const input = {
   fontSize: 15,
 }
 
-const chip = {
+const chipStyle = {
   flexDirection: 'row' as const,
   alignItems: 'center' as const,
   gap: 4,
@@ -250,5 +363,5 @@ const chip = {
   paddingVertical: 5,
 }
 
-const chipLabel = { color: '#728C74', fontSize: 10, fontWeight: '700' as const }
-const chipValue = { color: '#52CC64', fontSize: 14, fontWeight: '800' as const }
+const chipLabelStyle = { color: '#728C74', fontSize: 10, fontWeight: '700' as const }
+const chipValueStyle = { color: '#52CC64', fontSize: 14, fontWeight: '800' as const }

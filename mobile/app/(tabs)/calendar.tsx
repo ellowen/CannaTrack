@@ -66,16 +66,18 @@ export default function CalendarScreen() {
     load()
   }, [displayMonth, user])
 
+  const tasksByDate: Record<string, Set<string>> = {}
+  for (const t of tasks) {
+    if (t.completed) continue
+    const key = format(t.scheduledDate, 'yyyy-MM-dd')
+    if (!tasksByDate[key]) tasksByDate[key] = new Set()
+    tasksByDate[key].add(t.type)
+  }
+
   const selectedTasks = tasks.filter(t => {
     const d = new Date(t.scheduledDate)
     d.setHours(0, 0, 0, 0)
     return d.getTime() === selected.getTime()
-  })
-
-  const getTasksForDay = (day: Date) => tasks.filter(t => {
-    const d = new Date(t.scheduledDate)
-    d.setHours(0, 0, 0, 0)
-    return d.getTime() === day.getTime()
   })
 
   async function completeTask(taskId: string) {
@@ -122,7 +124,6 @@ export default function CalendarScreen() {
               <View key={`empty-${i}`} style={{ width: '14.28%', height: 50 }} />
             ))}
             {days.map(day => {
-              const dayTasks = getTasksForDay(day)
               const isSelected = selected.getTime() === day.getTime()
               const isToday = today.getTime() === day.getTime()
               return (
@@ -143,13 +144,18 @@ export default function CalendarScreen() {
                   <Text style={{ color: isSelected ? '#0C1410' : '#E4F2E7', fontSize: 12, fontWeight: '600' }}>
                     {day.getDate()}
                   </Text>
-                  {dayTasks.length > 0 && (
-                    <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
-                      {dayTasks.slice(0, 3).map(t => (
-                        <View key={t.id} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: TYPE_COLOR[t.type] }} />
-                      ))}
-                    </View>
-                  )}
+                  {(() => {
+                    const dayKey = format(day, 'yyyy-MM-dd')
+                    const types = tasksByDate[dayKey] ?? new Set<string>()
+                    if (types.size === 0) return null
+                    return (
+                      <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                        {[...types].slice(0, 3).map(type => (
+                          <View key={type} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: TYPE_COLOR[type] }} />
+                        ))}
+                      </View>
+                    )
+                  })()}
                 </TouchableOpacity>
               )
             })}
