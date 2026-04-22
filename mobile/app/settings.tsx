@@ -27,7 +27,7 @@ export default function SettingsScreen() {
         .eq('id', user.id)
         .single()
       if (data) {
-        setNotifications(data.notifications_enabled ?? true)
+        setNotifications(data.notifications_enabled ?? false)
         const name = data.username ?? ''
         setLoadedUsername(name)
         setUsername(name)
