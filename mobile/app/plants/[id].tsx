@@ -10,6 +10,7 @@ import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import { calculatePlantHealth } from '@shared/lib/gamification'
+import { CompleteTaskSheet } from '@/components/CompleteTaskSheet'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -24,9 +25,10 @@ const TYPE_LABEL: Record<string, string> = {
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
-  const [plant, setPlant]   = useState<Plant | null>(null)
-  const [tasks, setTasks]   = useState<ScheduledTask[]>([])
-  const [loading, setLoading] = useState(true)
+  const [plant, setPlant]       = useState<Plant | null>(null)
+  const [tasks, setTasks]       = useState<ScheduledTask[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [sheetTask, setSheetTask] = useState<{ id: string; type: string; week: number; cycle: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -102,16 +104,26 @@ export default function PlantDetailScreen() {
     )
   }
 
-  async function completeTask(taskId: string) {
+  async function completeTask(taskId: string, notes?: string, ec?: number, ph?: number) {
     await supabase
       .from('scheduled_tasks')
-      .update({ completed: true, completed_at: new Date().toISOString() })
+      .update({ completed: true, completed_at: new Date().toISOString(), completion_notes: notes ?? null })
       .eq('id', taskId)
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
     if (user) {
-      awardXP(user.id, XP_VALUES.COMPLETE_TASK)
-      recordDailyActivity(user.id)
+      if (ec != null || ph != null) {
+        await supabase.from('measurements').insert({
+          user_id: user.id, plant_id: id,
+          ec: ec ?? null, ph: ph ?? null,
+          notes: notes?.trim() || null,
+        })
+        void awardXP(user.id, XP_VALUES.COMPLETE_WITH_MEASUREMENT)
+      } else {
+        void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+      }
+      void recordDailyActivity(user.id)
     }
+    setSheetTask(null)
   }
 
   if (loading) return (
@@ -222,7 +234,7 @@ export default function PlantDetailScreen() {
                     </View>
                     {!task.completed && (
                       <TouchableOpacity
-                        onPress={() => completeTask(task.id)}
+                        onPress={() => setSheetTask({ id: task.id, type: task.type, week: task.week, cycle: task.cycle })}
                         style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
                       >
                         <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
@@ -342,7 +354,7 @@ export default function PlantDetailScreen() {
             </View>
           )}
 
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 10 }}>
             <Text style={sectionLabel}>📱 ACCIONES RAPIDAS</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
@@ -359,10 +371,34 @@ export default function PlantDetailScreen() {
                 <Text style={{ fontSize: 20, marginBottom: 4 }}>📊</Text>
                 <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Medida</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/timeline`)}
+                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 20, marginBottom: 4 }}>📅</Text>
+                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Timeline</Text>
+              </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              onPress={() => router.push(`/plants/${id}/diagnosis`)}
+              style={{ backgroundColor: '#1A0A1A', borderRadius: 12, borderWidth: 1, borderColor: '#3D1A4B', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+            >
+              <Text style={{ fontSize: 20 }}>🔍</Text>
+              <View>
+                <Text style={{ color: '#C084FC', fontWeight: '800', fontSize: 13 }}>Diagnostico IA</Text>
+                <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>Analiza tu planta con Claude Vision</Text>
+              </View>
+              <Text style={{ color: '#C084FC', fontSize: 18, marginLeft: 'auto' }}>→</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+      <CompleteTaskSheet
+        visible={!!sheetTask}
+        task={sheetTask}
+        onClose={() => setSheetTask(null)}
+        onComplete={completeTask}
+      />
     </SafeAreaView>
   )
 }

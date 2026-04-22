@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput, FlatList, Modal, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
@@ -9,6 +9,9 @@ import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { awardXP, XP_VALUES } from '@/lib/xp'
+
+const { width: screenWidth } = Dimensions.get('window')
+const PHOTO_SIZE = (screenWidth - 48) / 3
 
 interface DiaryLog {
   id: string
@@ -44,6 +47,8 @@ export default function DiaryScreen() {
   const [newNotes, setNewNotes]     = useState('')
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [uploading, setUploading]   = useState(false)
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null)
+  const [lightboxWeekLabel, setLightboxWeekLabel] = useState<string>('')
 
   const loadLogs = useCallback(async () => {
     if (!id || !user) return
@@ -121,6 +126,8 @@ export default function DiaryScreen() {
     }
   }
 
+  const photosLogs = logs.filter(l => l.photoUrl != null)
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
@@ -143,6 +150,37 @@ export default function DiaryScreen() {
             {plantName ? <Text style={{ color: '#728C74', fontSize: 12 }}>{plantName}</Text> : null}
           </View>
         </View>
+
+        {/* Galeria de fotos */}
+        {photosLogs.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
+              FOTOS · {photosLogs.length} {photosLogs.length === 1 ? 'foto' : 'fotos'}
+            </Text>
+            <FlatList
+              data={photosLogs}
+              keyExtractor={item => item.id}
+              numColumns={3}
+              scrollEnabled={false}
+              columnWrapperStyle={{ gap: 6 }}
+              ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setLightboxUri(item.photoUrl)
+                    setLightboxWeekLabel(item.weekLabel)
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={{ uri: item.photoUrl! }}
+                    style={{ width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 8 }}
+                  />
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
 
         {/* Nueva entrada */}
         <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
@@ -168,7 +206,7 @@ export default function DiaryScreen() {
           />
           {startDate && (
             <Text style={{ color: '#3A5040', fontSize: 11, marginBottom: 10, textAlign: 'center' }}>
-              Se guardará en {calcWeekLabel(startDate, new Date())}
+              Se guardara en {calcWeekLabel(startDate, new Date())}
             </Text>
           )}
           <TouchableOpacity
@@ -190,7 +228,7 @@ export default function DiaryScreen() {
 
         {logs.length === 0 ? (
           <Text style={{ color: '#3A5040', textAlign: 'center', paddingVertical: 20, fontSize: 14 }}>
-            Sin entradas todavía
+            Sin entradas todavia
           </Text>
         ) : (
           logs.map(log => (
@@ -202,7 +240,15 @@ export default function DiaryScreen() {
                 </Text>
               </View>
               {log.photoUrl ? (
-                <Image source={{ uri: log.photoUrl }} style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 8 }} />
+                <TouchableOpacity
+                  onPress={() => {
+                    setLightboxUri(log.photoUrl)
+                    setLightboxWeekLabel(log.weekLabel)
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Image source={{ uri: log.photoUrl }} style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 8 }} />
+                </TouchableOpacity>
               ) : null}
               {log.notes ? (
                 <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 18 }}>{log.notes}</Text>
@@ -211,6 +257,33 @@ export default function DiaryScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Lightbox */}
+      <Modal
+        visible={!!lightboxUri}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLightboxUri(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => setLightboxUri(null)}
+            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}
+          >
+            <Text style={{ color: 'white', fontSize: 28 }}>✕</Text>
+          </TouchableOpacity>
+          {lightboxUri && (
+            <Image
+              source={{ uri: lightboxUri }}
+              style={{ width: screenWidth, height: screenWidth }}
+              resizeMode="contain"
+            />
+          )}
+          {lightboxWeekLabel ? (
+            <Text style={{ color: '#728C74', fontSize: 13, marginTop: 16 }}>{lightboxWeekLabel}</Text>
+          ) : null}
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }

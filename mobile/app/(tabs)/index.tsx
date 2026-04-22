@@ -8,6 +8,8 @@ import { usePlants } from '@/hooks/usePlants'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { awardXP, XP_VALUES } from '@/lib/xp'
+import { CompleteTaskSheet } from '@/components/CompleteTaskSheet'
 
 const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
@@ -25,6 +27,7 @@ export default function HomeScreen() {
   const [username, setUsername]         = useState<string>('')
   const [streak, setStreak]             = useState(0)
   const [harvested, setHarvested]       = useState<{ id: string; name: string; genetics: string }[]>([])
+  const [sheetTask, setSheetTask]       = useState<{ id: string; type: string; week: number; cycle: string } | null>(null)
   const pending = tasks.filter(t => !t.completed)
   const today = new Date()
 
@@ -44,6 +47,20 @@ export default function HomeScreen() {
     if (h < 12) return 'Buenos dias'
     if (h < 20) return 'Buenas tardes'
     return 'Buenas noches'
+  }
+
+  async function handleComplete(taskId: string, notes?: string, ec?: number, ph?: number) {
+    await completeTask(taskId, notes)
+    if ((ec != null || ph != null) && user) {
+      const plantId = tasks.find(t => t.id === taskId)?.plantId
+      await supabase.from('measurements').insert({
+        user_id: user.id, plant_id: plantId ?? null,
+        ec: ec ?? null, ph: ph ?? null,
+        notes: notes?.trim() || null,
+      })
+      void awardXP(user.id, XP_VALUES.COMPLETE_WITH_MEASUREMENT)
+    }
+    setSheetTask(null)
   }
 
   function onRefresh() {
@@ -102,7 +119,7 @@ export default function HomeScreen() {
                     </View>
                     {!task.completed && (
                       <TouchableOpacity
-                        onPress={() => completeTask(task.id)}
+                        onPress={() => setSheetTask({ id: task.id, type: task.type, week: task.week, cycle: task.cycle })}
                         style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
                       >
                         <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
@@ -213,6 +230,12 @@ export default function HomeScreen() {
         )}
 
       </ScrollView>
+      <CompleteTaskSheet
+        visible={!!sheetTask}
+        task={sheetTask}
+        onClose={() => setSheetTask(null)}
+        onComplete={handleComplete}
+      />
     </SafeAreaView>
   )
 }
