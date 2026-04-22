@@ -1,47 +1,129 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated } from 'react-native'
 
-interface SheetTask {
-  id: string
-  type: string
-  week: number
-  cycle: string
+const TYPE_LABEL: Record<string, string> = {
+  nutrition:   'Nutricion',
+  irrigation:  'Riego',
+  foliar:      'Foliar',
+  observation: 'Observacion',
+  harvest:     'Cosecha',
+}
+const TYPE_ICON: Record<string, string> = {
+  nutrition:   '🍃',
+  irrigation:  '💧',
+  foliar:      '🌫️',
+  observation: '🔍',
+  harvest:     '✂️',
+}
+
+// Lineas de REVEGETAR → colores
+const LINE_COLOR: Record<string, { bg: string; text: string }> = {
+  BIO:  { bg: '#14532D', text: '#4ADE80' },
+  ECO:  { bg: '#451A03', text: '#FB923C' },
+  LIFE: { bg: '#1E3A5F', text: '#60A5FA' },
+  FUEL: { bg: '#3B0764', text: '#C084FC' },
+}
+const DEFAULT_LINE_COLOR = { bg: '#1C2E1E', text: '#728C74' }
+
+const MEASUREMENT_TYPES = new Set(['nutrition', 'irrigation'])
+const RECIPE_TYPES      = new Set(['nutrition', 'foliar'])
+
+function fmt(n: number) {
+  return parseFloat(n.toFixed(1)).toString()
+}
+
+export interface SheetTask {
+  id:               string
+  type:             string
+  week:             number
+  cycle:            string
+  products?:        Array<{ name: string; minDose: number; maxDose: number; unit: string; line?: string }>
+  ecMin?:           number
+  ecMax?:           number
+  phMin?:           number
+  phMax?:           number
+  potCount?:        number
+  potVolumeLiters?: number
 }
 
 interface Props {
-  visible: boolean
-  task: SheetTask | null
-  onClose: () => void
+  visible:    boolean
+  task:       SheetTask | null
+  onClose:    () => void
   onComplete: (taskId: string, notes?: string, ec?: number, ph?: number) => void
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  nutrition: 'Nutricion', irrigation: 'Riego',
-  foliar: 'Foliar', observation: 'Observacion', harvest: 'Cosecha',
-}
-
 export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props) {
-  const [ec, setEc]       = useState('')
-  const [ph, setPh]       = useState('')
-  const [notes, setNotes] = useState('')
+  const [ec, setEc]               = useState('')
+  const [ph, setPh]               = useState('')
+  const [notes, setNotes]         = useState('')
+  const [recipeOpen, setRecipeOpen] = useState(false)
+  const [xpReward, setXpReward]   = useState<{ xp: number } | null>(null)
 
   useEffect(() => {
-    if (!visible) { setEc(''); setPh(''); setNotes('') }
-  }, [visible])
+    if (visible) {
+      setEc(''); setPh(''); setNotes(''); setRecipeOpen(false); setXpReward(null)
+    }
+  }, [visible, task?.id])
 
   if (!task) return null
 
-  const showMeasurements = task.type === 'nutrition' || task.type === 'irrigation'
-  const hasMeasurement   = ec.trim() !== '' || ph.trim() !== ''
-  const weekLabel        = `${task.cycle === 'vege' ? 'V' : 'F'}${task.week}`
+  const t           = task  // narrowed non-null ref for closures
+  const showMeasure = MEASUREMENT_TYPES.has(t.type)
+  const showRecipe  = RECIPE_TYPES.has(t.type) && (t.products?.length ?? 0) > 0
+  const liters      = (t.potCount ?? 1) * (t.potVolumeLiters ?? 10)
+  const ecNum       = parseFloat(ec)
+  const phNum       = parseFloat(ph)
+  const hasMeasure  = !isNaN(ecNum) && ecNum > 0 && !isNaN(phNum) && phNum > 0
+  const weekLabel   = t.cycle === 'vege' ? `V${t.week}` : `F${t.week}`
+  const icon        = TYPE_ICON[t.type] ?? '📌'
+  const label       = TYPE_LABEL[t.type] ?? t.type
 
-  function handleComplete() {
+  // Status en tiempo real de EC y pH
+  function ecStatus(): 'ok' | 'warn' | 'bad' | null {
+    if (!ec || isNaN(ecNum) || !t.ecMin) return null
+    if (ecNum >= t.ecMin && ecNum <= (t.ecMax ?? 99))  return 'ok'
+    if (Math.abs(ecNum - (ecNum < t.ecMin ? t.ecMin : t.ecMax ?? t.ecMin)) < 0.3) return 'warn'
+    return 'bad'
+  }
+  function phStatus(): 'ok' | 'warn' | 'bad' | null {
+    if (!ph || isNaN(phNum) || !t.phMin) return null
+    if (phNum >= t.phMin && phNum <= (t.phMax ?? 99))  return 'ok'
+    if (Math.abs(phNum - (phNum < t.phMin ? t.phMin : t.phMax ?? t.phMin)) < 0.3) return 'warn'
+    return 'bad'
+  }
+
+  const STATUS_COLOR = { ok: '#52CC64', warn: '#F59E0B', bad: '#EF4444' }
+  const STATUS_ICON  = { ok: '✓', warn: '~', bad: '✕' }
+  const STATUS_LABEL = { ok: 'Ideal', warn: 'Cerca', bad: 'Fuera' }
+
+  const ec_st = ecStatus()
+  const ph_st = phStatus()
+
+  function confirmLabel() {
+    if (hasMeasure)        return 'Guardar EC/pH ✓'
+    if (notes.trim())      return 'Guardar nota ✓'
+    return 'Confirmar ✓'
+  }
+
+  function handleSkip() {
+    onComplete(task!.id)
+    onClose()
+  }
+
+  function handleConfirm() {
+    const xp = hasMeasure ? 25 : 15
+    setXpReward({ xp })
     onComplete(
       task!.id,
       notes.trim() || undefined,
-      ec ? parseFloat(ec) : undefined,
-      ph ? parseFloat(ph) : undefined,
+      ec ? ecNum : undefined,
+      ph ? phNum : undefined,
     )
+    setTimeout(() => {
+      setXpReward(null)
+      onClose()
+    }, 1400)
   }
 
   return (
@@ -59,82 +141,195 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
           backgroundColor: '#131D14',
           borderTopLeftRadius: 24, borderTopRightRadius: 24,
           borderTopWidth: 1, borderTopColor: '#1C2E1E',
-          padding: 20, paddingBottom: 36,
+          padding: 20, paddingBottom: 40,
+          overflow: 'hidden',
         }}>
+
+          {/* XP Reward overlay */}
+          {xpReward && (
+            <View style={{
+              position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: '#131D14',
+              borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              alignItems: 'center', justifyContent: 'center',
+              paddingVertical: 48,
+              zIndex: 10,
+            }}>
+              <Text style={{ fontSize: 52, marginBottom: 12 }}>✅</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginBottom: 8 }}>
+                Tarea completada
+              </Text>
+              <Text style={{ color: '#52CC64', fontSize: 36, fontWeight: '900' }}>
+                +{xpReward.xp} XP
+              </Text>
+            </View>
+          )}
+
           {/* Handle */}
           <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#1C2E1E', alignSelf: 'center', marginBottom: 16 }} />
 
-          {/* Task info */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900' }}>
-              {TYPE_LABEL[task.type] ?? task.type}
-            </Text>
-            <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>{weekLabel}</Text>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 18 }}>
+            <Text style={{ fontSize: 22, marginTop: 1 }}>{icon}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <Text style={{ color: '#E4F2E7', fontSize: 17, fontWeight: '900' }}>
+                  {label} completada ✓
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{
+                  backgroundColor: t.cycle === 'flora' ? '#2D1A4A' : '#0D2010',
+                  borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2,
+                }}>
+                  <Text style={{
+                    color: t.cycle === 'flora' ? '#C084FC' : '#52CC64',
+                    fontSize: 10, fontWeight: '800',
+                  }}>{weekLabel}</Text>
+                </View>
+                {t.ecMin != null && (
+                  <Text style={{ color: '#3A5040', fontSize: 10 }}>
+                    Objetivo: EC {t.ecMin}–{t.ecMax} · pH {t.phMin}–{t.phMax}
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
 
-          {/* EC + pH — solo para nutricion/riego */}
-          {showMeasurements && (
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={lbl}>EC (mS/cm)</Text>
-                <TextInput
-                  value={ec}
-                  onChangeText={setEc}
-                  keyboardType="decimal-pad"
-                  placeholder="1.2"
-                  placeholderTextColor="#3A5040"
-                  style={inp}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={lbl}>pH</Text>
-                <TextInput
-                  value={ph}
-                  onChangeText={setPh}
-                  keyboardType="decimal-pad"
-                  placeholder="6.2"
-                  placeholderTextColor="#3A5040"
-                  style={inp}
-                />
+          {/* Receta colapsable — nutricion y foliar */}
+          {showRecipe && (
+            <View style={{ marginBottom: 14 }}>
+              <TouchableOpacity
+                onPress={() => setRecipeOpen(v => !v)}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                  🧪 Receta · {t.products!.length} producto{t.products!.length > 1 ? 's' : ''}
+                </Text>
+                <Text style={{ color: '#3A5040', fontSize: 12 }}>{recipeOpen ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+
+              {recipeOpen && (
+                <View style={{
+                  backgroundColor: '#0C1410', borderRadius: 14,
+                  borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden',
+                }}>
+                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4 }}>
+                    Para {fmt(liters)}L ({t.potCount ?? 1} maceta{(t.potCount ?? 1) > 1 ? 's' : ''} × {t.potVolumeLiters ?? 10}L)
+                  </Text>
+                  {t.products!.map((p, i) => {
+                    const minVol = fmt(p.minDose * liters)
+                    const maxVol = fmt(p.maxDose * liters)
+                    const lineCol = LINE_COLOR[p.line ?? ''] ?? DEFAULT_LINE_COLOR
+                    return (
+                      <View key={i} style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 8,
+                        paddingHorizontal: 12, paddingVertical: 10,
+                        borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
+                      }}>
+                        {p.line && (
+                          <View style={{ backgroundColor: lineCol.bg, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                            <Text style={{ color: lineCol.text, fontSize: 9, fontWeight: '800' }}>{p.line}</Text>
+                          </View>
+                        )}
+                        <Text style={{ color: '#B8D4BC', fontSize: 12, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                        <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800' }}>
+                          {minVol === maxVol ? minVol : `${minVol}–${maxVol}`} {p.unit}
+                        </Text>
+                      </View>
+                    )
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* EC / pH con feedback en tiempo real */}
+          {showMeasure && (
+            <View style={{ marginBottom: 14 }}>
+              <Text style={lbl}>💧 Medicion (opcional)</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={lbl}>EC</Text>
+                    {ec_st && (
+                      <Text style={{ color: STATUS_COLOR[ec_st], fontSize: 10, fontWeight: '800' }}>
+                        {STATUS_ICON[ec_st]} {STATUS_LABEL[ec_st]}
+                      </Text>
+                    )}
+                  </View>
+                  <TextInput
+                    value={ec}
+                    onChangeText={setEc}
+                    keyboardType="decimal-pad"
+                    placeholder="1.2"
+                    placeholderTextColor="#3A5040"
+                    style={[
+                      inp,
+                      ec_st === 'ok'   && { borderColor: '#52CC64' },
+                      ec_st === 'warn' && { borderColor: '#F59E0B' },
+                      ec_st === 'bad'  && { borderColor: '#EF4444' },
+                    ]}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={lbl}>pH</Text>
+                    {ph_st && (
+                      <Text style={{ color: STATUS_COLOR[ph_st], fontSize: 10, fontWeight: '800' }}>
+                        {STATUS_ICON[ph_st]} {STATUS_LABEL[ph_st]}
+                      </Text>
+                    )}
+                  </View>
+                  <TextInput
+                    value={ph}
+                    onChangeText={setPh}
+                    keyboardType="decimal-pad"
+                    placeholder="6.2"
+                    placeholderTextColor="#3A5040"
+                    style={[
+                      inp,
+                      ph_st === 'ok'   && { borderColor: '#52CC64' },
+                      ph_st === 'warn' && { borderColor: '#F59E0B' },
+                      ph_st === 'bad'  && { borderColor: '#EF4444' },
+                    ]}
+                  />
+                </View>
               </View>
             </View>
           )}
 
           {/* Notas */}
-          <Text style={lbl}>NOTAS</Text>
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder="Observaciones opcionales..."
+            placeholder={showMeasure ? 'Observaciones adicionales... (opcional)' : 'Observaciones, estado de la planta... (opcional)'}
             placeholderTextColor="#3A5040"
             multiline
-            style={[inp, { minHeight: 64, textAlignVertical: 'top', marginBottom: 20 }]}
+            style={[inp, { minHeight: 60, textAlignVertical: 'top', marginBottom: 18 }]}
           />
-
-          {/* Bonus XP hint */}
-          {showMeasurements && hasMeasurement && (
-            <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700', textAlign: 'center', marginBottom: 12 }}>
-              +25 XP por registrar medicion 🧪
-            </Text>
-          )}
 
           {/* Botones */}
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
-              onPress={onClose}
-              style={{ flex: 1, backgroundColor: '#0C1410', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', paddingVertical: 14, alignItems: 'center' }}
+              onPress={handleSkip}
+              style={{
+                flex: 1, backgroundColor: '#0C1410', borderRadius: 14,
+                borderWidth: 1, borderColor: '#1C2E1E',
+                paddingVertical: 14, alignItems: 'center',
+              }}
             >
-              <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>Cancelar</Text>
+              <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 13 }}>Saltar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleComplete}
-              style={{ flex: 2, backgroundColor: '#52CC64', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
+              onPress={handleConfirm}
+              style={{
+                flex: 2, backgroundColor: '#52CC64', borderRadius: 14,
+                paddingVertical: 14, alignItems: 'center',
+              }}
             >
-              <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 14 }}>
-                {hasMeasurement ? 'Completar con medicion →' : 'Completar →'}
-              </Text>
+              <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 14 }}>{confirmLabel()}</Text>
             </TouchableOpacity>
           </View>
 
@@ -153,7 +348,7 @@ const lbl = {
   marginBottom: 6,
 }
 
-const inp = {
+const inp: object = {
   backgroundColor: '#0C1410',
   borderWidth: 1,
   borderColor: '#1C2E1E',

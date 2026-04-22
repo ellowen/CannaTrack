@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
@@ -10,7 +10,8 @@ import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import { calculatePlantHealth } from '@shared/lib/gamification'
-import { CompleteTaskSheet } from '@/components/CompleteTaskSheet'
+import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
+import { HarvestSheet } from '@/components/HarvestSheet'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -28,9 +29,9 @@ export default function PlantDetailScreen() {
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
-  const [sheetTask, setSheetTask]     = useState<{ id: string; type: string; week: number; cycle: string } | null>(null)
+  const [sheetTask, setSheetTask]     = useState<SheetTask | null>(null)
   const [harvestModal, setHarvestModal] = useState(false)
-  const [harvestGrams, setHarvestGrams] = useState('')
+  const [liters, setLiters]           = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -38,7 +39,11 @@ export default function PlantDetailScreen() {
         supabase.from('plants').select('*').eq('id', id).single(),
         supabase.from('scheduled_tasks').select('*').eq('plant_id', id).order('scheduled_date'),
       ])
-      if (p) setPlant(rowToPlant(p))
+      if (p) {
+        const plant = rowToPlant(p)
+        setPlant(plant)
+        setLiters((plant.potCount ?? 1) * (plant.potVolumeLiters ?? 11))
+      }
       setTasks((t ?? []).map(rowToTask))
       setLoading(false)
     }
@@ -88,20 +93,23 @@ export default function PlantDetailScreen() {
 
   async function handleHarvest() {
     if (!plant) return
-    setHarvestGrams('')
     setHarvestModal(true)
   }
 
-  async function confirmHarvest() {
+  async function confirmHarvest(grams?: number) {
     if (!plant) return
-    const grams = parseFloat(harvestGrams)
-    const harvestNote = !isNaN(grams) && grams > 0 ? `Cosecha: ${grams}g` : null
+    const harvestNote = grams != null ? `Cosecha: ${grams}g` : null
     await supabase.from('plants').update({
       status: 'harvested',
       notes: harvestNote ?? plant.notes ?? null,
     }).eq('id', plant.id)
     if (user) void awardXP(user.id, XP_VALUES.HARVEST)
-    setHarvestModal(false)
+    router.replace('/(tabs)')
+  }
+
+  async function confirmDiscard() {
+    if (!plant) return
+    await supabase.from('plants').update({ status: 'discarded' }).eq('id', plant.id)
     router.replace('/(tabs)')
   }
 
@@ -243,7 +251,12 @@ export default function PlantDetailScreen() {
                     </View>
                     {!task.completed && (
                       <TouchableOpacity
-                        onPress={() => setSheetTask({ id: task.id, type: task.type, week: task.week, cycle: task.cycle })}
+                        onPress={() => setSheetTask({
+                          id: task.id, type: task.type, week: task.week, cycle: task.cycle,
+                          products: task.products, ecMin: task.ecMin, ecMax: task.ecMax,
+                          phMin: task.phMin, phMax: task.phMax,
+                          potCount: plant.potCount, potVolumeLiters: plant.potVolumeLiters,
+                        })}
                         style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
                       >
                         <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
@@ -321,44 +334,117 @@ export default function PlantDetailScreen() {
                 🧪 NUTRICION · {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
               </Text>
               <View style={card}>
-                {/* EC y pH */}
-                {(nutritionTask.ecMin || nutritionTask.phMin) && (
-                  <View style={{
-                    flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8,
-                    borderBottomWidth: nutritionTask.products?.length > 0 ? 1 : 0, borderBottomColor: '#1C2E1E',
-                  }}>
+                {/* Header con EC/pH */}
+                <View style={{
+                  backgroundColor: nutritionTask.cycle === 'flora' ? '#1A0D2E' : '#0D2010',
+                  paddingHorizontal: 14, paddingVertical: 12,
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 22 }}>{nutritionTask.cycle === 'flora' ? '🌸' : '🌿'}</Text>
+                    <View>
+                      <Text style={{
+                        color: nutritionTask.cycle === 'flora' ? '#C084FC' : '#52CC64',
+                        fontSize: 11, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase',
+                      }}>
+                        Semana {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
+                      </Text>
+                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>{nutritionTask.stage}</Text>
+                    </View>
+                  </View>
+                  {nutritionTask.ecMin != null && (
+                    <View style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, alignItems: 'flex-end' }}>
+                      <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800' }}>EC {nutritionTask.ecMin}–{nutritionTask.ecMax}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>pH {nutritionTask.phMin}–{nutritionTask.phMax}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Calculadora de litros */}
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                  paddingHorizontal: 14, paddingVertical: 10,
+                  borderBottomWidth: 1, borderBottomColor: '#1C2E1E',
+                  backgroundColor: '#0C1410',
+                }}>
+                  <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>Preparar para</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => Math.max(step, parseFloat((v - step).toFixed(1)))) }}
+                      style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#131D14', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: '#E4F2E7', fontSize: 16, lineHeight: 18 }}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900', minWidth: 36, textAlign: 'center' }}>{liters}L</Text>
+                    <TouchableOpacity
+                      onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => parseFloat((v + step).toFixed(1))) }}
+                      style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#131D14', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: '#E4F2E7', fontSize: 16, lineHeight: 18 }}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Productos con dosis calculadas */}
+                {nutritionTask.products?.length > 0 ? (
+                  nutritionTask.products.map((p: { name: string; minDose: number; maxDose: number; unit: string; line?: string }, i: number) => {
+                    const totalMin = parseFloat((p.minDose * liters).toFixed(1))
+                    const totalMax = parseFloat((p.maxDose * liters).toFixed(1))
+                    const isFixed  = p.minDose === p.maxDose
+                    const LINE_COLOR: Record<string, { bg: string; text: string }> = {
+                      BIO:  { bg: '#14532D', text: '#4ADE80' },
+                      ECO:  { bg: '#451A03', text: '#FB923C' },
+                      LIFE: { bg: '#1E3A5F', text: '#60A5FA' },
+                      FUEL: { bg: '#3B0764', text: '#C084FC' },
+                    }
+                    const lc = LINE_COLOR[p.line ?? ''] ?? { bg: '#1C2E1E', text: '#728C74' }
+                    return (
+                      <View key={i} style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 8,
+                        paddingHorizontal: 14, paddingVertical: 12,
+                        borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
+                      }}>
+                        {p.line && (
+                          <View style={{ backgroundColor: lc.bg, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                            <Text style={{ color: lc.text, fontSize: 9, fontWeight: '800' }}>{p.line}</Text>
+                          </View>
+                        )}
+                        <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '900' }}>
+                            {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
+                          </Text>
+                          <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
+                            {isFixed ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
+                          </Text>
+                        </View>
+                      </View>
+                    )
+                  })
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 14 }}>
+                    <Text style={{ fontSize: 18 }}>💧</Text>
+                    <Text style={{ color: '#728C74', fontSize: 13 }}>Solo agua - semana de limpieza</Text>
+                  </View>
+                )}
+
+                {/* Footer */}
+                {nutritionTask.products?.length > 0 && (
+                  <View style={{ paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E', flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: '#3A5040', fontSize: 10 }}>
+                      {liters !== (plant.potCount ?? 1) * (plant.potVolumeLiters ?? 11)
+                        ? `Calculado para ${liters}L`
+                        : plant.potCount > 1
+                          ? `${plant.potCount} macetas · ${liters}L total`
+                          : `${liters}L por maceta`}
+                    </Text>
                     {nutritionTask.ecMin != null && (
-                      <View style={{ flex: 1, backgroundColor: '#0D2010', borderRadius: 10, padding: 10, alignItems: 'center' }}>
-                        <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>EC</Text>
-                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', marginTop: 2 }}>
-                          {nutritionTask.ecMin}–{nutritionTask.ecMax}
-                        </Text>
-                      </View>
-                    )}
-                    {nutritionTask.phMin != null && (
-                      <View style={{ flex: 1, backgroundColor: '#0D2010', borderRadius: 10, padding: 10, alignItems: 'center' }}>
-                        <Text style={{ color: '#3B82F6', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>PH</Text>
-                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', marginTop: 2 }}>
-                          {nutritionTask.phMin}–{nutritionTask.phMax}
-                        </Text>
-                      </View>
+                      <Text style={{ color: '#3A5040', fontSize: 10 }}>
+                        EC {nutritionTask.ecMin}–{nutritionTask.ecMax} · pH {nutritionTask.phMin}–{nutritionTask.phMax}
+                      </Text>
                     )}
                   </View>
                 )}
-                {/* Productos */}
-                {nutritionTask.products?.map((p: { name: string; minDose: number; maxDose: number; unit: string }, i: number) => (
-                  <View key={i} style={{
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                    paddingHorizontal: 14, paddingVertical: 11,
-                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
-                  }}>
-                    <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
-                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>
-                      {p.minDose !== p.maxDose ? `${p.minDose}–${p.maxDose}` : `${p.minDose}`}
-                      {' '}{p.unit}/L
-                    </Text>
-                  </View>
-                ))}
               </View>
             </View>
           )}
@@ -391,48 +477,13 @@ export default function PlantDetailScreen() {
           </View>
         </View>
       </ScrollView>
-      {/* Modal cosecha */}
-      <Modal visible={harvestModal} transparent animationType="slide" onRequestClose={() => setHarvestModal(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}
-        >
-          <View style={{ backgroundColor: '#131D14', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', marginBottom: 4 }}>🌾 Cosechar planta</Text>
-            <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 20 }}>
-              "{plant?.name}" pasara a cosechada y desaparecera del listado activo.
-            </Text>
-            <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
-              Gramos cosechados (opcional)
-            </Text>
-            <TextInput
-              value={harvestGrams}
-              onChangeText={setHarvestGrams}
-              placeholder="ej: 45.5"
-              placeholderTextColor="#3A5040"
-              keyboardType="decimal-pad"
-              style={{
-                backgroundColor: '#0C1410', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E',
-                color: '#E4F2E7', fontSize: 16, padding: 14, marginBottom: 20,
-              }}
-            />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => setHarvestModal(false)}
-                style={{ flex: 1, backgroundColor: '#1A3D1E', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
-              >
-                <Text style={{ color: '#52CC64', fontWeight: '700' }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={confirmHarvest}
-                style={{ flex: 1, backgroundColor: '#4B1515', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
-              >
-                <Text style={{ color: '#EF4444', fontWeight: '900' }}>Cosechar +100 XP</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      <HarvestSheet
+        visible={harvestModal}
+        plant={plant}
+        onClose={() => setHarvestModal(false)}
+        onHarvest={confirmHarvest}
+        onDiscard={confirmDiscard}
+      />
 
       <CompleteTaskSheet
         visible={!!sheetTask}
