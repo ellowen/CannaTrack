@@ -26,6 +26,20 @@
     "plugins": [
       "expo-router",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "CannaTrack usa Face ID para que puedas ingresar mas rapido."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0C1410",
+          "sounds": []
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "CannaTrack necesita acceso a tus fotos para el diario de cultivo."

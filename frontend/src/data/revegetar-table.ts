@@ -1,4 +1,4 @@
-import type { NutritionTable } from '@/types/plant'
+import type { NutritionTable } from '../types/plant'
 
 export const REVEGETAR_TABLE: NutritionTable = {
   id: 'revegetar-v1',

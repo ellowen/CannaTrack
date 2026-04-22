@@ -6,7 +6,7 @@ import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { awardXP, XP_VALUES } from '@/lib/xp'
+import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
@@ -87,7 +87,10 @@ export default function PlantDetailScreen() {
       .update({ completed: true, completed_at: new Date().toISOString() })
       .eq('id', taskId)
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
-    if (user) awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+    if (user) {
+      awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+      recordDailyActivity(user.id)
+    }
   }
 
   if (loading) return (
