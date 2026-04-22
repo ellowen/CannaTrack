@@ -12,6 +12,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
+import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
+import type { NutritionTable } from '@shared/types/plant'
 import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
@@ -24,6 +26,11 @@ const TYPE_COLOR: Record<string, string> = {
 const TYPE_LABEL: Record<string, string> = {
   nutrition: 'Nutricion', irrigation: 'Riego',
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
+}
+
+function getTable(nutritionTableId: string): NutritionTable {
+  if (nutritionTableId === 'topcrop-v1') return TOPCROP_TABLE
+  return REVEGETAR_TABLE
 }
 
 function todayAsYMD(): string {
@@ -80,7 +87,7 @@ export default function PlantDetailScreen() {
     setFloraDateModal(false)
 
     const floraStartDate = candidate
-    const newTasks = startFloraPhase(plant, floraStartDate, REVEGETAR_TABLE)
+    const newTasks = startFloraPhase(plant, floraStartDate, getTable(plant.nutritionTableId))
     await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
     if (newTasks.length > 0) {
       await supabase.from('scheduled_tasks').insert(
@@ -424,10 +431,13 @@ export default function PlantDetailScreen() {
                     const totalMax = parseFloat((p.maxDose * liters).toFixed(1))
                     const isFixed  = p.minDose === p.maxDose
                     const LINE_COLOR: Record<string, { bg: string; text: string }> = {
-                      BIO:  { bg: '#14532D', text: '#4ADE80' },
-                      ECO:  { bg: '#451A03', text: '#FB923C' },
-                      LIFE: { bg: '#1E3A5F', text: '#60A5FA' },
-                      FUEL: { bg: '#3B0764', text: '#C084FC' },
+                      BIO:   { bg: '#14532D', text: '#4ADE80' },
+                      ECO:   { bg: '#451A03', text: '#FB923C' },
+                      LIFE:  { bg: '#1E3A5F', text: '#60A5FA' },
+                      FUEL:  { bg: '#3B0764', text: '#C084FC' },
+                      PRO:   { bg: '#431407', text: '#FB923C' },
+                      MID:   { bg: '#4a0d2e', text: '#F472B6' },
+                      BASIC: { bg: '#4c0519', text: '#FDA4AF' },
                     }
                     const lc = LINE_COLOR[p.line ?? ''] ?? { bg: '#1C2E1E', text: '#728C74' }
                     return (

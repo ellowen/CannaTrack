@@ -16,12 +16,15 @@ const TYPE_ICON: Record<string, string> = {
   harvest:     '✂️',
 }
 
-// Lineas de REVEGETAR → colores
+// Lineas de REVEGETAR y TOPCROP → colores
 const LINE_COLOR: Record<string, { bg: string; text: string }> = {
-  BIO:  { bg: '#14532D', text: '#4ADE80' },
-  ECO:  { bg: '#451A03', text: '#FB923C' },
-  LIFE: { bg: '#1E3A5F', text: '#60A5FA' },
-  FUEL: { bg: '#3B0764', text: '#C084FC' },
+  BIO:   { bg: '#14532D', text: '#4ADE80' },
+  ECO:   { bg: '#451A03', text: '#FB923C' },
+  LIFE:  { bg: '#1E3A5F', text: '#60A5FA' },
+  FUEL:  { bg: '#3B0764', text: '#C084FC' },
+  PRO:   { bg: '#431407', text: '#FB923C' },
+  MID:   { bg: '#4a0d2e', text: '#F472B6' },
+  BASIC: { bg: '#4c0519', text: '#FDA4AF' },
 }
 const DEFAULT_LINE_COLOR = { bg: '#1C2E1E', text: '#728C74' }
 
