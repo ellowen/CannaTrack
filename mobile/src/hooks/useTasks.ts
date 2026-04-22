@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
+import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startOfDay, endOfDay } from 'date-fns'
 import type { ScheduledTask } from '@shared/types/plant'
 
@@ -32,6 +33,10 @@ export function useTodayTasks() {
       .update({ completed: true, completed_at: new Date().toISOString(), completion_notes: notes })
       .eq('id', taskId)
     setTasks(t => t.map(x => x.id === taskId ? { ...x, completed: true } : x))
+    if (user) {
+      awardXP(user.id, XP_VALUES.COMPLETE_TASK)
+      recordDailyActivity(user.id)
+    }
   }
 
   return { tasks, loading, completeTask, refetch: fetch }

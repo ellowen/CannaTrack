@@ -6,27 +6,20 @@ WebBrowser.maybeCompleteAuthSession()
 
 export async function signInWithGoogle(): Promise<{ error?: string }> {
   try {
-    // Linking.createURL devuelve exp://... en Expo Go o cannatrack:// en builds
     const redirectTo = Linking.createURL('/')
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-      },
+      options: { redirectTo, skipBrowserRedirect: true },
     })
 
     if (error || !data.url) return { error: error?.message ?? 'No se pudo iniciar Google OAuth' }
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo)
-
     if (result.type !== 'success') return {}
 
-    // Extraer tokens de la URL de callback (Supabase los pone en el fragment)
-    const url      = result.url
-    const fragment = url.split('#')[1] ?? ''
-    const query    = url.split('?')[1]?.split('#')[0] ?? ''
+    const fragment = result.url.split('#')[1] ?? ''
+    const query    = result.url.split('?')[1]?.split('#')[0] ?? ''
     const params   = new URLSearchParams(fragment || query)
 
     const accessToken  = params.get('access_token')

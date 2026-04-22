@@ -1,125 +1,209 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+
+interface Measurement {
+  id: string
+  ec: number | null
+  ph: number | null
+  waterTemp: number | null
+  notes: string
+  measuredAt: Date
+}
 
 export default function MeasurementsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
-  const [ecMin, setEcMin] = useState('')
-  const [ecMax, setEcMax] = useState('')
-  const [phMin, setPhMin] = useState('')
-  const [phMax, setPhMax] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [history, setHistory]   = useState<Measurement[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [ec, setEc]             = useState('')
+  const [ph, setPh]             = useState('')
+  const [temp, setTemp]         = useState('')
+  const [notes, setNotes]       = useState('')
+
+  useEffect(() => {
+    load()
+  }, [id, user])
+
+  async function load() {
+    if (!id || !user) return
+    const { data } = await supabase
+      .from('measurements')
+      .select('*')
+      .eq('plant_id', id)
+      .order('measured_at', { ascending: false })
+      .limit(20)
+    setHistory((data ?? []).map(r => ({
+      id:         r.id,
+      ec:         r.ec,
+      ph:         r.ph,
+      waterTemp:  r.water_temp,
+      notes:      r.notes ?? '',
+      measuredAt: new Date(r.measured_at),
+    })))
+    setLoading(false)
+  }
 
   async function handleSave() {
     if (!id || !user) return
+    if (!ec && !ph && !temp) {
+      Alert.alert('Atención', 'Ingresá al menos un valor')
+      return
+    }
     setSaving(true)
     try {
-      const task = {
-        ec_min: ecMin ? parseFloat(ecMin) : undefined,
-        ec_max: ecMax ? parseFloat(ecMax) : undefined,
-        ph_min: phMin ? parseFloat(phMin) : undefined,
-        ph_max: phMax ? parseFloat(phMax) : undefined,
-      }
-      await supabase.from('scheduled_tasks').insert({
-        plant_id: id,
-        user_id: user.id,
-        type: 'observation',
-        scheduled_date: new Date().toISOString().split('T')[0],
-        cycle: 'vege',
-        week: 1,
-        stage: 'medición',
-        ...task,
+      await supabase.from('measurements').insert({
+        plant_id:   id,
+        user_id:    user.id,
+        ec:         ec   ? parseFloat(ec)   : null,
+        ph:         ph   ? parseFloat(ph)   : null,
+        water_temp: temp ? parseFloat(temp) : null,
+        notes:      notes.trim() || null,
       })
-      Alert.alert('Éxito', 'Medida registrada')
-      router.back()
+      setEc(''); setPh(''); setTemp(''); setNotes('')
+      await load()
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error')
+      Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
     } finally {
       setSaving(false)
     }
   }
 
-  const inputStyle = { backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, color: '#E4F2E7', fontSize: 14, marginBottom: 12 }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+
+        {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
           </TouchableOpacity>
-          <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', marginLeft: 12 }}>Registrar medida</Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', marginLeft: 12 }}>Mediciones</Text>
         </View>
 
-        <View style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center' }}>
-          <Text style={{ color: '#52CC64', fontSize: 14, fontWeight: '700' }}>📊 EC - Conductividad eléctrica</Text>
+        {/* Formulario */}
+        <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 20 }}>
+          <Text style={label}>EC (mS/cm)</Text>
+          <TextInput value={ec} onChangeText={setEc} keyboardType="decimal-pad" placeholder="Ej: 1.2" placeholderTextColor="#3A5040" style={input} />
+
+          <Text style={label}>pH</Text>
+          <TextInput value={ph} onChangeText={setPh} keyboardType="decimal-pad" placeholder="Ej: 6.2" placeholderTextColor="#3A5040" style={input} />
+
+          <Text style={label}>Temp. agua (°C)</Text>
+          <TextInput value={temp} onChangeText={setTemp} keyboardType="decimal-pad" placeholder="Ej: 22" placeholderTextColor="#3A5040" style={input} />
+
+          <Text style={label}>Notas</Text>
+          <TextInput
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Observaciones opcionales..."
+            placeholderTextColor="#3A5040"
+            style={[input, { minHeight: 72, textAlignVertical: 'top' }]}
+            multiline
+          />
+
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={saving}
+            style={{ backgroundColor: '#52CC64', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 4, opacity: saving ? 0.4 : 1 }}
+          >
+            {saving
+              ? <ActivityIndicator color="white" size="small" />
+              : <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 15 }}>Registrar →</Text>
+            }
+          </TouchableOpacity>
         </View>
 
-        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>EC MÍNIMO</Text>
-        <TextInput
-          value={ecMin}
-          onChangeText={setEcMin}
-          keyboardType="decimal-pad"
-          placeholder="Ej: 0.6"
-          placeholderTextColor="#3A5040"
-          style={inputStyle}
-        />
+        {/* Historial */}
+        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+          HISTORIAL
+        </Text>
 
-        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>EC MÁXIMO</Text>
-        <TextInput
-          value={ecMax}
-          onChangeText={setEcMax}
-          keyboardType="decimal-pad"
-          placeholder="Ej: 1.2"
-          placeholderTextColor="#3A5040"
-          style={inputStyle}
-        />
-
-        <View style={{ backgroundColor: '#1A3D1E', borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', padding: 12, marginBottom: 20, alignItems: 'center', marginTop: 16 }}>
-          <Text style={{ color: '#52CC64', fontSize: 14, fontWeight: '700' }}>🧪 PH - Potencial de hidrógeno</Text>
-        </View>
-
-        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>PH MÍNIMO</Text>
-        <TextInput
-          value={phMin}
-          onChangeText={setPhMin}
-          keyboardType="decimal-pad"
-          placeholder="Ej: 5.5"
-          placeholderTextColor="#3A5040"
-          style={inputStyle}
-        />
-
-        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>PH MÁXIMO</Text>
-        <TextInput
-          value={phMax}
-          onChangeText={setPhMax}
-          keyboardType="decimal-pad"
-          placeholder="Ej: 6.5"
-          placeholderTextColor="#3A5040"
-          style={inputStyle}
-        />
-
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={saving}
-          style={{
-            backgroundColor: '#52CC64',
-            borderRadius: 12,
-            paddingVertical: 16,
-            alignItems: 'center',
-            opacity: saving ? 0.4 : 1,
-          }}
-        >
-          {saving
-            ? <ActivityIndicator color="white" size="small" />
-            : <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>Registrar medida</Text>
-          }
-        </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator color="#52CC64" style={{ marginTop: 20 }} />
+        ) : history.length === 0 ? (
+          <Text style={{ color: '#3A5040', textAlign: 'center', paddingVertical: 20, fontSize: 14 }}>
+            Sin mediciones registradas
+          </Text>
+        ) : (
+          <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+            {history.map((m, i) => (
+              <View key={m.id} style={{
+                padding: 14,
+                borderTopWidth: i > 0 ? 1 : 0,
+                borderTopColor: '#1C2E1E',
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#728C74', fontSize: 11 }}>
+                    {format(m.measuredAt, "d MMM · HH:mm", { locale: es })}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+                  {m.ec != null && (
+                    <View style={chip}>
+                      <Text style={chipLabel}>EC</Text>
+                      <Text style={chipValue}>{m.ec.toFixed(2)}</Text>
+                    </View>
+                  )}
+                  {m.ph != null && (
+                    <View style={chip}>
+                      <Text style={chipLabel}>pH</Text>
+                      <Text style={chipValue}>{m.ph.toFixed(1)}</Text>
+                    </View>
+                  )}
+                  {m.waterTemp != null && (
+                    <View style={chip}>
+                      <Text style={chipLabel}>°C</Text>
+                      <Text style={chipValue}>{m.waterTemp}</Text>
+                    </View>
+                  )}
+                </View>
+                {m.notes ? <Text style={{ color: '#728C74', fontSize: 12, marginTop: 6 }}>{m.notes}</Text> : null}
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   )
 }
+
+const label = {
+  color: '#728C74' as const,
+  fontSize: 11,
+  fontWeight: '700' as const,
+  letterSpacing: 1.5,
+  textTransform: 'uppercase' as const,
+  marginBottom: 6,
+  marginTop: 12,
+}
+
+const input = {
+  backgroundColor: '#0C1410',
+  borderWidth: 1,
+  borderColor: '#1C2E1E',
+  borderRadius: 12,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+  color: '#E4F2E7',
+  fontSize: 15,
+}
+
+const chip = {
+  flexDirection: 'row' as const,
+  alignItems: 'center' as const,
+  gap: 4,
+  backgroundColor: '#1A3D1E',
+  borderRadius: 8,
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+}
+
+const chipLabel = { color: '#728C74', fontSize: 10, fontWeight: '700' as const }
+const chipValue = { color: '#52CC64', fontSize: 14, fontWeight: '800' as const }

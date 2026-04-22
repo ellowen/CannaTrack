@@ -1,15 +1,23 @@
+import '../global.css'
 import { useEffect, useState } from 'react'
-import { Stack, useRouter, useSegments } from 'expo-router'
+import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
-import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
+import { registerForPushNotifications } from '@/lib/notifications'
 import type { Session } from '@supabase/supabase-js'
+
+async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('onboarding_completed')
+    .eq('id', userId)
+    .single()
+  return data?.onboarding_completed ? '/(tabs)' : '/onboarding'
+}
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
-  const segments = useSegments()
-  const router   = useRouter()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -17,29 +25,30 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       setSession(s)
 
-      if (event === 'SIGNED_IN' && s) {
-        await saveSessionForBiometric(s)
-        const token = await registerForPushNotifications()
-        if (token) {
-          await supabase.from('profiles').update({ push_token: token }).eq('id', s.user.id)
-          await scheduleDailyReminder(9, 0)
-        }
-      }
-
       if (event === 'SIGNED_OUT') {
         await clearSavedSession()
+        router.replace('/auth')
+        return
       }
+
+      if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') return
+
+      if (!s) {
+        router.replace('/auth')
+        return
+      }
+
+      if (event === 'SIGNED_IN') {
+        await saveSessionForBiometric(s)
+        registerForPushNotifications()
+      }
+
+      const dest = await resolvePostLoginRoute(s.user.id)
+      router.replace(dest)
     })
 
     return () => subscription.unsubscribe()
   }, [])
-
-  useEffect(() => {
-    if (session === undefined) return
-    const inAuth = segments[0] === 'auth'
-    if (!session && !inAuth) router.replace('/auth')
-    else if (session && inAuth) router.replace('/(tabs)')
-  }, [session, segments])
 
   if (session === undefined) return null
 
@@ -47,6 +56,7 @@ export default function RootLayout() {
     <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="plants/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plants/[id]" />

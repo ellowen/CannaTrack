@@ -14,7 +14,7 @@ const TYPE_COLOR: Record<string, string> = {
 
 export default function CalendarScreen() {
   const { user } = useAuth()
-  const [selected, setSelected] = useState(new Date())
+  const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(true)
 

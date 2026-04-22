@@ -57,7 +57,6 @@ export default function NewPlantScreen() {
         nutritionTableId: 'revegetar',
         availableProducts: [],
         status:           'active',
-        notes:            '',
       }
 
       const tasks = generatePlantSchedule(plant, REVEGETAR_TABLE)

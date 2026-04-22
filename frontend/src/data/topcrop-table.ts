@@ -1,4 +1,4 @@
-import type { NutritionTable } from '@/types/plant'
+import type { NutritionTable } from '../types/plant'
 
 /**
  * Tabla nutricional Top Crop.

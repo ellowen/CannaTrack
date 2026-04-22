@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -6,6 +7,7 @@ import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
@@ -20,8 +22,15 @@ export default function HomeScreen() {
   const { user } = useAuth()
   const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
   const { tasks, completeTask, refetch: refetchTasks } = useTodayTasks()
+  const [username, setUsername] = useState<string>('')
   const pending = tasks.filter(t => !t.completed)
   const today = new Date()
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('profiles').select('username').eq('id', user.id).single()
+      .then(({ data }) => setUsername(data?.username ?? user.email?.split('@')[0] ?? 'Cultivador'))
+  }, [user])
 
   const greeting = () => {
     const h = today.getHours()
@@ -47,7 +56,7 @@ export default function HomeScreen() {
             {format(today, "EEEE d 'de' MMMM", { locale: es })}
           </Text>
           <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900' }}>
-            {greeting()}, Cultivador
+            {greeting()}, {username || 'Cultivador'}
           </Text>
         </View>
 
@@ -117,12 +126,17 @@ export default function HomeScreen() {
 
         {plants.length === 0 ? (
           <TouchableOpacity
-            onPress={() => router.push('/plants/new')}
-            style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 2, borderColor: '#1C2E1E', borderStyle: 'dashed', padding: 40, alignItems: 'center' }}
+            onPress={() => router.push('/onboarding')}
+            style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 2, borderColor: '#52CC64', borderStyle: 'dashed', padding: 40, alignItems: 'center' }}
           >
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>🌱</Text>
-            <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 15 }}>Agregar primera planta</Text>
-            <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 4 }}>El calendario se genera automaticamente</Text>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
+            <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Crear primera planta</Text>
+            <Text style={{ color: '#728C74', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 18 }}>
+              Te guiamos paso a paso para configurar{'\n'}tu calendario de cultivo
+            </Text>
+            <View style={{ marginTop: 16, backgroundColor: '#52CC64', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 }}>
+              <Text style={{ color: '#0C1410', fontWeight: '800', fontSize: 14 }}>Empezar →</Text>
+            </View>
           </TouchableOpacity>
         ) : (
           <View style={{ gap: 12 }}>
@@ -153,7 +167,7 @@ export default function HomeScreen() {
                     {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
                   </Text>
                   <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    🪴 {plant.potCount} × {plant.potVolumeLiters ?? 11}L
+                    🪴 {plant.potCount} × {plant.potVolumeLiters}L
                   </Text>
                 </View>
               </TouchableOpacity>

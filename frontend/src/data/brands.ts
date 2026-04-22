@@ -1,4 +1,4 @@
-import type { Brand } from '@/types/plant'
+import type { Brand } from '../types/plant'
 
 export const REVEGETAR_BRAND: Brand = {
   id: 'revegetar',
