@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
+import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -22,6 +23,24 @@ export default function NewPlantScreen() {
   const [potCount, setPotCount]                 = useState('1')
   const [potVolume, setPotVolume]               = useState('11')
   const [loading, setLoading]                   = useState(false)
+  const [nutritionTableId, setNutritionTableId] = useState<'revegetar' | 'topcrop-v1'>('revegetar')
+
+  const [isPro, setIsPro] = useState(false)
+  const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    async function checkPro() {
+      if (!user) return
+      const [{ data: prof }, { count }] = await Promise.all([
+        supabase.from('profiles').select('is_pro').eq('id', user.id).single(),
+        supabase.from('plants').select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('status', 'active'),
+      ])
+      setIsPro(prof?.is_pro ?? false)
+      setActivePlantCount(count ?? 0)
+    }
+    checkPro()
+  }, [user])
 
   async function handleCreate() {
     if (!name.trim() || !genetics.trim() || !user) return
@@ -39,7 +58,7 @@ export default function NewPlantScreen() {
           sex:                  geneticType === 'regular' ? sex : null,
           auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
           start_date:           startDate.toISOString().split('T')[0],
-          nutrition_table_id:   'revegetar',
+          nutrition_table_id:   nutritionTableId,
           available_products:   [],
           location,
           pot_count:            parseInt(potCount),
@@ -61,12 +80,13 @@ export default function NewPlantScreen() {
         location,
         potCount:            parseInt(potCount),
         potVolumeLiters:     parseFloat(potVolume),
-        nutritionTableId:    'revegetar',
+        nutritionTableId,
         availableProducts:   [],
         status:              'active',
       }
 
-      const tasks = generatePlantSchedule(plant, REVEGETAR_TABLE)
+      const table = nutritionTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
+      const tasks = generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {
         await supabase.from('scheduled_tasks').insert(
@@ -93,6 +113,35 @@ export default function NewPlantScreen() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (activePlantCount === null) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#52CC64" />
+      </SafeAreaView>
+    )
+  }
+
+  if (activePlantCount >= 1 && !isPro) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Text style={{ fontSize: 48, marginBottom: 16 }}>🌿</Text>
+        <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', textAlign: 'center', marginBottom: 12 }}>
+          Plan gratuito
+        </Text>
+        <Text style={{ color: '#728C74', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+          Con el plan gratuito podes tener 1 planta activa.{'\n'}Upgradea a Pro para cultivos ilimitados.
+        </Text>
+        <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#52CC64', padding: 20, width: '100%', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '900', marginBottom: 4 }}>Pro - USD 5/mes</Text>
+          <Text style={{ color: '#728C74', fontSize: 12, textAlign: 'center' }}>Plantas ilimitadas · Todas las tablas · IA</Text>
+        </View>
+        <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 14, alignItems: 'center' }}>
+          <Text style={{ color: '#728C74', fontSize: 14 }}>← Volver</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -257,6 +306,33 @@ export default function NewPlantScreen() {
               style={inputStyle}
             />
           </View>
+        </View>
+
+        {/* Tabla nutricional */}
+        <Text style={[labelStyle, { marginTop: 16 }]}>Tabla nutricional</Text>
+        <View style={{ gap: 8 }}>
+          {([
+            { id: 'revegetar', label: 'REVEGETAR', desc: 'BIO · ECO · LIFE · FUEL' },
+            { id: 'topcrop-v1', label: 'Top Crop', desc: 'PRO · MID · BASIC' },
+          ] as const).map(opt => (
+            <TouchableOpacity
+              key={opt.id}
+              onPress={() => setNutritionTableId(opt.id)}
+              style={{
+                borderRadius: 12, padding: 12,
+                backgroundColor: nutritionTableId === opt.id ? '#1A3D1E' : '#0C1410',
+                borderWidth: 1,
+                borderColor: nutritionTableId === opt.id ? '#52CC64' : '#1C2E1E',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <View>
+                <Text style={{ color: nutritionTableId === opt.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 14 }}>{opt.label}</Text>
+                <Text style={{ color: '#728C74', fontSize: 11, marginTop: 2 }}>{opt.desc}</Text>
+              </View>
+              {nutritionTableId === opt.id && <Text style={{ color: '#52CC64', fontSize: 16 }}>✓</Text>}
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Boton */}
