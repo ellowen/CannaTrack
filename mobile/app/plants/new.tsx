@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
@@ -23,10 +24,13 @@ export default function NewPlantScreen() {
   const [potCount, setPotCount]                 = useState('1')
   const [potVolume, setPotVolume]               = useState('11')
   const [loading, setLoading]                   = useState(false)
-  const [nutritionTableId, setNutritionTableId] = useState<'revegetar' | 'topcrop-v1'>('revegetar')
+  const [selectedTableId, setSelectedTableId]   = useState('')
+  const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
 
   const [isPro, setIsPro] = useState(false)
   const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
+
+  const { tables, loading: tablesLoading } = useNutritionTables()
 
   useEffect(() => {
     async function checkPro() {
@@ -41,6 +45,12 @@ export default function NewPlantScreen() {
     }
     checkPro()
   }, [user])
+
+  useEffect(() => {
+    if (tables.length > 0 && !selectedTableId) {
+      setSelectedTableId(tables[0].id)
+    }
+  }, [tables, selectedTableId])
 
   async function handleCreate() {
     if (!name.trim() || !genetics.trim() || !user) return
@@ -58,8 +68,8 @@ export default function NewPlantScreen() {
           sex:                  geneticType === 'regular' ? sex : null,
           auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
           start_date:           startDate.toISOString().split('T')[0],
-          nutrition_table_id:   nutritionTableId,
-          available_products:   [],
+          nutrition_table_id:   selectedTableId,
+          available_products:   availableProducts,
           location,
           pot_count:            parseInt(potCount),
           pot_volume_liters:    parseFloat(potVolume),
@@ -80,12 +90,13 @@ export default function NewPlantScreen() {
         location,
         potCount:            parseInt(potCount),
         potVolumeLiters:     parseFloat(potVolume),
-        nutritionTableId,
-        availableProducts:   [],
+        nutritionTableId:    selectedTableId,
+        availableProducts:   availableProducts ?? undefined,
         status:              'active',
       }
 
-      const table = nutritionTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
+      const table = tables.find(t => t.id === selectedTableId)
+      if (!table) throw new Error('Tabla nutricional no encontrada')
       const tasks = generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {
@@ -309,31 +320,116 @@ export default function NewPlantScreen() {
         </View>
 
         {/* Tabla nutricional */}
-        <Text style={[labelStyle, { marginTop: 16 }]}>Tabla nutricional</Text>
-        <View style={{ gap: 8 }}>
-          {([
-            { id: 'revegetar', label: 'REVEGETAR', desc: 'BIO · ECO · LIFE · FUEL' },
-            { id: 'topcrop-v1', label: 'Top Crop', desc: 'PRO · MID · BASIC' },
-          ] as const).map(opt => (
+        <Text style={labelStyle}>Tabla nutricional</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12, gap: 8 }}>
+          {tables.map(table => (
             <TouchableOpacity
-              key={opt.id}
-              onPress={() => setNutritionTableId(opt.id)}
+              key={table.id}
+              onPress={() => {
+                setSelectedTableId(table.id)
+                setAvailableProducts(null)
+              }}
               style={{
-                borderRadius: 12, padding: 12,
-                backgroundColor: nutritionTableId === opt.id ? '#1A3D1E' : '#0C1410',
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: selectedTableId === table.id ? '#1A3D1E' : '#0C1410',
                 borderWidth: 1,
-                borderColor: nutritionTableId === opt.id ? '#52CC64' : '#1C2E1E',
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                borderColor: selectedTableId === table.id ? '#52CC64' : '#1C2E1E',
+                marginRight: 8,
               }}
             >
-              <View>
-                <Text style={{ color: nutritionTableId === opt.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 14 }}>{opt.label}</Text>
-                <Text style={{ color: '#728C74', fontSize: 11, marginTop: 2 }}>{opt.desc}</Text>
-              </View>
-              {nutritionTableId === opt.id && <Text style={{ color: '#52CC64', fontSize: 16 }}>✓</Text>}
+              <Text style={{ color: selectedTableId === table.id ? '#52CC64' : '#E4F2E7', fontWeight: '700' }}>
+                {table.name.split(' ')[0]}
+              </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
+
+        {/* Productos */}
+        {selectedTableId && tables.find(t => t.id === selectedTableId) && (
+          <View style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={labelStyle}>Productos (opcional)</Text>
+              <TouchableOpacity
+                onPress={() => setAvailableProducts(null)}
+                style={{ padding: 4 }}
+              >
+                <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>
+                  {availableProducts === null ? 'Todos' : `${availableProducts.length} seleccionados`}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {(() => {
+              const table = tables.find(t => t.id === selectedTableId)
+              if (!table) return null
+
+              return (
+                <View>
+                  {table.lines.map(line => {
+                    // Buscar productos de esta línea en cualquier semana
+                    const lineProducts = new Set<string>()
+                    ;[...table.vegeWeeks, ...table.floraWeeks].forEach(week => {
+                      week.products.forEach(p => {
+                        if (p.line === line.id) lineProducts.add(p.name)
+                      })
+                    })
+
+                    return (
+                      <View key={line.id} style={{ marginBottom: 12 }}>
+                        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>
+                          {line.name}
+                        </Text>
+                        <View style={{ gap: 6 }}>
+                          {Array.from(lineProducts).map(productName => (
+                            <TouchableOpacity
+                              key={productName}
+                              onPress={() => {
+                                if (availableProducts === null) {
+                                  setAvailableProducts([productName])
+                                } else if (availableProducts.includes(productName)) {
+                                  setAvailableProducts(availableProducts.filter(p => p !== productName))
+                                } else {
+                                  setAvailableProducts([...availableProducts, productName])
+                                }
+                              }}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                paddingHorizontal: 10,
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                                backgroundColor: availableProducts === null || availableProducts.includes(productName) ? '#1A3D1E' : '#0C1410',
+                                borderWidth: 1,
+                                borderColor: '#1C2E1E',
+                              }}
+                            >
+                              <View
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: 4,
+                                  borderWidth: 2,
+                                  borderColor: '#52CC64',
+                                  backgroundColor: availableProducts === null || availableProducts.includes(productName) ? '#52CC64' : 'transparent',
+                                  marginRight: 8,
+                                }}
+                              />
+                              <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>
+                                {productName}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              )
+            })()}
+          </View>
+        )}
 
         {/* Boton */}
         <TouchableOpacity

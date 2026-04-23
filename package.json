@@ -8,5 +8,8 @@
     "test": "npm run test --prefix frontend",
     "demo": "npm run demo --prefix frontend",
     "type-check": "npm run type-check --prefix frontend"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
   }
 }
