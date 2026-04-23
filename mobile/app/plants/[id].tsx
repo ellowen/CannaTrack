@@ -47,6 +47,7 @@ export default function PlantDetailScreen() {
   const [liters, setLiters]               = useState(0)
   const [floraDateModal, setFloraDateModal] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(todayAsYMD())
+  const [floraError, setFloraError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -72,45 +73,71 @@ export default function PlantDetailScreen() {
   }
 
   async function confirmFlora() {
-    if (!plant) return
-    // Validate YYYY-MM-DD
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(floraDateInput)
-    if (!match) return
-    const candidate = new Date(floraDateInput)
-    if (isNaN(candidate.getTime())) return
-
-    setFloraDateModal(false)
-
-    const floraStartDate = candidate
-    const table = tables.find(t => t.id === plant.nutritionTableId)
-    if (!table) {
-      alert('Tabla nutricional no encontrada')
+    if (!plant) {
+      console.error('[confirmFlora] No plant data')
       return
     }
-    const newTasks = startFloraPhase(plant, floraStartDate, table)
-    await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
-    if (newTasks.length > 0) {
-      await supabase.from('scheduled_tasks').insert(
-        newTasks.map(t => ({
-          plant_id:       plant.id,
-          user_id:        user?.id,
-          type:           t.type,
-          scheduled_date: t.scheduledDate.toISOString().split('T')[0],
-          cycle:          t.cycle,
-          week:           t.week,
-          stage:          t.stage,
-          products:       t.products,
-          ec_min:         t.ecMin ?? null,
-          ec_max:         t.ecMax ?? null,
-          ph_min:         t.phMin ?? null,
-          ph_max:         t.phMax ?? null,
-        }))
-      )
+    // Validate YYYY-MM-DD
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(floraDateInput)
+    if (!match) {
+      alert('Formato inválido. Use YYYY-MM-DD')
+      return
     }
-    await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
-    setPlant({ ...plant, floraStartDate })
-    setTasks(newTasks)
-    if (user) awardXP(user.id, XP_VALUES.START_FLORA)
+    const candidate = new Date(floraDateInput)
+    if (isNaN(candidate.getTime())) {
+      alert('Fecha inválida')
+      return
+    }
+
+    console.log('[confirmFlora] Looking for table:', plant.nutritionTableId, 'Available tables:', tables.map(t => t.id))
+
+    const table = tables.find(t => t.id === plant.nutritionTableId)
+    if (!table) {
+      console.error('[confirmFlora] Table not found:', plant.nutritionTableId)
+      alert(`Tabla no encontrada: ${plant.nutritionTableId}\n\nTablas disponibles: ${tables.map(t => t.id).join(', ')}`)
+      setFloraDateModal(false)
+      return
+    }
+
+    try {
+      setFloraError(null)
+      const floraStartDate = candidate
+      console.log('[confirmFlora] Starting flora with table:', table.id, 'date:', floraStartDate)
+      const newTasks = startFloraPhase(plant, floraStartDate, table)
+
+      await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
+      if (newTasks.length > 0) {
+        const { error: insertError } = await supabase.from('scheduled_tasks').insert(
+          newTasks.map(t => ({
+            plant_id:       plant.id,
+            user_id:        user?.id,
+            type:           t.type,
+            scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+            cycle:          t.cycle,
+            week:           t.week,
+            stage:          t.stage,
+            products:       t.products,
+            ec_min:         t.ecMin ?? null,
+            ec_max:         t.ecMax ?? null,
+            ph_min:         t.phMin ?? null,
+            ph_max:         t.phMax ?? null,
+          }))
+        )
+        if (insertError) throw insertError
+      }
+      const { error: updateError } = await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
+      if (updateError) throw updateError
+
+      setPlant({ ...plant, floraStartDate })
+      setTasks(newTasks)
+      if (user) awardXP(user.id, XP_VALUES.START_FLORA)
+      console.log('[confirmFlora] Success! Flora started')
+      setFloraDateModal(false)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al iniciar floración'
+      console.error('[confirmFlora] Error:', e)
+      setFloraError(msg)
+    }
   }
 
   async function handleHarvest() {
@@ -579,7 +606,7 @@ export default function PlantDetailScreen() {
               style={{
                 backgroundColor: '#0C1410',
                 borderWidth: 1,
-                borderColor: '#1C2E1E',
+                borderColor: floraError ? '#EF4444' : '#1C2E1E',
                 borderRadius: 12,
                 paddingHorizontal: 14,
                 paddingVertical: 12,
@@ -589,9 +616,15 @@ export default function PlantDetailScreen() {
                 marginBottom: 8,
               }}
             />
-            <Text style={{ color: '#3A5040', fontSize: 11, marginBottom: 20 }}>
-              Formato: AAAA-MM-DD (ej: 2025-04-15)
-            </Text>
+            {floraError ? (
+              <Text style={{ color: '#EF4444', fontSize: 11, marginBottom: 20 }}>
+                ❌ {floraError}
+              </Text>
+            ) : (
+              <Text style={{ color: '#3A5040', fontSize: 11, marginBottom: 20 }}>
+                Formato: AAAA-MM-DD (ej: 2025-04-15)
+              </Text>
+            )}
 
             {/* Warning */}
             <View style={{
