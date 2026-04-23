@@ -365,7 +365,7 @@ export default function OnboardingScreen() {
                       <Text style={{ color: selectedTableId === table.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
                         {table.name}
                       </Text>
-                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{table.brand}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>Acceso: {table.accessTier === 'pro' ? 'Pro' : 'Gratis'}</Text>
                     </View>
                     {selectedTableId === table.id && <Text style={{ color: '#52CC64', fontSize: 18 }}>✓</Text>}
                   </TouchableOpacity>

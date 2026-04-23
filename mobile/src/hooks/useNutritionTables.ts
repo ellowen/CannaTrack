@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { NutritionTable, NutritionLine, ProductDose, NutritionWeek } from '@shared/types/plant'
+import type { NutritionTable, NutritionLine, ProductDose, NutritionWeek, PlantStage } from '@shared/types/plant'
 
 export function useNutritionTables() {
   const [tables, setTables] = useState<NutritionTable[]>([])
@@ -51,13 +51,13 @@ export function useNutritionTables() {
           .map((w: Record<string, unknown>) => ({
             cycle: 'vege' as const,
             week: w.week as number,
-            stage: w.stage as string,
+            stage: w.stage as any as PlantStage,
             dayStart: w.day_start as number,
             dayEnd: w.day_end as number,
-            ecMin: w.ec_min as number | undefined,
-            ecMax: w.ec_max as number | undefined,
-            phMin: w.ph_min as number | undefined,
-            phMax: w.ph_max as number | undefined,
+            ecMin: (w.ec_min as number) ?? 0,
+            ecMax: (w.ec_max as number) ?? 0,
+            phMin: (w.ph_min as number) ?? 6,
+            phMax: (w.ph_max as number) ?? 6,
             products: (products ?? [])
               .filter((p: Record<string, unknown>) => p.week_id === w.id)
               .map((p: Record<string, unknown>) => ({
@@ -74,13 +74,13 @@ export function useNutritionTables() {
           .map((w: Record<string, unknown>) => ({
             cycle: 'flora' as const,
             week: w.week as number,
-            stage: w.stage as string,
+            stage: w.stage as any as PlantStage,
             dayStart: w.day_start as number,
             dayEnd: w.day_end as number,
-            ecMin: w.ec_min as number | undefined,
-            ecMax: w.ec_max as number | undefined,
-            phMin: w.ph_min as number | undefined,
-            phMax: w.ph_max as number | undefined,
+            ecMin: (w.ec_min as number) ?? 0,
+            ecMax: (w.ec_max as number) ?? 0,
+            phMin: (w.ph_min as number) ?? 6,
+            phMax: (w.ph_max as number) ?? 6,
             products: (products ?? [])
               .filter((p: Record<string, unknown>) => p.week_id === w.id)
               .map((p: Record<string, unknown>) => ({
@@ -95,12 +95,14 @@ export function useNutritionTables() {
         enriched.push({
           id: t.id as string,
           name: t.name as string,
-          brandId: t.brand_id as string | undefined,
+          brandId: (t.brand_id as string) ?? null,
           isOfficial: t.is_official as boolean,
           accessTier: t.access_tier as 'free' | 'pro',
+          geneticTypes: [],
           lines: parsedLines,
           vegeWeeks,
-          floraWeeks
+          floraWeeks,
+          createdAt: new Date(t.created_at as string)
         })
       }
 
