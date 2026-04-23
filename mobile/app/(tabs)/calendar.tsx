@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -21,6 +21,11 @@ export default function CalendarScreen() {
   const [plantNames, setPlantNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
+  // Animation state
+  const slideAnim = useRef(new Animated.Value(0)).current
+  const fadeAnim = useRef(new Animated.Value(1)).current
+  const headerScaleAnim = useRef(new Animated.Value(1)).current
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const start = startOfMonth(displayMonth)
@@ -28,17 +33,47 @@ export default function CalendarScreen() {
   const firstDayOfWeek = start.getDay()
   const days = Array.from({ length: daysInMonth }, (_, i) => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1))
 
+  function animateMonthChange(direction: 'next' | 'prev') {
+    const startValue = direction === 'next' ? 1 : -1
+    slideAnim.setValue(startValue * 500)
+    fadeAnim.setValue(0)
+    headerScaleAnim.setValue(0.95)
+
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerScaleAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }
+
   function prevMonth() {
+    animateMonthChange('prev')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   }
 
   function nextMonth() {
+    animateMonthChange('next')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   }
 
   function goToday() {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
+    if (d.getMonth() !== displayMonth.getMonth() || d.getFullYear() !== displayMonth.getFullYear()) {
+      animateMonthChange('next')
+    }
     setDisplayMonth(d)
     setSelected(d)
   }
@@ -66,12 +101,27 @@ export default function CalendarScreen() {
     load()
   }, [displayMonth, user])
 
-  const tasksByDate: Record<string, Set<string>> = {}
+  const tasksByDate: Record<string, { types: Set<string>; count: number; overdue: boolean }> = {}
   for (const t of tasks) {
-    if (t.completed) continue
     const key = format(t.scheduledDate, 'yyyy-MM-dd')
-    if (!tasksByDate[key]) tasksByDate[key] = new Set()
-    tasksByDate[key].add(t.type)
+    if (!tasksByDate[key]) tasksByDate[key] = { types: new Set(), count: 0, overdue: false }
+
+    if (!t.completed) {
+      tasksByDate[key].types.add(t.type)
+      tasksByDate[key].count += 1
+      // Mark as overdue if task is in the past and not completed
+      if (new Date(t.scheduledDate) < today && !t.completed) {
+        tasksByDate[key].overdue = true
+      }
+    }
+  }
+
+  function getTaskIndicatorColor(dayKey: string): string {
+    const dayData = tasksByDate[dayKey]
+    if (!dayData) return 'transparent'
+    if (dayData.overdue) return '#EF4444' // red for overdue
+    if (new Date(dayKey) <= today) return '#F59E0B' // amber for today/past incomplete
+    return '#10B981' // emerald for future tasks
   }
 
   const selectedTasks = tasks.filter(t => {
@@ -100,9 +150,17 @@ export default function CalendarScreen() {
             <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={{ color: '#52CC64', fontSize: 18, fontWeight: '700' }}>{'<'}</Text>
             </TouchableOpacity>
-            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            <Animated.Text style={{
+              color: '#728C74',
+              fontSize: 11,
+              fontWeight: '700',
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              transform: [{ scale: headerScaleAnim }],
+              opacity: fadeAnim,
+            }}>
               {format(displayMonth, 'MMMM yyyy', { locale: es })}
-            </Text>
+            </Animated.Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Text style={{ color: '#52CC64', fontSize: 18, fontWeight: '700' }}>{'>'}</Text>
@@ -119,13 +177,23 @@ export default function CalendarScreen() {
               </Text>
             ))}
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <Animated.View style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            opacity: fadeAnim,
+            transform: [{ translateX: slideAnim }],
+          }}>
             {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-              <View key={`empty-${i}`} style={{ width: '14.28%', height: 50 }} />
+              <View key={`empty-${i}`} style={{ width: '14.28%', height: 62 }} />
             ))}
             {days.map(day => {
               const isSelected = selected.getTime() === day.getTime()
               const isToday = today.getTime() === day.getTime()
+              const dayKey = format(day, 'yyyy-MM-dd')
+              const dayData = tasksByDate[dayKey]
+              const taskCount = dayData?.count ?? 0
+              const indicatorColor = getTaskIndicatorColor(dayKey)
+
               return (
                 <TouchableOpacity
                   key={day.getTime()}
@@ -136,30 +204,33 @@ export default function CalendarScreen() {
                     }
                   }}
                   style={{
-                    width: '14.28%', height: 50, alignItems: 'center', justifyContent: 'center',
+                    width: '14.28%', height: 62, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: isSelected ? '#52CC64' : isToday ? '#1C2E1E' : 'transparent',
-                    borderRadius: 8, marginBottom: 4,
+                    borderRadius: 8, marginBottom: 4, borderWidth: isToday && !isSelected ? 2 : 0, borderColor: '#52CC64',
                   }}
                 >
                   <Text style={{ color: isSelected ? '#0C1410' : '#E4F2E7', fontSize: 12, fontWeight: '600' }}>
                     {day.getDate()}
                   </Text>
-                  {(() => {
-                    const dayKey = format(day, 'yyyy-MM-dd')
-                    const types = tasksByDate[dayKey] ?? new Set<string>()
-                    if (types.size === 0) return null
-                    return (
-                      <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
-                        {[...types].slice(0, 3).map(type => (
-                          <View key={type} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: TYPE_COLOR[type] }} />
-                        ))}
-                      </View>
-                    )
-                  })()}
+                  {taskCount > 0 && (
+                    <View style={{ marginTop: 4, alignItems: 'center' }}>
+                      {taskCount > 3 ? (
+                        <Text style={{ color: indicatorColor, fontSize: 10, fontWeight: '700' }}>
+                          {taskCount}
+                        </Text>
+                      ) : (
+                        <View style={{ flexDirection: 'row', gap: 2 }}>
+                          {[...Array(taskCount)].map((_, i) => (
+                            <View key={i} style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: indicatorColor }} />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  )}
                 </TouchableOpacity>
               )
             })}
-          </View>
+          </Animated.View>
         </View>
 
         {loading ? (
