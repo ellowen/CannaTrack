@@ -6,12 +6,13 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
+import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type Location    = 'indoor' | 'outdoor'
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 export default function OnboardingScreen() {
   const { user } = useAuth()
@@ -21,6 +22,9 @@ export default function OnboardingScreen() {
   const [geneticType, setGeneticType] = useState<GeneticType>('feminized')
   const [location, setLocation]       = useState<Location>('indoor')
   const [loading, setLoading]         = useState(false)
+  const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState('77')
+  const [sex, setSex] = useState<'female' | 'male' | 'unknown'>('unknown')
+  const [nutritionTableId, setNutritionTableId] = useState<'revegetar' | 'topcrop-v1'>('revegetar')
 
   function canAdvance() {
     if (step === 1) return plantName.trim().length > 0
@@ -45,7 +49,9 @@ export default function OnboardingScreen() {
           location,
           pot_count:          1,
           pot_volume_liters:  11,
-          nutrition_table_id: 'revegetar',
+          nutrition_table_id: nutritionTableId,
+          auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
+          sex: geneticType === 'regular' ? sex : null,
           available_products: [],
         })
         .select()
@@ -58,17 +64,19 @@ export default function OnboardingScreen() {
         name:             plantRow.name,
         genetics:         plantRow.genetics,
         geneticType,
-        sex:              'unknown',
+        sex:              geneticType === 'regular' ? sex : 'unknown',
+        autoFlowerTotalDays: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : undefined,
         startDate,
         location,
         potCount:         1,
         potVolumeLiters:  11,
-        nutritionTableId: 'revegetar',
+        nutritionTableId,
         availableProducts: [],
         status:           'active',
       }
 
-      const tasks = generatePlantSchedule(plant, REVEGETAR_TABLE)
+      const table = nutritionTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
+      const tasks = generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {
         await supabase.from('scheduled_tasks').insert(
@@ -225,6 +233,61 @@ export default function OnboardingScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+
+              {/* Dias totales para autofloreciente */}
+              {geneticType === 'autoflower' && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
+                    Dias totales del ciclo
+                  </Text>
+                  <TextInput
+                    value={autoFlowerTotalDays}
+                    onChangeText={setAutoFlowerTotalDays}
+                    keyboardType="number-pad"
+                    placeholder="77"
+                    placeholderTextColor="#3A5040"
+                    style={{
+                      backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
+                      borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+                      color: '#E4F2E7', fontSize: 15,
+                    }}
+                  />
+                  <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 4 }}>
+                    Tipico: 70-84 dias desde germinacion
+                  </Text>
+                </View>
+              )}
+
+              {/* Sexo para regular */}
+              {geneticType === 'regular' && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
+                    Sexo (opcional)
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {([
+                      { value: 'female', label: 'Hembra', color: '#52CC64' },
+                      { value: 'male',   label: 'Macho',  color: '#3B82F6' },
+                      { value: 'unknown', label: 'No se',  color: '#728C74' },
+                    ] as const).map(opt => (
+                      <TouchableOpacity
+                        key={opt.value}
+                        onPress={() => setSex(opt.value)}
+                        style={{
+                          flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
+                          backgroundColor: sex === opt.value ? '#1A3D1E' : '#131D14',
+                          borderWidth: 1,
+                          borderColor: sex === opt.value ? opt.color : '#1C2E1E',
+                        }}
+                      >
+                        <Text style={{ color: sex === opt.value ? opt.color : '#728C74', fontWeight: '800', fontSize: 13 }}>
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
             </View>
           )}
 
@@ -259,6 +322,47 @@ export default function OnboardingScreen() {
                       {opt.label}
                     </Text>
                     <Text style={{ color: '#728C74', fontSize: 12, marginTop: 4 }}>{opt.desc}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* PASO 5: Tabla nutricional */}
+          {step === 5 && (
+            <View>
+              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+                PASO 5 DE {TOTAL_STEPS - 1}
+              </Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
+                Que tabla usas?
+              </Text>
+              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
+                Selecciona los fertilizantes que vas a usar
+              </Text>
+              <View style={{ gap: 10 }}>
+                {([
+                  { id: 'revegetar',  label: 'REVEGETAR', sub: 'BIO · ECO · LIFE · FUEL', desc: 'Tabla de cultivo REVEGETAR' },
+                  { id: 'topcrop-v1', label: 'Top Crop',  sub: 'PRO · MID · BASIC',       desc: 'Tabla de cultivo Top Crop' },
+                ] as const).map(opt => (
+                  <TouchableOpacity
+                    key={opt.id}
+                    onPress={() => setNutritionTableId(opt.id)}
+                    style={{
+                      borderRadius: 16, padding: 16,
+                      backgroundColor: nutritionTableId === opt.id ? '#1A3D1E' : '#131D14',
+                      borderWidth: 1,
+                      borderColor: nutritionTableId === opt.id ? '#52CC64' : '#1C2E1E',
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    }}
+                  >
+                    <View>
+                      <Text style={{ color: nutritionTableId === opt.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
+                        {opt.label}
+                      </Text>
+                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{opt.sub}</Text>
+                    </View>
+                    {nutritionTableId === opt.id && <Text style={{ color: '#52CC64', fontSize: 18 }}>✓</Text>}
                   </TouchableOpacity>
                 ))}
               </View>
