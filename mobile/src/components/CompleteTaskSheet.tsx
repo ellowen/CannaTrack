@@ -226,7 +226,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
-      <Animated.View style={{ flex: 1, backgroundColor: `rgba(0,0,0,${0.6 * (1 - Math.min(panY.__getValue() / (Dimensions.get('window').height / 2), 1))})` }}>
+      <Animated.View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}>
         <TouchableOpacity
           style={{ flex: 1 }}
           activeOpacity={1}
