@@ -30,10 +30,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="plants"
+        options={{
+          title: 'Plantas',
+          tabBarIcon: ({ focused }) => <Icon label={focused ? '🍃' : '🌱'} />,
+        }}
+      />
+      <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendario',
+          title: 'Tareas',
           tabBarIcon: ({ focused }) => <Icon label={focused ? '📅' : '🗓️'} />,
+        }}
+      />
+      <Tabs.Screen
+        name="diagnose"
+        options={{
+          title: 'Diagnose',
+          tabBarIcon: ({ focused }) => <Icon label={focused ? '📷' : '📸'} />,
         }}
       />
       <Tabs.Screen

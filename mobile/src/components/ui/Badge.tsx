@@ -1,40 +1,132 @@
-import { View, Text, StyleSheet } from 'react-native'
-import { colors, radius } from '@/constants/theme'
+import React from 'react'
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native'
 
-type Variant = 'vege' | 'flora' | 'harvest' | 'default'
+// Colors
+const COLORS = {
+  bg: {
+    default: '#E0E0E0',
+    success: '#E8F5E9',
+    warning: '#FFF3E0',
+    danger: '#FFEBEE',
+    info: '#E3F2FD',
+  },
+  text: {
+    default: '#616161',
+    success: '#2E7D32',
+    warning: '#E65100',
+    danger: '#C62828',
+    info: '#0D47A1',
+  },
+}
 
-interface Props {
-  label: string
+type Variant = 'default' | 'success' | 'warning' | 'danger' | 'info'
+type Size = 'sm' | 'md'
+
+interface BadgeProps {
   variant?: Variant
-}
-
-const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border: string }> = {
-  vege:    { bg: '#0D2010', text: '#52CC64', border: '#1A3D1E' },
-  flora:   { bg: '#1A0D2E', text: '#A855F7', border: '#3D1A5A' },
-  harvest: { bg: '#2E0D0D', text: '#EF4444', border: '#5A1A1A' },
-  default: { bg: colors.bg.elevated, text: colors.text.secondary, border: colors.border.default },
-}
-
-export default function Badge({ label, variant = 'default' }: Props) {
-  const v = VARIANT_STYLES[variant]
-  return (
-    <View style={[styles.badge, { backgroundColor: v.bg, borderColor: v.border }]}>
-      <Text style={[styles.label, { color: v.text }]}>{label}</Text>
-    </View>
-  )
+  size?: Size
+  icon?: React.ReactNode
+  children: React.ReactNode
+  style?: ViewStyle
+  testID?: string
 }
 
 const styles = StyleSheet.create({
-  badge: {
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    paddingHorizontal: 10,
+  container: {
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  // Size: sm
+  smBadge: {
+    paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  label: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+  // Size: md
+  mdBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  // Variant: default
+  defaultBadge: {
+    backgroundColor: COLORS.bg.default,
+  },
+  // Variant: success
+  successBadge: {
+    backgroundColor: COLORS.bg.success,
+  },
+  // Variant: warning
+  warningBadge: {
+    backgroundColor: COLORS.bg.warning,
+  },
+  // Variant: danger
+  dangerBadge: {
+    backgroundColor: COLORS.bg.danger,
+  },
+  // Variant: info
+  infoBadge: {
+    backgroundColor: COLORS.bg.info,
+  },
+  // Text
+  text: {
+    fontWeight: '600',
+  },
+  smText: {
+    fontSize: 12,
+  },
+  mdText: {
+    fontSize: 14,
+  },
+  // Icon spacing
+  iconSpacing: {
+    marginRight: 6,
   },
 })
+
+export const Badge: React.FC<BadgeProps> = ({
+  variant = 'default',
+  size = 'md',
+  icon,
+  children,
+  style,
+  testID,
+}) => {
+  const variantStyle = {
+    default: styles.defaultBadge,
+    success: styles.successBadge,
+    warning: styles.warningBadge,
+    danger: styles.dangerBadge,
+    info: styles.infoBadge,
+  }[variant]
+
+  const sizeStyle = {
+    sm: styles.smBadge,
+    md: styles.mdBadge,
+  }[size]
+
+  const textSize = {
+    sm: styles.smText,
+    md: styles.mdText,
+  }[size]
+
+  const textColor = {
+    default: COLORS.text.default,
+    success: COLORS.text.success,
+    warning: COLORS.text.warning,
+    danger: COLORS.text.danger,
+    info: COLORS.text.info,
+  }[variant]
+
+  return (
+    <View
+      style={[styles.container, variantStyle, sizeStyle, style]}
+      testID={testID}
+    >
+      {icon && <View style={styles.iconSpacing}>{icon}</View>}
+      <Text style={[styles.text, textSize, { color: textColor }]}>
+        {children}
+      </Text>
+    </View>
+  )
+}
