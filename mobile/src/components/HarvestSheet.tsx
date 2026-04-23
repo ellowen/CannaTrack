@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert } from 'react-native'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
+import * as Haptics from 'expo-haptics'
 import { supabase } from '@/lib/supabase'
 import type { Plant } from '@shared/types/plant'
 
@@ -18,9 +19,78 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
   const [grams, setGrams]       = useState('')
   const [stats, setStats]       = useState<{ growDays: number; pct: number; avgEc: string | null; avgPh: string | null } | null>(null)
 
+  const panY = useRef(new Animated.Value(0)).current
+  const opacityAnim = useRef(new Animated.Value(1)).current
+  const handleOpacityAnim = useRef(new Animated.Value(0.5)).current
+
+  const SWIPE_THRESHOLD = 100
+  const VELOCITY_THRESHOLD = 0.5
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const isVerticalSwipe = Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+        return isVerticalSwipe && gestureState.dy > 0
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy)
+          const progress = Math.min(gestureState.dy / SWIPE_THRESHOLD, 1)
+          opacityAnim.setValue(1 - progress * 0.2)
+          handleOpacityAnim.setValue(0.5 + progress * 0.3)
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const isFastSwipe = gestureState.vy > VELOCITY_THRESHOLD
+        const passesThreshold = gestureState.dy > SWIPE_THRESHOLD
+
+        if ((passesThreshold || isFastSwipe) && gestureState.dy > 0) {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          } catch {
+            // Haptics not available
+          }
+
+          Animated.timing(panY, {
+            toValue: Dimensions.get('window').height,
+            duration: 300,
+            useNativeDriver: false,
+          }).start()
+
+          setTimeout(() => {
+            onClose()
+            panY.setValue(0)
+            opacityAnim.setValue(1)
+            handleOpacityAnim.setValue(0.5)
+          }, 300)
+        } else {
+          Animated.spring(panY, {
+            toValue: 0,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+          Animated.spring(opacityAnim, {
+            toValue: 1,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+          Animated.spring(handleOpacityAnim, {
+            toValue: 0.5,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+        }
+      },
+    })
+  ).current
+
   useEffect(() => {
     if (!visible || !plant) return
     setTab('harvest'); setGrams('')
+    panY.setValue(0)
+    opacityAnim.setValue(1)
+    handleOpacityAnim.setValue(0.5)
 
     async function loadStats() {
       const today = new Date()
@@ -53,6 +123,26 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
 
   const today = new Date()
 
+  function handleDismiss() {
+    if (grams.trim()) {
+      Alert.alert(
+        'Descartar cambios',
+        'Tienes datos sin guardar. ¿Estás seguro?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Descartar', style: 'destructive', onPress: () => {
+            onClose()
+            panY.setValue(0)
+            opacityAnim.setValue(1)
+            handleOpacityAnim.setValue(0.5)
+          }},
+        ]
+      )
+    } else {
+      onClose()
+    }
+  }
+
   function handleConfirm() {
     if (tab === 'harvest') {
       const g = parseFloat(grams)
@@ -71,24 +161,31 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
   ] : null
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
-        activeOpacity={1}
-        onPress={onClose}
-      />
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
+      <Animated.View style={{ flex: 1, backgroundColor: `rgba(0,0,0,${0.6 * (1 - Math.min(panY.__getValue() / (Dimensions.get('window').height / 2), 1))})` }}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={handleDismiss}
+        />
+      </Animated.View>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
       >
-        <View style={{
-          backgroundColor: '#131D14',
-          borderTopLeftRadius: 24, borderTopRightRadius: 24,
-          borderTopWidth: 1, borderTopColor: '#1C2E1E',
-          padding: 20, paddingBottom: 44,
-        }}>
+        <Animated.View
+          style={{
+            backgroundColor: '#131D14',
+            borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            borderTopWidth: 1, borderTopColor: '#1C2E1E',
+            padding: 20, paddingBottom: 44,
+            transform: [{ translateY: panY }],
+            opacity: opacityAnim,
+          }}
+          {...panResponder.panHandlers}
+        >
           {/* Handle */}
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#1C2E1E', alignSelf: 'center', marginBottom: 16 }} />
+          <Animated.View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#1C2E1E', alignSelf: 'center', marginBottom: 16, opacity: handleOpacityAnim }} />
 
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
@@ -204,7 +301,7 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
             </Text>
           </TouchableOpacity>
 
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   )
