@@ -637,7 +637,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                     <div className="space-y-2.5">
                       {vegeWeeks.map((week) => (
                         <div key={week.week} className="flex gap-3 items-start">
-                          <Badge variant="green" className="shrink-0 mt-0.5 text-[11px]">V{week.week}</Badge>
+                          <Badge variant="info" className="shrink-0 mt-0.5 text-[11px]">V{week.week}</Badge>
                           <div className="min-w-0">
                             <p className="text-xs text-ink-3 mb-0.5">{STAGE_LABELS[week.stage] ?? week.stage}</p>
                             <p className="text-xs text-ink-1 leading-relaxed">
@@ -657,7 +657,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                     <div className="space-y-2.5">
                       {floraWeeks.map((week) => (
                         <div key={week.week} className="flex gap-3 items-start">
-                          <Badge variant="amber" className="shrink-0 mt-0.5 text-[11px]">F{week.week}</Badge>
+                          <Badge variant="warning" className="shrink-0 mt-0.5 text-[11px]">F{week.week}</Badge>
                           <div className="min-w-0">
                             <p className="text-xs text-ink-3 mb-0.5">{STAGE_LABELS[week.stage] ?? week.stage}</p>
                             <p className="text-xs text-ink-1 leading-relaxed">

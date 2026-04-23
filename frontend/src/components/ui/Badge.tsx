@@ -1,31 +1,47 @@
 import { clsx } from 'clsx'
+import React from 'react'
 
-type BadgeVariant = 'green' | 'amber' | 'blue' | 'red' | 'gray' | 'purple'
+type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info'
+type BadgeSize = 'sm' | 'md'
 
 interface BadgeProps {
   variant?: BadgeVariant
+  size?: BadgeSize
+  icon?: React.ReactNode
   children: React.ReactNode
   className?: string
 }
 
 const variants: Record<BadgeVariant, string> = {
-  green:  'bg-brand-subtle text-brand-500 border border-brand-border',
-  amber:  'bg-flora-bg text-flora-text border border-flora-border',
-  blue:   'bg-blue-50 text-blue-700 border border-blue-200',
-  purple: 'bg-violet-50 text-violet-700 border border-violet-200',
-  red:    'bg-red-50 text-red-600 border border-red-200',
-  gray:   'bg-app-elevated text-ink-3 border border-app-border',
+  default: 'bg-app-elevated text-ink-2 border border-app-border',
+  success: 'bg-green-50 text-green-700 border border-green-200',
+  warning: 'bg-amber-50 text-amber-700 border border-amber-200',
+  danger: 'bg-red-50 text-red-600 border border-red-200',
+  info: 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
-export default function Badge({ variant = 'gray', children, className }: BadgeProps) {
+const sizes: Record<BadgeSize, string> = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-2.5 py-1 text-sm',
+}
+
+export default function Badge({
+  variant = 'default',
+  size = 'sm',
+  icon,
+  children,
+  className,
+}: BadgeProps) {
   return (
     <span
       className={clsx(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold',
+        'inline-flex items-center gap-1 rounded-full font-semibold',
         variants[variant],
+        sizes[size],
         className
       )}
     >
+      {icon}
       {children}
     </span>
   )
