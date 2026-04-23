@@ -99,6 +99,7 @@ export interface Plant {
   sex: PlantSex
   startDate: Date
   floraStartDate?: Date
+  endDate?: Date
   autoFlowerTotalDays?: number   // default 75
   location: 'indoor' | 'outdoor'
   potCount: number

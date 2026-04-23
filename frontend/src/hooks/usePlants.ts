@@ -37,11 +37,11 @@ export function usePlants() {
   }
 
   function discardPlant(id: string) {
-    updatePlant(id, { status: 'discarded' })
+    updatePlant(id, { status: 'discarded', endDate: new Date() })
   }
 
   function harvestPlant(id: string) {
-    updatePlant(id, { status: 'harvested' })
+    updatePlant(id, { status: 'harvested', endDate: new Date() })
   }
 
   function startFlora(id: string, floraStartDate: Date) {
