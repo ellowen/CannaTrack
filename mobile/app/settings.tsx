@@ -18,12 +18,18 @@ export default function SettingsScreen() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [notificationHour, setNotificationHour] = useState(9)
+  const [notificationMinute, setNotificationMinute] = useState(0)
+  const [timeChangeState, setTimeChangeState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const timeChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     async function load() {
       if (!user) return
       const { data } = await supabase
         .from('profiles')
-        .select('notifications_enabled, username')
+        .select('notifications_enabled, username, notification_time')
         .eq('id', user.id)
         .single()
       if (data) {
@@ -31,6 +37,10 @@ export default function SettingsScreen() {
         const name = data.username ?? ''
         setLoadedUsername(name)
         setUsername(name)
+        const hour = parseInt(data.notification_time?.split(':')[0] ?? '09')
+        const minute = parseInt(data.notification_time?.split(':')[1] ?? '00')
+        setNotificationHour(hour)
+        setNotificationMinute(minute)
       }
       setLoading(false)
     }
@@ -40,8 +50,45 @@ export default function SettingsScreen() {
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      if (timeChangeTimeoutRef.current) clearTimeout(timeChangeTimeoutRef.current)
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
     }
   }, [])
+
+  async function handleNotificationTimeChange() {
+    if (!user) return
+    setTimeChangeState('saving')
+    const timeString = `${String(notificationHour).padStart(2, '0')}:${String(notificationMinute).padStart(2, '0')}`
+    const { error } = await supabase
+      .from('profiles')
+      .update({ notification_time: timeString })
+      .eq('id', user.id)
+
+    if (error) {
+      setTimeChangeState('idle')
+      return
+    }
+
+    if (notifications) {
+      await scheduleDailyReminder(notificationHour, notificationMinute)
+    }
+
+    setTimeChangeState('saved')
+    timeChangeTimeoutRef.current = setTimeout(() => setTimeChangeState('idle'), 2000)
+  }
+
+  useEffect(() => {
+    if (!notifications) return
+
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+    debounceTimeoutRef.current = setTimeout(() => {
+      handleNotificationTimeChange()
+    }, 500)
+
+    return () => {
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+    }
+  }, [notificationHour, notificationMinute, notifications])
 
   function handleUsernameChange(value: string) {
     setUsername(value)
@@ -86,7 +133,7 @@ export default function SettingsScreen() {
     if (!user) return
     await supabase.from('profiles').update({ notifications_enabled: value }).eq('id', user.id)
     if (value) {
-      await scheduleDailyReminder(9, 0)
+      await scheduleDailyReminder(notificationHour, notificationMinute)
     } else {
       await Notifications.cancelAllScheduledNotificationsAsync()
     }
@@ -170,7 +217,7 @@ export default function SettingsScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
             <View>
               <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>
-              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Recordatorio diario a las 9:00</Text>
+              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Recordatorio diario a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}</Text>
             </View>
             <Switch
               value={notifications}
@@ -179,6 +226,63 @@ export default function SettingsScreen() {
               thumbColor={notifications ? '#1A3D1E' : '#728C74'}
             />
           </View>
+
+          {notifications && (
+            <View style={{ backgroundColor: '#131D14', borderTopWidth: 1, borderTopColor: '#1C2E1E', padding: 16 }}>
+              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', marginBottom: 12 }}>
+                Hora del recordatorio
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                {/* Hours */}
+                <View style={{ alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={() => setNotificationHour((h) => (h === 23 ? 0 : h + 1))}
+                    style={{ padding: 8 }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▲</Text>
+                  </TouchableOpacity>
+                  <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900', minWidth: 60, textAlign: 'center' }}>
+                    {String(notificationHour).padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setNotificationHour((h) => (h === 0 ? 23 : h - 1))}
+                    style={{ padding: 8 }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▼</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={{ color: '#728C74', fontSize: 24, fontWeight: '700' }}>:</Text>
+
+                {/* Minutes */}
+                <View style={{ alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={() => setNotificationMinute((m) => (m === 55 ? 0 : m + 5))}
+                    style={{ padding: 8 }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▲</Text>
+                  </TouchableOpacity>
+                  <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900', minWidth: 60, textAlign: 'center' }}>
+                    {String(notificationMinute).padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setNotificationMinute((m) => (m === 0 ? 55 : m - 5))}
+                    style={{ padding: 8 }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▼</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 8 }}>
+                <Text style={{ color: '#728C74', fontSize: 12 }}>
+                  Recordatorio a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}
+                </Text>
+                {timeChangeState === 'saved' && (
+                  <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>✓ Guardado</Text>
+                )}
+              </View>
+            </View>
+          )}
           <TouchableOpacity style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
             <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Acerca de</Text>
             <Text style={{ color: '#728C74', fontSize: 12, marginTop: 4 }}>CannaTrack v1.0.0</Text>
