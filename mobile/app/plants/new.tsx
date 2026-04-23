@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
-import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
-import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -30,7 +28,7 @@ export default function NewPlantScreen() {
   const [isPro, setIsPro] = useState(false)
   const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
 
-  const { tables, loading: tablesLoading } = useNutritionTables()
+  const { tables, loading } = useNutritionTables()
 
   useEffect(() => {
     async function checkPro() {

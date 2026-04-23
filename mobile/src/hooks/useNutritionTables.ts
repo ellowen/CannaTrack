@@ -1,43 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-
-export interface NutritionLine {
-  code: string
-  name: string
-  colorClass: string
-}
-
-export interface ProductDose {
-  name: string
-  line: string
-  unit: 'ml' | 'gr'
-  minDose: number
-  maxDose: number
-}
-
-export interface NutritionWeek {
-  cycle: 'vege' | 'flora'
-  week: number
-  stage: string
-  dayStart: number
-  dayEnd: number
-  products: ProductDose[]
-  ecMin?: number
-  ecMax?: number
-  phMin?: number
-  phMax?: number
-}
-
-export interface NutritionTable {
-  id: string
-  name: string
-  brandId?: string
-  isOfficial: boolean
-  accessTier: 'free' | 'pro'
-  vegeWeeks: NutritionWeek[]
-  floraWeeks: NutritionWeek[]
-  lines: NutritionLine[]
-}
+import type { NutritionTable, NutritionLine, ProductDose, NutritionWeek } from '@shared/types/plant'
 
 export function useNutritionTables() {
   const [tables, setTables] = useState<NutritionTable[]>([])
@@ -78,7 +41,7 @@ export function useNutritionTables() {
         if (productError) throw productError
 
         const parsedLines: NutritionLine[] = (lines ?? []).map(l => ({
-          code: l.line_code as string,
+          id: l.line_code as string,
           name: l.line_name as string,
           colorClass: l.color_class ?? ''
         }))
