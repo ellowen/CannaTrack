@@ -11,8 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
-import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
-import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
+import { useNutritionTables } from '@/hooks/useNutritionTables'
 import type { NutritionTable } from '@shared/types/plant'
 import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
@@ -28,11 +27,6 @@ const TYPE_LABEL: Record<string, string> = {
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
 }
 
-function getTable(nutritionTableId: string): NutritionTable {
-  if (nutritionTableId === 'topcrop-v1') return TOPCROP_TABLE
-  return REVEGETAR_TABLE
-}
-
 function todayAsYMD(): string {
   const d = new Date()
   const y = d.getFullYear()
@@ -44,6 +38,7 @@ function todayAsYMD(): string {
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
+  const { tables } = useNutritionTables()
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
@@ -87,7 +82,12 @@ export default function PlantDetailScreen() {
     setFloraDateModal(false)
 
     const floraStartDate = candidate
-    const newTasks = startFloraPhase(plant, floraStartDate, getTable(plant.nutritionTableId))
+    const table = tables.find(t => t.id === plant.nutritionTableId)
+    if (!table) {
+      alert('Tabla nutricional no encontrada')
+      return
+    }
+    const newTasks = startFloraPhase(plant, floraStartDate, table)
     await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
     if (newTasks.length > 0) {
       await supabase.from('scheduled_tasks').insert(

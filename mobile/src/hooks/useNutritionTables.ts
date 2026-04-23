@@ -17,36 +17,28 @@ export function useNutritionTables() {
 
       if (tableError) throw tableError
 
+      // Cargar TODAS las líneas, semanas y productos de una sola vez
+      const { data: allLines } = await supabase.from('nutrition_lines').select('*')
+      const { data: allWeeks } = await supabase.from('nutrition_weeks').select('*')
+      const { data: allProducts } = await supabase.from('nutrition_products').select('*')
+
       const enriched: NutritionTable[] = []
 
       for (const t of tablesData ?? []) {
-        const { data: lines, error: lineError } = await supabase
-          .from('nutrition_lines')
-          .select('*')
-          .eq('table_id', t.id)
+        const lines = (allLines ?? []).filter((l: Record<string, unknown>) => l.table_id === t.id)
+        const weeks = (allWeeks ?? []).filter((w: Record<string, unknown>) => w.table_id === t.id)
+        const products = (allProducts ?? []).filter((p: Record<string, unknown>) => {
+          // Producto pertenece a esta tabla si su week_id está en una semana de esta tabla
+          return weeks.some((w: Record<string, unknown>) => w.id === p.week_id)
+        })
 
-        if (lineError) throw lineError
-
-        const { data: weeks, error: weekError } = await supabase
-          .from('nutrition_weeks')
-          .select('*')
-          .eq('table_id', t.id)
-
-        if (weekError) throw weekError
-
-        const { data: products, error: productError } = await supabase
-          .from('nutrition_products')
-          .select('*')
-
-        if (productError) throw productError
-
-        const parsedLines: NutritionLine[] = (lines ?? []).map(l => ({
+        const parsedLines: NutritionLine[] = lines.map((l: Record<string, unknown>) => ({
           id: l.line_code as string,
           name: l.line_name as string,
           colorClass: l.color_class ?? ''
         }))
 
-        const vegeWeeks: NutritionWeek[] = (weeks ?? [])
+        const vegeWeeks: NutritionWeek[] = weeks
           .filter((w: Record<string, unknown>) => w.cycle === 'vege')
           .map((w: Record<string, unknown>) => ({
             cycle: 'vege' as const,
@@ -58,7 +50,7 @@ export function useNutritionTables() {
             ecMax: (w.ec_max as number) ?? 0,
             phMin: (w.ph_min as number) ?? 6,
             phMax: (w.ph_max as number) ?? 6,
-            products: (products ?? [])
+            products: products
               .filter((p: Record<string, unknown>) => p.week_id === w.id)
               .map((p: Record<string, unknown>) => ({
                 name: p.product_name as string,
@@ -69,7 +61,7 @@ export function useNutritionTables() {
               }))
           }))
 
-        const floraWeeks: NutritionWeek[] = (weeks ?? [])
+        const floraWeeks: NutritionWeek[] = weeks
           .filter((w: Record<string, unknown>) => w.cycle === 'flora')
           .map((w: Record<string, unknown>) => ({
             cycle: 'flora' as const,
@@ -81,7 +73,7 @@ export function useNutritionTables() {
             ecMax: (w.ec_max as number) ?? 0,
             phMin: (w.ph_min as number) ?? 6,
             phMax: (w.ph_max as number) ?? 6,
-            products: (products ?? [])
+            products: products
               .filter((p: Record<string, unknown>) => p.week_id === w.id)
               .map((p: Record<string, unknown>) => ({
                 name: p.product_name as string,
