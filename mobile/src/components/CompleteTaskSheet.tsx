@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert, ScrollView } from 'react-native'
+import * as Haptics from 'expo-haptics'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutricion',
@@ -62,10 +63,84 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
   const [notes, setNotes]         = useState('')
   const [recipeOpen, setRecipeOpen] = useState(false)
   const [xpReward, setXpReward]   = useState<{ xp: number } | null>(null)
+  const [scrollEnabled, setScrollEnabled] = useState(true)
+
+  const panY = useRef(new Animated.Value(0)).current
+  const opacityAnim = useRef(new Animated.Value(1)).current
+  const handleOpacityAnim = useRef(new Animated.Value(0.5)).current
+
+  const SWIPE_THRESHOLD = 100
+  const VELOCITY_THRESHOLD = 0.5
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => !xpReward && scrollEnabled,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const isVerticalSwipe = Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+        return isVerticalSwipe && !xpReward && scrollEnabled && gestureState.dy > 0
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy)
+          // Animate opacity and handle based on drag progress
+          const progress = Math.min(gestureState.dy / SWIPE_THRESHOLD, 1)
+          opacityAnim.setValue(1 - progress * 0.2)
+          handleOpacityAnim.setValue(0.5 + progress * 0.3)
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const isFastSwipe = gestureState.vy > VELOCITY_THRESHOLD
+        const passesThreshold = gestureState.dy > SWIPE_THRESHOLD
+
+        if ((passesThreshold || isFastSwipe) && gestureState.dy > 0) {
+          // Trigger haptics and dismiss
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          } catch {
+            // Haptics not available on all platforms
+          }
+
+          Animated.timing(panY, {
+            toValue: Dimensions.get('window').height,
+            duration: 300,
+            useNativeDriver: false,
+          }).start()
+
+          setTimeout(() => {
+            onClose()
+            panY.setValue(0)
+            opacityAnim.setValue(1)
+            handleOpacityAnim.setValue(0.5)
+          }, 300)
+        } else {
+          // Bounce back
+          Animated.spring(panY, {
+            toValue: 0,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+          Animated.spring(opacityAnim, {
+            toValue: 1,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+          Animated.spring(handleOpacityAnim, {
+            toValue: 0.5,
+            useNativeDriver: false,
+            bounciness: 8,
+          }).start()
+        }
+      },
+    })
+  ).current
 
   useEffect(() => {
     if (visible) {
       setEc(''); setPh(''); setNotes(''); setRecipeOpen(false); setXpReward(null)
+      setScrollEnabled(true)
+      panY.setValue(0)
+      opacityAnim.setValue(1)
+      handleOpacityAnim.setValue(0.5)
     }
   }, [visible, task?.id])
 
@@ -129,24 +204,51 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
     }, 1400)
   }
 
+  function handleDismiss() {
+    if (notes.trim() || ec.trim() || ph.trim()) {
+      Alert.alert(
+        'Descartar cambios',
+        'Tienes datos sin guardar. ¿Estás seguro?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Descartar', style: 'destructive', onPress: () => {
+            onClose()
+            panY.setValue(0)
+            opacityAnim.setValue(1)
+            handleOpacityAnim.setValue(0.5)
+          }},
+        ]
+      )
+    } else {
+      onClose()
+    }
+  }
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
-        activeOpacity={1}
-        onPress={onClose}
-      />
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
+      <Animated.View style={{ flex: 1, backgroundColor: `rgba(0,0,0,${0.6 * (1 - Math.min(panY.__getValue() / (Dimensions.get('window').height / 2), 1))})` }}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={handleDismiss}
+        />
+      </Animated.View>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
       >
-        <View style={{
-          backgroundColor: '#131D14',
-          borderTopLeftRadius: 24, borderTopRightRadius: 24,
-          borderTopWidth: 1, borderTopColor: '#1C2E1E',
-          padding: 20, paddingBottom: 40,
-          overflow: 'hidden',
-        }}>
+        <Animated.View
+          style={{
+            backgroundColor: '#131D14',
+            borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            borderTopWidth: 1, borderTopColor: '#1C2E1E',
+            padding: 20, paddingBottom: 40,
+            overflow: 'hidden',
+            transform: [{ translateY: panY }],
+            opacity: opacityAnim,
+          }}
+          {...panResponder.panHandlers}
+        >
 
           {/* XP Reward overlay */}
           {xpReward && (
@@ -169,7 +271,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
           )}
 
           {/* Handle */}
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#1C2E1E', alignSelf: 'center', marginBottom: 16 }} />
+          <Animated.View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#1C2E1E', alignSelf: 'center', marginBottom: 16, opacity: handleOpacityAnim }} />
 
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 18 }}>
@@ -336,7 +438,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
             </TouchableOpacity>
           </View>
 
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   )
