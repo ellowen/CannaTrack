@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
-import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
-import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -84,7 +82,8 @@ export default function OnboardingScreen() {
         status:           'active',
       }
 
-      const table = selectedTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
+      const table = tables.find(t => t.id === selectedTableId)
+      if (!table) throw new Error('Tabla nutricional no encontrada')
       const tasks = generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {

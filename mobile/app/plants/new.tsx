@@ -28,7 +28,7 @@ export default function NewPlantScreen() {
   const [isPro, setIsPro] = useState(false)
   const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
 
-  const { tables, loading } = useNutritionTables()
+  const { tables, loading: tablesLoading } = useNutritionTables()
 
   useEffect(() => {
     async function checkPro() {
