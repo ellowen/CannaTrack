@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
 import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
@@ -16,6 +17,7 @@ const TOTAL_STEPS = 6
 
 export default function OnboardingScreen() {
   const { user } = useAuth()
+  const { tables } = useNutritionTables()
   const [step, setStep]               = useState(0)
   const [plantName, setPlantName]     = useState('')
   const [genetics, setGenetics]       = useState('')
@@ -24,7 +26,14 @@ export default function OnboardingScreen() {
   const [loading, setLoading]         = useState(false)
   const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState('77')
   const [sex, setSex] = useState<'female' | 'male' | 'unknown'>('unknown')
-  const [nutritionTableId, setNutritionTableId] = useState<'revegetar' | 'topcrop-v1'>('revegetar')
+  const [selectedTableId, setSelectedTableId] = useState('')
+  const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
+
+  useEffect(() => {
+    if (tables.length > 0 && !selectedTableId) {
+      setSelectedTableId(tables[0].id)
+    }
+  }, [tables, selectedTableId])
 
   function canAdvance() {
     if (step === 1) return plantName.trim().length > 0
@@ -49,10 +58,10 @@ export default function OnboardingScreen() {
           location,
           pot_count:          1,
           pot_volume_liters:  11,
-          nutrition_table_id: nutritionTableId,
+          nutrition_table_id: selectedTableId,
           auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
           sex: geneticType === 'regular' ? sex : null,
-          available_products: [],
+          available_products: availableProducts ?? [],
         })
         .select()
         .single()
@@ -70,12 +79,12 @@ export default function OnboardingScreen() {
         location,
         potCount:         1,
         potVolumeLiters:  11,
-        nutritionTableId,
-        availableProducts: [],
+        nutritionTableId: selectedTableId,
+        availableProducts: availableProducts ?? undefined,
         status:           'active',
       }
 
-      const table = nutritionTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
+      const table = selectedTableId === 'topcrop-v1' ? TOPCROP_TABLE : REVEGETAR_TABLE
       const tasks = generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {
@@ -341,28 +350,25 @@ export default function OnboardingScreen() {
                 Selecciona los fertilizantes que vas a usar
               </Text>
               <View style={{ gap: 10 }}>
-                {([
-                  { id: 'revegetar',  label: 'REVEGETAR', sub: 'BIO · ECO · LIFE · FUEL', desc: 'Tabla de cultivo REVEGETAR' },
-                  { id: 'topcrop-v1', label: 'Top Crop',  sub: 'PRO · MID · BASIC',       desc: 'Tabla de cultivo Top Crop' },
-                ] as const).map(opt => (
+                {tables.map(table => (
                   <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setNutritionTableId(opt.id)}
+                    key={table.id}
+                    onPress={() => setSelectedTableId(table.id)}
                     style={{
                       borderRadius: 16, padding: 16,
-                      backgroundColor: nutritionTableId === opt.id ? '#1A3D1E' : '#131D14',
+                      backgroundColor: selectedTableId === table.id ? '#1A3D1E' : '#131D14',
                       borderWidth: 1,
-                      borderColor: nutritionTableId === opt.id ? '#52CC64' : '#1C2E1E',
+                      borderColor: selectedTableId === table.id ? '#52CC64' : '#1C2E1E',
                       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                     }}
                   >
                     <View>
-                      <Text style={{ color: nutritionTableId === opt.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
-                        {opt.label}
+                      <Text style={{ color: selectedTableId === table.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
+                        {table.name}
                       </Text>
-                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{opt.sub}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{table.brand}</Text>
                     </View>
-                    {nutritionTableId === opt.id && <Text style={{ color: '#52CC64', fontSize: 18 }}>✓</Text>}
+                    {selectedTableId === table.id && <Text style={{ color: '#52CC64', fontSize: 18 }}>✓</Text>}
                   </TouchableOpacity>
                 ))}
               </View>
