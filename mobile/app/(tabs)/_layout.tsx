@@ -37,7 +37,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="tasks"
         options={{
           title: 'Tareas',
           tabBarIcon: ({ focused }) => <Icon label={focused ? '📅' : '🗓️'} />,
