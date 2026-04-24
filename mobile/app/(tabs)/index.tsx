@@ -12,6 +12,7 @@ import { completeTaskInSupabase } from '@/lib/sync'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { getLevelInfo } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
+import { PlantCard } from '@/components/PlantCard'
 import type { ScheduledTask, Plant } from '@shared/types/plant'
 
 const TYPE_ICON: Record<string, string> = {
@@ -375,38 +376,19 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : (
           <View style={{ gap: 12 }}>
-            {plants.map(plant => (
-              <TouchableOpacity
-                key={plant.id}
-                onPress={() => router.push(`/plants/${plant.id}`)}
-                style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}
-                activeOpacity={0.85}
-              >
-                <View style={{ backgroundColor: '#1A3D1E', padding: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800' }}>
-                        {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#6DC278', fontSize: 11, fontWeight: '600' }}>{plant.floraStartDate ? 'FLORA' : 'VEGE'}</Text>
-                  </View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{plant.name}</Text>
-                  <Text style={{ color: '#6DC278', fontSize: 13, marginTop: 2 }}>{plant.genetics}</Text>
-                </View>
-                <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    📅 {format(plant.startDate, 'd MMM yyyy', { locale: es })}
-                  </Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    {plant.location === 'indoor' ? '🏠' : '☀️'} {differenceInDays(new Date(), plant.startDate)}d
-                  </Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    🪴 {plant.potCount}×{plant.potVolumeLiters}L
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {plants.map(plant => {
+              const plantTasks = pending.filter((t: ScheduledTask) => t.plantId === plant.id)
+              const plantOverdue = overdueTasks.filter((t: ScheduledTask) => t.plantId === plant.id)
+              return (
+                <PlantCard
+                  key={plant.id}
+                  plant={plant}
+                  pendingTasks={plantTasks.length}
+                  overdueTasks={plantOverdue.length}
+                  onPress={() => router.push(`/plants/${plant.id}`)}
+                />
+              )
+            })}
           </View>
         )}
 
