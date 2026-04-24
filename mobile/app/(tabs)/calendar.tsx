@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl, PanResponder, Dimensions } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -7,8 +7,6 @@ import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { ScheduledTask } from '@shared/types/plant'
-
-const { width } = Dimensions.get('window')
 
 const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
@@ -28,24 +26,6 @@ export default function CalendarScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current
   const fadeAnim = useRef(new Animated.Value(1)).current
   const headerScaleAnim = useRef(new Animated.Value(1)).current
-  const swipeAnimRef = useRef<Record<string, Animated.Value>>({})
-
-  function getSwipeAnim(taskId: string): Animated.Value {
-    if (!swipeAnimRef.current[taskId]) {
-      swipeAnimRef.current[taskId] = new Animated.Value(0)
-    }
-    return swipeAnimRef.current[taskId]
-  }
-
-  function handleSwipeComplete(taskId: string) {
-    completeTask(taskId)
-    const anim = getSwipeAnim(taskId)
-    Animated.timing(anim, {
-      toValue: width,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -279,59 +259,84 @@ export default function CalendarScreen() {
               <Text style={{ color: '#728C74', textAlign: 'center', paddingVertical: 20 }}>Sin tareas</Text>
             ) : (
               <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-                {selectedTasks.map((task, i) => {
-                  const swipeAnim = getSwipeAnim(task.id)
-                  const translateX = swipeAnim.interpolate({
-                    inputRange: [0, width],
-                    outputRange: [0, width],
-                    extrapolate: 'clamp',
-                  })
-                  return (
-                    <View key={task.id} style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
-                      overflow: 'hidden',
-                    }}>
-                      {/* Swipe background (complete action) */}
-                      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#0D2010', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 14 }}>
-                        <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>✓ Hecho</Text>
-                      </View>
-
-                      {/* Swipeable task item */}
-                      <Animated.View style={{ transform: [{ translateX }], flex: 1 }}>
-                        <TouchableOpacity
-                          onLongPress={() => handleSwipeComplete(task.id)}
+                {selectedTasks.map((task, i) => (
+                  <View
+                    key={task.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      borderTopWidth: i > 0 ? 1 : 0,
+                      borderTopColor: '#1C2E1E',
+                      opacity: task.completed ? 0.4 : 1,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: TYPE_COLOR[task.type],
+                        }}
+                      />
+                      <View>
+                        <Text
                           style={{
-                            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                            paddingHorizontal: 14, paddingVertical: 12,
-                            backgroundColor: '#131D14',
-                            opacity: task.completed ? 0.4 : 1,
+                            color: '#E4F2E7',
+                            fontWeight: '700',
+                            fontSize: 14,
                           }}
                         >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TYPE_COLOR[task.type] }} />
-                            <View>
-                              <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
-                                {task.type === 'nutrition' ? 'Nutricion' : task.type === 'irrigation' ? 'Riego' : task.type === 'foliar' ? 'Foliar' : task.type === 'harvest' ? 'Cosecha' : 'Observacion'}
-                              </Text>
-                              <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>
-                                {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {plantNames[task.plantId] ?? '...'}
-                              </Text>
-                            </View>
-                          </View>
-                          {!task.completed && (
-                            <TouchableOpacity
-                              onPress={() => completeTask(task.id)}
-                              style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
-                            >
-                              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
-                            </TouchableOpacity>
-                          )}
-                        </TouchableOpacity>
-                      </Animated.View>
+                          {task.type === 'nutrition'
+                            ? 'Nutricion'
+                            : task.type === 'irrigation'
+                              ? 'Riego'
+                              : task.type === 'foliar'
+                                ? 'Foliar'
+                                : task.type === 'harvest'
+                                  ? 'Cosecha'
+                                  : 'Observacion'}
+                        </Text>
+                        <Text
+                          style={{
+                            color: '#728C74',
+                            fontSize: 11,
+                            marginTop: 1,
+                          }}
+                        >
+                          {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} ·{' '}
+                          {plantNames[task.plantId] ?? '...'}
+                        </Text>
+                      </View>
                     </View>
-                  )
-                })}
+                    {!task.completed && (
+                      <TouchableOpacity
+                        onPress={() => completeTask(task.id)}
+                        style={{
+                          backgroundColor: '#0D2010',
+                          borderWidth: 1,
+                          borderColor: '#1A3D1E',
+                          borderRadius: 12,
+                          paddingHorizontal: 14,
+                          paddingVertical: 7,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#52CC64',
+                            fontWeight: '700',
+                            fontSize: 12,
+                          }}
+                        >
+                          Hecho ✓
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
               </View>
             )}
           </ScrollView>
