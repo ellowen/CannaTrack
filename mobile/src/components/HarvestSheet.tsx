@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert } from 'react-native'
-import format from 'date-fns/format'
-import differenceInDays from 'date-fns/differenceInDays'
+import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import * as Haptics from 'expo-haptics'
 import { supabase } from '@/lib/supabase'

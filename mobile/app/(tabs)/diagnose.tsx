@@ -6,7 +6,7 @@ import { usePlants } from '@/hooks/usePlants'
 import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
-import format from 'date-fns/format'
+import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 type PhotoLog = {
