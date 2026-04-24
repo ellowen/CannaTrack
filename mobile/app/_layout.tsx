@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import { useInitSync } from '@/hooks/useInitSync'
+import { ThemeProvider } from '@/context/ThemeContext'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -68,7 +69,7 @@ export default function RootLayout() {
   if (session === undefined) return null
 
   return (
-    <>
+    <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth" />
         <Stack.Screen name="onboarding" />
@@ -83,6 +84,6 @@ export default function RootLayout() {
         <Stack.Screen name="achievements" />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </ThemeProvider>
   )
 }
