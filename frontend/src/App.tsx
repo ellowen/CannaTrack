@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { router } from '@/router'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
@@ -98,8 +99,10 @@ export default function App() {
   if (!onboarded) return <Onboarding />
 
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
