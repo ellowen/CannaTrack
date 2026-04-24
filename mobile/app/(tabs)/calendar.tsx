@@ -1,10 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
-import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
+import startOfDay from 'date-fns/startOfDay'
+import endOfDay from 'date-fns/endOfDay'
+import format from 'date-fns/format'
+import getDaysInMonth from 'date-fns/getDaysInMonth'
+import startOfMonth from 'date-fns/startOfMonth'
 import { es } from 'date-fns/locale'
 import type { ScheduledTask } from '@shared/types/plant'
 
@@ -31,7 +35,12 @@ export default function CalendarScreen() {
   const start = startOfMonth(displayMonth)
   const daysInMonth = getDaysInMonth(displayMonth)
   const firstDayOfWeek = start.getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1))
+  const days = useMemo(() =>
+    Array.from({ length: daysInMonth }, (_, i) =>
+      new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1)
+    ),
+    [daysInMonth, displayMonth]
+  )
 
   function animateMonthChange(direction: 'next' | 'prev') {
     const startValue = direction === 'next' ? 1 : -1
