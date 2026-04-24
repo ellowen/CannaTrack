@@ -10,6 +10,7 @@ interface NutritionStore {
   tables: NutritionTable[]
   selectedTableId: string
   loading: boolean
+  tablesLoaded: boolean
 
   // Acciones
   setTables: (tables: NutritionTable[]) => void
@@ -19,6 +20,7 @@ interface NutritionStore {
   updateTable: (id: string, changes: Partial<NutritionTable>) => void
   removeTable: (id: string) => void
   setLoading: (v: boolean) => void
+  ensureTablesLoaded: () => void
 
   // Selectors
   getTableById: (id: string) => NutritionTable | undefined
@@ -37,9 +39,10 @@ export const useNutritionStore = create<NutritionStore>()(
   persist(
     (set, get) => ({
       customTables: [],
-      tables: mergeTables([]),
+      tables: [], // Start empty, load on demand
       selectedTableId: 'revegetar',
       loading: false,
+      tablesLoaded: false,
 
       setTables: (tables) => set({ tables }),
       setSelectedTable: (selectedTableId) => set({ selectedTableId }),
@@ -73,9 +76,19 @@ export const useNutritionStore = create<NutritionStore>()(
         }),
       setLoading: (loading) => set({ loading }),
 
+      ensureTablesLoaded: () => {
+        const state = get()
+        if (!state.tablesLoaded) {
+          // Load official tables when first needed (not on app start)
+          set({ tables: mergeTables(state.customTables), tablesLoaded: true })
+        }
+      },
+
       getTableById: (id) => get().tables.find((t) => t.id === id),
       getAvailableTables: (plan) => {
-        const tables = get().tables
+        const state = get()
+        state.ensureTablesLoaded() // Lazy-load if not already loaded
+        const tables = state.tables
         if (plan === 'pro') return tables
         return tables.filter((t) => t.accessTier === 'free')
       },
@@ -88,7 +101,9 @@ export const useNutritionStore = create<NutritionStore>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.tables = mergeTables(state.customTables)
+          // Don't eagerly load tables on rehydration - wait until ensureTablesLoaded is called
+          state.tables = []
+          state.tablesLoaded = false
         }
       },
       storage: createAsyncStorage(),
