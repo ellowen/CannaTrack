@@ -14,6 +14,7 @@ interface PlantStore {
   addPlant: (plant: Plant) => void
   updatePlant: (id: string, changes: Partial<Plant>) => void
   removePlant: (id: string) => void
+  setPlants: (plants: Plant[]) => void
   selectPlant: (id: string | null) => void
   setLoading: (v: boolean) => void
   setError: (e: string | null) => void
@@ -41,6 +42,7 @@ export const usePlantStore = create<PlantStore>()(
         })),
       removePlant: (id) =>
         set((s) => ({ plants: s.plants.filter((p) => p.id !== id) })),
+      setPlants: (plants) => set({ plants }),
       selectPlant: (id) => set({ selectedPlantId: id }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),

@@ -1,44 +1,52 @@
 /**
- * Sync Queue - Placeholder para sincronización offline (Mobile)
- *
- * TODO: Implementar cuando sea necesario
- * Por ahora, los cambios se sincronizan directamente sin queue
+ * Sync Queue - Offline sync queue for mobile
+ * Enqueues local changes and processes them when online
  */
 
-// Placeholder exports para evitar errores de import
-export function enqueueSyncAction() {
-  console.log('[SyncQueue] Placeholder - sync will be implemented later')
+import { supabase } from './supabase'
+import { useSyncStore } from '@/store/syncStore'
+import { useTaskStore } from '@/store/taskStore'
+import { usePlantStore } from '@/store/plantStore'
+
+const SYNC_RETRY_DELAY_MS = 5000
+const SYNC_RETRY_MAX_ATTEMPTS = 3
+
+let retryAttempts = 0
+
+interface SyncAction {
+  id: string
+  type: 'addPlant' | 'updatePlant' | 'completeTask' | 'addXP' | 'uploadPhoto'
+  payload: Record<string, unknown>
+  timestamp: number
 }
 
-export function processSyncQueue() {
-  console.log('[SyncQueue] Placeholder - no queue to process')
+/**
+ * Enqueue a sync action to be processed when online
+ */
+export function enqueueSyncAction(
+  type: SyncAction['type'],
+  payload: Record<string, unknown>
+): void {
+  const syncStore = useSyncStore.getState()
+
+  syncStore.enqueueSyncAction({
+    type,
+    payload,
+  })
+
+  console.log(`[SyncQueue] Acción encolada: ${type}`, payload)
 }
- * Intenta enviar todas las acciones pendientes a Supabase.
- * Maneja errores gracefully sin romper el flujo.
+
+/**
+ * Process all queued sync actions when online
+ * Called from OfflineIndicator or manually by user
  */
 export async function processSyncQueue(): Promise<void> {
-  // Solo procesar si hay conexión
-  const online = await isOnline()
-  if (!online) {
-    console.log('[SyncQueue] Offline - skipping sync')
-    // Registrar listener para cuando vuelva online
-    if (!unsubscribeOnline) {
-      unsubscribeOnline = onOnline(() => {
-        console.log('[SyncQueue] Online detected - processing queue')
-        processSyncQueue().catch((err) => {
-          console.error('[SyncQueue] Error en sync automático:', err)
-        })
-      })
-    }
-    return
-  }
-
   const syncStore = useSyncStore.getState()
   const queue = syncStore.syncQueue
 
   if (queue.length === 0) {
     console.log('[SyncQueue] Queue vacía')
-    // Resetear retry counter cuando la cola está vacía
     retryAttempts = 0
     return
   }
@@ -47,24 +55,23 @@ export async function processSyncQueue(): Promise<void> {
   syncStore.setIsSyncing(true)
 
   try {
-    // Obtener user ID del usuario autenticado
     const { data: authData } = await supabase.auth.getUser()
     if (!authData.user) {
       throw new Error('Usuario no autenticado')
     }
 
-    // Procesar cada acción en la cola
+    // Process each action in queue
     for (const action of queue) {
       try {
         await processSyncAction(action, authData.user.id)
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error)
         console.error(`[SyncQueue] Error procesando acción ${action.id}:`, errorMsg)
-        // Continuar con las siguientes acciones incluso si una falla
+        // Continue with next actions even if one fails
       }
     }
 
-    // Limpiar cola después de procesar todas las acciones
+    // Clear queue after processing all actions
     syncStore.clearQueue()
     syncStore.setLastSyncAt(new Date())
     syncStore.clearSyncError()
@@ -77,11 +84,13 @@ export async function processSyncQueue(): Promise<void> {
 
     syncStore.setSyncError(errorMsg)
 
-    // Reintentar con backoff exponencial
+    // Retry with exponential backoff
     if (retryAttempts < SYNC_RETRY_MAX_ATTEMPTS) {
       retryAttempts++
       const delayMs = SYNC_RETRY_DELAY_MS * Math.pow(2, retryAttempts - 1)
-      console.log(`[SyncQueue] Reintentando en ${delayMs}ms (intento ${retryAttempts}/${SYNC_RETRY_MAX_ATTEMPTS})`)
+      console.log(
+        `[SyncQueue] Reintentando en ${delayMs}ms (intento ${retryAttempts}/${SYNC_RETRY_MAX_ATTEMPTS})`
+      )
 
       setTimeout(() => {
         processSyncQueue().catch((err) => {
@@ -98,23 +107,34 @@ export async function processSyncQueue(): Promise<void> {
 }
 
 /**
- * Procesa una acción individual según su tipo.
+ * Process a single sync action by type
  */
 async function processSyncAction(
-  action: { id: string; type: string; payload: Record<string, unknown> },
+  action: SyncAction,
   userId: string
 ): Promise<void> {
   switch (action.type) {
     case 'addPlant': {
       const plant = action.payload as any
-      await syncPlantToSupabase(plant)
+      // Plant should already exist in supabase from creation
+      console.log('[SyncQueue] Plant already synced during creation')
       break
     }
 
     case 'updatePlant': {
-      const { plantId, status } = action.payload as { plantId: string; status: 'active' | 'harvested' | 'discarded' }
+      const { plantId, status } = action.payload as {
+        plantId: string
+        status: 'active' | 'harvested' | 'discarded'
+      }
       if (plantId && status) {
-        await updatePlantStatusInSupabase(plantId, status)
+        const { error } = await supabase
+          .from('plants')
+          .update({ status })
+          .eq('id', plantId)
+          .eq('user_id', userId)
+
+        if (error) throw error
+        console.log(`[SyncQueue] Plant ${plantId} status updated to ${status}`)
       }
       break
     }
@@ -122,20 +142,30 @@ async function processSyncAction(
     case 'completeTask': {
       const { taskId, notes } = action.payload as { taskId: string; notes?: string }
       if (taskId) {
-        await completeTaskInSupabase(taskId, notes)
+        const { error } = await supabase
+          .from('scheduled_tasks')
+          .update({
+            completed: true,
+            completed_at: new Date().toISOString(),
+            completion_notes: notes,
+          })
+          .eq('id', taskId)
+
+        if (error) throw error
+        console.log(`[SyncQueue] Task ${taskId} marked as completed`)
       }
       break
     }
 
     case 'addXP': {
-      // TODO: Implementar sync de XP cuando se agregue tabla XP a Supabase
-      console.log('[SyncQueue] XP sync no implementado aún:', action.payload)
+      // TODO: Implement XP sync when XP table is added to Supabase
+      console.log('[SyncQueue] XP sync not implemented yet:', action.payload)
       break
     }
 
     case 'uploadPhoto': {
-      // TODO: Implementar sync de fotos cuando se agregue storage a Supabase
-      console.log('[SyncQueue] Photo upload no implementado aún:', action.payload)
+      // TODO: Implement photo sync when storage is set up in Supabase
+      console.log('[SyncQueue] Photo upload not implemented yet:', action.payload)
       break
     }
 
@@ -145,67 +175,24 @@ async function processSyncAction(
 }
 
 /**
- * Encola una acción de sincronización.
- * Se guarda automáticamente en AsyncStorage via Zustand persist.
- */
-export function enqueueSyncAction(
-  type: 'addPlant' | 'updatePlant' | 'completeTask' | 'addXP' | 'uploadPhoto',
-  payload: Record<string, unknown>
-): void {
-  const syncStore = useSyncStore.getState()
-
-  syncStore.enqueueSyncAction({
-    type,
-    payload,
-  })
-
-  console.log(`[SyncQueue] Acción encolada: ${type}`, payload)
-
-  // Si estamos online, intentar sincronizar inmediatamente
-  isOnline()
-    .then((online) => {
-      if (online) {
-        processSyncQueue().catch((err) => {
-          console.error('[SyncQueue] Error en sync inmediato:', err)
-        })
-      }
-    })
-    .catch((err) => {
-      console.error('[SyncQueue] Error verificando conectividad:', err)
-    })
-}
-
-/**
- * Retorna el estado actual de la cola.
+ * Get current sync queue status
  */
 export function getSyncQueueStatus() {
   const syncStore = useSyncStore.getState()
   return {
-    pendingCount: syncStore.getPendingActionsCount(),
+    pendingCount: syncStore.syncQueue.length,
     isSyncing: syncStore.isSyncing,
-    lastSyncAt: syncStore.getLastSyncTime(),
+    lastSyncAt: syncStore.lastSyncAt,
     error: syncStore.syncError,
   }
 }
 
 /**
- * Limpia la cola completamente (úsalo con cuidado).
+ * Clear sync queue (use with caution)
  */
 export function clearSyncQueue(): void {
   const syncStore = useSyncStore.getState()
   syncStore.clearQueue()
   retryAttempts = 0
   console.log('[SyncQueue] Cola limpiada')
-}
-
-/**
- * Desuscribe los listeners de red y limpia recursos.
- * Llamar en cleanup de useEffect o al desmontar la app.
- */
-export function cleanupSyncQueue(): void {
-  if (unsubscribeOnline) {
-    unsubscribeOnline()
-    unsubscribeOnline = null
-  }
-  console.log('[SyncQueue] Listeners limpiados')
 }

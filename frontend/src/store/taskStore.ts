@@ -16,6 +16,7 @@ interface TaskStore {
   updateTask: (id: string, changes: Partial<ScheduledTask>) => void
   removeTask: (id: string) => void
   setTasks: (plantId: string, tasks: ScheduledTask[]) => void
+  setAllTasks: (tasks: ScheduledTask[]) => void
   resetTasksForPlant: (plantId: string) => void
   setFilter: (f: TaskFilter) => void
   setLoading: (v: boolean) => void
@@ -70,6 +71,7 @@ export const useTaskStore = create<TaskStore>()(
             ...newTasks,
           ],
         })),
+      setAllTasks: (tasks) => set({ tasks }),
       resetTasksForPlant: (plantId) =>
         set((s) => ({ tasks: s.tasks.filter((t) => t.plantId !== plantId) })),
       setFilter: (filter) => set({ filter }),

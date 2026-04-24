@@ -185,7 +185,6 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
   const [newProduct, setNewProduct] = useState<{ name: string; dose: string; unit: 'ml' | 'gr' }>({
     name: '', dose: '', unit: 'ml',
   })
-  const [newProductError, setNewProductError] = useState<string>('')
   const [addingProduct, setAddingProduct] = useState(false)
 
   function set<K extends keyof PlantFormValues>(field: K, value: PlantFormValues[K]) {

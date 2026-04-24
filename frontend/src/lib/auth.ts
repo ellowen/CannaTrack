@@ -89,7 +89,7 @@ export async function signOut() {
 export function onAuthStateChange(
   callback: (user: typeof supabase.auth.getUser extends Promise<{ data: { user: infer T } }> ? T : never | null) => void
 ) {
-  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null)
   })
 

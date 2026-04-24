@@ -10,7 +10,7 @@ import { useTaskStore } from '@/store/taskStore'
 
 export function useInitSync() {
   const { setPlants } = usePlantStore()
-  const { setTasks: setAllTasks } = useTaskStore()
+  const { setAllTasks } = useTaskStore()
 
   useEffect(() => {
     async function sync() {
@@ -24,10 +24,7 @@ export function useInitSync() {
 
         // Cargar tareas de Supabase
         const tasks = await loadTasksFromSupabase(user.id)
-
-        // Agrupar tareas por planta (el store las guarda todas)
-        // En realidad, el store guarda todas las tareas juntas
-        useTaskStore.setState({ tasks })
+        setAllTasks(tasks)
       } catch (error) {
         console.error('Error en sincronización inicial:', error)
         // No lanzar error, solo usar lo que está en localStorage

@@ -1,6 +1,6 @@
 import { useMeasurementStore } from '@/store/measurementStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
-import type { Measurement } from '@/types/measurement'
+import type { MeasurementLog } from '@/types/measurement'
 
 export function useMeasurements(plantId: string) {
   const { logs, addLog, deleteLog } = useMeasurementStore()
@@ -9,7 +9,7 @@ export function useMeasurements(plantId: string) {
     .filter((l) => l.plantId === plantId)
     .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())
 
-  function addLogWithSync(measurement: Measurement): void {
+  function addLogWithSync(measurement: MeasurementLog): void {
     addLog(measurement)
     enqueueSyncAction('addXP', {
       userId: plantId, // Nota: esto debería ser el userId real, pero aquí va plantId como placeholder
