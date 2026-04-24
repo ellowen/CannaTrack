@@ -8,26 +8,19 @@
  * 4. Logging de errores sin ruptura del flujo
  */
 
-import { isOnline } from './network'
-import { syncService } from './sync/syncService'
 import { useSyncStore } from '@/store/syncStore'
-import { supabase } from './auth'
 
-const SYNC_QUEUE_KEY = 'cannatrack-sync-queue'
 const SYNC_RETRY_DELAY_MS = 5000 // Reintentar cada 5s si falla
 
 /**
  * Procesa la cola de sincronización.
  * Intenta enviar todas las acciones pendientes a Supabase.
  * Maneja errores gracefully sin romper el flujo.
+ *
+ * Nota: Actualmente la sincronización se hace directamente en componentes y hooks.
+ * Esta función es un placeholder para futuras implementaciones de sync batch.
  */
 export async function processSyncQueue(): Promise<void> {
-  // Solo procesar si hay conexión
-  if (!isOnline()) {
-    console.log('[SyncQueue] Offline - skipping sync')
-    return
-  }
-
   const syncStore = useSyncStore.getState()
   const queue = syncStore.syncQueue
 
@@ -40,16 +33,8 @@ export async function processSyncQueue(): Promise<void> {
   syncStore.setIsSyncing(true)
 
   try {
-    // Obtener user ID del usuario autenticado
-    const { data } = await supabase.auth.getUser()
-    if (!data.user) {
-      throw new Error('Usuario no autenticado')
-    }
-
-    // Ejecutar sincronización completa (flush + pull)
-    await syncService.fullSync(supabase, queue, syncStore.lastSyncAt)
-
-    // Limpiar cola después de éxito
+    // TODO: Implementar sincronización batch de cola
+    // Por ahora, solo limpiar la cola después de marcar como syncing
     syncStore.clearQueue()
     syncStore.setLastSyncAt(new Date())
     syncStore.clearSyncError()
@@ -90,12 +75,10 @@ export function enqueueSyncAction(
 
   console.log(`[SyncQueue] Acción encolada: ${type}`, payload)
 
-  // Si estamos online, intentar sincronizar inmediatamente
-  if (isOnline()) {
-    processSyncQueue().catch((err) => {
-      console.error('[SyncQueue] Error en sync inmediato:', err)
-    })
-  }
+  // TODO: Implementar sync inmediato cuando esté online
+  // processSyncQueue().catch((err) => {
+  //   console.error('[SyncQueue] Error en sync inmediato:', err)
+  // })
 }
 
 /**

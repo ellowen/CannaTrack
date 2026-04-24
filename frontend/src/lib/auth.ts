@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type User } from '@supabase/supabase-js'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -87,7 +87,7 @@ export async function signOut() {
  * Returns unsubscribe function.
  */
 export function onAuthStateChange(
-  callback: (user: typeof supabase.auth.getUser extends Promise<{ data: { user: infer T } }> ? T : never | null) => void
+  callback: (user: User | null) => void
 ) {
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null)
