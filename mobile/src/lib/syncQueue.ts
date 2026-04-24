@@ -107,6 +107,28 @@ export async function processSyncQueue(): Promise<void> {
 }
 
 /**
+ * Validate updatePlant payload
+ */
+function validateUpdatePlantPayload(payload: Record<string, unknown>): boolean {
+  if (!payload || typeof payload !== 'object') return false
+  const { plantId, status } = payload
+  if (typeof plantId !== 'string' || !plantId) return false
+  if (!['active', 'harvested', 'discarded'].includes(String(status))) return false
+  return true
+}
+
+/**
+ * Validate completeTask payload
+ */
+function validateCompleteTaskPayload(payload: Record<string, unknown>): boolean {
+  if (!payload || typeof payload !== 'object') return false
+  const { taskId, notes } = payload
+  if (typeof taskId !== 'string' || !taskId) return false
+  if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) return false
+  return true
+}
+
+/**
  * Process a single sync action by type
  */
 async function processSyncAction(
@@ -115,45 +137,52 @@ async function processSyncAction(
 ): Promise<void> {
   switch (action.type) {
     case 'addPlant': {
-      const plant = action.payload as any
       // Plant should already exist in supabase from creation
       console.log('[SyncQueue] Plant already synced during creation')
       break
     }
 
     case 'updatePlant': {
+      if (!validateUpdatePlantPayload(action.payload)) {
+        console.error(`[SyncQueue] Invalid updatePlant payload`, action.payload)
+        break
+      }
+
       const { plantId, status } = action.payload as {
         plantId: string
         status: 'active' | 'harvested' | 'discarded'
       }
-      if (plantId && status) {
-        const { error } = await supabase
-          .from('plants')
-          .update({ status })
-          .eq('id', plantId)
-          .eq('user_id', userId)
 
-        if (error) throw error
-        console.log(`[SyncQueue] Plant ${plantId} status updated to ${status}`)
-      }
+      const { error } = await supabase
+        .from('plants')
+        .update({ status })
+        .eq('id', plantId)
+        .eq('user_id', userId)
+
+      if (error) throw error
+      console.log(`[SyncQueue] Plant ${plantId} status updated to ${status}`)
       break
     }
 
     case 'completeTask': {
-      const { taskId, notes } = action.payload as { taskId: string; notes?: string }
-      if (taskId) {
-        const { error } = await supabase
-          .from('scheduled_tasks')
-          .update({
-            completed: true,
-            completed_at: new Date().toISOString(),
-            completion_notes: notes,
-          })
-          .eq('id', taskId)
-
-        if (error) throw error
-        console.log(`[SyncQueue] Task ${taskId} marked as completed`)
+      if (!validateCompleteTaskPayload(action.payload)) {
+        console.error(`[SyncQueue] Invalid completeTask payload`, action.payload)
+        break
       }
+
+      const { taskId, notes } = action.payload as { taskId: string; notes?: string }
+
+      const { error } = await supabase
+        .from('scheduled_tasks')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+          completion_notes: notes,
+        })
+        .eq('id', taskId)
+
+      if (error) throw error
+      console.log(`[SyncQueue] Task ${taskId} marked as completed`)
       break
     }
 

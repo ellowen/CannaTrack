@@ -11,7 +11,7 @@
 drop policy if exists "profiles: system update xp" on profiles;
 create policy "profiles: system update xp" on profiles
   for update using (auth.uid() = id)
-  with check (auth.uid() = id or auth.uid() is null);
+  with check (auth.uid() = id);
 
 -- ────────────────────────────────────────────────────────────────────────
 -- PLANTS — Cada usuario solo ve/modifica las suyas

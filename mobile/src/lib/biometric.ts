@@ -4,6 +4,8 @@ import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 
 const SESSION_KEY = 'cannatrack_session_v1'
+const BIOMETRIC_MAX_ATTEMPTS = 5
+let failedBiometricAttempts = 0
 
 export async function saveSessionForBiometric(session: Session): Promise<void> {
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify({
@@ -34,12 +36,24 @@ export async function getBiometricLabel(): Promise<string> {
 }
 
 export async function restoreSessionWithBiometric(): Promise<Session | null> {
+  if (failedBiometricAttempts >= BIOMETRIC_MAX_ATTEMPTS) {
+    alert('Too many attempts. Please use password.')
+    return null
+  }
+
   try {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Confirma tu identidad para ingresar',
       cancelLabel:   'Cancelar',
     })
-    if (!result.success) return null
+
+    if (!result.success) {
+      failedBiometricAttempts++
+      console.warn(`Biometric failed (${failedBiometricAttempts}/${BIOMETRIC_MAX_ATTEMPTS})`)
+      return null
+    }
+
+    failedBiometricAttempts = 0
 
     const val = await SecureStore.getItemAsync(SESSION_KEY)
     if (!val) return null
