@@ -95,7 +95,9 @@ export function OfflineIndicator() {
   if (state === 'none') return null
 
   const isOffline = state === 'offline'
-  const bgColor = isOffline ? '#EF4444' : '#F59E0B'
+  let bgColor = '#F59E0B' // syncing/pending (amber)
+  if (isOffline) bgColor = '#EF4444' // offline (red)
+  if (!isOffline && !isSyncing && pendingCount === 0) bgColor = '#10B981' // synced (green)
 
   return (
     <Animated.View
@@ -125,45 +127,64 @@ export function OfflineIndicator() {
           </Text>
 
           {/* Detalles: contador o último sync */}
-          <Text
-            style={{
-              color: 'rgba(255, 255, 255, 0.85)',
-              fontSize: 12,
-              fontWeight: '400',
-            }}
-          >
-            {isOffline
-              ? 'Los cambios se guardarán cuando vuelva'
-              : `${pendingCount} cambios pendientes`}
-          </Text>
-
-          {/* Último sync time (solo si hay conexión y hay historial) */}
-          {!isOffline && lastSyncTime && (
+          <View>
             <Text
               style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: 11,
+                color: 'rgba(255, 255, 255, 0.85)',
+                fontSize: 12,
                 fontWeight: '400',
-                marginTop: 2,
               }}
             >
-              Último sincronizado: {lastSyncTime}
+              {isOffline
+                ? 'Los cambios se guardarán cuando vuelva'
+                : isSyncing
+                  ? `Sincronizando ${pendingCount} cambios...`
+                  : pendingCount > 0
+                    ? `${pendingCount} cambios pendientes`
+                    : 'Sincronizado'}
             </Text>
-          )}
+
+            {/* Último sync time (solo si hay conexión y hay historial) */}
+            {!isOffline && lastSyncTime && (
+              <Text
+                style={{
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontSize: 11,
+                  fontWeight: '400',
+                  marginTop: 2,
+                }}
+              >
+                Último: {lastSyncTime}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Indicador y botón */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 12 }}>
           {isSyncing ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            !isOffline &&
-            hasPending && (
+            <>
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>
+                {pendingCount}
+              </Text>
+            </>
+          ) : !isOffline && hasPending ? (
+            <>
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: 20,
+                  fontWeight: '600',
+                }}
+              >
+                •
+              </Text>
               <TouchableOpacity
                 onPress={handleManualSync}
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
                   backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   borderRadius: 6,
                   borderWidth: 1,
@@ -173,15 +194,24 @@ export function OfflineIndicator() {
                 <Text
                   style={{
                     color: '#fff',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: '600',
                   }}
                 >
-                  Sincronizar ahora
+                  Ahora
                 </Text>
               </TouchableOpacity>
-            )
-          )}
+            </>
+          ) : !isOffline && !isSyncing ? (
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: 16,
+              }}
+            >
+              ✓
+            </Text>
+          ) : null}
         </View>
       </View>
     </Animated.View>
