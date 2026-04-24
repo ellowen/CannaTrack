@@ -205,6 +205,11 @@ export default function PlantsScreen() {
             scrollEnabled={false}
             data={filteredPlants}
             keyExtractor={p => p.id}
+            maxToRenderPerBatch={15}
+            updateCellsBatchingPeriod={50}
+            initialNumToRender={10}
+            windowSize={10}
+            removeClippedSubviews={true}
             renderItem={({ item: plant }) => (
               <TouchableOpacity
                 onPress={() => router.push(`/plants/${plant.id}`)}
