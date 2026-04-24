@@ -1,25 +1,166 @@
-import { useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, ActivityIndicator, Alert, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useAuth } from '@/hooks/useAuth'
+import { usePlants } from '@/hooks/usePlants'
+import { supabase } from '@/lib/supabase'
+import * as ImagePicker from 'expo-image-picker'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 
-type Diagnosis = {
+type PhotoLog = {
   id: string
-  date: Date
-  photoUrl?: string
-  report?: string
+  plantId: string
+  photoUrl: string
+  week: number
+  stage: string
+  createdAt: Date
+  notes?: string
 }
 
 export default function DiagnoseScreen() {
-  const [lastDiagnosis, setLastDiagnosis] = useState<Diagnosis | null>(null)
+  const { user } = useAuth()
+  const { plants } = usePlants()
+  const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<PhotoLog[]>([])
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
-  const handleTakePhoto = () => {
-    // TODO: Week 5 - Camera access implementation
-    console.log('Take photo - Week 5 implementation')
+  const selectedPlant = selectedPlantId ? plants.find(p => p.id === selectedPlantId) : null
+
+  useEffect(() => {
+    if (selectedPlantId) {
+      loadPhotos(selectedPlantId)
+    }
+  }, [selectedPlantId])
+
+  async function loadPhotos(plantId: string) {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('week_logs')
+        .select('id, plant_id, photo_url, week, stage, created_at, notes')
+        .eq('plant_id', plantId)
+        .not('photo_url', 'is', null)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const parsed = (data ?? []).map((p: any) => ({
+        id: p.id,
+        plantId: p.plant_id,
+        photoUrl: p.photo_url,
+        week: p.week,
+        stage: p.stage,
+        createdAt: new Date(p.created_at),
+        notes: p.notes,
+      }))
+      setPhotos(parsed)
+    } catch (error) {
+      console.error('Error loading photos:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSelectFromGallery = () => {
-    // TODO: Week 5 - Photo library implementation
-    console.log('Select from gallery - Week 5 implementation')
+  async function handleTakePhoto() {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      })
+
+      if (!result.canceled && selectedPlant) {
+        await uploadPhoto(result.assets[0].uri, selectedPlant.id)
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo acceder a la cámara')
+      console.error('Camera error:', error)
+    }
+  }
+
+  async function handleSelectFromGallery() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      })
+
+      if (!result.canceled && selectedPlant) {
+        await uploadPhoto(result.assets[0].uri, selectedPlant.id)
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo acceder a la galería')
+      console.error('Gallery error:', error)
+    }
+  }
+
+  async function uploadPhoto(uri: string, plantId: string) {
+    if (!user) return
+
+    try {
+      setUploading(true)
+      const filename = `${user.id}/${plantId}/${Date.now()}.jpg`
+
+      // Convertir URI a Blob usando fetch
+      const response = await fetch(uri)
+      const blob = await response.blob()
+
+      // Upload Blob a Supabase storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('plant_photos')
+        .upload(filename, blob, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('plant_photos')
+        .getPublicUrl(data.path)
+
+      // Save to week_logs
+      const { error: insertError } = await supabase
+        .from('week_logs')
+        .insert({
+          user_id: user.id,
+          plant_id: plantId,
+          photo_url: urlData.publicUrl,
+          week: selectedPlant?.floraStartDate ? Math.ceil((Date.now() - selectedPlant.floraStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) : 0,
+          stage: selectedPlant?.floraStartDate ? 'FLORA' : 'VEGE',
+          notes: '',
+        })
+
+      if (insertError) throw insertError
+
+      Alert.alert('Exito', 'Foto subida correctamente')
+      loadPhotos(plantId)
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo subir la foto')
+      console.error('Upload error:', error)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  if (plants.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ alignItems: 'center', gap: 12 }}>
+          <Text style={{ fontSize: 40 }}>📭</Text>
+          <Text style={{ color: '#728C74', fontSize: 13 }}>Sin plantas activas</Text>
+          <Text style={{ color: '#3A5040', fontSize: 12, maxWidth: 250, textAlign: 'center' }}>
+            Crea tu primera planta para comenzar a documentar el crecimiento
+          </Text>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -29,153 +170,170 @@ export default function DiagnoseScreen() {
         {/* Header */}
         <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 20 }}>
           <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900' }}>
-            Diagnóstico por IA
+            Diario Fotográfico
           </Text>
           <Text style={{ color: '#728C74', fontSize: 13, marginTop: 8, lineHeight: 18 }}>
-            Sube una foto de tu planta para obtener un diagnóstico automático de plagas, enfermedades y deficiencias nutricionales.
-          </Text>
-          <Text style={{ color: '#A78BFA', fontSize: 12, marginTop: 4, fontWeight: '600' }}>
-            (Semana 5: integración con Claude Vision API)
+            Documenta el crecimiento de tu planta semana a semana. Pronto: diagnóstico automático con IA.
           </Text>
         </View>
 
-        {/* Action Buttons */}
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <TouchableOpacity
-            onPress={handleTakePhoto}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              paddingVertical: 16,
-              backgroundColor: '#131D14',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: 18 }}>📷</Text>
-            <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '700' }}>
-              Tomar foto
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSelectFromGallery}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              paddingVertical: 16,
-              backgroundColor: '#131D14',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: 18 }}>🖼️</Text>
-            <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '700' }}>
-              Galería
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            disabled
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              paddingVertical: 16,
-              backgroundColor: '#131D14',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-              opacity: 0.5,
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>✨</Text>
-            <Text style={{ color: '#728C74', fontSize: 16, fontWeight: '700' }}>
-              Diagnóstico automático
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Last Diagnosis */}
-        {lastDiagnosis ? (
-          <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
-            <Text style={sectionLabel}>Último diagnóstico</Text>
-            <View style={{
-              backgroundColor: '#131D14',
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-              padding: 14,
-              gap: 12,
-            }}>
-              <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>
-                {lastDiagnosis.date.toLocaleDateString('es-AR')}
-              </Text>
-
-              {lastDiagnosis.photoUrl && (
-                <Image
-                  source={{ uri: lastDiagnosis.photoUrl }}
-                  style={{ width: '100%', height: 180, borderRadius: 10, backgroundColor: '#0C1410' }}
-                />
-              )}
-
-              {lastDiagnosis.report && (
-                <View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 12, lineHeight: 16 }}>
-                    {lastDiagnosis.report}
+        {/* Plant Selector */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+          <Text style={sectionLabel}>Selecciona una planta</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: -12 }}>
+            <View style={{ flexDirection: 'row', gap: 10, paddingBottom: 12 }}>
+              {plants.map(plant => (
+                <TouchableOpacity
+                  key={plant.id}
+                  onPress={() => setSelectedPlantId(plant.id)}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 14,
+                    borderRadius: 10,
+                    backgroundColor: selectedPlantId === plant.id ? '#52CC64' : '#131D14',
+                    borderWidth: 1,
+                    borderColor: selectedPlantId === plant.id ? '#52CC64' : '#1C2E1E',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{
+                    color: selectedPlantId === plant.id ? '#0C1410' : '#E4F2E7',
+                    fontSize: 13,
+                    fontWeight: '700',
+                  }}>
+                    {plant.name}
                   </Text>
-                </View>
-              )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {selectedPlant && (
+          <>
+            {/* Action Buttons */}
+            <View style={{ paddingHorizontal: 16, gap: 10, marginBottom: 24 }}>
+              <TouchableOpacity
+                onPress={handleTakePhoto}
+                disabled={uploading}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  paddingVertical: 16,
+                  backgroundColor: uploading ? '#1C2E1E' : '#131D14',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#1C2E1E',
+                  opacity: uploading ? 0.5 : 1,
+                }}
+                activeOpacity={0.8}
+              >
+                {uploading ? (
+                  <ActivityIndicator color="#52CC64" size="small" />
+                ) : (
+                  <>
+                    <Text style={{ fontSize: 18 }}>📷</Text>
+                    <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '700' }}>
+                      Tomar foto
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
 
               <TouchableOpacity
+                onPress={handleSelectFromGallery}
+                disabled={uploading}
                 style={{
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
-                  backgroundColor: 'rgba(139,92,246,0.1)',
-                  borderRadius: 8,
+                  flexDirection: 'row',
                   alignItems: 'center',
-                  marginTop: 8,
+                  justifyContent: 'center',
+                  gap: 10,
+                  paddingVertical: 16,
+                  backgroundColor: uploading ? '#1C2E1E' : '#131D14',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#1C2E1E',
+                  opacity: uploading ? 0.5 : 1,
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
-                <Text style={{ color: '#8B5CF6', fontSize: 13, fontWeight: '700' }}>
-                  Ver detalle completo
+                <Text style={{ fontSize: 18 }}>🖼️</Text>
+                <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '700' }}>
+                  Galería
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        ) : (
-          <View style={{ paddingHorizontal: 16, marginTop: 32 }}>
-            <View style={{
-              backgroundColor: '#131D14',
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-              padding: 24,
-              alignItems: 'center',
-              gap: 12,
-            }}>
-              <Text style={{ fontSize: 32 }}>📭</Text>
-              <Text style={{ color: '#728C74', fontSize: 13, textAlign: 'center' }}>
-                Sin diagnósticos aún
-              </Text>
-              <Text style={{ color: '#3A5040', fontSize: 12, textAlign: 'center' }}>
-                Sube tu primera foto para comenzar
-              </Text>
-            </View>
-          </View>
+
+            {/* Photo Gallery */}
+            {loading ? (
+              <View style={{ paddingHorizontal: 16, paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator color="#52CC64" size="large" />
+              </View>
+            ) : photos.length === 0 ? (
+              <View style={{ paddingHorizontal: 16 }}>
+                <View style={{
+                  backgroundColor: '#131D14',
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: '#1C2E1E',
+                  padding: 24,
+                  alignItems: 'center',
+                  gap: 12,
+                }}>
+                  <Text style={{ fontSize: 32 }}>📸</Text>
+                  <Text style={{ color: '#728C74', fontSize: 13, textAlign: 'center' }}>
+                    Sin fotos aún
+                  </Text>
+                  <Text style={{ color: '#3A5040', fontSize: 12, textAlign: 'center' }}>
+                    Sube tu primera foto para documentar el crecimiento
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={{ paddingHorizontal: 16 }}>
+                <Text style={sectionLabel}>Historial de fotos ({photos.length})</Text>
+                <View style={{ gap: 12 }}>
+                  {photos.map(photo => (
+                    <View
+                      key={photo.id}
+                      style={{
+                        backgroundColor: '#131D14',
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        borderColor: '#1C2E1E',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Image
+                        source={{ uri: photo.photoUrl }}
+                        style={{ width: '100%', height: 200, backgroundColor: '#0C1410' }}
+                      />
+                      <View style={{ padding: 12, gap: 8 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '700' }}>
+                            Semana {photo.week} · {photo.stage}
+                          </Text>
+                        </View>
+                        <Text style={{ color: '#728C74', fontSize: 11 }}>
+                          {format(photo.createdAt, "d MMM yyyy, HH:mm", { locale: es })}
+                        </Text>
+                        {photo.notes && (
+                          <Text style={{ color: '#A78BFA', fontSize: 12, marginTop: 4 }}>
+                            {photo.notes}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
         )}
 
-        {/* Coming Soon Footer */}
+        {/* AI Diagnosis Coming Soon */}
         <View style={{ paddingHorizontal: 16, marginTop: 32, paddingBottom: 20 }}>
           <View style={{
             backgroundColor: 'rgba(139,92,246,0.1)',
@@ -188,10 +346,10 @@ export default function DiagnoseScreen() {
           }}>
             <Text style={{ fontSize: 20 }}>🚀</Text>
             <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Coming Soon
+              Diagnóstico por IA - Próximamente
             </Text>
             <Text style={{ color: '#8B5CF6', fontSize: 11, textAlign: 'center', lineHeight: 15 }}>
-              Esta feature estará disponible en Semana 5 con integración completa de cámara y IA
+              Análisis automático de plagas, enfermedades y deficiencias nutricionales con Claude Vision
             </Text>
           </View>
         </View>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { differenceInHours, addDays } from 'date-fns'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
+import { useInitSync } from '@/hooks/useInitSync'
 import { useUserStore } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { PlantCard } from '@/components/plant'
@@ -52,6 +53,8 @@ const taskTypeLabel: Record<string, string> = {
  * - XP: 150, Level: 2, Streak: 5 días
  */
 export default function Dashboard() {
+  useInitSync() // Cargar datos de Supabase al iniciar
+
   const navigate = useNavigate()
   const { name, streak, totalXP, addXP } = useUserStore()
   const { plants, allPlants } = usePlants()

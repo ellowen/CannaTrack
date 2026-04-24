@@ -8,6 +8,7 @@
 -- create policy "profiles: own" on profiles for all using (auth.uid() = id);
 
 -- Agregar política para que el sistema pueda actualizar XP
+drop policy if exists "profiles: system update xp" on profiles;
 create policy "profiles: system update xp" on profiles
   for update using (auth.uid() = id)
   with check (auth.uid() = id or auth.uid() is null);
@@ -25,6 +26,7 @@ create policy "profiles: system update xp" on profiles
 -- create policy "tasks: own" on scheduled_tasks for all using (auth.uid() = user_id);
 
 -- Agregar política para marcar como completada
+drop policy if exists "tasks: complete own" on scheduled_tasks;
 create policy "tasks: complete own" on scheduled_tasks
   for update using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

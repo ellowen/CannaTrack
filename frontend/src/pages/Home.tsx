@@ -4,6 +4,7 @@ import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
+import { useInitSync } from '@/hooks/useInitSync'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
 import { PlantCard } from '@/components/plant'
@@ -29,6 +30,8 @@ const taskTypeLabel: Record<string, string> = {
 }
 
 export default function Home() {
+  useInitSync() // Cargar datos de Supabase
+
   const navigate = useNavigate()
   const { name, streak, totalXP } = useUserStore()
   const levelInfo = getLevelInfo(totalXP)

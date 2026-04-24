@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
+import { useInitSync } from '@/hooks/useInitSync'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
@@ -14,6 +15,8 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export default function CalendarScreen() {
+  useInitSync() // Cargar datos de Supabase
+
   const { user } = useAuth()
   const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [displayMonth, setDisplayMonth] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })

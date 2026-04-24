@@ -16,6 +16,7 @@ interface TaskStore {
   updateTask: (id: string, changes: Partial<ScheduledTask>) => void
   removeTask: (id: string) => void
   setTasks: (plantId: string, tasks: ScheduledTask[]) => void
+  setAllTasks: (tasks: ScheduledTask[]) => void
   resetTasksForPlant: (plantId: string) => void
   setFilter: (f: TaskFilter) => void
   setLoading: (v: boolean) => void
@@ -42,19 +43,30 @@ export const useTaskStore = create<TaskStore>()(
       loading: false,
 
       addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
-      completeTask: (id, notes) =>
+      completeTask: (id, notes) => {
+        const state = get()
+        const originalTask = state.tasks.find((t) => t.id === id)
+
+        if (!originalTask) {
+          console.error(`Task ${id} not found`)
+          return
+        }
+
+        const completedTask: ScheduledTask = {
+          ...originalTask,
+          completed: true,
+          completedAt: new Date(),
+          completionNotes: notes,
+        }
+
+        // Update local state
         set((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === id
-              ? {
-                  ...t,
-                  completed: true,
-                  completedAt: new Date(),
-                  completionNotes: notes,
-                }
-              : t
-          ),
-        })),
+          tasks: s.tasks.map((t) => (t.id === id ? completedTask : t)),
+        }))
+
+        // Sync will be handled in components/hooks
+        console.log(`[TaskStore] Task ${id} completed locally`)
+      },
       updateTask: (id, changes) =>
         set((s) => ({
           tasks: s.tasks.map((t) =>
@@ -70,6 +82,7 @@ export const useTaskStore = create<TaskStore>()(
             ...newTasks,
           ],
         })),
+      setAllTasks: (tasks) => set({ tasks }),
       resetTasksForPlant: (plantId) =>
         set((s) => ({ tasks: s.tasks.filter((t) => t.plantId !== plantId) })),
       setFilter: (filter) => set({ filter }),

@@ -40,6 +40,7 @@ create or replace trigger on_auth_user_created
 -- RLS
 alter table profiles enable row level security;
 
+drop policy if exists "profiles: own" on profiles;
 create policy "profiles: own" on profiles
   for all using (auth.uid() = id);
 
@@ -72,6 +73,7 @@ comment on table plants is 'Plantas del usuario con ciclo de vida (vege/flora)';
 -- RLS
 alter table plants enable row level security;
 
+drop policy if exists "plants: own" on plants;
 create policy "plants: own" on plants
   for all using (auth.uid() = user_id);
 
@@ -105,6 +107,7 @@ comment on table scheduled_tasks is 'Tareas programadas por el motor nutricional
 -- RLS
 alter table scheduled_tasks enable row level security;
 
+drop policy if exists "tasks: own" on scheduled_tasks;
 create policy "tasks: own" on scheduled_tasks
   for all using (auth.uid() = user_id);
 
@@ -133,6 +136,7 @@ comment on table measurements is 'Mediciones reales (EC/pH) del cultivo';
 -- RLS
 alter table measurements enable row level security;
 
+drop policy if exists "measurements: own" on measurements;
 create policy "measurements: own" on measurements
   for all using (auth.uid() = user_id);
 
@@ -157,6 +161,7 @@ comment on table week_logs is 'Registro semanal con foto y notas del cultivo';
 -- RLS
 alter table week_logs enable row level security;
 
+drop policy if exists "week_logs: own" on week_logs;
 create policy "week_logs: own" on week_logs
   for all using (auth.uid() = user_id);
 
@@ -171,18 +176,21 @@ on conflict (id) do nothing;
 
 alter table storage.objects enable row level security;
 
+drop policy if exists "fotos: upload own" on storage.objects;
 create policy "fotos: upload own" on storage.objects
   for insert with check (
     bucket_id = 'plant-photos' and
     auth.uid()::text = (storage.foldername(name))[1]
   );
 
+drop policy if exists "fotos: read own" on storage.objects;
 create policy "fotos: read own" on storage.objects
   for select using (
     bucket_id = 'plant-photos' and
     auth.uid()::text = (storage.foldername(name))[1]
   );
 
+drop policy if exists "fotos: delete own" on storage.objects;
 create policy "fotos: delete own" on storage.objects
   for delete using (
     bucket_id = 'plant-photos' and

@@ -125,17 +125,16 @@ export class SyncService {
   }
 
   private async syncCompleteTask(supabase: SupabaseClient, action: SyncAction): Promise<void> {
-    const { id, completedAt, completionNotes } = action.payload as Record<string, any>
+    const { taskId, completedAt, completionNotes } = action.payload as Record<string, any>
 
     const { error } = await supabase
-      .from('tasks')
+      .from('scheduled_tasks')
       .update({
         completed: true,
-        completed_at: completedAt || new Date(),
+        completed_at: completedAt?.toISOString() || new Date().toISOString(),
         completion_notes: completionNotes,
-        timestamp: new Date(),
       })
-      .eq('id', id)
+      .eq('id', taskId)
 
     if (error) throw error
   }

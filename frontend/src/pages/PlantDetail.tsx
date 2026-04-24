@@ -7,6 +7,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
+import { completeTaskInSupabase, updatePlantStatusInSupabase } from '@/lib/sync'
 import { Button } from '@/components/ui'
 import { NutritionCard } from '@/components/nutrition'
 import { TaskItem, WeekView } from '@/components/calendar'
@@ -266,7 +267,12 @@ export default function PlantDetail() {
                   <button
                     onClick={() => {
                       const [y, m, d] = floraDateInput.split('-').map(Number)
-                      startFlora(plant.id, new Date(y, m - 1, d))
+                      const floraDate = new Date(y, m - 1, d)
+                      startFlora(plant.id, floraDate)
+                      // Sincronizar estado de planta (sin bloquear)
+                      updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                        console.error('Error sincronizando flora:', err)
+                      )
                       setFloraPickerOpen(false)
                     }}
                     className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
@@ -280,6 +286,10 @@ export default function PlantDetail() {
                 <button
                   onClick={() => {
                     startFlora(plant.id, new Date())
+                    // Sincronizar estado de planta (sin bloquear)
+                    updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                      console.error('Error sincronizando flora:', err)
+                    )
                   }}
                   className="flex-1 py-3 rounded-xl border border-flora-border text-flora-text font-bold text-sm tap-highlight-none active:scale-95 transition-all bg-app-card"
                 >
@@ -457,7 +467,13 @@ export default function PlantDetail() {
       {/* Sheet de completado con nota */}
       <CompleteTaskSheet
         task={completingTask}
-        onConfirm={(taskId, notes) => storeCompleteTask(taskId, notes)}
+        onConfirm={(taskId, notes) => {
+          storeCompleteTask(taskId, notes)
+          // Sincronizar con Supabase (sin bloquear)
+          completeTaskInSupabase(taskId, notes).catch((err) =>
+            console.error('Error sincronizando tarea completada:', err)
+          )
+        }}
         onClose={() => setCompletingTask(null)}
       />
 
@@ -465,8 +481,22 @@ export default function PlantDetail() {
       {harvestSheetOpen && (
         <HarvestSheet
           plant={plant}
-          onConfirmHarvest={() => { harvestPlant(plant.id); navigate('/') }}
-          onConfirmDiscard={() => { discardPlant(plant.id); navigate('/') }}
+          onConfirmHarvest={() => {
+            harvestPlant(plant.id)
+            // Sincronizar cosecha (sin bloquear)
+            updatePlantStatusInSupabase(plant.id, 'harvested').catch((err) =>
+              console.error('Error sincronizando cosecha:', err)
+            )
+            navigate('/')
+          }}
+          onConfirmDiscard={() => {
+            discardPlant(plant.id)
+            // Sincronizar descarte (sin bloquear)
+            updatePlantStatusInSupabase(plant.id, 'discarded').catch((err) =>
+              console.error('Error sincronizando descarte:', err)
+            )
+            navigate('/')
+          }}
           onClose={() => setHarvestSheetOpen(false)}
         />
       )}

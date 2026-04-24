@@ -42,7 +42,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "CannaTrack necesita acceso a tus fotos para el diario de cultivo."
+          "photosPermission": "CannaTrack necesita acceso a tus fotos para el diario de cultivo.",
+          "cameraPermission": "CannaTrack necesita acceso a la cámara para fotografiar tus plantas."
         }
       ]
     ],

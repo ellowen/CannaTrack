@@ -18,6 +18,7 @@ interface PlantStore {
   setLoading: (v: boolean) => void
   setError: (e: string | null) => void
   setFilter: (f: 'active' | 'all') => void
+  setPlants: (plants: Plant[]) => void
 
   // Selectors
   getActivePlants: () => Plant[]
@@ -45,6 +46,7 @@ export const usePlantStore = create<PlantStore>()(
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       setFilter: (filter) => set({ filter }),
+      setPlants: (plants) => set({ plants }),
 
       getActivePlants: () => get().plants.filter((p) => p.status === 'active'),
       getPlantById: (id) => get().plants.find((p) => p.id === id),
