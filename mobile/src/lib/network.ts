@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react'
+import { AppState, type AppStateStatus } from 'react-native'
+import { supabase } from './supabase'
 
 let networkListeners: ((isOnline: boolean) => void)[] = []
 let currentOnlineState = true
 let pollInterval: NodeJS.Timeout | null = null
+let networkPollingPaused = false
+let appStateSubscription: any = null
 
 /**
- * Detecta si el dispositivo tiene conectividad (fallback con fetch).
- * Intenta conectar a Google para verificar.
+ * Detecta si el dispositivo tiene conectividad.
+ * Usa endpoint de Supabase con validación de certificado HTTPS.
  */
 export async function checkOnline(): Promise<boolean> {
   try {
-    const response = await fetch('https://www.google.com/favicon.ico', {
-      method: 'HEAD',
-      cache: 'no-cache',
-      mode: 'no-cors',
-    })
-    return response.ok || response.type === 'opaque'
+    const response = await Promise.race([
+      fetch(`${supabase.supabaseUrl}/rest/v1/`, {
+        method: 'HEAD',
+        headers: { 'Authorization': 'Bearer ' + (supabase.auth.session()?.access_token || '') }
+      }),
+      new Promise<Response>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 2000)
+      ),
+    ])
+    return response.ok
   } catch {
     return false
   }
@@ -93,16 +101,50 @@ export function useNetworkStatus() {
 }
 
 /**
- * Inicia polling para detectar cambios de conectividad (cada 5 segundos).
+ * Inicia polling para detectar cambios de conectividad (cada 30 segundos).
+ * Se pausa cuando la app está en background para ahorrar batería.
  */
 function startNetworkPolling() {
+  // Usar 30 segundos en lugar de 5 (85% menos polling)
   pollInterval = setInterval(async () => {
+    if (networkPollingPaused) return
+
     const online = await checkOnline()
     if (online !== currentOnlineState) {
       currentOnlineState = online
       networkListeners.forEach((cb) => cb(online))
     }
-  }, 5000)
+  }, 30000)
+
+  // Pausar polling cuando app va a background
+  if (!appStateSubscription) {
+    appStateSubscription = AppState.addEventListener('change', handleAppStateChange)
+  }
+}
+
+/**
+ * Pausa el polling de red cuando la app entra en background.
+ */
+export function pauseNetworkPolling(): void {
+  networkPollingPaused = true
+}
+
+/**
+ * Reanuda el polling de red cuando la app vuelve a foreground.
+ */
+export function resumeNetworkPolling(): void {
+  networkPollingPaused = false
+}
+
+/**
+ * Maneja cambios de estado de la app (foreground/background).
+ */
+function handleAppStateChange(state: AppStateStatus): void {
+  if (state === 'active') {
+    resumeNetworkPolling()
+  } else {
+    pauseNetworkPolling()
+  }
 }
 
 /**
@@ -112,5 +154,10 @@ function stopNetworkPolling() {
   if (pollInterval) {
     clearInterval(pollInterval)
     pollInterval = null
+  }
+
+  if (appStateSubscription) {
+    appStateSubscription.remove()
+    appStateSubscription = null
   }
 }
