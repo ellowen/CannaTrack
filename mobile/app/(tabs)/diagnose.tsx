@@ -5,7 +5,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePlants } from '@/hooks/usePlants'
 import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
-import { format } from 'date-fns'
+import * as ImageManipulator from 'expo-image-manipulator'
+import format from 'date-fns/format'
 import { es } from 'date-fns/locale'
 
 type PhotoLog = {
@@ -104,13 +105,21 @@ export default function DiagnoseScreen() {
 
     try {
       setUploading(true)
+
+      // Compress image to max 1024x1024, 0.7 quality, JPEG format
+      const compressed = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1024, height: 1024 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      )
+
       const filename = `${user.id}/${plantId}/${Date.now()}.jpg`
 
-      // Convertir URI a Blob usando fetch
-      const response = await fetch(uri)
+      // Convert URI to Blob using fetch
+      const response = await fetch(compressed.uri)
       const blob = await response.blob()
 
-      // Upload Blob a Supabase storage
+      // Upload Blob to Supabase storage
       const { data, error: uploadError } = await supabase.storage
         .from('plant_photos')
         .upload(filename, blob, {
