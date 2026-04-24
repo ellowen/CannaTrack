@@ -48,6 +48,10 @@ export interface PlantFormValues {
   notes: string
 }
 
+interface FieldError {
+  [key: string]: string | undefined
+}
+
 interface PlantFormProps {
   onSubmit: (values: PlantFormValues) => void
   initialValues?: Partial<PlantFormValues>
@@ -174,26 +178,133 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     ...initialValues,
   })
 
+  const [errors, setErrors] = useState<FieldError>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
   // Estado del formulario inline para nuevo producto personalizado
   const [newProduct, setNewProduct] = useState<{ name: string; dose: string; unit: 'ml' | 'gr' }>({
     name: '', dose: '', unit: 'ml',
   })
+  const [newProductError, setNewProductError] = useState<string>('')
   const [addingProduct, setAddingProduct] = useState(false)
 
   function set<K extends keyof PlantFormValues>(field: K, value: PlantFormValues[K]) {
     setValues((v) => ({ ...v, [field]: value }))
+    // Validar campo al cambiar
+    validateField(field, value)
+    // Marcar como tocado
+    setTouched((t) => ({ ...t, [field]: true }))
+  }
+
+  function validateField(field: keyof PlantFormValues, value: any): void {
+    const newErrors = { ...errors }
+
+    if (field === 'name') {
+      if (!value?.trim()) {
+        newErrors.name = 'El nombre es requerido'
+      } else if (value.trim().length < 2) {
+        newErrors.name = 'El nombre debe tener al menos 2 caracteres'
+      } else {
+        delete newErrors.name
+      }
+    }
+
+    if (field === 'genetics') {
+      if (!value?.trim()) {
+        newErrors.genetics = 'La genética es requerida'
+      } else if (value.trim().length < 2) {
+        newErrors.genetics = 'La genética debe tener al menos 2 caracteres'
+      } else {
+        delete newErrors.genetics
+      }
+    }
+
+    if (field === 'startDate') {
+      if (!value) {
+        newErrors.startDate = 'La fecha de inicio es requerida'
+      } else {
+        const date = new Date(value)
+        const futureDate = new Date()
+        futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+        if (isNaN(date.getTime())) {
+          newErrors.startDate = 'Fecha inválida'
+        } else if (date > futureDate) {
+          newErrors.startDate = 'La fecha no puede ser más de 1 año en el futuro'
+        } else {
+          delete newErrors.startDate
+        }
+      }
+    }
+
+    if (field === 'autoFlowerTotalDays') {
+      if (value < 60 || value > 120) {
+        newErrors.autoFlowerTotalDays = 'Los días deben estar entre 60 y 120'
+      } else {
+        delete newErrors.autoFlowerTotalDays
+      }
+    }
+
+    if (field === 'potCount') {
+      if (value < 1 || value > 100) {
+        newErrors.potCount = 'Debe tener entre 1 y 100 macetas'
+      } else {
+        delete newErrors.potCount
+      }
+    }
+
+    if (field === 'potVolumeLiters') {
+      if (value < 1 || value > 200) {
+        newErrors.potVolumeLiters = 'El volumen debe estar entre 1 y 200 litros'
+      } else {
+        delete newErrors.potVolumeLiters
+      }
+    }
+
+    setErrors(newErrors)
   }
 
   function isStepValid(): boolean {
-    if (step === 1) return values.name.trim().length > 0 && values.genetics.trim().length > 0
-    if (step === 2) return !!values.startDate
+    if (step === 1) {
+      return values.name.trim().length > 0 &&
+             values.genetics.trim().length > 0 &&
+             !errors.name &&
+             !errors.genetics
+    }
+    if (step === 2) {
+      return !!values.startDate &&
+             !errors.startDate &&
+             !errors.potCount &&
+             !errors.potVolumeLiters &&
+             !errors.autoFlowerTotalDays
+    }
     return true
   }
 
   function handleNext(e: React.FormEvent) {
     e.preventDefault()
-    if (step < 3) setStep((s) => s + 1)
-    else onSubmit(values)
+
+    // Marcar todos los campos del paso actual como tocados
+    if (step === 1) {
+      setTouched((t) => ({ ...t, name: true, genetics: true }))
+      validateField('name', values.name)
+      validateField('genetics', values.genetics)
+    }
+    if (step === 2) {
+      setTouched((t) => ({ ...t, startDate: true, potCount: true, potVolumeLiters: true }))
+      validateField('startDate', values.startDate)
+      validateField('potCount', values.potCount)
+      validateField('potVolumeLiters', values.potVolumeLiters)
+      if (values.geneticType === 'autoflower') {
+        validateField('autoFlowerTotalDays', values.autoFlowerTotalDays)
+      }
+    }
+
+    if (step < 3 && isStepValid()) {
+      setStep((s) => s + 1)
+    } else if (step === 3) {
+      onSubmit(values)
+    }
   }
 
   // ─── Paso 1: Identificación ──────────────────────────────────────────────
@@ -209,9 +320,21 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             autoFocus
             value={values.name}
             onChange={(e) => set('name', e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
             placeholder="Ej: White Widow #1"
-            className={fieldClass}
+            className={clsx(
+              fieldClass,
+              touched.name && errors.name && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+            )}
           />
+          {touched.name && errors.name && (
+            <p className="text-xs text-red-500 mt-2 flex items-center gap-1.5">
+              <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0-1A6 6 0 1 0 8 2a6 6 0 0 0 0 12zm-1-5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm1-4a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 5z" clipRule="evenodd" />
+              </svg>
+              {errors.name}
+            </p>
+          )}
         </div>
 
         <div>
@@ -221,9 +344,21 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             required
             value={values.genetics}
             onChange={(e) => set('genetics', e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, genetics: true }))}
             placeholder="Ej: White Widow"
-            className={fieldClass}
+            className={clsx(
+              fieldClass,
+              touched.genetics && errors.genetics && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+            )}
           />
+          {touched.genetics && errors.genetics && (
+            <p className="text-xs text-red-500 mt-2 flex items-center gap-1.5">
+              <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0-1A6 6 0 1 0 8 2a6 6 0 0 0 0 12zm-1-5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm1-4a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 5z" clipRule="evenodd" />
+              </svg>
+              {errors.genetics}
+            </p>
+          )}
         </div>
 
         <div>
@@ -240,15 +375,22 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
         {values.geneticType === 'autoflower' && (
           <div>
-            <label className={labelClass}>Días totales del ciclo</label>
+            <label className={labelClass}>Días totales del ciclo *</label>
             <input
               type="number"
               min={60}
               max={120}
               value={values.autoFlowerTotalDays}
               onChange={(e) => set('autoFlowerTotalDays', Number(e.target.value))}
-              className={fieldClass}
+              onBlur={() => setTouched((t) => ({ ...t, autoFlowerTotalDays: true }))}
+              className={clsx(
+                fieldClass,
+                touched.autoFlowerTotalDays && errors.autoFlowerTotalDays && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+              )}
             />
+            {touched.autoFlowerTotalDays && errors.autoFlowerTotalDays && (
+              <p className="text-xs text-red-500 mt-2">{errors.autoFlowerTotalDays}</p>
+            )}
             <p className="text-xs text-ink-4 mt-2">Típico: 70–80 días desde germinación</p>
           </div>
         )}
@@ -293,8 +435,15 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             required
             value={values.startDate}
             onChange={(e) => set('startDate', e.target.value)}
-            className={fieldClass}
+            onBlur={() => setTouched((t) => ({ ...t, startDate: true }))}
+            className={clsx(
+              fieldClass,
+              touched.startDate && errors.startDate && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+            )}
           />
+          {touched.startDate && errors.startDate && (
+            <p className="text-xs text-red-500 mt-2">{errors.startDate}</p>
+          )}
           <p className="text-xs text-ink-4 mt-2">
             Fecha en que germinó o se trasplantó
           </p>
@@ -312,26 +461,40 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Macetas</label>
+            <label className={labelClass}>Macetas *</label>
             <input
               type="number"
               min={1}
               max={100}
               value={values.potCount}
               onChange={(e) => set('potCount', Number(e.target.value))}
-              className={fieldClass}
+              onBlur={() => setTouched((t) => ({ ...t, potCount: true }))}
+              className={clsx(
+                fieldClass,
+                touched.potCount && errors.potCount && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+              )}
             />
+            {touched.potCount && errors.potCount && (
+              <p className="text-xs text-red-500 mt-2">{errors.potCount}</p>
+            )}
           </div>
           <div>
-            <label className={labelClass}>Litros c/u</label>
+            <label className={labelClass}>Litros c/u *</label>
             <input
               type="number"
               min={1}
               max={200}
               value={values.potVolumeLiters}
               onChange={(e) => set('potVolumeLiters', Number(e.target.value))}
-              className={fieldClass}
+              onBlur={() => setTouched((t) => ({ ...t, potVolumeLiters: true }))}
+              className={clsx(
+                fieldClass,
+                touched.potVolumeLiters && errors.potVolumeLiters && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
+              )}
             />
+            {touched.potVolumeLiters && errors.potVolumeLiters && (
+              <p className="text-xs text-red-500 mt-2">{errors.potVolumeLiters}</p>
+            )}
           </div>
         </div>
 

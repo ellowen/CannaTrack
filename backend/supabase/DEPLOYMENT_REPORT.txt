@@ -1,0 +1,122 @@
+﻿================================================================================
+CANNATRACK SUPABASE MIGRATIONS - DEPLOYMENT REPORT
+================================================================================
+
+PROJECT INFORMATION
+───────────────────
+Project Ref: wpvvfroutebiwckrenmq
+Project URL: https://wpvvfroutebiwckrenmq.supabase.co
+Dashboard:  https://wpvvfroutebiwckrenmq.supabase.co/dashboard
+
+MIGRATION FILES STATUS
+──────────────────────
+✓ 20260424_01_init_schema.sql (9.1 KB)
+✓ 20260424_02_nutrition_tables.sql (8.2 KB)
+✓ 20260424_03_gamification.sql (9.3 KB)
+✓ 20260424_04_rls_policies.sql (9.4 KB)
+
+DEPLOYMENT STATUS
+─────────────────
+Files Ready:       4/4
+Combined SQL Size: 36 KB
+Lines of SQL:      759
+
+CURRENT ENVIRONMENT
+───────────────────
+Node.js:          Available (v20.20.2)
+PostgreSQL CLI:   Not Available
+Supabase CLI:     Not Available
+Curl:             Available
+
+NEXT STEPS (MANUAL DEPLOYMENT)
+──────────────────────────────
+1. Open browser and go to:
+   https://wpvvfroutebiwckrenmq.supabase.co/dashboard
+
+2. Click "SQL Editor" in left menu
+
+3. Click "New Query" button
+
+4. Download or copy migration files and execute in order:
+
+   File 1: 20260424_01_init_schema.sql
+   - Creates base schema: profiles, plants, tasks, measurements, week_logs
+   - Sets up RLS policies
+   - Creates triggers for auth
+
+   File 2: 20260424_02_nutrition_tables.sql
+   - Creates nutrition_tables, nutrition_weeks, nutrition_products
+   - Seeds REVEGETAR (14 weeks + 20 products)
+
+   File 3: 20260424_03_gamification.sql
+   - Creates user_xp_log, user_streaks tables
+   - Sets up XP functions and level system
+
+   File 4: 20260424_04_rls_policies.sql
+   - Consolidates RLS policies
+   - Sets up helper functions
+
+5. Validate deployment with SQL query:
+   SELECT table_name FROM information_schema.tables
+   WHERE table_schema = 'public'
+   ORDER BY table_name;
+
+   Expected tables (10 total):
+   - measurements
+   - nutrition_products
+   - nutrition_tables
+   - nutrition_weeks
+   - plants
+   - profiles
+   - scheduled_tasks
+   - user_streaks
+   - user_xp_log
+   - week_logs
+
+ALTERNATIVE: PROGRAMMATIC DEPLOYMENT
+─────────────────────────────────────
+If you want to automate this:
+
+a) Install Supabase CLI locally:
+   npm install -g supabase@latest
+   
+b) Link to project:
+   cd C:\Dev\CannaTrack\backend\supabase
+   supabase link --project-ref wpvvfroutebiwckrenmq
+
+c) Push migrations:
+   supabase db push
+
+VALIDATION CHECKLIST
+────────────────────
+After deployment, verify:
+
+□ 10 tables created (see SQL query above)
+□ RLS enabled on all user tables
+□ REVEGETAR seed data loaded (14 nutrition_weeks rows)
+□ Gamification functions working
+□ Storage bucket 'plant-photos' configured
+□ Auth triggers active (handle_new_user function)
+
+DOCUMENTATION REFERENCES
+─────────────────────────
+Location: C:\Dev\CannaTrack\backend\supabase\
+
+Files:
+- README_MIGRATIONS.md       Full technical details
+- MIGRATIONS_CHECKLIST.md    Field-by-field validation
+- PUSH_INSTRUCTIONS.md       Troubleshooting guide
+- ENTREGABLE.txt            Executive summary
+- QUICK_START.md            Quick reference
+
+NOTES
+─────
+- All migrations are idempotent (CREATE IF NOT EXISTS)
+- Safe to re-execute
+- Total SQL: 759 lines across 4 files
+- No data loss risk (first deployment)
+- RLS is enabled on all tables for security
+
+================================================================================
+Generated: 2026-04-24 / CannaTrack DevOps
+================================================================================
