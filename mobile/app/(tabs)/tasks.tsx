@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +20,7 @@ export default function CalendarScreen() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [plantNames, setPlantNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Animation state
   const slideAnim = useRef(new Animated.Value(0)).current
@@ -78,28 +79,35 @@ export default function CalendarScreen() {
     setSelected(d)
   }
 
+  async function load() {
+    if (!user) return
+    const monthStart = startOfDay(start)
+    const monthEnd = endOfDay(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0))
+    const [{ data: taskData }, { data: plantData }] = await Promise.all([
+      supabase
+        .from('scheduled_tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('scheduled_date', monthStart.toISOString())
+        .lte('scheduled_date', monthEnd.toISOString()),
+      supabase.from('plants').select('id, name').eq('user_id', user.id),
+    ])
+    setTasks((taskData ?? []).map(rowToTask))
+    const nameMap: Record<string, string> = {}
+    for (const p of (plantData ?? [])) nameMap[p.id] = p.name
+    setPlantNames(nameMap)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    async function load() {
-      if (!user) return
-      const monthStart = startOfDay(start)
-      const monthEnd = endOfDay(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0))
-      const [{ data: taskData }, { data: plantData }] = await Promise.all([
-        supabase
-          .from('scheduled_tasks')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('scheduled_date', monthStart.toISOString())
-          .lte('scheduled_date', monthEnd.toISOString()),
-        supabase.from('plants').select('id, name').eq('user_id', user.id),
-      ])
-      setTasks((taskData ?? []).map(rowToTask))
-      const nameMap: Record<string, string> = {}
-      for (const p of (plantData ?? [])) nameMap[p.id] = p.name
-      setPlantNames(nameMap)
-      setLoading(false)
-    }
     load()
   }, [displayMonth, user])
+
+  async function onRefresh() {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }
 
   const tasksByDate: Record<string, { types: Set<string>; count: number; overdue: boolean }> = {}
   for (const t of tasks) {
@@ -238,7 +246,7 @@ export default function CalendarScreen() {
             <ActivityIndicator color="#52CC64" size="large" />
           </View>
         ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}>
             <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
               {format(selected, 'd MMMM', { locale: es })}
             </Text>

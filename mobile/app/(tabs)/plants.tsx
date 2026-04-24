@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -29,6 +30,8 @@ export default function PlantsScreen() {
   const [showNewModal, setShowNewModal] = useState(false)
   const [archived, setArchived] = useState<Plant[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     genetics: '',
@@ -77,17 +80,36 @@ export default function PlantsScreen() {
     setLoading(false)
   }
 
+  async function onRefresh() {
+    setRefreshing(true)
+    await loadArchived()
+    setRefreshing(false)
+  }
+
   const filteredPlants = useMemo(() => {
+    let filtered: Plant[] = []
     switch (filter) {
       case 'all':
-        return [...plants, ...archived]
+        filtered = [...plants, ...archived]
+        break
       case 'archived':
-        return archived
+        filtered = archived
+        break
       case 'active':
       default:
-        return plants
+        filtered = plants
+        break
     }
-  }, [plants, archived, filter])
+
+    if (!searchQuery.trim()) return filtered
+
+    const query = searchQuery.toLowerCase()
+    return filtered.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      p.genetics.toLowerCase().includes(query) ||
+      p.geneticType.toLowerCase().includes(query)
+    )
+  }, [plants, archived, filter, searchQuery])
 
   const handleCreatePlant = async () => {
     if (!user || !formData.name.trim()) {
@@ -140,6 +162,25 @@ export default function PlantsScreen() {
               <Text style={{ color: '#0C1410', fontWeight: '700', fontSize: 13 }}>+ Nueva</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Search Bar */}
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar por nombre, genetica..."
+            placeholderTextColor="#3A5040"
+            style={{
+              backgroundColor: '#131D14',
+              borderWidth: 1,
+              borderColor: '#1C2E1E',
+              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              color: '#E4F2E7',
+              fontSize: 14,
+              marginBottom: 12,
+            }}
+          />
 
           {/* Filter Tabs */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -207,6 +248,7 @@ export default function PlantsScreen() {
             initialNumToRender={10}
             windowSize={10}
             removeClippedSubviews={true}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
             renderItem={({ item: plant }) => (
               <TouchableOpacity
                 onPress={() => router.push(`/plants/${plant.id}`)}

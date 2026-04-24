@@ -10,8 +10,12 @@ import { usePlantStore } from '@/store/plantStore'
 
 const SYNC_RETRY_DELAY_MS = 5000
 const SYNC_RETRY_MAX_ATTEMPTS = 3
+const SYNC_RATE_LIMIT_MS = 5000 // Max 1 sync request per 5 seconds
 
 let retryAttempts = 0
+let lastSyncStartTime = 0
+let syncQueue: SyncAction[] = []
+let isSyncingInProgress = false
 
 interface SyncAction {
   id: string
@@ -123,6 +127,7 @@ async function handleCompleteTaskBatch(
  * Process all queued sync actions when online
  * Called from OfflineIndicator or manually by user
  * Groups actions by type and processes in parallel (50-70% fewer API calls)
+ * Rate limited to max 1 sync per 5 seconds to prevent API overload
  */
 export async function processSyncQueue(): Promise<void> {
   const syncStore = useSyncStore.getState()
@@ -134,8 +139,23 @@ export async function processSyncQueue(): Promise<void> {
     return
   }
 
+  // Rate limiting check - prevent hammering API
+  const timeSinceLastSync = Date.now() - lastSyncStartTime
+  if (isSyncingInProgress || timeSinceLastSync < SYNC_RATE_LIMIT_MS) {
+    const waitTime = Math.max(0, SYNC_RATE_LIMIT_MS - timeSinceLastSync)
+    console.log(`[SyncQueue] Rate limited - retrying in ${waitTime}ms`)
+    setTimeout(() => {
+      processSyncQueue().catch((err) => {
+        console.error('[SyncQueue] Error in rate-limited retry:', err)
+      })
+    }, waitTime)
+    return
+  }
+
   console.log(`[SyncQueue] Procesando ${queue.length} acciones pendientes`)
   syncStore.setIsSyncing(true)
+  isSyncingInProgress = true
+  lastSyncStartTime = Date.now()
 
   try {
     const { data: authData } = await supabase.auth.getUser()
@@ -180,9 +200,11 @@ export async function processSyncQueue(): Promise<void> {
     console.log('[SyncQueue] Sincronización completada exitosamente')
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
-    console.error(`[SyncQueue] Error durante sincronización: ${errorMsg}`)
+    // Sanitize error for user display
+    const sanitizedError = sanitizeSyncError(errorMsg)
+    console.error(`[SyncQueue] Error durante sincronización: ${sanitizedError}`)
 
-    syncStore.setSyncError(errorMsg)
+    syncStore.setSyncError(sanitizedError)
 
     // Retry with exponential backoff
     if (retryAttempts < SYNC_RETRY_MAX_ATTEMPTS) {
@@ -203,6 +225,7 @@ export async function processSyncQueue(): Promise<void> {
     }
   } finally {
     syncStore.setIsSyncing(false)
+    isSyncingInProgress = false
   }
 }
 
@@ -280,5 +303,31 @@ export function clearSyncQueue(): void {
   const syncStore = useSyncStore.getState()
   syncStore.clearQueue()
   retryAttempts = 0
+  isSyncingInProgress = false
   console.log('[SyncQueue] Cola limpiada')
+}
+
+/**
+ * Sanitize sync errors to prevent exposure of sensitive info
+ * Removes technical details and stack traces
+ */
+function sanitizeSyncError(fullError: string): string {
+  if (fullError.includes('network') || fullError.includes('timeout')) {
+    return 'Network connection error'
+  }
+  if (fullError.includes('auth')) {
+    return 'Authentication error'
+  }
+  if (fullError.includes('constraint')) {
+    return 'Data validation error'
+  }
+  // Default safe message
+  return 'Sync failed - please try again'
+}
+
+/**
+ * Get sync rate limit constant (for testing)
+ */
+export function getSyncRateLimit(): number {
+  return SYNC_RATE_LIMIT_MS
 }

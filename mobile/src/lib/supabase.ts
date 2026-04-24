@@ -24,4 +24,14 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      // Connection and request timeouts
+      'Connection-Timeout': '10000',
+      'Request-Timeout': '30000',
+    },
+  },
 })
