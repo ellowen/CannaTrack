@@ -63,3 +63,11 @@ export const usePlantStore = create<PlantStore>()(
     }
   )
 )
+
+/**
+ * Memoized selector for active plants only.
+ * Use this instead of usePlantStore(s => s.plants.filter(p => p.status === 'active'))
+ * to avoid creating a new array on every render.
+ */
+export const useActivePlants = () =>
+  usePlantStore((s) => s.plants.filter((p) => p.status === 'active'))
