@@ -17,15 +17,12 @@ import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useAuth } from '@/hooks/useAuth'
-import { useInitSync } from '@/hooks/useInitSync'
 import { supabase } from '@/lib/supabase'
 import type { Plant } from '@shared/types/plant'
 
 type FilterType = 'active' | 'all' | 'archived'
 
 export default function PlantsScreen() {
-  useInitSync() // Cargar datos de Supabase
-
   const { user } = useAuth()
   const { plants } = usePlants()
   const [filter, setFilter] = useState<FilterType>('active')

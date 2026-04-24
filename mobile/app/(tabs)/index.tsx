@@ -6,7 +6,6 @@ import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
-import { useInitSync } from '@/hooks/useInitSync'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { completeTaskInSupabase } from '@/lib/sync'
@@ -27,8 +26,6 @@ const TYPE_LABEL: Record<string, string> = {
 type ArchivedPlant = { id: string; name: string; genetics: string; status: string; startDate: Date }
 
 export default function HomeScreen() {
-  useInitSync() // Cargar datos de Supabase
-
   const { user }  = useAuth()
   const { plants } = usePlants()
   const { todayTasks: tasks, completeTask } = useTasks()

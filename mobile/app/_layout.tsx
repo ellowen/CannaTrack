@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
+import { useInitSync } from '@/hooks/useInitSync'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -18,6 +19,10 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+
+  // Initialize sync once at app start (instead of in each screen)
+  // Expected: 2-4 fewer requests compared to calling from multiple screens
+  useInitSync()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
