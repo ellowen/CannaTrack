@@ -1,0 +1,131 @@
+/**
+ * Mobile Auth Module — Identical to frontend, uses same Supabase client
+ */
+
+import { supabase } from './supabase'
+
+export interface AuthCredentials {
+  email: string
+  password: string
+}
+
+export interface SignUpData extends AuthCredentials {
+  name: string
+}
+
+/**
+ * Sign up a new user with email, password and name.
+ * Trigger in Supabase automatically creates the profile.
+ */
+export async function signUp({ email, password, name }: SignUpData) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+    },
+  })
+
+  if (error) throw error
+  return data.user
+}
+
+/**
+ * Sign in with email and password.
+ * Returns user and profile data.
+ */
+export async function signIn({ email, password }: AuthCredentials) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error) throw error
+  if (!data.user) throw new Error('No user returned from sign in')
+
+  // Load profile from profiles table
+  const profile = await loadProfile(data.user.id)
+
+  return { user: data.user, profile }
+}
+
+/**
+ * Load user profile from profiles table.
+ */
+export async function loadProfile(userId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Sign out the current user.
+ */
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+/**
+ * Listen to auth state changes.
+ * Returns unsubscribe function.
+ */
+export function onAuthStateChange(
+  callback: (user: Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user'] | null) => void
+) {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(session?.user || null)
+  })
+
+  return data.subscription?.unsubscribe
+}
+
+/**
+ * Get current session.
+ */
+export async function getCurrentSession() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  return data.session
+}
+
+/**
+ * Get current user.
+ */
+export async function getCurrentUser() {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  return data.user
+}
+
+/**
+ * Update user metadata (e.g., name).
+ */
+export async function updateUserMetadata(updates: Record<string, any>) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: updates,
+  })
+
+  if (error) throw error
+  return data.user
+}
+
+/**
+ * Update user profile in profiles table.
+ */
+export async function updateProfile(userId: string, updates: Record<string, any>) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}

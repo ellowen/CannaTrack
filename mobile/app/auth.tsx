@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { supabase } from '@/lib/supabase'
+import { signIn, signUp } from '@/lib/auth'
 import { isBiometricAvailable, hasSavedSession, restoreSessionWithBiometric, getBiometricLabel } from '@/lib/biometric'
 
 export default function AuthScreen() {
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
+  const [name, setName]           = useState('')
   const [loading, setLoading]     = useState(false)
   const [mode, setMode]           = useState<'login' | 'register'>('login')
   const [showBiometric, setShowBiometric] = useState(false)
@@ -26,26 +27,27 @@ export default function AuthScreen() {
 
   async function handleAuth() {
     if (!email.trim() || !password) return
+    if (mode === 'register' && !name.trim()) return
+
     setLoading(true)
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        if (error) Alert.alert('Error', error.message)
+        await signIn({ email: email.trim(), password })
         // _layout.tsx onAuthStateChange (SIGNED_IN) se encarga del redirect
       } else {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
-        if (error) {
-          Alert.alert('Error', error.message)
-        } else if (!data.session) {
-          // Supabase requiere confirmacion de email
-          Alert.alert(
-            'Revisa tu correo',
-            'Te enviamos un link de confirmacion. Una vez confirmado, ingresa con tu cuenta.',
-            [{ text: 'OK' }]
-          )
-        }
-        // Si hay session (auto-confirm activado), _layout.tsx maneja el redirect
+        await signUp({ email: email.trim(), password, name: name.trim() })
+        Alert.alert(
+          'Revisa tu correo',
+          'Te enviamos un link de confirmacion. Una vez confirmado, ingresa con tu cuenta.',
+          [{ text: 'OK' }]
+        )
+        setMode('login')
+        setEmail('')
+        setPassword('')
+        setName('')
       }
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Ocurrio un error')
     } finally {
       setLoading(false)
     }
@@ -79,6 +81,20 @@ export default function AuthScreen() {
           </View>
 
           {/* Inputs */}
+          {mode === 'register' && (
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Nombre"
+              placeholderTextColor="#3A5040"
+              autoCapitalize="words"
+              style={{
+                backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
+                borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14,
+                color: '#E4F2E7', fontSize: 15, marginBottom: 12,
+              }}
+            />
+          )}
           <TextInput
             value={email}
             onChangeText={setEmail}

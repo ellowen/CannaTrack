@@ -1,0 +1,399 @@
+# Sync Flow Diagram
+
+Documentación visual del flujo de sincronización offline-first.
+
+## Flujo Completo: Completar una Tarea
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USER COMPLETES TASK                         │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ↓
+        ┌────────────────────┐
+        │  Component Handler  │
+        │ handleCompleteTask()│
+        └──────────┬─────────┘
+                   │
+        ┌──────────┴──────────┐
+        ↓                     ↓
+   ┌────────────┐      ┌──────────────┐
+   │ IMMEDIATE  │      │  ENQUEUE FOR │
+   │ LOCAL UX   │      │    SYNC      │
+   └────────────┘      └──────────────┘
+        │                     │
+        │                     ↓
+        │            ┌─────────────────────┐
+        │            │  useSyncStore()     │
+        │            │  enqueueSyncAction()│
+        │            │ type: 'completeTask'│
+        │            │ payload: { id, ...} │
+        │            │ timestamp: now      │
+        │            └──────────┬──────────┘
+        │                       │
+        │        ┌──────────────┘
+        │        ↓
+        │   ┌──────────────────────────┐
+        │   │  PERSIST TO STORAGE      │
+        │   │  localStorage/AsyncStore │
+        │   │  cannatrack-sync         │
+        │   └──────────────────────────┘
+        │                       │
+        ↓                       ↓
+   ┌─────────────┐      ┌─────────────┐
+   │  taskStore  │      │  syncStore  │
+   │ ✓ Task now  │      │ ✓ Pending   │
+   │   completed │      │   enqueued  │
+   │ ✓ Local state│      │ ✓ Persisted │
+   │   updated   │      │   offline   │
+   └─────────────┘      └─────────────┘
+        │                       │
+        └───────────┬───────────┘
+                    │
+                    ↓
+            ┌───────────────┐
+            │ USER SEES UX  │
+            │  IMMEDIATELY  │
+            │  (NO LATENCY) │
+            └───────────────┘
+```
+
+## Flujo de Sincronización: Cuando Vuelve Online
+
+```
+┌──────────────────────────────────────────┐
+│   NAVIGATOR.ONLINE EVENT                 │
+│   (o NetInfo state change en mobile)     │
+└─────────────┬──────────────────────────┘
+              │
+              ↓
+    ┌─────────────────────┐
+    │  onOnline callback  │
+    │  triggers useSync() │
+    └──────────┬──────────┘
+               │
+               ↓
+    ┌────────────────────────┐
+    │  useSync().sync()      │
+    │  called automatically  │
+    └──────────┬─────────────┘
+               │
+    ┌──────────┴──────────┐
+    ↓                     ↓
+┌─────────────┐   ┌──────────────────┐
+│ FLUSH QUEUE │   │ GET QUEUE STATE  │
+│ (send)      │   │ from syncStore   │
+└──────┬──────┘   └──────────┬───────┘
+       │                     │
+       └─────────┬───────────┘
+                 ↓
+    ┌──────────────────────────────────┐
+    │  FOR EACH ACTION IN QUEUE:       │
+    │  1. Prepare payload              │
+    │  2. POST /api/sync/{actionType}  │
+    │  3. Check response               │
+    └──────────┬───────────────────────┘
+               │
+    ┌──────────┴──────────┐
+    │                     │
+    ↓                     ↓
+┌─────────────┐   ┌────────────────┐
+│  200 OK?    │   │  409 CONFLICT? │
+└──────┬──────┘   └────────┬───────┘
+       │ YES                │
+       │         YES ┌──────┴──────────┐
+       │            ↓                  ↓
+       │      ┌──────────────┐  ┌──────────┐
+       │      │ FETCH REMOTE │  │ COMPARE  │
+       │      │ entity       │  │ timestamps│
+       │      └───────┬──────┘  └──────┬───┘
+       │              │                │
+       │              └────────┬───────┘
+       │                       ↓
+       │              ┌──────────────────┐
+       │              │ local >= remote? │
+       │              └──────┬─────┬─────┘
+       │                     │     │
+       │                YES  │     │ NO
+       │              ┌──────┘     └─────┐
+       │              ↓                  ↓
+       │         ┌─────────┐       ┌──────────┐
+       │         │USE LOCAL│       │USE REMOTE│
+       │         └────┬────┘       └────┬─────┘
+       │              │                 │
+       │              └────────┬────────┘
+       │                       ↓
+       │              ┌────────────────┐
+       │              │UPDATE: winner  │
+       │              │in DB           │
+       │              └────────┬───────┘
+       │                       │
+       └──────────┬────────────┘
+                  │
+                  ↓
+    ┌─────────────────────────────┐
+    │ REMOVE SYNCED ACTIONS       │
+    │ from syncQueue              │
+    │ (if 200 or 409 resolved OK) │
+    └──────────────┬──────────────┘
+                   │
+                   ↓
+    ┌──────────────────────────┐
+    │  PULL REMOTE CHANGES     │
+    │  (pullRemote)            │
+    │  GET /api/data?since=t   │
+    └──────────┬───────────────┘
+               │
+    ┌──────────┴──────────┐
+    │                     │
+    ↓                     ↓
+┌────────────┐   ┌──────────────────┐
+│ PLANTS     │   │ COMPARE          │
+│ TASKS      │   │ timestamps       │
+│ MEAS.      │   │ local vs remote  │
+└──────┬─────┘   └────────┬─────────┘
+       │                  │
+       │      ┌───────────┘
+       │      │
+       │      ↓
+       │  ┌──────────────────┐
+       │  │ remote > local?  │
+       │  └────┬──────┬──────┘
+       │       │ YES  │ NO
+       │    YES│      │skip
+       │       ↓      │
+       │  ┌──────────┐│
+       │  │UPDATE    ││
+       │  │LOCAL     ││
+       │  │STORE    ││
+       │  └────┬─────┘│
+       │       │      │
+       └───────┼──────┘
+               │
+               ↓
+    ┌──────────────────────────┐
+    │  CLEAR QUEUE             │
+    │  clearQueue()            │
+    │  Set lastSyncAt = now    │
+    └────────────┬─────────────┘
+                 │
+                 ↓
+    ┌──────────────────────────┐
+    │  SYNC COMPLETE           │
+    │  ✓ Queue flushed         │
+    │  ✓ Remote pulled         │
+    │  ✓ Stores updated        │
+    │  ✓ UI refreshed          │
+    │  ✓ lastSyncAt recorded   │
+    └──────────────────────────┘
+```
+
+## Estados del Sync
+
+```
+[IDLE] ──> [SYNCING] ──> [SUCCESS] ──> [IDLE]
+              │
+              │ error
+              ├──> [ERROR] ──> retry ──> [SYNCING]
+              │
+              └──> retry (exponential)
+```
+
+## Queue Persistence
+
+```
+┌────────────────────────┐
+│  BROWSER/MOBILE        │
+├────────────────────────┤
+│                        │
+│  ┌──────────────────┐  │
+│  │  In-Memory Store │  │
+│  │  (Zustand state) │  │
+│  └────────┬─────────┘  │
+│           │            │
+│           │ persist    │
+│           ↓            │
+│  ┌──────────────────┐  │
+│  │ localStorage OR  │  │
+│  │ AsyncStorage     │  │
+│  │ (encrypted)      │  │
+│  │ Key: cannatrack- │  │
+│  │      sync        │  │
+│  └──────────────────┘  │
+│           ↑            │
+│           │ rehydrate  │
+│           │ on load    │
+│           │            │
+│  ┌────────┴─────────┐  │
+│  │ App starts       │  │
+│  │ Load queue from  │  │
+│  │ storage          │  │
+│  └──────────────────┘  │
+│                        │
+└────────────────────────┘
+       │
+       ↓ (if online)
+   Auto-sync
+```
+
+## Conflict Resolution Logic
+
+```
+                 ┌─────────────────┐
+                 │ LOCAL vs REMOTE │
+                 │   timestamps    │
+                 └────────┬────────┘
+                          │
+                ┌─────────┼────────┐
+                │         │        │
+                ↓         ↓        ↓
+         ┌──────────┐┌──────────┐┌────────┐
+         │local >   ││local ==  ││remote >│
+         │remote   ││remote   ││local   │
+         └────┬────┘└────┬────┘└───┬────┘
+              │          │         │
+              ↓          ↓         ↓
+         ┌────────┐┌────────┐┌─────────┐
+         │USE     ││USE     ││USE      │
+         │LOCAL   ││LOCAL   ││REMOTE   │
+         │(newer) ││(user   ││(newer)  │
+         │        ││intent) ││         │
+         └────────┘└────────┘└─────────┘
+              │          │         │
+              └──────────┴─────────┘
+                       │
+                       ↓
+              ┌────────────────┐
+              │WINNER PERSISTS │
+              │to DB + STORE   │
+              └────────────────┘
+```
+
+## Error Handling & Retry
+
+```
+┌──────────────────┐
+│  SYNC ACTION     │
+└────────┬─────────┘
+         │
+         ↓
+    ┌─────────┐
+    │ TRY #1  │
+    └────┬────┘
+         │
+    ┌────┴────┐
+    │ error?  │
+    └────┬────┘
+         │ YES
+         ↓
+    ┌──────────────┐
+    │ WAIT 1s      │
+    │ (2^0 = 1000) │
+    └──────┬───────┘
+           │
+           ↓
+    ┌─────────┐
+    │ TRY #2  │
+    └────┬────┘
+         │
+    ┌────┴────┐
+    │ error?  │
+    └────┬────┘
+         │ YES
+         ↓
+    ┌──────────────┐
+    │ WAIT 2s      │
+    │ (2^1 = 2000) │
+    └──────┬───────┘
+           │
+           ↓
+    ┌─────────┐
+    │ TRY #3  │
+    └────┬────┘
+         │
+    ┌────┴────┐
+    │ error?  │
+    └────┬────┐
+         │YES │ NO
+         │    └─────────┐
+         ↓              ↓
+    ┌─────────────┐ ┌──────────┐
+    │ERROR LOGGED │ │SUCCESS   │
+    │Retry when   │ │Action    │
+    │online next  │ │removed   │
+    └─────────────┘ │from queue│
+                    └──────────┘
+```
+
+## State Diagram: Complete User Journey
+
+```
+                           ┌─────────┐
+                           │  START  │
+                           │(offline)│
+                           └────┬────┘
+                                │
+                   ┌────────────┘
+                   │
+                   ↓
+        ┌──────────────────┐
+        │ USER COMPLETES   │
+        │ TASK (OFFLINE)   │
+        └────────┬─────────┘
+                 │
+         ┌───────┴────────┐
+         ↓                ↓
+   ┌──────────┐   ┌──────────┐
+   │LOCAL UX  │   │ENQUEUE   │
+   │✓ Updated │   │✓ Pending │
+   └──────────┘   └──────────┘
+                 │
+         ┌───────┴────────┐
+         ↓                │
+   ┌───────────┐          │
+   │CONTINUE   │    ┌─────┴────────┐
+   │OFFLINE    │    │OFFLINE + MANY│
+   │WORKING    │    │ ACTIONS      │
+   └─────┬─────┘    └──────┬───────┘
+         │                 │
+         │        ┌────────┴──┐
+         │        │           │
+         │   CONNECTION RESTORED
+         │        │           │
+         └────────┼───────────┘
+                  │
+                  ↓
+         ┌──────────────┐
+         │AUTO SYNC     │
+         │starts        │
+         └──────┬───────┘
+                │
+     ┌──────────┴──────────┐
+     ↓                     ↓
+┌──────────┐        ┌────────────┐
+│CONFLICT? │        │SIMPLE SYNC │
+└────┬─────┘        └──────┬─────┘
+     │ YES                 │
+     │ ┌───────────────────┘
+     │ │
+     ↓ ↓
+┌─────────────────┐
+│RESOLVE          │
+│(timestamp wins) │
+└────────┬────────┘
+         │
+         ↓
+┌──────────────────┐
+│SYNC SUCCESS      │
+│✓ Queue cleared  │
+│✓ lastSyncAt set │
+│✓ Remote pulled  │
+│✓ Conflict fixed │
+└────────┬────────┘
+         │
+         ↓
+     ┌────────┐
+     │  END   │
+     │(ready) │
+     └────────┘
+```

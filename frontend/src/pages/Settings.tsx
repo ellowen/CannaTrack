@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission } from '@/lib/notifications'
@@ -19,12 +20,15 @@ const themeOptions: { value: ThemePreference; label: string; icon: string }[] = 
 ]
 
 export default function Settings() {
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
   const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
   const customTables = tables.filter((t) => !t.isOfficial)
   const officialTables = tables.filter((t) => t.isOfficial)
+  const [signingOut, setSigningOut] = useState(false)
 
   function handleDeleteTable(tableId: string, tableName: string) {
     const plantsUsingTable = plants.filter((p) => p.nutritionTableId === tableId && p.status === 'active')
@@ -294,8 +298,33 @@ export default function Settings() {
       {/* Zona de peligro */}
       <section className="pb-2">
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Zona de peligro</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
           <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink-1">Cerrar sesión</p>
+              <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
+                Desconectate de tu cuenta en este dispositivo.
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                setSigningOut(true)
+                try {
+                  await signOut()
+                  navigate('/login', { replace: true })
+                } catch (error) {
+                  alert('Error al cerrar sesión')
+                  setSigningOut(false)
+                }
+              }}
+              disabled={signingOut}
+              className="shrink-0 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all disabled:opacity-50"
+            >
+              {signingOut ? 'Saliendo...' : 'Cerrar sesión'}
+            </button>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 pt-3 border-t border-app-border">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-1">Borrar todos los datos</p>
               <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">

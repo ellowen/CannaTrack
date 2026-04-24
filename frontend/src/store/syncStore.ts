@@ -17,10 +17,11 @@ interface SyncStore {
 
   // Acciones
   enqueueSyncAction: (action: Omit<SyncAction, 'id' | 'timestamp'>) => void
-  flushSyncQueue: (onlineActions?: SyncAction[]) => Promise<SyncAction[]>
-  setSyncError: (error: string | null) => void
   clearQueue: () => void
   setIsSyncing: (v: boolean) => void
+  setSyncError: (error: string | null) => void
+  setLastSyncAt: (date: Date | null) => void
+  clearSyncError: () => void
 
   // Selectors
   getPendingActionsCount: () => number
@@ -47,30 +48,11 @@ export const useSyncStore = create<SyncStore>()(
           ],
         })),
 
-      flushSyncQueue: async (onlineActions?: SyncAction[]) => {
-        set({ isSyncing: true, syncError: null })
-        try {
-          const actionsToSync = onlineActions || get().syncQueue
-          // Aquí va la lógica real de sincronización con Supabase
-          // Por ahora, limpiamos la queue en el cliente
-          set({
-            syncQueue: [],
-            lastSyncAt: new Date(),
-            isSyncing: false,
-          })
-          return actionsToSync
-        } catch (error) {
-          set({
-            syncError: error instanceof Error ? error.message : 'Sync failed',
-            isSyncing: false,
-          })
-          return []
-        }
-      },
-
-      setSyncError: (syncError) => set({ syncError }),
       clearQueue: () => set({ syncQueue: [] }),
       setIsSyncing: (isSyncing) => set({ isSyncing }),
+      setSyncError: (syncError) => set({ syncError }),
+      setLastSyncAt: (lastSyncAt) => set({ lastSyncAt }),
+      clearSyncError: () => set({ syncError: null }),
 
       getPendingActionsCount: () => get().syncQueue.length,
       getLastSyncTime: () => get().lastSyncAt,
