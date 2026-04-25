@@ -25,11 +25,23 @@ export default function NewPlantScreen() {
   const [success, setSuccess] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
+  const [selectedTableId, setSelectedTableId] = useState<string>('')
   const [isPro, setIsPro] = useState(false)
   const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
 
+  // Cuando cargan las tablas, pre-seleccionar la primera
   useEffect(() => {
-    if (!user) return
+    if (tables.length > 0 && !selectedTableId) {
+      setSelectedTableId(tables[0].id)
+    }
+  }, [tables, selectedTableId])
+
+  useEffect(() => {
+    // Si no hay usuario, mostrar formulario vacío (no bloquear)
+    if (!user) {
+      setActivePlantCount(0)
+      return
+    }
     checkProStatus()
   }, [user])
 
@@ -119,7 +131,7 @@ export default function NewPlantScreen() {
           sex: null,
           auto_flower_total_days: geneticType === 'autoflower' ? 77 : null,
           start_date: startDate.toISOString().split('T')[0],
-          nutrition_table_id: tables[0]?.id || 'revegetar',
+          nutrition_table_id: selectedTableId || tables[0]?.id || 'revegetar',
           location: 'indoor',
           pot_count: 1,
           pot_volume_liters: 11,
@@ -369,6 +381,51 @@ export default function NewPlantScreen() {
             }}
             maximumDate={new Date()}
           />
+        )}
+
+        {/* TABLA NUTRICIONAL */}
+        <Text style={[labelStyle, { marginTop: 24 }]}>TABLA NUTRICIONAL</Text>
+        {tables.length > 0 ? (
+          tables.map(t => (
+            <TouchableOpacity
+              key={t.id}
+              onPress={() => setSelectedTableId(t.id)}
+              disabled={loading}
+              style={{
+                backgroundColor: selectedTableId === t.id ? '#1A3D1E' : '#131D14',
+                borderWidth: 1,
+                borderColor: selectedTableId === t.id ? '#52CC64' : '#1C2E1E',
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                marginBottom: 8,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: selectedTableId === t.id ? '#52CC64' : '#E4F2E7', fontWeight: '700' }}>
+                {t.name}
+              </Text>
+              {selectedTableId === t.id && <Text style={{ color: '#52CC64' }}>✓</Text>}
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={{
+            backgroundColor: '#131D14',
+            borderWidth: 1,
+            borderColor: '#1C2E1E',
+            borderRadius: 14,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            marginBottom: 8,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <Text style={{ color: '#52CC64', fontWeight: '700' }}>REVEGETAR</Text>
+            <Text style={{ color: '#52CC64' }}>✓</Text>
+          </View>
         )}
 
         {/* Boton crear */}
