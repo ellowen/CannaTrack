@@ -78,6 +78,7 @@ export default function RootLayout() {
         <Stack.Screen name="plants/[id]" />
         <Stack.Screen name="plants/[id]/edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plants/[id]/diary" />
+        <Stack.Screen name="plants/[id]/diagnosis" />
         <Stack.Screen name="plants/[id]/measurements" />
         <Stack.Screen name="plants/[id]/timeline" />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
