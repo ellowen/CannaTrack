@@ -4,11 +4,13 @@ import { addMonths, format, isSameDay, isSameMonth, startOfMonth } from 'date-fn
 import { es } from 'date-fns/locale'
 import { useTasks } from '@/hooks/useTasks'
 import { usePlants } from '@/hooks/usePlants'
+import { useInitSync } from '@/hooks/useInitSync'
 import { useTaskStore } from '@/store/taskStore'
 import { MonthCalendar, TaskTimeline } from '@/components/calendar'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
 import { hapticLight } from '@/lib/haptics'
+import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -25,6 +27,8 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 export default function Calendar() {
+  useInitSync() // Cargar datos de Supabase
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -202,7 +206,13 @@ export default function Calendar() {
 
       <CompleteTaskSheet
         task={completingTask}
-        onConfirm={(taskId, notes) => completeTask(taskId, notes)}
+        onConfirm={(taskId, notes) => {
+          completeTask(taskId, notes)
+          // Sincronizar con Supabase (sin bloquear)
+          completeTaskInSupabase(taskId, notes).catch((err) =>
+            console.error('Error sincronizando tarea completada:', err)
+          )
+        }}
         onClose={() => setCompletingTask(null)}
       />
     </div>

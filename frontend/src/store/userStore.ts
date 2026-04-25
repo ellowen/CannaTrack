@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AccessTier } from '@/types/plant'
-import { computeStreak, XP } from '@/lib/gamification'
+import { computeStreak, getLevelInfo, XP } from '@/lib/gamification'
 import { dateReviver } from '@/lib/storage'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
 interface UserStore {
+  userId: string | null
+  email: string | null
   name: string
   plan: AccessTier
   potVolumeLiters: number
@@ -20,20 +22,28 @@ interface UserStore {
   lastActivityDate: Date | null
   totalXP: number
 
+  // Acciones
+  setUser: (userId: string, email: string, name: string) => void
   setName: (name: string) => void
   setPlan: (plan: AccessTier) => void
+  updatePlan: (plan: AccessTier) => void
   setPotVolume: (liters: number) => void
   setTheme: (theme: ThemePreference) => void
   setNotificationsEnabled: (v: boolean) => void
   setOnboarded: (v: boolean) => void
-
-  /** Suma XP y actualiza streak. Devuelve el XP ganado (puede tener bonus). */
+  updatePreferences: (prefs: Partial<{ notificationsEnabled: boolean; onboarded: boolean }>) => void
   addXP: (base: number) => { xpGained: number; streakBonus: number; newStreak: number }
+
+  // Selectors
+  getLevel: () => ReturnType<typeof getLevelInfo>
+  getStreakBonusXP: () => number
 }
 
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
+      userId: null,
+      email: null,
       name: '',
       plan: 'free' as AccessTier,
       potVolumeLiters: 11,
@@ -45,12 +55,15 @@ export const useUserStore = create<UserStore>()(
       lastActivityDate: null,
       totalXP: 0,
 
+      setUser: (userId, email, name) => set({ userId, email, name }),
       setName: (name) => set({ name }),
       setPlan: (plan) => set({ plan }),
+      updatePlan: (plan) => set({ plan }),
       setPotVolume: (potVolumeLiters) => set({ potVolumeLiters }),
       setTheme: (theme) => set({ theme }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setOnboarded: (onboarded) => set({ onboarded }),
+      updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
 
       addXP: (base) => {
         const { streak, bestStreak, lastActivityDate, totalXP } = get()
@@ -70,6 +83,14 @@ export const useUserStore = create<UserStore>()(
         })
 
         return { xpGained, streakBonus, newStreak }
+      },
+
+      getLevel: () => getLevelInfo(get().totalXP),
+      getStreakBonusXP: () => {
+        const { streak } = get()
+        if (streak >= 30) return XP.STREAK_30_BONUS
+        if (streak >= 7)  return XP.STREAK_7_BONUS
+        return 0
       },
     }),
     {

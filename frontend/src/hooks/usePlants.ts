@@ -2,6 +2,7 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import type { Plant, NutritionTable } from '@/types/plant'
 
 function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
@@ -26,6 +27,19 @@ export function usePlants() {
   function addPlant(data: Omit<Plant, 'id'>): Plant {
     const plant: Plant = { ...data, id: crypto.randomUUID() }
     storeAdd(plant)
+
+    // Encolar acción de sincronización
+    enqueueSyncAction('addPlant', {
+      id: plant.id,
+      name: plant.name,
+      genetics: plant.genetics,
+      geneticType: plant.geneticType,
+      location: plant.location,
+      potCount: plant.potCount,
+      nutritionTableId: plant.nutritionTableId,
+      startDate: plant.startDate,
+    })
+
     const table = tables.find((t) => t.id === plant.nutritionTableId)
     if (table) {
       const effective = plant.availableProducts
@@ -37,17 +51,31 @@ export function usePlants() {
   }
 
   function discardPlant(id: string) {
-    updatePlant(id, { status: 'discarded' })
+    updatePlant(id, { status: 'discarded', endDate: new Date() })
+    enqueueSyncAction('updatePlant', {
+      id,
+      status: 'discarded',
+      endDate: new Date(),
+    })
   }
 
   function harvestPlant(id: string) {
-    updatePlant(id, { status: 'harvested' })
+    updatePlant(id, { status: 'harvested', endDate: new Date() })
+    enqueueSyncAction('updatePlant', {
+      id,
+      status: 'harvested',
+      endDate: new Date(),
+    })
   }
 
   function startFlora(id: string, floraStartDate: Date) {
     const plant = plants.find((p) => p.id === id)
     if (!plant) return
     updatePlant(id, { floraStartDate })
+    enqueueSyncAction('updatePlant', {
+      id,
+      floraStartDate,
+    })
     const table = tables.find((t) => t.id === plant.nutritionTableId)
     if (table) {
       const effective = plant.availableProducts
@@ -67,6 +95,10 @@ export function usePlants() {
     if (!existing) return
     const updated: Plant = { ...existing, ...data }
     updatePlant(id, data)
+    enqueueSyncAction('updatePlant', {
+      id,
+      ...data,
+    })
     const table = tables.find((t) => t.id === updated.nutritionTableId)
     if (table) {
       const effective = updated.availableProducts

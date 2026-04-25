@@ -1,50 +1,90 @@
-import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from './useAuth'
-import type { Plant } from '@shared/types/plant'
+import { usePlantStore } from '@/store/plantStore'
+import { useTaskStore } from '@/store/taskStore'
+import { useNutritionStore } from '@/store/nutritionStore'
+import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
+import type { Plant, NutritionTable } from '@shared/types/plant'
 
-export function usePlants() {
-  const { user } = useAuth()
-  const [plants, setPlants]   = useState<Plant[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState<string | null>(null)
-
-  const fetch = useCallback(async () => {
-    if (!user) return
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('plants')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-
-    if (error) setError(error.message)
-    else setPlants((data ?? []).map(rowToPlant))
-    setLoading(false)
-  }, [user])
-
-  useEffect(() => { fetch() }, [fetch])
-
-  return { plants, loading, error, refetch: fetch }
+function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
+  return {
+    ...table,
+    vegeWeeks: table.vegeWeeks.map((w) => ({
+      ...w,
+      products: w.products.filter((p) => available.includes(p.name)),
+    })),
+    floraWeeks: table.floraWeeks.map((w) => ({
+      ...w,
+      products: w.products.filter((p) => available.includes(p.name)),
+    })),
+  }
 }
 
-function rowToPlant(row: Record<string, unknown>): Plant {
+export function usePlants() {
+  const { plants, addPlant: storeAdd, updatePlant, removePlant } = usePlantStore()
+  const { setTasks } = useTaskStore()
+  const { tables } = useNutritionStore()
+
+  function addPlant(data: Omit<Plant, 'id'>): Plant {
+    const plant: Plant = { ...data, id: crypto.randomUUID() }
+    storeAdd(plant)
+    const table = tables.find((t) => t.id === plant.nutritionTableId)
+    if (table) {
+      const effective = plant.availableProducts
+        ? applyProductFilter(table, plant.availableProducts)
+        : table
+      setTasks(plant.id, generatePlantSchedule(plant, effective))
+    }
+    return plant
+  }
+
+  function discardPlant(id: string) {
+    updatePlant(id, { status: 'discarded', endDate: new Date() })
+  }
+
+  function harvestPlant(id: string) {
+    updatePlant(id, { status: 'harvested', endDate: new Date() })
+  }
+
+  function startFlora(id: string, floraStartDate: Date) {
+    const plant = plants.find((p) => p.id === id)
+    if (!plant) return
+    updatePlant(id, { floraStartDate })
+    const table = tables.find((t) => t.id === plant.nutritionTableId)
+    if (table) {
+      const effective = plant.availableProducts
+        ? applyProductFilter(table, plant.availableProducts)
+        : table
+      setTasks(id, generatePlantSchedule({ ...plant, floraStartDate }, effective))
+    }
+  }
+
+  function getPlantById(id: string): Plant | undefined {
+    return plants.find((p) => p.id === id)
+  }
+
+  function editPlant(id: string, data: Omit<Plant, 'id' | 'status'>): void {
+    const existing = plants.find((p) => p.id === id)
+    if (!existing) return
+    const updated: Plant = { ...existing, ...data }
+    updatePlant(id, data)
+    const table = tables.find((t) => t.id === updated.nutritionTableId)
+    if (table) {
+      const effective = updated.availableProducts
+        ? applyProductFilter(table, updated.availableProducts)
+        : table
+      setTasks(id, generatePlantSchedule(updated, effective))
+    }
+  }
+
   return {
-    id:                  row.id as string,
-    name:                row.name as string,
-    genetics:            row.genetics as string,
-    geneticType:         row.genetic_type as Plant['geneticType'],
-    sex:                 (row.sex as Plant['sex']) ?? 'unknown',
-    startDate:           new Date(row.start_date as string),
-    floraStartDate:      row.flora_start_date ? new Date(row.flora_start_date as string) : undefined,
-    autoFlowerTotalDays: (row.auto_flower_total_days as number) ?? 75,
-    location:            (row.location as Plant['location']) ?? 'indoor',
-    potCount:            (row.pot_count as number) ?? 1,
-    potVolumeLiters:     (row.pot_volume_liters as number) ?? 11,
-    nutritionTableId:    (row.nutrition_table_id as string) ?? 'revegetar',
-    availableProducts:   (row.available_products as string[]) ?? [],
-    status:              (row.status as Plant['status']) ?? 'active',
-    notes:               (row.notes as string) ?? '',
+    plants: plants.filter((p) => p.status === 'active'),
+    allPlants: plants,
+    addPlant,
+    updatePlant,
+    editPlant,
+    removePlant,
+    discardPlant,
+    harvestPlant,
+    startFlora,
+    getPlantById,
   }
 }

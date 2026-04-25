@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +20,7 @@ export default function CalendarScreen() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [plantNames, setPlantNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Animation state
   const slideAnim = useRef(new Animated.Value(0)).current
@@ -31,7 +32,12 @@ export default function CalendarScreen() {
   const start = startOfMonth(displayMonth)
   const daysInMonth = getDaysInMonth(displayMonth)
   const firstDayOfWeek = start.getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1))
+  const days = useMemo(() =>
+    Array.from({ length: daysInMonth }, (_, i) =>
+      new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1)
+    ),
+    [daysInMonth, displayMonth]
+  )
 
   function animateMonthChange(direction: 'next' | 'prev') {
     const startValue = direction === 'next' ? 1 : -1
@@ -78,28 +84,35 @@ export default function CalendarScreen() {
     setSelected(d)
   }
 
+  async function load() {
+    if (!user) return
+    const monthStart = startOfDay(start)
+    const monthEnd = endOfDay(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0))
+    const [{ data: taskData }, { data: plantData }] = await Promise.all([
+      supabase
+        .from('scheduled_tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('scheduled_date', monthStart.toISOString())
+        .lte('scheduled_date', monthEnd.toISOString()),
+      supabase.from('plants').select('id, name').eq('user_id', user.id),
+    ])
+    setTasks((taskData ?? []).map(rowToTask))
+    const nameMap: Record<string, string> = {}
+    for (const p of (plantData ?? [])) nameMap[p.id] = p.name
+    setPlantNames(nameMap)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    async function load() {
-      if (!user) return
-      const monthStart = startOfDay(start)
-      const monthEnd = endOfDay(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0))
-      const [{ data: taskData }, { data: plantData }] = await Promise.all([
-        supabase
-          .from('scheduled_tasks')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('scheduled_date', monthStart.toISOString())
-          .lte('scheduled_date', monthEnd.toISOString()),
-        supabase.from('plants').select('id, name').eq('user_id', user.id),
-      ])
-      setTasks((taskData ?? []).map(rowToTask))
-      const nameMap: Record<string, string> = {}
-      for (const p of (plantData ?? [])) nameMap[p.id] = p.name
-      setPlantNames(nameMap)
-      setLoading(false)
-    }
     load()
   }, [displayMonth, user])
+
+  async function onRefresh() {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }
 
   const tasksByDate: Record<string, { types: Set<string>; count: number; overdue: boolean }> = {}
   for (const t of tasks) {
@@ -238,7 +251,7 @@ export default function CalendarScreen() {
             <ActivityIndicator color="#52CC64" size="large" />
           </View>
         ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}>
             <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
               {format(selected, 'd MMMM', { locale: es })}
             </Text>
@@ -247,29 +260,79 @@ export default function CalendarScreen() {
             ) : (
               <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
                 {selectedTasks.map((task, i) => (
-                  <View key={task.id} style={{
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                    paddingHorizontal: 14, paddingVertical: 12,
-                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
-                    opacity: task.completed ? 0.4 : 1,
-                  }}>
+                  <View
+                    key={task.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      borderTopWidth: i > 0 ? 1 : 0,
+                      borderTopColor: '#1C2E1E',
+                      opacity: task.completed ? 0.4 : 1,
+                    }}
+                  >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TYPE_COLOR[task.type] }} />
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: TYPE_COLOR[task.type],
+                        }}
+                      />
                       <View>
-                        <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
-                          {task.type === 'nutrition' ? 'Nutricion' : task.type === 'irrigation' ? 'Riego' : task.type === 'foliar' ? 'Foliar' : task.type === 'harvest' ? 'Cosecha' : 'Observacion'}
+                        <Text
+                          style={{
+                            color: '#E4F2E7',
+                            fontWeight: '700',
+                            fontSize: 14,
+                          }}
+                        >
+                          {task.type === 'nutrition'
+                            ? 'Nutricion'
+                            : task.type === 'irrigation'
+                              ? 'Riego'
+                              : task.type === 'foliar'
+                                ? 'Foliar'
+                                : task.type === 'harvest'
+                                  ? 'Cosecha'
+                                  : 'Observacion'}
                         </Text>
-                        <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>
-                          {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {plantNames[task.plantId] ?? '...'}
+                        <Text
+                          style={{
+                            color: '#728C74',
+                            fontSize: 11,
+                            marginTop: 1,
+                          }}
+                        >
+                          {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} ·{' '}
+                          {plantNames[task.plantId] ?? '...'}
                         </Text>
                       </View>
                     </View>
                     {!task.completed && (
                       <TouchableOpacity
                         onPress={() => completeTask(task.id)}
-                        style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
+                        style={{
+                          backgroundColor: '#0D2010',
+                          borderWidth: 1,
+                          borderColor: '#1A3D1E',
+                          borderRadius: 12,
+                          paddingHorizontal: 14,
+                          paddingVertical: 7,
+                        }}
                       >
-                        <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
+                        <Text
+                          style={{
+                            color: '#52CC64',
+                            fontWeight: '700',
+                            fontSize: 12,
+                          }}
+                        >
+                          Hecho ✓
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>

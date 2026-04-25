@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/context/ThemeContext'
 import { scheduleDailyReminder } from '@/lib/notifications'
 import * as Notifications from 'expo-notifications'
 
 export default function SettingsScreen() {
   const { user } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const [notifications, setNotifications] = useState(true)
   const [loading, setLoading] = useState(true)
 
@@ -214,6 +216,18 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+            <View>
+              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Modo oscuro</Text>
+              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Tema {isDark ? 'oscuro' : 'claro'}</Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
+              thumbColor={isDark ? '#1A3D1E' : '#728C74'}
+            />
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
             <View>
               <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>

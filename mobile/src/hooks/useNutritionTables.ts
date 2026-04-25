@@ -35,7 +35,7 @@ export function useNutritionTables() {
         const parsedLines: NutritionLine[] = lines.map((l: Record<string, unknown>) => ({
           id: l.line_code as string,
           name: l.line_name as string,
-          colorClass: l.color_class ?? ''
+          colorClass: (l.color_class as string) ?? ''
         }))
 
         const vegeWeeks: NutritionWeek[] = weeks

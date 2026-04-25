@@ -7,6 +7,7 @@ interface MeasurementStore {
   logs: MeasurementLog[]
   addLog: (log: Omit<MeasurementLog, 'id'>) => void
   deleteLog: (id: string) => void
+  updateMeasurement: (plantId: string, measurement: any) => void
 }
 
 export const useMeasurementStore = create<MeasurementStore>()(
@@ -17,6 +18,13 @@ export const useMeasurementStore = create<MeasurementStore>()(
         set((s) => ({ logs: [{ ...log, id: crypto.randomUUID() }, ...s.logs] })),
       deleteLog: (id) =>
         set((s) => ({ logs: s.logs.filter((l) => l.id !== id) })),
+      updateMeasurement: (plantId, measurement) =>
+        set((s) => ({
+          logs: [
+            ...s.logs.filter((l) => l.plantId !== plantId || l.id !== measurement.id),
+            { ...measurement, plantId },
+          ],
+        })),
     }),
     {
       name: 'cannatrack-measurements',

@@ -5,13 +5,15 @@ import { router } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
-import { useTodayTasks } from '@/hooks/useTasks'
+import { useTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { completeTaskInSupabase } from '@/lib/sync'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { getLevelInfo } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
-import type { ScheduledTask } from '@shared/types/plant'
+import { PlantCard } from '@/components/PlantCard'
+import type { ScheduledTask, Plant } from '@shared/types/plant'
 
 const TYPE_ICON: Record<string, string> = {
   nutrition: '🍃', irrigation: '💧',
@@ -26,8 +28,8 @@ type ArchivedPlant = { id: string; name: string; genetics: string; status: strin
 
 export default function HomeScreen() {
   const { user }  = useAuth()
-  const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
-  const { tasks, completeTask, refetch: refetchTasks } = useTodayTasks()
+  const { plants } = usePlants()
+  const { todayTasks: tasks, completeTask } = useTasks()
 
   const [username, setUsername]       = useState('')
   const [streak, setStreak]           = useState(0)
@@ -40,18 +42,18 @@ export default function HomeScreen() {
 
   const today    = new Date()
   today.setHours(0, 0, 0, 0)
-  const pending  = tasks.filter(t => !t.completed)
-  const done     = tasks.filter(t => t.completed)
+  const pending  = tasks.filter((t: ScheduledTask) => !t.completed)
+  const done     = tasks.filter((t: ScheduledTask) => t.completed)
   const allDone  = tasks.length > 0 && pending.length === 0
 
   const levelInfo = getLevelInfo(xp)
 
   // Grupos por planta (multi-plant view)
-  const plantIdsWithTasks = [...new Set(pending.map(t => t.plantId))]
+  const plantIdsWithTasks = [...new Set(pending.map((t: ScheduledTask) => t.plantId))]
   const multiPlant        = plantIdsWithTasks.length > 1
-  const taskGroups        = plantIdsWithTasks.map(pid => ({
-    plant: plants.find(p => p.id === pid),
-    tasks: pending.filter(t => t.plantId === pid),
+  const taskGroups        = plantIdsWithTasks.map((pid: string) => ({
+    plant: plants.find((p) => p.id === pid),
+    tasks: pending.filter((t: ScheduledTask) => t.plantId === pid),
   }))
 
   const longestGrowDays = plants.length > 0
@@ -105,6 +107,12 @@ export default function HomeScreen() {
   async function handleComplete(taskId: string, notes?: string, ec?: number, ph?: number) {
     const task = [...tasks, ...overdueTasks].find(t => t.id === taskId)
     await completeTask(taskId, notes)
+
+    // Sincronizar con Supabase (sin bloquear)
+    completeTaskInSupabase(taskId, notes).catch((err) =>
+      console.error('Error sincronizando tarea completada:', err)
+    )
+
     if (task && (ec != null || ph != null) && user) {
       await supabase.from('measurements').insert({
         user_id: user.id, plant_id: task.plantId ?? null,
@@ -122,7 +130,7 @@ export default function HomeScreen() {
 
   async function onRefresh() {
     setRefreshing(true)
-    await Promise.all([refetchPlants(), refetchTasks(), loadData()])
+    await loadData()
     setRefreshing(false)
   }
 
@@ -140,7 +148,7 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing || loadingPlants} onRefresh={onRefresh} tintColor="#52CC64" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
       >
 
         {/* Header */}
@@ -191,7 +199,7 @@ export default function HomeScreen() {
               ⚠️ VENCIDAS · {overdueTasks.length}
             </Text>
             <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#4B1515', overflow: 'hidden' }}>
-              {overdueTasks.map((task, i) => {
+              {overdueTasks.map((task: ScheduledTask, i: number) => {
                 const plantName = plants.find(p => p.id === task.plantId)?.name ?? '—'
                 return (
                   <View key={task.id} style={{
@@ -245,7 +253,7 @@ export default function HomeScreen() {
             ) : multiPlant ? (
               /* Vista agrupada por planta */
               <View style={{ gap: 10 }}>
-                {taskGroups.map(({ plant: p, tasks: pts }) => (
+                {taskGroups.map(({ plant: p, tasks: pts }: { plant: Plant | undefined; tasks: ScheduledTask[] }) => (
                   <View key={p?.id ?? 'unknown'} style={{ backgroundColor: '#131D14', borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
                     <TouchableOpacity
                       onPress={() => p && router.push(`/plants/${p.id}`)}
@@ -255,7 +263,7 @@ export default function HomeScreen() {
                       <Text style={{ color: '#B8D4BC', fontSize: 12, fontWeight: '700', flex: 1 }}>{p?.name ?? '—'}</Text>
                       <Text style={{ color: '#3A5040', fontSize: 10 }}>{pts.length} tarea{pts.length > 1 ? 's' : ''} →</Text>
                     </TouchableOpacity>
-                    {pts.map((task, i) => (
+                    {pts.map((task: ScheduledTask, i: number) => (
                       <View key={task.id} style={{
                         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                         paddingHorizontal: 14, paddingVertical: 12,
@@ -281,7 +289,7 @@ export default function HomeScreen() {
             ) : (
               /* Vista plana — 1 sola planta */
               <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-                {pending.map((task, i) => {
+                {pending.map((task: ScheduledTask, i: number) => {
                   const plantName = plants.find(p => p.id === task.plantId)?.name ?? '—'
                   return (
                     <View key={task.id} style={{
@@ -368,38 +376,19 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : (
           <View style={{ gap: 12 }}>
-            {plants.map(plant => (
-              <TouchableOpacity
-                key={plant.id}
-                onPress={() => router.push(`/plants/${plant.id}`)}
-                style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}
-                activeOpacity={0.85}
-              >
-                <View style={{ backgroundColor: '#1A3D1E', padding: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800' }}>
-                        {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#6DC278', fontSize: 11, fontWeight: '600' }}>{plant.floraStartDate ? 'FLORA' : 'VEGE'}</Text>
-                  </View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{plant.name}</Text>
-                  <Text style={{ color: '#6DC278', fontSize: 13, marginTop: 2 }}>{plant.genetics}</Text>
-                </View>
-                <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    📅 {format(plant.startDate, 'd MMM yyyy', { locale: es })}
-                  </Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    {plant.location === 'indoor' ? '🏠' : '☀️'} {differenceInDays(new Date(), plant.startDate)}d
-                  </Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    🪴 {plant.potCount}×{plant.potVolumeLiters}L
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {plants.map(plant => {
+              const plantTasks = pending.filter((t: ScheduledTask) => t.plantId === plant.id)
+              const plantOverdue = overdueTasks.filter((t: ScheduledTask) => t.plantId === plant.id)
+              return (
+                <PlantCard
+                  key={plant.id}
+                  plant={plant}
+                  pendingTasks={plantTasks.length}
+                  overdueTasks={plantOverdue.length}
+                  onPress={() => router.push(`/plants/${plant.id}`)}
+                />
+              )
+            })}
           </View>
         )}
 

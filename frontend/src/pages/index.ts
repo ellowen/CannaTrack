@@ -1,5 +1,8 @@
 export { default as Home } from './Home'
+export { default as Dashboard } from './Dashboard'
 export { default as NewPlant } from './NewPlant'
 export { default as PlantDetail } from './PlantDetail'
+export { default as PlantBrowser } from './PlantBrowser'
 export { default as Calendar } from './Calendar'
+export { default as Diagnose } from './Diagnose'
 export { default as Settings } from './Settings'

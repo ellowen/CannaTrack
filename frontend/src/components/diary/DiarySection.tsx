@@ -3,7 +3,7 @@ import { useWeekLog } from '@/hooks/useWeekLog'
 import type { WeekLog } from '@/types/weekLog'
 import WeekLogCard from './WeekLogCard'
 import WeekLogSheet from './WeekLogSheet'
-import { PhotoLightbox } from '@/components/gallery'
+import { PhotoLightbox, PhotoGallery } from '@/components/gallery'
 
 interface DiarySectionProps {
   plantId: string
@@ -55,42 +55,66 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
     }
   }
 
+  function handleAddPhoto(photoDataUrl: string, logDate?: Date) {
+    addLog({
+      plantId,
+      weekLabel: currentWeekLabel,
+      logDate: logDate || new Date(),
+      notes: '',
+      photoDataUrl,
+    })
+  }
+
+  function handleDeletePhoto(logId: string) {
+    deleteLog(logId)
+  }
+
   return (
     <>
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">
-            📖 Diario de cultivo
-          </p>
-          <button
-            onClick={openNew}
-            className="flex items-center gap-1.5 text-xs font-semibold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
-            Nueva entrada
-          </button>
+      <section className="space-y-8">
+        {/* Diary entries */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">
+              📖 Diario de cultivo
+            </p>
+            <button
+              onClick={openNew}
+              className="flex items-center gap-1.5 text-xs font-semibold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+              Nueva entrada
+            </button>
+          </div>
+
+          {logs.length === 0 ? (
+            <button
+              onClick={openNew}
+              className="w-full rounded-2xl border-2 border-dashed border-app-border p-6 text-center tap-highlight-none active:scale-[0.98] transition-all hover:border-brand-border group"
+            >
+              <p className="text-3xl mb-2">📸</p>
+              <p className="text-sm font-semibold text-ink-3 group-hover:text-ink-2 transition-colors">
+                Agregá tu primera entrada
+              </p>
+              <p className="text-xs text-ink-4 mt-1">Foto + notas de la semana actual</p>
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {logs.map((log) => (
+                <WeekLogCard key={log.id} log={log} onClick={() => handleCardClick(log)} />
+              ))}
+            </div>
+          )}
         </div>
 
-        {logs.length === 0 ? (
-          <button
-            onClick={openNew}
-            className="w-full rounded-2xl border-2 border-dashed border-app-border p-6 text-center tap-highlight-none active:scale-[0.98] transition-all hover:border-brand-border group"
-          >
-            <p className="text-3xl mb-2">📸</p>
-            <p className="text-sm font-semibold text-ink-3 group-hover:text-ink-2 transition-colors">
-              Agregá tu primera entrada
-            </p>
-            <p className="text-xs text-ink-4 mt-1">Foto + notas de la semana actual</p>
-          </button>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {logs.map((log) => (
-              <WeekLogCard key={log.id} log={log} onClick={() => handleCardClick(log)} />
-            ))}
-          </div>
-        )}
+        {/* Photo Gallery */}
+        <PhotoGallery
+          logs={logs}
+          onAddPhoto={handleAddPhoto}
+          onDeletePhoto={handleDeletePhoto}
+        />
       </section>
 
       <WeekLogSheet

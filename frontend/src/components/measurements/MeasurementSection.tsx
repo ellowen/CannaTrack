@@ -193,7 +193,7 @@ export default function MeasurementSection({ plantId, ecMin, ecMax, phMin, phMax
         isOpen={sheetOpen}
         ecMin={ecMin} ecMax={ecMax}
         phMin={phMin} phMax={phMax}
-        onSave={(data) => addLog({ ...data, plantId, logDate: new Date() })}
+        onSave={(data) => addLog({ id: crypto.randomUUID(), ...data, plantId, logDate: new Date() })}
         onClose={() => setSheetOpen(false)}
       />
     </>

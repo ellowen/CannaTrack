@@ -1,63 +1,52 @@
-import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from './useAuth'
-import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
-import { startOfDay, endOfDay } from 'date-fns'
+import { useTaskStore } from '@/store/taskStore'
+import { usePlants } from './usePlants'
+import { getTasksForDate, getUpcomingTasks, getOverdueTasks } from '@shared/lib/nutrition-utils'
 import type { ScheduledTask } from '@shared/types/plant'
+import { useMemo } from 'react'
 
-export function useTodayTasks() {
-  const { user } = useAuth()
-  const [tasks, setTasks]     = useState<ScheduledTask[]>([])
-  const [loading, setLoading] = useState(true)
+export function useTasks(plantId?: string) {
+  const { tasks, completeTask, resetTasksForPlant } = useTaskStore()
+  const { plants } = usePlants()
 
-  const fetch = useCallback(async () => {
-    if (!user) return
-    const today = new Date()
-    const { data } = await supabase
-      .from('scheduled_tasks')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('scheduled_date', startOfDay(today).toISOString())
-      .lte('scheduled_date', endOfDay(today).toISOString())
-      .order('type')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-    setTasks((data ?? []).map(rowToTask))
-    setLoading(false)
-  }, [user])
+  // Memoize todayStr to avoid creating new string on every call
+  const todayStr = useMemo(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  // Obtener IDs de plantas activas
+  const activePlantIds = useMemo(() =>
+    new Set(plants.filter((p) => p.status === 'active').map((p) => p.id)),
+    [plants]
+  )
 
-  async function completeTask(taskId: string, notes?: string) {
-    await supabase
-      .from('scheduled_tasks')
-      .update({ completed: true, completed_at: new Date().toISOString(), completion_notes: notes })
-      .eq('id', taskId)
-    setTasks(t => t.map(x => x.id === taskId ? { ...x, completed: true } : x))
-    if (user) {
-      void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
-      void recordDailyActivity(user.id)
-    }
+  // Filtrar tareas: por planta si especificada, y solo de plantas activas
+  const filteredTasks = useMemo(() =>
+    tasks.filter((t) => {
+      if (plantId && t.plantId !== plantId) return false
+      return activePlantIds.has(t.plantId)
+    }),
+    [tasks, plantId, activePlantIds]
+  )
+
+  const todayTasks = getTasksForDate(filteredTasks, today)
+  const upcomingTasks = getUpcomingTasks(filteredTasks, today, 7)
+  const overdueTasks = getOverdueTasks(filteredTasks, today)
+
+  function getTasksForPlant(pId: string): ScheduledTask[] {
+    return tasks.filter((t) => t.plantId === pId && activePlantIds.has(pId))
   }
 
-  return { tasks, loading, completeTask, refetch: fetch }
-}
-
-function rowToTask(row: Record<string, unknown>): ScheduledTask {
   return {
-    id:            row.id as string,
-    plantId:       row.plant_id as string,
-    type:          row.type as ScheduledTask['type'],
-    scheduledDate: new Date(row.scheduled_date as string),
-    cycle:         row.cycle as ScheduledTask['cycle'],
-    week:          row.week as number,
-    stage:         (row.stage as ScheduledTask['stage']) ?? 'rooting',
-    products:      (row.products as ScheduledTask['products']) ?? [],
-    ecMin:         (row.ec_min as number) ?? undefined,
-    ecMax:         (row.ec_max as number) ?? undefined,
-    phMin:         (row.ph_min as number) ?? undefined,
-    phMax:         (row.ph_max as number) ?? undefined,
-    completed:        (row.completed as boolean) ?? false,
-    completedAt:      row.completed_at ? new Date(row.completed_at as string) : undefined,
-    completionNotes:  (row.completion_notes as string) ?? undefined,
+    tasks: filteredTasks,
+    todayTasks,
+    upcomingTasks,
+    overdueTasks,
+    completeTask,
+    resetTasksForPlant,
+    getTasksForPlant,
   }
 }

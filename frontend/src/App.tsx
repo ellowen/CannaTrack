@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { router } from '@/router'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
+import { processSyncQueue } from '@/lib/syncQueue'
+import { onOnline, onOffline, isOnline } from '@/lib/network'
 import Onboarding from '@/pages/Onboarding'
 
 function applyTheme(preference: ThemePreference) {
@@ -66,7 +70,39 @@ export default function App() {
     notifyPendingTasks(pending.length, plantNames)
   }, [notificationsEnabled, tasks, plants])
 
+  // Sincronización offline-first: procesar queue cuando vuelve conexión
+  useEffect(() => {
+    const cleanupOnline = onOnline(() => {
+      console.log('[App] Conexión restaurada, iniciando sincronización')
+      processSyncQueue().catch((err) => {
+        console.error('[App] Error al sincronizar:', err)
+      })
+    })
+
+    const cleanupOffline = onOffline(() => {
+      console.log('[App] Conexión perdida, cambios se guardarán localmente')
+    })
+
+    // Intentar sincronizar al montar (por si estamos online y hay queue pendiente)
+    if (isOnline()) {
+      processSyncQueue().catch((err) => {
+        console.error('[App] Error en sync inicial:', err)
+      })
+    }
+
+    return () => {
+      cleanupOnline()
+      cleanupOffline()
+    }
+  }, [])
+
   if (!onboarded) return <Onboarding />
 
-  return <RouterProvider router={router} />
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ErrorBoundary>
+  )
 }

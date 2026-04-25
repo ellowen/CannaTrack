@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Ale
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
+import { supabase } from '@/lib/supabase'
 
 interface DiagnosisResult {
   summary: string
@@ -45,8 +46,6 @@ export default function DiagnosisScreen() {
     setLoading(true)
     try {
       // Llama a Supabase Edge Function que proxea Anthropic API
-      const { createClient } = await import('@supabase/supabase-js')
-      const { supabase } = await import('@/lib/supabase')
 
       const { data, error } = await supabase.functions.invoke('diagnose-plant', {
         body: { image: base64, plantId: id },
