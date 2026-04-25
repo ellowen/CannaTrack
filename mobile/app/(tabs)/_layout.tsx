@@ -26,21 +26,28 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ focused }) => <Icon label={focused ? '🌿' : '🪴'} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <Icon label={focused ? '🌿' : '🪴'} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendario',
-          tabBarIcon: ({ focused }) => <Icon label={focused ? '📅' : '🗓️'} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <Icon label={focused ? '📅' : '🗓️'} />,
+        }}
+      />
+      <Tabs.Screen
+        name="diagnose"
+        options={{
+          title: 'Diagnostico',
+          tabBarIcon: ({ focused }: { focused: boolean }) => <Icon label={focused ? '🔬' : '🔍'} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ focused }) => <Icon label={focused ? '⚡' : '👤'} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <Icon label={focused ? '⚡' : '👤'} />,
         }}
       />
     </Tabs>

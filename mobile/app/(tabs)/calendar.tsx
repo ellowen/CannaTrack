@@ -28,15 +28,22 @@ export default function CalendarScreen() {
   useEffect(() => {
     async function load() {
       if (!user) return
+      setLoading(true)
       const monthStart = startOfDay(start)
       const monthEnd = endOfDay(new Date(selected.getFullYear(), selected.getMonth() + 1, 0))
-      const { data } = await supabase
-        .from('scheduled_tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('scheduled_date', monthStart.toISOString())
-        .lte('scheduled_date', monthEnd.toISOString())
-      setTasks((data ?? []).map(rowToTask))
+
+      // Solo tareas de plantas activas (excluye cosechadas/descartadas)
+      const [{ data: activePlants }, { data: rawTasks }] = await Promise.all([
+        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
+        supabase.from('scheduled_tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('scheduled_date', monthStart.toISOString())
+          .lte('scheduled_date', monthEnd.toISOString()),
+      ])
+
+      const activeIds = new Set((activePlants ?? []).map(p => p.id))
+      setTasks((rawTasks ?? []).filter(t => activeIds.has(t.plant_id)).map(rowToTask))
       setLoading(false)
     }
     load()
