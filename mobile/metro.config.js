@@ -17,12 +17,17 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-// extraNodeModules solo captura el nombre exacto del paquete, no sub-paths como react/jsx-runtime.
-// resolveRequest intercepta TODOS los imports para forzar React 18 desde mobile/node_modules.
-const localPackages = ['react', 'react-dom', 'react-native', 'scheduler']
+// extraNodeModules fuerza react-native a resolverse desde mobile (Metro maneja platform extensions)
+config.resolver.extraNodeModules = {
+  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+}
+
+// resolveRequest captura react y sub-paths (react/jsx-runtime, scheduler, etc.)
+// NO interceptamos react-native porque Metro necesita resolver .ios.js/.android.js
+const localReactPkgs = ['react', 'scheduler']
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  for (const pkg of localPackages) {
+  for (const pkg of localReactPkgs) {
     if (moduleName === pkg || moduleName.startsWith(pkg + '/')) {
       const suffix = moduleName.slice(pkg.length)
       const localPath = path.resolve(projectRoot, 'node_modules', pkg) + suffix
