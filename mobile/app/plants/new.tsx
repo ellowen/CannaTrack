@@ -356,7 +356,7 @@ export default function NewPlantScreen() {
             value={startDate}
             mode="date"
             display={process.env.EXPO_OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, selectedDate) => {
+            onChange={(event: unknown, selectedDate?: Date) => {
               handleDateChange(event, selectedDate)
               // Limpiar error cuando selecciona fecha
               if (selectedDate) {
