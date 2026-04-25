@@ -79,14 +79,14 @@ Evalua: color de hojas, posibles deficiencias nutricionales, plagas, hongos, que
     }
   }
 
-  // Guardar diagnostico en historial
-  await supabase.from('plant_diary').insert({
-    plant_id: plantId,
-    user_id: user.id,
-    date: new Date().toISOString(),
-    note: `[IA] ${parsed.summary}`,
-    photo_url: imageUrl,
-    type: 'observation',
+  // Guardar diagnostico en historial de la planta
+  await supabase.from('week_logs').insert({
+    plant_id:   plantId,
+    user_id:    user.id,
+    week_label: `Diagnostico IA`,
+    log_date:   new Date().toISOString().split('T')[0],
+    notes:      `[IA] ${parsed.summary}${parsed.issues.length ? '\n\nProblemas: ' + parsed.issues.join(', ') : ''}${parsed.recommendations.length ? '\n\nAcciones: ' + parsed.recommendations.join(', ') : ''}`,
+    photo_url:  imageUrl,
   })
 
   return new Response(JSON.stringify(parsed), {

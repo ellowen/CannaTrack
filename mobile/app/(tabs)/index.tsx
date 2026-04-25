@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -23,7 +23,8 @@ export default function HomeScreen() {
   const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
   const { tasks, pendingTasks: pending, completeTask, refetch: refetchTasks } = useTodayTasks()
   const [username, setUsername] = useState<string>('')
-  const today = new Date()
+  const today = useMemo(() => new Date(), [])
+  const plantById = useMemo(() => new Map(plants.map(p => [p.id, p])), [plants])
 
   useEffect(() => {
     if (!user) return
@@ -67,7 +68,7 @@ export default function HomeScreen() {
             </Text>
             <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
               {tasks.map((task, i) => {
-                const plantName = plants.find(p => p.id === task.plantId)?.name ?? '—'
+                const plantName = plantById.get(task.plantId)?.name ?? '—'
                 return (
                   <View key={task.id} style={{
                     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
