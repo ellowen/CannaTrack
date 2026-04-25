@@ -9,9 +9,8 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 
 export function useInitSync() {
-  const { setPlants } = usePlantStore()
-  const { setTasks: setAllTasks } = useTaskStore()
-  const user = getCurrentUser()
+  const setPlants = usePlantStore(s => s.setPlants)
+  const setAllTasks = useTaskStore(s => s.setTasks)
 
   useEffect(() => {
     async function sync() {
@@ -19,7 +18,6 @@ export function useInitSync() {
         const currentUser = await getCurrentUser()
         if (!currentUser) return
 
-        // Load plants and tasks in parallel instead of sequentially (200-300ms faster)
         const [plants, tasks] = await Promise.all([
           loadPlantsFromSupabase(currentUser.id),
           loadTasksFromSupabase(currentUser.id),
@@ -27,11 +25,15 @@ export function useInitSync() {
 
         setPlants(plants)
         setAllTasks(tasks)
-      } catch (error) {
+      } catch (error: unknown) {
+        // AuthSessionMissingError es esperado cuando el usuario no está logueado
+        if (error instanceof Error && error.name === 'AuthSessionMissingError') return
         console.error('Error en sincronización inicial:', error)
       }
     }
 
     sync()
-  }, [user, setPlants, setAllTasks])
+  // setPlants y setAllTasks son referencias estables de Zustand
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }
