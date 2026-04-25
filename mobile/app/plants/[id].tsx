@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -105,18 +105,17 @@ export default function PlantDetailScreen() {
     </SafeAreaView>
   )
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayTasks = tasks.filter(t => {
+  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
+  const todayTasks = useMemo(() => tasks.filter(t => {
     const d = new Date(t.scheduledDate)
     d.setHours(0, 0, 0, 0)
     return d.getTime() === today.getTime()
-  })
-  const upcoming = tasks.filter(t => {
+  }), [tasks, today])
+  const upcoming = useMemo(() => tasks.filter(t => {
     const d = new Date(t.scheduledDate)
     d.setHours(0, 0, 0, 0)
     return d > today && !t.completed
-  }).slice(0, 5)
+  }).slice(0, 5), [tasks, today])
 
   const daysSinceStart = differenceInDays(today, plant.startDate)
   const isFlora = !!plant.floraStartDate

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
@@ -39,7 +39,10 @@ export function useTodayTasks() {
     }
   }
 
-  return { tasks, loading, completeTask, refetch: fetch }
+  const pendingTasks = useMemo(() => tasks.filter(t => !t.completed), [tasks])
+  const completedTasks = useMemo(() => tasks.filter(t => t.completed), [tasks])
+
+  return { tasks, pendingTasks, completedTasks, loading, completeTask, refetch: fetch }
 }
 
 function rowToTask(row: Record<string, unknown>): ScheduledTask {

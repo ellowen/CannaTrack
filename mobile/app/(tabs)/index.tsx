@@ -21,9 +21,8 @@ const TYPE_LABEL: Record<string, string> = {
 export default function HomeScreen() {
   const { user } = useAuth()
   const { plants, loading: loadingPlants, refetch: refetchPlants } = usePlants()
-  const { tasks, completeTask, refetch: refetchTasks } = useTodayTasks()
+  const { tasks, pendingTasks: pending, completeTask, refetch: refetchTasks } = useTodayTasks()
   const [username, setUsername] = useState<string>('')
-  const pending = tasks.filter(t => !t.completed)
   const today = new Date()
 
   useEffect(() => {

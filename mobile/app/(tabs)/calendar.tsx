@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,12 +18,14 @@ export default function CalendarScreen() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(true)
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const start = startOfMonth(selected)
   const daysInMonth = getDaysInMonth(selected)
   const firstDayOfWeek = start.getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(selected.getFullYear(), selected.getMonth(), i + 1))
+  const days = useMemo(
+    () => Array.from({ length: daysInMonth }, (_, i) => new Date(selected.getFullYear(), selected.getMonth(), i + 1)),
+    [daysInMonth, selected],
+  )
 
   useEffect(() => {
     async function load() {
