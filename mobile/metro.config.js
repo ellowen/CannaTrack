@@ -22,19 +22,14 @@ config.resolver.extraNodeModules = {
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
 }
 
-// resolveRequest captura react y sub-paths (react/jsx-runtime, scheduler, etc.)
-// NO interceptamos react-native porque Metro necesita resolver .ios.js/.android.js
-const localReactPkgs = ['react', 'scheduler']
-
+// resolveRequest captura 'react' y todos sus sub-paths (react/jsx-runtime, etc.)
+// path.join maneja separadores Windows correctamente, evitando fallas silenciosas en require.resolve
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  for (const pkg of localReactPkgs) {
-    if (moduleName === pkg || moduleName.startsWith(pkg + '/')) {
-      const suffix = moduleName.slice(pkg.length)
-      const localPath = path.resolve(projectRoot, 'node_modules', pkg) + suffix
-      try {
-        return { filePath: require.resolve(localPath), type: 'sourceFile' }
-      } catch {}
-    }
+  if (moduleName === 'react' || moduleName.startsWith('react/')) {
+    const localPath = path.join(projectRoot, 'node_modules', moduleName)
+    try {
+      return { filePath: require.resolve(localPath), type: 'sourceFile' }
+    } catch {}
   }
   return context.resolveRequest(context, moduleName, platform)
 }
