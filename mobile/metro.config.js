@@ -17,10 +17,21 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-// Fuerza React y React Native a resolverse desde mobile para evitar conflicto con React 19 del frontend
-config.resolver.extraNodeModules = {
-  'react':        path.resolve(projectRoot, 'node_modules/react'),
-  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+// extraNodeModules solo captura el nombre exacto del paquete, no sub-paths como react/jsx-runtime.
+// resolveRequest intercepta TODOS los imports para forzar React 18 desde mobile/node_modules.
+const localPackages = ['react', 'react-dom', 'react-native', 'scheduler']
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  for (const pkg of localPackages) {
+    if (moduleName === pkg || moduleName.startsWith(pkg + '/')) {
+      const suffix = moduleName.slice(pkg.length)
+      const localPath = path.resolve(projectRoot, 'node_modules', pkg) + suffix
+      try {
+        return { filePath: require.resolve(localPath), type: 'sourceFile' }
+      } catch {}
+    }
+  }
+  return context.resolveRequest(context, moduleName, platform)
 }
 
 module.exports = config
