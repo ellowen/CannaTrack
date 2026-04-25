@@ -17,18 +17,14 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-// extraNodeModules fuerza react-native a resolverse desde mobile (Metro maneja platform extensions)
-config.resolver.extraNodeModules = {
-  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
-}
-
-// resolveRequest captura 'react' y todos sus sub-paths (react/jsx-runtime, etc.)
-// path.join maneja separadores Windows correctamente, evitando fallas silenciosas en require.resolve
+// RN 0.81.5 requiere react@^19.1.0 — forzar TODOS los imports de react/* a usar
+// la unica copia de React 19 del root, evitando el error de version duplicada.
+// react-native esta hoisted al root (mobile/node_modules/react-native no existe).
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'react' || moduleName.startsWith('react/')) {
-    const localPath = path.join(projectRoot, 'node_modules', moduleName)
+    const rootPath = path.join(workspaceRoot, 'node_modules', moduleName)
     try {
-      return { filePath: require.resolve(localPath), type: 'sourceFile' }
+      return { filePath: require.resolve(rootPath), type: 'sourceFile' }
     } catch {}
   }
   return context.resolveRequest(context, moduleName, platform)
