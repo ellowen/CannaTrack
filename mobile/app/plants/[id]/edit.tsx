@@ -256,14 +256,24 @@ export default function EditPlantScreen() {
           ))}
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           <View style={{ flex: 1 }}>
             <Text style={lbl}>CANTIDAD</Text>
-            <TextInput value={potCount} onChangeText={setPotCount} keyboardType="number-pad" placeholderTextColor="#3A5040" style={inp} />
+            <StepperField
+              value={parseInt(potCount) || 1}
+              min={1} max={20} step={1}
+              onChange={v => setPotCount(String(v))}
+              unit=""
+            />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={lbl}>LITROS</Text>
-            <TextInput value={potVolumeLiters} onChangeText={setPotVolumeLiters} keyboardType="decimal-pad" placeholderTextColor="#3A5040" style={inp} />
+            <Text style={lbl}>LITROS / MACETA</Text>
+            <StepperField
+              value={parseInt(potVolumeLiters) || 11}
+              min={1} max={200} step={1}
+              onChange={v => setPotVolumeLiters(String(v))}
+              unit="L"
+            />
           </View>
         </View>
 
@@ -424,6 +434,28 @@ export default function EditPlantScreen() {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+function StepperField({ value, min, max, step, onChange, unit }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 16, overflow: 'hidden' }}>
+      <TouchableOpacity
+        onPress={() => onChange(Math.max(min, value - step))}
+        style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}
+      >
+        <Text style={{ color: value <= min ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '700', lineHeight: 24 }}>−</Text>
+      </TouchableOpacity>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 48 }}>
+        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{value}{unit}</Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => onChange(Math.min(max, value + step))}
+        style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}
+      >
+        <Text style={{ color: value >= max ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '700', lineHeight: 24 }}>+</Text>
+      </TouchableOpacity>
+    </View>
   )
 }
 

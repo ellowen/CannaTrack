@@ -288,21 +288,21 @@ export default function PlantsScreen() {
                 <FormField label="Macetas">
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Cantidad</Text>
-                      <TextInput
-                        value={formData.potCount}
-                        onChangeText={potCount => setFormData(p => ({ ...p, potCount }))}
-                        keyboardType="number-pad"
-                        style={inputStyle}
+                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
+                      <Stepper
+                        value={parseInt(formData.potCount) || 1}
+                        min={1} max={20} step={1}
+                        onChange={v => setFormData(p => ({ ...p, potCount: String(v) }))}
+                        unit=""
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Litros</Text>
-                      <TextInput
-                        value={formData.potVolumeLiters}
-                        onChangeText={potVolumeLiters => setFormData(p => ({ ...p, potVolumeLiters }))}
-                        keyboardType="number-pad"
-                        style={inputStyle}
+                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Litros por maceta</Text>
+                      <Stepper
+                        value={parseInt(formData.potVolumeLiters) || 11}
+                        min={1} max={200} step={1}
+                        onChange={v => setFormData(p => ({ ...p, potVolumeLiters: String(v) }))}
+                        unit="L"
                       />
                     </View>
                   </View>
@@ -493,6 +493,30 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// ─── Stepper ─────────────────────────────────────────────────────────────────
+
+function Stepper({ value, min, max, step, onChange, unit }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
+      <TouchableOpacity
+        onPress={() => onChange(Math.max(min, value - step))}
+        style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}
+      >
+        <Text style={{ color: value <= min ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>−</Text>
+      </TouchableOpacity>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 44 }}>
+        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{value}{unit}</Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => onChange(Math.min(max, value + step))}
+        style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}
+      >
+        <Text style={{ color: value >= max ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>+</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
 
 function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
