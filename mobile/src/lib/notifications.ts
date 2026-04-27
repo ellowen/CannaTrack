@@ -1,20 +1,24 @@
+import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 
 const isExpoGo = Constants.appOwnership === 'expo'
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-})
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  })
+}
 
 export async function registerForPushNotifications(): Promise<string | null> {
+  if (Platform.OS === 'web') return null
   if (!Device.isDevice || isExpoGo) return null
 
   const { status: existing } = await Notifications.getPermissionsAsync()
@@ -33,13 +37,15 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 }
 
-export async function scheduleDailyReminder(enabled: boolean, hour = 9, minute = 0): Promise<void> {
+export async function scheduleDailyReminder(hour = 9, minute = 0): Promise<void> {
+  if (Platform.OS === 'web') return
+
   // Cancela todas las notificaciones diarias anteriores antes de reprogramar
   const scheduled = await Notifications.getAllScheduledNotificationsAsync()
-  const dailyIds = scheduled.filter(n => n.content.data?.type === 'daily_reminder').map(n => n.identifier)
+  const dailyIds = scheduled
+    .filter(n => n.content.data?.type === 'daily_reminder')
+    .map(n => n.identifier)
   await Promise.all(dailyIds.map(id => Notifications.cancelScheduledNotificationAsync(id)))
-
-  if (!enabled) return
 
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -61,7 +67,8 @@ export async function schedulePlantTaskNotification(
   taskType: string,
   scheduledDate: Date,
 ): Promise<void> {
-  // Notifica el dia de la tarea a las 9 AM
+  if (Platform.OS === 'web') return
+
   const triggerDate = new Date(scheduledDate)
   triggerDate.setHours(9, 0, 0, 0)
   if (triggerDate <= new Date()) return
@@ -86,6 +93,8 @@ export async function schedulePlantTaskNotification(
 }
 
 export async function cancelPlantNotifications(plantId: string): Promise<void> {
+  if (Platform.OS === 'web') return
+
   const scheduled = await Notifications.getAllScheduledNotificationsAsync()
   const toCancel = scheduled
     .filter(n => n.content.data?.plantId === plantId)
@@ -94,5 +103,6 @@ export async function cancelPlantNotifications(plantId: string): Promise<void> {
 }
 
 export async function cancelAllReminders(): Promise<void> {
+  if (Platform.OS === 'web') return
   await Notifications.cancelAllScheduledNotificationsAsync()
 }

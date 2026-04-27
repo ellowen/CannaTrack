@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import { supabase } from './supabase'
@@ -8,6 +9,7 @@ const BIOMETRIC_MAX_ATTEMPTS = 5
 let failedBiometricAttempts = 0
 
 export async function saveSessionForBiometric(session: Session): Promise<void> {
+  if (Platform.OS === 'web') return
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify({
     access_token:  session.access_token,
     refresh_token: session.refresh_token,
@@ -15,27 +17,32 @@ export async function saveSessionForBiometric(session: Session): Promise<void> {
 }
 
 export async function clearSavedSession(): Promise<void> {
+  if (Platform.OS === 'web') return
   await SecureStore.deleteItemAsync(SESSION_KEY)
 }
 
 export async function hasSavedSession(): Promise<boolean> {
+  if (Platform.OS === 'web') return false
   const val = await SecureStore.getItemAsync(SESSION_KEY)
   return val !== null
 }
 
 export async function isBiometricAvailable(): Promise<boolean> {
+  if (Platform.OS === 'web') return false
   const compatible = await LocalAuthentication.hasHardwareAsync()
   const enrolled   = await LocalAuthentication.isEnrolledAsync()
   return compatible && enrolled
 }
 
 export async function getBiometricLabel(): Promise<string> {
+  if (Platform.OS === 'web') return 'Contrasena'
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
   if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'Face ID'
   return 'Huella digital'
 }
 
 export async function restoreSessionWithBiometric(): Promise<Session | null> {
+  if (Platform.OS === 'web') return null
   if (failedBiometricAttempts >= BIOMETRIC_MAX_ATTEMPTS) {
     alert('Too many attempts. Please use password.')
     return null

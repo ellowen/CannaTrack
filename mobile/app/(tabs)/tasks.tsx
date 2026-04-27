@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl, PanResponder } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
@@ -26,6 +27,8 @@ export default function CalendarScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current
   const fadeAnim = useRef(new Animated.Value(1)).current
   const headerScaleAnim = useRef(new Animated.Value(1)).current
+  // Celebration animation when all tasks for selected day are done
+  const celebrationAnim = useRef(new Animated.Value(0)).current
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -60,11 +63,13 @@ export default function CalendarScreen() {
   }
 
   function prevMonth() {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     animateMonthChange('prev')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   }
 
   function nextMonth() {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     animateMonthChange('next')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   }
@@ -78,6 +83,21 @@ export default function CalendarScreen() {
     setDisplayMonth(d)
     setSelected(d)
   }
+
+  // Swipe gesture for month navigation
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -50) {
+          nextMonth()
+        } else if (gs.dx > 50) {
+          prevMonth()
+        }
+      },
+    })
+  ).current
 
   async function load() {
     if (!user) return
@@ -117,7 +137,6 @@ export default function CalendarScreen() {
     if (!t.completed) {
       tasksByDate[key].types.add(t.type)
       tasksByDate[key].count += 1
-      // Mark as overdue if task is in the past and not completed
       if (new Date(t.scheduledDate) < today && !t.completed) {
         tasksByDate[key].overdue = true
       }
@@ -127,9 +146,9 @@ export default function CalendarScreen() {
   function getTaskIndicatorColor(dayKey: string): string {
     const dayData = tasksByDate[dayKey]
     if (!dayData) return 'transparent'
-    if (dayData.overdue) return '#EF4444' // red for overdue
-    if (new Date(dayKey) <= today) return '#F59E0B' // amber for today/past incomplete
-    return '#10B981' // emerald for future tasks
+    if (dayData.overdue) return '#EF4444'
+    if (new Date(dayKey) <= today) return '#F59E0B'
+    return '#10B981'
   }
 
   const selectedTasks = tasks.filter(t => {
@@ -138,22 +157,49 @@ export default function CalendarScreen() {
     return d.getTime() === selected.getTime()
   })
 
+  function triggerCelebration() {
+    celebrationAnim.setValue(0)
+    Animated.sequence([
+      Animated.timing(celebrationAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(celebrationAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start()
+  }
+
   async function completeTask(taskId: string) {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     await supabase
       .from('scheduled_tasks')
       .update({ completed: true, completed_at: new Date().toISOString() })
       .eq('id', taskId)
-    setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
+    setTasks(prev => {
+      const updated = prev.map(t => t.id === taskId ? { ...t, completed: true } : t)
+      // Check if all tasks for selected day are now done
+      const dayTasks = updated.filter(t => {
+        const d = new Date(t.scheduledDate); d.setHours(0,0,0,0)
+        return d.getTime() === selected.getTime()
+      })
+      if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) {
+        triggerCelebration()
+      }
+      return updated
+    })
     if (user) {
       void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
       void recordDailyActivity(user.id)
     }
   }
 
+  const celebrationScale = celebrationAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.04, 1] })
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       <View style={{ flex: 1, flexDirection: 'column' }}>
-        <View style={{ backgroundColor: '#1A3D1E', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+        <Animated.View
+          style={{ backgroundColor: '#1A3D1E', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E',
+            transform: [{ scale: celebrationScale }],
+          }}
+          {...panResponder.panHandlers}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={{ color: '#52CC64', fontSize: 18, fontWeight: '700' }}>{'<'}</Text>
@@ -206,6 +252,7 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   key={day.getTime()}
                   onPress={() => {
+                    void Haptics.selectionAsync()
                     setSelected(day)
                     if (day.getMonth() !== displayMonth.getMonth() || day.getFullYear() !== displayMonth.getFullYear()) {
                       setDisplayMonth(new Date(day.getFullYear(), day.getMonth(), 1))
@@ -239,7 +286,7 @@ export default function CalendarScreen() {
               )
             })}
           </Animated.View>
-        </View>
+        </Animated.View>
 
         {loading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -247,9 +294,17 @@ export default function CalendarScreen() {
           </View>
         ) : (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}>
-            <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
-              {format(selected, 'd MMMM', { locale: es })}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                {format(selected, 'd MMMM', { locale: es })}
+              </Text>
+              {/* Celebration badge when all tasks done */}
+              {selectedTasks.length > 0 && selectedTasks.every(t => t.completed) && (
+                <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>
+                  Todo listo
+                </Text>
+              )}
+            </View>
             {selectedTasks.length === 0 ? (
               <Text style={{ color: '#728C74', textAlign: 'center', paddingVertical: 20 }}>Sin tareas</Text>
             ) : (
@@ -277,7 +332,7 @@ export default function CalendarScreen() {
                         onPress={() => completeTask(task.id)}
                         style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
                       >
-                        <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
+                        <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho</Text>
                       </TouchableOpacity>
                     )}
                   </View>

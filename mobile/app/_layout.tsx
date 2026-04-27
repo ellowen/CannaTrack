@@ -48,7 +48,7 @@ export default function RootLayout() {
 
       if (event === 'SIGNED_IN') {
         await saveSessionForBiometric(s)
-        void registerForPushNotifications(s.user.id)
+        void registerForPushNotifications()
       }
 
       setUser(s.user.id, s.user.email ?? '', s.user.email?.split('@')[0] ?? '')

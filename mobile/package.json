@@ -6,6 +6,7 @@
     "start": "cross-env EXPO_PROJECT_ROOT=. EXPO_ROUTER_APP_ROOT=app expo start",
     "android": "cross-env EXPO_PROJECT_ROOT=. EXPO_ROUTER_APP_ROOT=app expo run:android",
     "ios": "cross-env EXPO_PROJECT_ROOT=. EXPO_ROUTER_APP_ROOT=app expo run:ios",
+    "web": "cross-env EXPO_PROJECT_ROOT=. EXPO_ROUTER_APP_ROOT=app expo start --web",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"

@@ -85,7 +85,6 @@ export default function NewPlantScreen() {
   }
 
   async function handleCreate() {
-    console.log('[handleCreate] user:', user?.id ?? 'NULL', 'name:', name, 'table:', selectedTableId)
     const validationError = validateForm()
     if (validationError) {
       Alert.alert('Campos requeridos', validationError)
