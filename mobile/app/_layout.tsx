@@ -72,6 +72,14 @@ export default function RootLayout() {
         void registerForPushNotifications()
       }
 
+      // Garantizar que el profile existe (por si el trigger de DB no fireo)
+      await supabase
+        .from('profiles')
+        .upsert(
+          { id: s.user.id, username: s.user.email?.split('@')[0] ?? 'user' },
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+
       setUser(s.user.id, s.user.email ?? '', s.user.email?.split('@')[0] ?? '')
 
       const { data: prof } = await supabase
