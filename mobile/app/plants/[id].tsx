@@ -466,19 +466,19 @@ export default function PlantDetailScreen() {
                   borderBottomWidth: 1, borderBottomColor: '#1C2E1E',
                 }}>
                   <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>Preparar para</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
                     <TouchableOpacity
-                      onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => Math.max(step, parseFloat((v - step).toFixed(1)))) }}
-                      style={{ width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}
+                      onPress={() => setLiters(v => Math.max(1, v - 1))}
+                      style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}
                     >
-                      <Text style={{ color: '#E4F2E7', fontSize: 18, lineHeight: 20 }}>−</Text>
+                      <Text style={{ color: liters <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>−</Text>
                     </TouchableOpacity>
-                    <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', minWidth: 40, textAlign: 'center' }}>{liters}L</Text>
+                    <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900', minWidth: 48, textAlign: 'center' }}>{liters}L</Text>
                     <TouchableOpacity
-                      onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => parseFloat((v + step).toFixed(1))) }}
-                      style={{ width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}
+                      onPress={() => setLiters(v => v + 1)}
+                      style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}
                     >
-                      <Text style={{ color: '#E4F2E7', fontSize: 18, lineHeight: 20 }}>+</Text>
+                      <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
