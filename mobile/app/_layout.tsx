@@ -7,6 +7,7 @@ import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import { useInitSync } from '@/hooks/useInitSync'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { useUserStore } from '@/store/userStore'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -20,6 +21,7 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const setUser = useUserStore(s => s.setUser)
 
   // Initialize sync once at app start (instead of in each screen)
   // Expected: 2-4 fewer requests compared to calling from multiple screens
@@ -48,6 +50,8 @@ export default function RootLayout() {
         await saveSessionForBiometric(s)
         void registerForPushNotifications(s.user.id)
       }
+
+      setUser(s.user.id, s.user.email ?? '', s.user.email?.split('@')[0] ?? '')
 
       // Re-schedule notificacion diaria si el usuario la tiene activada
       const { data: prof } = await supabase
@@ -81,6 +85,7 @@ export default function RootLayout() {
         <Stack.Screen name="plants/[id]/diagnosis" />
         <Stack.Screen name="plants/[id]/measurements" />
         <Stack.Screen name="plants/[id]/timeline" />
+        <Stack.Screen name="tables/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="achievements" />
       </Stack>

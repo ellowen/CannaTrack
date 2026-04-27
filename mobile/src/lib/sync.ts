@@ -2,7 +2,7 @@
  * Sincronización offline-first con Supabase (Mobile)
  */
 
-import { supabase } from './auth'
+import { supabase } from './supabase'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 export async function syncPlantToSupabase(plant: Plant): Promise<void> {

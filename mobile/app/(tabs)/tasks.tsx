@@ -14,7 +14,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export default function CalendarScreen() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [displayMonth, setDisplayMonth] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
@@ -100,8 +100,8 @@ export default function CalendarScreen() {
   }
 
   useEffect(() => {
-    load()
-  }, [displayMonth, user])
+    if (!authLoading && user) load()
+  }, [displayMonth, user, authLoading])
 
   async function onRefresh() {
     setRefreshing(true)

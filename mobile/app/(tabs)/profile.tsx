@@ -12,7 +12,7 @@ import type { AchievementData } from '@shared/lib/gamification'
 type HarvestedPlant = { id: string; name: string; genetics: string; startDate: Date; completionRate: number }
 
 export default function ProfileScreen() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [profile, setProfile]         = useState<{ xp: number; streak: number; bestStreak: number; username: string } | null>(null)
   const [loading, setLoading]         = useState(true)
   const [completedToday, setCompletedToday] = useState(0)
@@ -20,8 +20,9 @@ export default function ProfileScreen() {
   const [harvestedList, setHarvestedList] = useState<HarvestedPlant[]>([])
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) { setLoading(false); return }
     async function load() {
-      if (!user) return
       const today0 = new Date(); today0.setHours(0, 0, 0, 0)
 
       const [
@@ -33,7 +34,7 @@ export default function ProfileScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, best_streak, username').eq('id', user.id).single(),
+        supabase.from('profiles').select('xp, streak_days, username').eq('id', user.id).single(),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
         supabase.from('plants').select('id, name, genetics, start_date').eq('user_id', user.id).eq('status', 'harvested'),
         supabase.from('scheduled_tasks').select('id').eq('user_id', user.id).eq('completed', true)
@@ -43,11 +44,11 @@ export default function ProfileScreen() {
         supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id).not('photo_url', 'is', null),
       ])
 
-      if (p) setProfile({ xp: p.xp ?? 0, streak: p.streak_days ?? 0, bestStreak: p.best_streak ?? 0, username: p.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
+      setProfile({ xp: p?.xp ?? 0, streak: p?.streak_days ?? 0, bestStreak: 0, username: p?.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
       setCompletedToday(tasksToday?.length ?? 0)
       setAchievementData({
         streak:               p?.streak_days ?? 0,
-        bestStreak:           p?.best_streak ?? 0,
+        bestStreak:           0,
         totalXP:              p?.xp ?? 0,
         totalTasksCompleted:  totalTasks ?? 0,
         tasksWithMeasurement: measurements ?? 0,
@@ -82,7 +83,7 @@ export default function ProfileScreen() {
       setLoading(false)
     }
     load()
-  }, [user])
+  }, [user, authLoading])
 
   async function handleSignOut() {
     Alert.alert('Cerrar sesion', '¿Estas seguro?', [
@@ -95,6 +96,12 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
+        <TouchableOpacity
+          onPress={handleSignOut}
+          style={{ marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' }}
+        >
+          <Text style={{ color: '#EF4444', fontWeight: '700' }}>Cerrar sesion</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     )
   }

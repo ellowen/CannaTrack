@@ -30,13 +30,14 @@ function getProgressHint(a: Achievement, data: AchievementData): string | null {
 }
 
 export default function AchievementsScreen() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [achievementData, setAchievementData] = useState<AchievementData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) { setLoading(false); return }
     async function load() {
-      if (!user) return
 
       const [
         { data: p },
@@ -68,7 +69,7 @@ export default function AchievementsScreen() {
       setLoading(false)
     }
     load()
-  }, [user])
+  }, [user, authLoading])
 
   if (loading || !achievementData) {
     return (

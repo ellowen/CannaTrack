@@ -10,7 +10,7 @@ import { useTaskStore } from '@/store/taskStore'
 
 export function useInitSync() {
   const setPlants = usePlantStore(s => s.setPlants)
-  const setAllTasks = useTaskStore(s => s.setTasks)
+  const setAllTasks = useTaskStore(s => s.setAllTasks)
 
   useEffect(() => {
     async function sync() {

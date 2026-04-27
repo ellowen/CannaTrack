@@ -151,6 +151,14 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
       >
 
+        {/* Logout */}
+        <TouchableOpacity
+          onPress={() => router.replace('/auth')}
+          style={{ alignSelf: 'flex-end', marginBottom: 8, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#EF4444' }}
+        >
+          <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '700' }}>INICIAR SESION</Text>
+        </TouchableOpacity>
+
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

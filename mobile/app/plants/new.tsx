@@ -12,7 +12,7 @@ import type { Plant } from '@shared/types/plant'
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 
 export default function NewPlantScreen() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { tables } = useNutritionTables()
 
   const [name, setName] = useState('')
@@ -25,7 +25,7 @@ export default function NewPlantScreen() {
   const [success, setSuccess] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const [selectedTableId, setSelectedTableId] = useState<string>('')
+  const [selectedTableId, setSelectedTableId] = useState<string>('revegetar-v1')
   const [isPro, setIsPro] = useState(false)
   const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
 
@@ -37,13 +37,10 @@ export default function NewPlantScreen() {
   }, [tables, selectedTableId])
 
   useEffect(() => {
-    // Si no hay usuario, mostrar formulario vacío (no bloquear)
-    if (!user) {
-      setActivePlantCount(0)
-      return
-    }
+    if (authLoading) return
+    if (!user) { setActivePlantCount(0); return }
     checkProStatus()
-  }, [user])
+  }, [user, authLoading])
 
   async function checkProStatus() {
     if (!user) return
@@ -61,40 +58,23 @@ export default function NewPlantScreen() {
     }
   }
 
-  function validateForm(): boolean {
+  function validateForm(): string | null {
     const errors: Record<string, string> = {}
 
-    // Validar nombre
     if (!name.trim()) {
       errors.name = 'El nombre es requerido'
     } else if (name.trim().length < 2) {
-      errors.name = 'El nombre debe tener al menos 2 caracteres'
+      errors.name = 'Mínimo 2 caracteres'
     } else if (name.trim().length > 50) {
-      errors.name = 'El nombre no puede superar 50 caracteres'
+      errors.name = 'Máximo 50 caracteres'
     }
 
-    // Validar tipo de genética
     if (!geneticType) {
-      errors.geneticType = 'Selecciona un tipo de genética'
-    }
-
-    // Validar fecha
-    if (!startDate) {
-      errors.startDate = 'Selecciona una fecha de inicio'
-    } else {
-      const now = new Date()
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-
-      if (startDate > now) {
-        errors.startDate = 'La fecha no puede ser en el futuro'
-      } else if (startDate < oneYearAgo) {
-        errors.startDate = 'La fecha no puede ser hace más de 1 año'
-      }
+      errors.geneticType = 'Seleccioná un tipo de genética'
     }
 
     setFieldErrors(errors)
-    return Object.keys(errors).length === 0
+    return Object.keys(errors).length === 0 ? null : Object.values(errors).join('\n')
   }
 
   function handleDateChange(event: any, selectedDate?: Date) {
@@ -105,14 +85,17 @@ export default function NewPlantScreen() {
   }
 
   async function handleCreate() {
-    if (!validateForm()) {
-      const errorMessages = Object.values(fieldErrors).join('\n')
-      Alert.alert('Validación requerida', errorMessages)
+    console.log('[handleCreate] user:', user?.id ?? 'NULL', 'name:', name, 'table:', selectedTableId)
+    const validationError = validateForm()
+    if (validationError) {
+      Alert.alert('Campos requeridos', validationError)
       return
     }
 
-    if (!user) {
-      Alert.alert('Error', 'No hay usuario autenticado')
+    const { data: { session } } = await supabase.auth.getSession()
+    const currentUser = session?.user ?? null
+    if (!currentUser) {
+      Alert.alert('Sin sesión', 'Cerrá y volvé a iniciar sesión')
       return
     }
 
@@ -124,14 +107,14 @@ export default function NewPlantScreen() {
       const { data: plantRow, error: plantErr } = await supabase
         .from('plants')
         .insert({
-          user_id: user.id,
+          user_id: currentUser.id,
           name: name.trim(),
           genetics: name.trim(),
           genetic_type: geneticType,
           sex: null,
           auto_flower_total_days: geneticType === 'autoflower' ? 77 : null,
           start_date: startDate.toISOString().split('T')[0],
-          nutrition_table_id: selectedTableId || tables[0]?.id || 'revegetar',
+          nutrition_table_id: selectedTableId || tables[0]?.id || 'revegetar-v1',
           location: 'indoor',
           pot_count: 1,
           pot_volume_liters: 11,
@@ -163,7 +146,7 @@ export default function NewPlantScreen() {
         if (tasks.length > 0) {
           await supabase.from('scheduled_tasks').insert(
             tasks.map(t => ({
-              user_id: user.id,
+              user_id: currentUser.id,
               plant_id: plantRow.id,
               type: t.type,
               scheduled_date: t.scheduledDate.toISOString().split('T')[0],
@@ -219,7 +202,7 @@ export default function NewPlantScreen() {
           <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '900', marginBottom: 4 }}>Pro - USD 5/mes</Text>
           <Text style={{ color: '#728C74', fontSize: 12, textAlign: 'center' }}>Plantas ilimitadas · Todas las tablas · IA</Text>
         </View>
-        <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 14, alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={{ paddingVertical: 14, alignItems: 'center' }}>
           <Text style={{ color: '#728C74', fontSize: 14 }}>← Volver</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -248,7 +231,7 @@ export default function NewPlantScreen() {
 
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={{ marginRight: 12 }}>
             <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
           </TouchableOpacity>
           <View>
@@ -411,34 +394,56 @@ export default function NewPlantScreen() {
             </TouchableOpacity>
           ))
         ) : (
-          <View style={{
-            backgroundColor: '#131D14',
+          <TouchableOpacity
+            onPress={() => setSelectedTableId('revegetar-v1')}
+            disabled={loading}
+            style={{
+              backgroundColor: '#1A3D1E',
+              borderWidth: 1,
+              borderColor: '#52CC64',
+              borderRadius: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              marginBottom: 8,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#52CC64', fontWeight: '700' }}>REVEGETAR — Tabla Nutricional Oficial</Text>
+            <Text style={{ color: '#52CC64' }}>✓</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Crear tabla personalizada */}
+        <TouchableOpacity
+          onPress={() => router.push('/tables/new')}
+          disabled={loading}
+          style={{
             borderWidth: 1,
             borderColor: '#1C2E1E',
+            borderStyle: 'dashed',
             borderRadius: 14,
-            paddingHorizontal: 16,
             paddingVertical: 14,
-            marginBottom: 8,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
-          }}>
-            <Text style={{ color: '#52CC64', fontWeight: '700' }}>REVEGETAR</Text>
-            <Text style={{ color: '#52CC64' }}>✓</Text>
-          </View>
-        )}
+            marginBottom: 8,
+            opacity: loading ? 0.5 : 1,
+          }}
+        >
+          <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700' }}>+ Crear tabla personalizada</Text>
+        </TouchableOpacity>
 
         {/* Boton crear */}
         <TouchableOpacity
           onPress={handleCreate}
-          disabled={!name.trim() || !geneticType || loading}
+          disabled={loading}
           style={{
             marginTop: 40,
             backgroundColor: '#52CC64',
             borderRadius: 18,
             paddingVertical: 18,
             alignItems: 'center',
-            opacity: (!name.trim() || !geneticType || loading) ? 0.5 : 1,
+            opacity: loading ? 0.5 : 1,
           }}
         >
           {loading ? (
