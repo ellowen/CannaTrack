@@ -63,6 +63,26 @@ export default function EditPlantScreen() {
     }
   }, [tables, selectedTableId])
 
+  async function handleDelete() {
+    Alert.alert(
+      'Eliminar planta',
+      '¿Seguro? Esta accion no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            if (!id || !user) return
+            await supabase.from('scheduled_tasks').delete().eq('plant_id', id)
+            await supabase.from('plants').delete().eq('id', id).eq('user_id', user.id)
+            router.replace('/(tabs)/plants')
+          },
+        },
+      ]
+    )
+  }
+
   async function handleSave() {
     if (!id || !user || !name.trim() || !genetics.trim()) return
     setSaving(true)
@@ -394,6 +414,13 @@ export default function EditPlantScreen() {
             ? <ActivityIndicator color="white" />
             : <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>Guardar →</Text>
           }
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleDelete}
+          style={{ marginTop: 16, paddingVertical: 16, alignItems: 'center' }}
+        >
+          <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>🗑 Eliminar planta</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
