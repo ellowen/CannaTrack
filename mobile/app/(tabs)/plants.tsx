@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -149,93 +150,54 @@ export default function PlantsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+        <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900' }}>Mis plantas</Text>
-            <TouchableOpacity
-              onPress={() => setShowNewModal(true)}
-              style={{ backgroundColor: '#52CC64', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 }}
-            >
-              <Text style={{ color: '#0C1410', fontWeight: '700', fontSize: 13 }}>+ Nueva</Text>
+            <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Mis plantas</Text>
+            <TouchableOpacity onPress={() => setShowNewModal(true)} activeOpacity={0.85} style={{ borderRadius: 14, overflow: 'hidden' }}>
+              <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ paddingHorizontal: 16, paddingVertical: 9 }}>
+                <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>+ Nueva</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
-
-          {/* Search Bar */}
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Buscar por nombre, genetica..."
-            placeholderTextColor="#3A5040"
-            style={{
-              backgroundColor: '#131D14',
-              borderWidth: 1,
-              borderColor: '#1C2E1E',
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              color: '#E4F2E7',
-              fontSize: 14,
-              marginBottom: 12,
-            }}
+            placeholderTextColor="#2D4A30"
+            style={{ backgroundColor: '#0D1A0F', borderWidth: 1, borderColor: '#1A3020', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, color: '#E8F5EA', fontSize: 14, marginBottom: 14 }}
           />
-
-          {/* Filter Tabs */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            {(['active', 'all', 'archived'] as const).map(f => (
-              <TouchableOpacity
-                key={f}
-                onPress={() => setFilter(f)}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 12,
-                  backgroundColor: f === filter ? '#52CC64' : '#131D14',
-                  borderWidth: 1,
-                  borderColor: f === filter ? '#52CC64' : '#1C2E1E',
-                }}
-              >
-                <Text
-                  style={{
-                    color: f === filter ? '#0C1410' : '#728C74',
-                    fontWeight: '600',
-                    fontSize: 12,
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {f === 'active' ? 'Activas' : f === 'all' ? 'Todas' : 'Descartadas'}
-                </Text>
+            {([['active', 'Activas'], ['all', 'Todas'], ['archived', 'Historial']] as const).map(([f, label]) => (
+              <TouchableOpacity key={f} onPress={() => setFilter(f)} activeOpacity={0.8} style={{ borderRadius: 12, overflow: 'hidden' }}>
+                {f === filter ? (
+                  <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>
+                    <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 12 }}>{label}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#0D1A0F', borderRadius: 12, borderWidth: 1, borderColor: '#1A3020' }}>
+                    <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 12 }}>{label}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </LinearGradient>
 
-        {/* Plants Grid */}
         {loading ? (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ color: '#728C74', textAlign: 'center', paddingVertical: 20 }}>Cargando...</Text>
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ color: '#3D6642', fontSize: 14 }}>Cargando...</Text>
           </View>
         ) : filteredPlants.length === 0 ? (
-          <View style={{ paddingHorizontal: 16 }}>
-            <TouchableOpacity
-              onPress={() => setShowNewModal(true)}
-              style={{
-                backgroundColor: '#131D14',
-                borderRadius: 20,
-                borderWidth: 2,
-                borderColor: '#52CC64',
-                borderStyle: 'dashed',
-                padding: 40,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
-              <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Sin plantas</Text>
-              <Text style={{ color: '#728C74', fontSize: 13, marginTop: 6, textAlign: 'center' }}>
-                Crea tu primera planta para empezar a cultivar
-              </Text>
+          <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+            <TouchableOpacity onPress={() => setShowNewModal(true)} activeOpacity={0.85}>
+              <LinearGradient colors={['#0D1A0F', '#080E09']} style={{ borderRadius: 22, padding: 40, alignItems: 'center', borderWidth: 2, borderColor: '#1A3020', borderStyle: 'dashed' }}>
+                <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
+                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 17 }}>Sin plantas</Text>
+                <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center' }}>Crea tu primera planta para empezar a cultivar</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : (
@@ -249,47 +211,74 @@ export default function PlantsScreen() {
             windowSize={10}
             removeClippedSubviews={true}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
-            renderItem={({ item: plant }) => (
-              <TouchableOpacity
-                onPress={() => router.push(`/plants/${plant.id}`)}
-                activeOpacity={0.85}
-                style={{
-                  marginHorizontal: 16,
-                  marginBottom: 12,
-                  backgroundColor: '#131D14',
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: '#1C2E1E',
-                  overflow: 'hidden',
-                }}
-              >
-                <View style={{ backgroundColor: plant.status === 'active' ? '#1A3D1E' : '#1A1A1A', padding: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: plant.status === 'active' ? '#52CC64' : '#728C74', fontSize: 10, fontWeight: '800' }}>
-                        {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
-                      </Text>
-                    </View>
-                    <Text style={{ color: plant.status === 'active' ? '#6DC278' : '#728C74', fontSize: 11, fontWeight: '600' }}>
-                      {plant.floraStartDate ? 'FLORA' : 'VEGE'}
-                    </Text>
-                  </View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{plant.name}</Text>
-                  <Text style={{ color: plant.status === 'active' ? '#6DC278' : '#728C74', fontSize: 13, marginTop: 2 }}>
-                    {plant.genetics}
-                  </Text>
-                </View>
+            renderItem={({ item: plant }) => {
+              const isActive  = plant.status === 'active'
+              const isFlora   = !!plant.floraStartDate
+              const totalDays = differenceInDays(new Date(), plant.startDate)
+              const phaseDay  = isFlora && plant.floraStartDate
+                ? differenceInDays(new Date(), plant.floraStartDate) + 1
+                : totalDays + 1
 
-                <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>📅 {format(plant.startDate, 'd MMM', { locale: es })}</Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>
-                    {plant.location === 'indoor' ? '🏠' : '☀️'} {differenceInDays(new Date(), plant.startDate)}d
-                  </Text>
-                  <Text style={{ color: '#728C74', fontSize: 12 }}>🪴 {plant.potCount}×{plant.potVolumeLiters}L</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            contentContainerStyle={{ paddingHorizontal: 0 }}
+              return (
+                <TouchableOpacity onPress={() => router.push(`/plants/${plant.id}`)} activeOpacity={0.85} style={{ marginHorizontal: 16, marginBottom: 12 }}>
+                  <LinearGradient
+                    colors={
+                      !isActive ? ['#101010', '#080808'] :
+                      isFlora ? ['#1A0E00', '#0E0800', '#080A09'] :
+                      ['#0D1A0F', '#070D08', '#080A09']
+                    }
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ borderRadius: 20, borderWidth: 1, borderColor: !isActive ? '#1A1A1A' : isFlora ? '#3D2000' : '#162A18', overflow: 'hidden' }}
+                  >
+                    <View style={{ padding: 16 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                        <LinearGradient
+                          colors={!isActive ? ['#1A1A1A', '#111111'] : isFlora ? ['#3D2000', '#1F1000'] : ['#1A3D1E', '#0D2010']}
+                          style={{ width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: !isActive ? '#2A2A2A' : isFlora ? '#6B3800' : '#2A5A2E' }}
+                        >
+                          <Text style={{ fontSize: 22 }}>{!isActive ? (plant.status === 'harvested' ? '✂️' : '🗑️') : isFlora ? '🌸' : '🌿'}</Text>
+                        </LinearGradient>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 5 }}>
+                            <View style={{ backgroundColor: isActive ? (isFlora ? '#3D2000' : '#1A3D1E') : '#1A1A1A', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                              <Text style={{ color: isActive ? (isFlora ? '#F59E0B' : '#52CC64') : '#555', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 }}>
+                                {isFlora ? 'FLORA' : 'VEGE'}
+                              </Text>
+                            </View>
+                            <View style={{ backgroundColor: '#0D1A10', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                              <Text style={{ color: '#4A7A50', fontSize: 9, fontWeight: '700' }}>
+                                {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
+                              </Text>
+                            </View>
+                            {!isActive && (
+                              <View style={{ backgroundColor: plant.status === 'harvested' ? '#0D2010' : '#1A0808', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                                <Text style={{ color: plant.status === 'harvested' ? '#52CC64' : '#EF4444', fontSize: 9, fontWeight: '900' }}>
+                                  {plant.status === 'harvested' ? 'COSECHADA' : 'DESCARTADA'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={{ color: isActive ? '#E8F5EA' : '#888', fontSize: 18, fontWeight: '900' }}>{plant.name}</Text>
+                          <Text style={{ color: isActive ? (isFlora ? '#A06020' : '#4A7A50') : '#555', fontSize: 12, marginTop: 1 }}>{plant.genetics}</Text>
+                        </View>
+                        {isActive && (
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 24, fontWeight: '900', lineHeight: 26 }}>D{phaseDay}</Text>
+                            <Text style={{ color: isFlora ? '#6B3800' : '#2A5A2E', fontSize: 9, fontWeight: '700' }}>S{Math.ceil(phaseDay / 7)}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: !isActive ? '#1A1A1A' : isFlora ? '#2D1800' : '#142214' }}>
+                        <Text style={{ color: !isActive ? '#444' : isFlora ? '#5A3010' : '#2A4A2E', fontSize: 11 }}>📅 {format(plant.startDate, 'd MMM yyyy', { locale: es })}</Text>
+                        <Text style={{ color: !isActive ? '#444' : isFlora ? '#5A3010' : '#2A4A2E', fontSize: 11 }}>{plant.location === 'indoor' ? '🏠' : '☀️'} {totalDays}d</Text>
+                        <Text style={{ color: !isActive ? '#444' : isFlora ? '#5A3010' : '#2A4A2E', fontSize: 11 }}>🪴 {plant.potCount}×{plant.potVolumeLiters}L</Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )
+            }}
+            contentContainerStyle={{ paddingTop: 12 }}
           />
         )}
       </ScrollView>
