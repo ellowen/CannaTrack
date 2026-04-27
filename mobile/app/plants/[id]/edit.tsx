@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,6 +12,16 @@ type PlantSex = 'female' | 'male' | 'unknown'
 type CustomProduct = { name: string; unit: 'ml' | 'gr'; minDose: number; maxDose: number }
 const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', minDose: 1, maxDose: 2 }
 
+const LINE_COLOR: Record<string, { bg: string; text: string }> = {
+  BIO:   { bg: 'rgba(20,83,45,0.7)',  text: '#4ADE80' },
+  ECO:   { bg: 'rgba(69,26,3,0.7)',   text: '#FB923C' },
+  LIFE:  { bg: 'rgba(30,58,95,0.7)',  text: '#60A5FA' },
+  FUEL:  { bg: 'rgba(59,7,100,0.7)',  text: '#C084FC' },
+  PRO:   { bg: 'rgba(67,20,7,0.7)',   text: '#FB923C' },
+  MID:   { bg: 'rgba(74,13,46,0.7)',  text: '#F472B6' },
+  BASIC: { bg: 'rgba(76,5,25,0.7)',   text: '#FDA4AF' },
+}
+
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
@@ -18,11 +29,11 @@ export default function EditPlantScreen() {
   const [genetics, setGenetics]                 = useState('')
   const [geneticType, setGeneticType]           = useState<GeneticType>('feminized')
   const [sex, setSex]                           = useState<PlantSex>('unknown')
-  const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState('77')
+  const [autoFlowerTotalDays, setAutoFlowerTotalDays] = useState(77)
   const [startDate, setStartDate]               = useState('')
   const [location, setLocation]                 = useState<'indoor' | 'outdoor'>('indoor')
-  const [potCount, setPotCount]                 = useState('1')
-  const [potVolumeLiters, setPotVolumeLiters]   = useState('11')
+  const [potCount, setPotCount]                 = useState(1)
+  const [potVolumeLiters, setPotVolumeLiters]   = useState(11)
   const [notes, setNotes]                       = useState('')
   const [loading, setLoading]                   = useState(true)
   const [saving, setSaving]                     = useState(false)
@@ -32,29 +43,24 @@ export default function EditPlantScreen() {
   const [showAddForm, setShowAddForm]           = useState(false)
   const [newProduct, setNewProduct]             = useState<CustomProduct>(EMPTY_NEW)
 
-  const { tables, loading: tablesLoading } = useNutritionTables()
+  const { tables } = useNutritionTables()
 
   useEffect(() => {
     async function load() {
       if (!id || !user) return
-      const { data } = await supabase
-        .from('plants')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .maybeSingle()
+      const { data } = await supabase.from('plants').select('*').eq('id', id).eq('user_id', user.id).maybeSingle()
       if (data) {
         setName(data.name)
         setGenetics(data.genetics)
         setGeneticType((data.genetic_type as GeneticType) ?? 'feminized')
         setSex((data.sex as PlantSex) ?? 'unknown')
-        setAutoFlowerTotalDays(String(data.auto_flower_total_days ?? 77))
+        setAutoFlowerTotalDays(data.auto_flower_total_days ?? 77)
         setStartDate(data.start_date ?? '')
         setSelectedTableId(data.nutrition_table_id || '')
         setAvailableProducts(data.available_products ? [...data.available_products] : null)
         setLocation(data.location ?? 'indoor')
-        setPotCount(String(data.pot_count ?? 1))
-        setPotVolumeLiters(String(data.pot_volume_liters ?? 11))
+        setPotCount(data.pot_count ?? 1)
+        setPotVolumeLiters(data.pot_volume_liters ?? 11)
         setNotes(data.notes ?? '')
         setCustomProducts(Array.isArray(data.custom_products) ? data.custom_products : [])
       }
@@ -64,54 +70,40 @@ export default function EditPlantScreen() {
   }, [id, user])
 
   useEffect(() => {
-    if (tables.length > 0 && !selectedTableId) {
-      setSelectedTableId(tables[0].id)
-    }
+    if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
   }, [tables, selectedTableId])
 
   async function handleDelete() {
-    Alert.alert(
-      'Eliminar planta',
-      '¿Seguro? Esta accion no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            if (!id || !user) return
-            await supabase.from('scheduled_tasks').delete().eq('plant_id', id)
-            await supabase.from('plants').delete().eq('id', id).eq('user_id', user.id)
-            router.replace('/(tabs)/plants')
-          },
-        },
-      ]
-    )
+    Alert.alert('Eliminar planta', '¿Seguro? Esta accion no se puede deshacer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+        if (!id || !user) return
+        await supabase.from('scheduled_tasks').delete().eq('plant_id', id)
+        await supabase.from('plants').delete().eq('id', id).eq('user_id', user.id)
+        router.replace('/(tabs)/plants')
+      }},
+    ])
   }
 
   async function handleSave() {
     if (!id || !user || !name.trim() || !genetics.trim()) return
     setSaving(true)
     try {
-      await supabase
-        .from('plants')
-        .update({
-          name:                 name.trim(),
-          genetics:             genetics.trim(),
-          genetic_type:         geneticType,
-          sex:                  geneticType === 'regular' ? sex : null,
-          auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
-          start_date:           startDate || null,
-          nutrition_table_id:   selectedTableId,
-          available_products:   availableProducts,
-          location,
-          pot_count:            parseInt(potCount) || 1,
-          pot_volume_liters:    parseFloat(potVolumeLiters) || 11,
-          notes:                notes.trim() || null,
-          custom_products:      customProducts,
-        })
-        .eq('id', id)
-        .eq('user_id', user.id)
+      await supabase.from('plants').update({
+        name:                 name.trim(),
+        genetics:             genetics.trim(),
+        genetic_type:         geneticType,
+        sex:                  geneticType === 'regular' ? sex : null,
+        auto_flower_total_days: geneticType === 'autoflower' ? autoFlowerTotalDays : null,
+        start_date:           startDate || null,
+        nutrition_table_id:   selectedTableId,
+        available_products:   availableProducts,
+        location,
+        pot_count:            potCount,
+        pot_volume_liters:    potVolumeLiters,
+        notes:                notes.trim() || null,
+        custom_products:      customProducts,
+      }).eq('id', id).eq('user_id', user.id)
       router.back()
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
@@ -122,242 +114,269 @@ export default function EditPlantScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
       </SafeAreaView>
     )
   }
 
+  const canSave = name.trim().length > 0 && genetics.trim().length > 0 && !saving
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
-          </TouchableOpacity>
-          <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Editar planta</Text>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
 
-        <Text style={lbl}>NOMBRE</Text>
-        <TextInput value={name} onChangeText={setName} placeholderTextColor="#3A5040" style={inp} />
-
-        <Text style={[lbl, { marginTop: 16 }]}>GENETICA</Text>
-        <TextInput value={genetics} onChangeText={setGenetics} placeholderTextColor="#3A5040" style={inp} />
-
-        {/* Tipo de genetica */}
-        <Text style={[lbl, { marginTop: 16 }]}>TIPO</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {(['feminized', 'autoflower', 'regular'] as GeneticType[]).map(t => (
+      {/* Header fijo */}
+      <LinearGradient colors={['#0F1F10', '#080E09']}
+        style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: '#1A2E1A' }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity
-              key={t}
-              onPress={() => setGeneticType(t)}
-              style={{
-                flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-                backgroundColor: geneticType === t ? '#1A3D1E' : '#131D14',
-                borderWidth: 1, borderColor: geneticType === t ? '#52CC64' : '#1C2E1E',
-              }}
+              onPress={() => router.back()}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: geneticType === t ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
-                {t === 'feminized' ? 'Feminizada' : t === 'autoflower' ? 'Auto' : 'Regular'}
-              </Text>
+              <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>←</Text>
             </TouchableOpacity>
-          ))}
+            <View>
+              <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Editar planta</Text>
+              <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 1 }}>Los cambios se guardan al tocar Guardar</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={handleSave} disabled={!canSave} activeOpacity={0.85}>
+            <LinearGradient
+              colors={canSave ? ['#52CC64', '#3DAA50'] : ['#1C2E1E', '#182018']}
+              style={{ borderRadius: 12, paddingHorizontal: 18, paddingVertical: 10 }}
+            >
+              {saving
+                ? <ActivityIndicator color="#080E09" size="small" />
+                : <Text style={{ color: canSave ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 13 }}>Guardar</Text>
+              }
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
+      </LinearGradient>
 
-        {/* Dias totales — solo autoflower */}
-        {geneticType === 'autoflower' && (
-          <View style={{ marginTop: 16 }}>
-            <Text style={lbl}>DIAS TOTALES DE CULTIVO</Text>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+
+        {/* Seccion: Identidad */}
+        <Section label="Identidad" icon="🌿">
+          <Field label="Nombre">
             <TextInput
-              value={autoFlowerTotalDays}
-              onChangeText={setAutoFlowerTotalDays}
-              keyboardType="number-pad"
-              placeholderTextColor="#3A5040"
+              value={name}
+              onChangeText={setName}
+              placeholder="Ej: Planta #1"
+              placeholderTextColor="#2D4A30"
               style={inp}
             />
-            <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 6 }}>Tipico: 70-80 dias desde germinacion</Text>
-          </View>
-        )}
-
-        {/* Sexo — solo regular */}
-        {geneticType === 'regular' && (
-          <View style={{ marginTop: 16 }}>
-            <Text style={lbl}>SEXO</Text>
+          </Field>
+          <Field label="Genetica">
+            <TextInput
+              value={genetics}
+              onChangeText={setGenetics}
+              placeholder="Ej: Blue Dream, OG Kush..."
+              placeholderTextColor="#2D4A30"
+              style={inp}
+            />
+          </Field>
+          <Field label="Tipo">
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                onPress={() => setSex('female')}
-                style={{
-                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-                  backgroundColor: sex === 'female' ? '#1A3D1E' : '#131D14',
-                  borderWidth: 1, borderColor: sex === 'female' ? '#52CC64' : '#1C2E1E',
-                }}
-              >
-                <Text style={{ color: sex === 'female' ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
-                  Hembra
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setSex('male')}
-                style={{
-                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-                  backgroundColor: sex === 'male' ? '#1A2B3D' : '#131D14',
-                  borderWidth: 1, borderColor: sex === 'male' ? '#4A90D9' : '#1C2E1E',
-                }}
-              >
-                <Text style={{ color: sex === 'male' ? '#4A90D9' : '#728C74', fontWeight: '700', fontSize: 13 }}>
-                  Macho
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setSex('unknown')}
-                style={{
-                  flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-                  backgroundColor: sex === 'unknown' ? '#1E1E1E' : '#131D14',
-                  borderWidth: 1, borderColor: sex === 'unknown' ? '#555555' : '#1C2E1E',
-                }}
-              >
-                <Text style={{ color: sex === 'unknown' ? '#AAAAAA' : '#728C74', fontWeight: '700', fontSize: 13 }}>
-                  Desconocido
-                </Text>
-              </TouchableOpacity>
+              {([
+                ['feminized', '♀', 'Fem'],
+                ['autoflower', '⏱', 'Auto'],
+                ['regular', '⚥', 'Reg'],
+              ] as const).map(([t, icon, label]) => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => setGeneticType(t)}
+                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
+                >
+                  {geneticType === t ? (
+                    <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 11, alignItems: 'center', gap: 3 }}>
+                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 11 }}>{label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ borderRadius: 12, paddingVertical: 11, alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 11 }}>{label}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Field>
+
+          {geneticType === 'autoflower' && (
+            <Field label="Dias totales de cultivo">
+              <Stepper value={autoFlowerTotalDays} min={50} max={120} step={1} unit="d" onChange={setAutoFlowerTotalDays} />
+              <Text style={{ color: '#2D4A30', fontSize: 11, marginTop: 6 }}>Tipico: 70-80 dias desde germinacion</Text>
+            </Field>
+          )}
+
+          {geneticType === 'regular' && (
+            <Field label="Sexo">
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {([
+                  ['female', '♀', '#52CC64', 'Hembra'],
+                  ['male',   '♂', '#3B82F6', 'Macho'],
+                  ['unknown','?', '#728C74', 'N/D'],
+                ] as const).map(([s, icon, color, label]) => (
+                  <TouchableOpacity
+                    key={s}
+                    onPress={() => setSex(s)}
+                    activeOpacity={0.8}
+                    style={{
+                      flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', gap: 2,
+                      backgroundColor: sex === s ? `${color}18` : 'rgba(255,255,255,0.04)',
+                      borderWidth: 1, borderColor: sex === s ? `${color}55` : '#1C2E1E',
+                    }}
+                  >
+                    <Text style={{ color: sex === s ? color : '#3A5040', fontSize: 18, fontWeight: '700' }}>{icon}</Text>
+                    <Text style={{ color: sex === s ? color : '#3A5040', fontWeight: '700', fontSize: 10 }}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Field>
+          )}
+        </Section>
+
+        {/* Seccion: Ciclo */}
+        <Section label="Ciclo de cultivo" icon="📅">
+          <Field label="Fecha de inicio">
+            <TextInput
+              value={startDate}
+              onChangeText={setStartDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#2D4A30"
+              keyboardType="numeric"
+              style={inp}
+            />
+          </Field>
+          <LinearGradient
+            colors={['rgba(245,158,11,0.08)', 'rgba(245,158,11,0.03)']}
+            style={{ borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)', padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+          >
+            <Text style={{ fontSize: 16 }}>⚠️</Text>
+            <Text style={{ color: '#F59E0B', fontSize: 12, flex: 1, lineHeight: 17 }}>
+              Cambiar la fecha o tipo regenera el calendario de nutricion
+            </Text>
+          </LinearGradient>
+        </Section>
+
+        {/* Seccion: Cultivo */}
+        <Section label="Configuracion" icon="🪴">
+          <Field label="Ubicacion">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([['indoor', '🏠', 'Indoor'], ['outdoor', '☀️', 'Outdoor']] as const).map(([l, icon, label]) => (
+                <TouchableOpacity key={l} onPress={() => setLocation(l)} activeOpacity={0.8} style={{ flex: 1 }}>
+                  {location === l ? (
+                    <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 13 }}>{label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ borderRadius: 12, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <Text style={{ color: '#4A7A50', fontWeight: '600', fontSize: 13 }}>{label}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Field>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Field label="Cantidad de macetas">
+                <Stepper value={potCount} min={1} max={20} step={1} unit="" onChange={setPotCount} />
+              </Field>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Field label="Litros por maceta">
+                <Stepper value={potVolumeLiters} min={1} max={200} step={1} unit="L" onChange={setPotVolumeLiters} />
+              </Field>
             </View>
           </View>
-        )}
+        </Section>
 
-        {/* Fecha de inicio */}
-        <Text style={[lbl, { marginTop: 16 }]}>FECHA DE INICIO</Text>
-        <TextInput
-          value={startDate}
-          onChangeText={setStartDate}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor="#3A5040"
-          style={inp}
-        />
+        {/* Seccion: Notas */}
+        <Section label="Notas" icon="📝">
+          <TextInput
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Observaciones, recordatorios, caracteristicas de esta planta..."
+            placeholderTextColor="#2D4A30"
+            multiline
+            numberOfLines={3}
+            style={[inp, { minHeight: 88, textAlignVertical: 'top' }]}
+          />
+        </Section>
 
-        {/* Aviso regeneracion — aparece cuando cambia geneticType o startDate */}
-        <View style={{
-          marginTop: 10, backgroundColor: '#2A2200', borderRadius: 12,
-          borderWidth: 1, borderColor: '#5C4400', padding: 12,
-        }}>
-          <Text style={{ color: '#FFD166', fontSize: 13 }}>
-            ⚠️ Cambiar esto regenera el calendario de nutricion
-          </Text>
-        </View>
-
-        <Text style={[lbl, { marginTop: 16 }]}>UBICACION</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {(['indoor', 'outdoor'] as const).map(l => (
-            <TouchableOpacity
-              key={l}
-              onPress={() => setLocation(l)}
-              style={{
-                flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-                backgroundColor: location === l ? '#1A3D1E' : '#131D14',
-                borderWidth: 1, borderColor: location === l ? '#52CC64' : '#1C2E1E',
-              }}
-            >
-              <Text style={{ color: location === l ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 13 }}>
-                {l === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={lbl}>CANTIDAD</Text>
-            <StepperField
-              value={parseInt(potCount) || 1}
-              min={1} max={20} step={1}
-              onChange={v => setPotCount(String(v))}
-              unit=""
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={lbl}>LITROS / MACETA</Text>
-            <StepperField
-              value={parseInt(potVolumeLiters) || 11}
-              min={1} max={200} step={1}
-              onChange={v => setPotVolumeLiters(String(v))}
-              unit="L"
-            />
-          </View>
-        </View>
-
-        <Text style={[lbl, { marginTop: 16 }]}>NOTAS</Text>
-        <TextInput
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Observaciones sobre esta planta..."
-          placeholderTextColor="#3A5040"
-          multiline
-          style={[inp, { minHeight: 80, textAlignVertical: 'top' }]}
-        />
-
-        {/* Tabla nutricional */}
-        <Text style={[lbl, { marginTop: 20 }]}>Tabla nutricional</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12, gap: 8 }}>
-          {tables.map(table => (
-            <TouchableOpacity
-              key={table.id}
-              onPress={() => {
-                setSelectedTableId(table.id)
-                setAvailableProducts(null)
-              }}
-              style={{
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: selectedTableId === table.id ? '#1A3D1E' : '#0C1410',
-                borderWidth: 1,
-                borderColor: selectedTableId === table.id ? '#52CC64' : '#1C2E1E',
-                marginRight: 8,
-              }}
-            >
-              <Text style={{ color: selectedTableId === table.id ? '#52CC64' : '#E4F2E7', fontWeight: '700' }}>
-                {table.name.split(' ')[0]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Productos */}
-        {selectedTableId && tables.find(t => t.id === selectedTableId) && (
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={lbl}>Productos (opcional)</Text>
-              <TouchableOpacity
-                onPress={() => setAvailableProducts(null)}
-                style={{ padding: 4 }}
-              >
-                <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>
-                  {availableProducts === null ? 'Todos' : `${availableProducts.length} seleccionados`}
-                </Text>
-              </TouchableOpacity>
+        {/* Seccion: Tabla nutricional */}
+        <Section label="Tabla nutricional" icon="🧪">
+          {/* Selector de tabla */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {tables.map(table => (
+                <TouchableOpacity
+                  key={table.id}
+                  onPress={() => { setSelectedTableId(table.id); setAvailableProducts(null) }}
+                  activeOpacity={0.8}
+                >
+                  {selectedTableId === table.id ? (
+                    <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 }}>
+                      <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>{table.name.split(' ')[0]}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                      <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 13 }}>{table.name.split(' ')[0]}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
+          </ScrollView>
 
-            {(() => {
-              const table = tables.find(t => t.id === selectedTableId)
-              if (!table) return null
+          {/* Productos de la tabla */}
+          {selectedTableId && (() => {
+            const table = tables.find(t => t.id === selectedTableId)
+            if (!table) return null
 
-              return (
-                <View>
-                  {table.lines.map(line => {
-                    // Buscar productos de esta línea en cualquier semana
-                    const lineProducts = new Set<string>()
-                    ;[...table.vegeWeeks, ...table.floraWeeks].forEach(week => {
-                      week.products.forEach(p => {
-                        if (p.line === line.id) lineProducts.add(p.name)
-                      })
-                    })
+            return (
+              <View style={{ gap: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                    Filtrar productos
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setAvailableProducts(null)}
+                    style={{ backgroundColor: availableProducts === null ? 'rgba(82,204,100,0.12)' : 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: availableProducts === null ? 'rgba(82,204,100,0.25)' : '#1C2E1E' }}
+                  >
+                    <Text style={{ color: availableProducts === null ? '#52CC64' : '#728C74', fontSize: 11, fontWeight: '700' }}>
+                      {availableProducts === null ? '✓ Todos' : `${availableProducts.length} sel.`}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {table.lines.map(line => {
+                  const lineProducts = new Set<string>()
+                  ;[...table.vegeWeeks, ...table.floraWeeks].forEach(week => {
+                    week.products.forEach(p => { if (p.line === line.id) lineProducts.add(p.name) })
+                  })
+                  if (lineProducts.size === 0) return null
+                  const lc = LINE_COLOR[line.id] ?? { bg: 'rgba(28,46,30,0.6)', text: '#728C74' }
 
-                    return (
-                      <View key={line.id} style={{ marginBottom: 12 }}>
-                        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>
-                          {line.name}
-                        </Text>
-                        <View style={{ gap: 6 }}>
-                          {Array.from(lineProducts).map(productName => (
+                  return (
+                    <View key={line.id}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <View style={{ backgroundColor: lc.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                          <Text style={{ color: lc.text, fontSize: 10, fontWeight: '800' }}>{line.id}</Text>
+                        </View>
+                        <Text style={{ color: '#4A6A50', fontSize: 12, fontWeight: '600' }}>{line.name}</Text>
+                      </View>
+                      <View style={{ gap: 6 }}>
+                        {Array.from(lineProducts).map(productName => {
+                          const checked = availableProducts === null || availableProducts.includes(productName)
+                          return (
                             <TouchableOpacity
                               key={productName}
                               onPress={() => {
@@ -369,115 +388,118 @@ export default function EditPlantScreen() {
                                   setAvailableProducts([...availableProducts, productName])
                                 }
                               }}
+                              activeOpacity={0.8}
                               style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                paddingHorizontal: 10,
-                                paddingVertical: 8,
-                                borderRadius: 8,
-                                backgroundColor: availableProducts === null || availableProducts.includes(productName) ? '#1A3D1E' : '#0C1410',
-                                borderWidth: 1,
-                                borderColor: '#1C2E1E',
+                                flexDirection: 'row', alignItems: 'center', gap: 10,
+                                paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12,
+                                backgroundColor: checked ? 'rgba(82,204,100,0.06)' : 'rgba(255,255,255,0.03)',
+                                borderWidth: 1, borderColor: checked ? 'rgba(82,204,100,0.2)' : '#1A2A1A',
                               }}
                             >
-                              <View
-                                style={{
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: 4,
-                                  borderWidth: 2,
-                                  borderColor: '#52CC64',
-                                  backgroundColor: availableProducts === null || availableProducts.includes(productName) ? '#52CC64' : 'transparent',
-                                  marginRight: 8,
-                                }}
-                              />
-                              <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>
+                              <View style={{
+                                width: 18, height: 18, borderRadius: 5,
+                                borderWidth: 2, borderColor: checked ? '#52CC64' : '#2D4A30',
+                                backgroundColor: checked ? '#52CC64' : 'transparent',
+                                alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                {checked && <Text style={{ color: '#080E09', fontSize: 11, fontWeight: '900', lineHeight: 13 }}>✓</Text>}
+                              </View>
+                              <Text style={{ color: checked ? '#E4F2E7' : '#4A6A50', fontSize: 13, fontWeight: '600', flex: 1 }}>
                                 {productName}
                               </Text>
                             </TouchableOpacity>
-                          ))}
-                        </View>
+                          )
+                        })}
                       </View>
-                    )
-                  })}
-                </View>
-              )
-            })()}
-          </View>
-        )}
+                    </View>
+                  )
+                })}
+              </View>
+            )
+          })()}
+        </Section>
 
-        {/* Productos personalizados */}
-        <View style={{ marginBottom: 20 }}>
-          <Text style={[lbl, { marginTop: 16 }]}>PRODUCTOS PROPIOS</Text>
-          <Text style={{ color: '#3A5040', fontSize: 12, marginBottom: 12, lineHeight: 17 }}>
-            Productos de otras marcas que uses en tu cultivo. Se muestran en la tarjeta de nutricion junto con la tabla.
+        {/* Seccion: Productos propios */}
+        <Section label="Productos propios" icon="✏️">
+          <Text style={{ color: '#3A5040', fontSize: 12, lineHeight: 17, marginBottom: 14 }}>
+            Agrega productos de otras marcas. Se calculan con el mismo stepper de litros de la tarjeta de nutricion.
           </Text>
 
-          {customProducts.length > 0 && (
-            <View style={{ gap: 8, marginBottom: 12 }}>
-              {customProducts.map((p, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D1A0F', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, gap: 8 }}>
-                  <View style={{ backgroundColor: '#1C2E1E', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text style={{ color: '#728C74', fontSize: 9, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
-                  </View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
-                  <Text style={{ color: '#3A5040', fontSize: 11 }}>
-                    {p.minDose === p.maxDose ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
-                    style={{ width: 26, height: 26, borderRadius: 7, backgroundColor: 'rgba(239,68,68,0.1)', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text style={{ color: '#EF4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+          {customProducts.map((p, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: '#B8D4BC', fontSize: 10, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
+              </View>
+              <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '700', flex: 1 }}>{p.name}</Text>
+              <Text style={{ color: '#4A7A50', fontSize: 11 }}>
+                {p.minDose === p.maxDose ? p.maxDose : `${p.minDose}–${p.maxDose}`}/{p.unit[0]}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
+                style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: '#EF4444', fontSize: 13, lineHeight: 15 }}>✕</Text>
+              </TouchableOpacity>
             </View>
-          )}
+          ))}
 
           {showAddForm ? (
-            <View style={{ backgroundColor: '#0D1A0F', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, padding: 14, gap: 12 }}>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>NUEVO PRODUCTO</Text>
+            <LinearGradient
+              colors={['#0D1A10', '#090E09']}
+              style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', padding: 16, gap: 14 }}
+            >
+              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
 
-              {/* Nombre */}
               <TextInput
                 value={newProduct.name}
                 onChangeText={v => setNewProduct(p => ({ ...p, name: v }))}
-                placeholder="Ej: BioBizz Grow, Canna A+B..."
+                placeholder="Nombre del producto..."
                 placeholderTextColor="#2D4A30"
+                autoFocus
                 style={inp}
               />
 
-              {/* Unidad */}
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {(['ml', 'gr'] as const).map(u => (
-                  <TouchableOpacity
-                    key={u}
-                    onPress={() => setNewProduct(p => ({ ...p, unit: u }))}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: newProduct.unit === u ? '#1A3D1E' : '#0C1410', borderWidth: 1, borderColor: newProduct.unit === u ? '#52CC64' : '#1C2E1E' }}
-                  >
-                    <Text style={{ color: newProduct.unit === u ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 12 }}>{u}</Text>
+                  <TouchableOpacity key={u} onPress={() => setNewProduct(p => ({ ...p, unit: u }))} activeOpacity={0.8} style={{ flex: 1 }}>
+                    {newProduct.unit === u ? (
+                      <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 10, paddingVertical: 11, alignItems: 'center' }}>
+                        <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 14 }}>{u}</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={{ borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                        <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 14 }}>{u}</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Dosis */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Min / litro</Text>
-                  <StepperField value={newProduct.minDose} min={0} max={500} step={1} unit={newProduct.unit} onChange={v => setNewProduct(p => ({ ...p, minDose: v, maxDose: Math.max(v, p.maxDose) }))} />
+                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
+                    Min por litro
+                  </Text>
+                  <Stepper
+                    value={newProduct.minDose} min={0} max={500} step={1} unit={newProduct.unit}
+                    onChange={v => setNewProduct(p => ({ ...p, minDose: v, maxDose: Math.max(v, p.maxDose) }))}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Max / litro</Text>
-                  <StepperField value={newProduct.maxDose} min={newProduct.minDose} max={500} step={1} unit={newProduct.unit} onChange={v => setNewProduct(p => ({ ...p, maxDose: v }))} />
+                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
+                    Max por litro
+                  </Text>
+                  <Stepper
+                    value={newProduct.maxDose} min={newProduct.minDose} max={500} step={1} unit={newProduct.unit}
+                    onChange={v => setNewProduct(p => ({ ...p, maxDose: v }))}
+                  />
                 </View>
               </View>
 
-              {/* Botones */}
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
                   onPress={() => { setShowAddForm(false); setNewProduct(EMPTY_NEW) }}
-                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: '#0C1410', borderWidth: 1, borderColor: '#1C2E1E' }}
+                  style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}
                 >
                   <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 13 }}>Cancelar</Text>
                 </TouchableOpacity>
@@ -488,99 +510,108 @@ export default function EditPlantScreen() {
                     setNewProduct(EMPTY_NEW)
                     setShowAddForm(false)
                   }}
-                  style={{ flex: 2, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: '#52CC64' }}
+                  disabled={!newProduct.name.trim()}
+                  activeOpacity={0.85}
+                  style={{ flex: 2 }}
                 >
-                  <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 13 }}>Agregar producto</Text>
+                  <LinearGradient
+                    colors={newProduct.name.trim() ? ['#52CC64', '#3DAA50'] : ['#1C2E1E', '#182018']}
+                    style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                  >
+                    <Text style={{ color: newProduct.name.trim() ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 13 }}>
+                      Agregar
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
-            </View>
+            </LinearGradient>
           ) : (
             <TouchableOpacity
               onPress={() => setShowAddForm(true)}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
+              activeOpacity={0.8}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 16, lineHeight: 18 }}>+</Text>
+              <Text style={{ color: '#52CC64', fontSize: 20, lineHeight: 22, fontWeight: '300' }}>+</Text>
               <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 13 }}>Agregar producto propio</Text>
             </TouchableOpacity>
           )}
+        </Section>
+
+        {/* Zona de peligro */}
+        <View style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(239,68,68,0.15)', overflow: 'hidden' }}>
+          <LinearGradient colors={['#150505', '#0E0303']} style={{ padding: 16 }}>
+            <Text style={{ color: '#3A3A3A', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
+              Zona de peligro
+            </Text>
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', backgroundColor: 'rgba(239,68,68,0.06)' }}
+            >
+              <Text style={{ fontSize: 16 }}>🗑️</Text>
+              <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Eliminar planta permanentemente</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
 
-        {/* Aviso regeneracion — si cambia tabla o fecha */}
-        {selectedTableId && (
-          <View style={{
-            marginBottom: 20, backgroundColor: '#2A2200', borderRadius: 12,
-            borderWidth: 1, borderColor: '#5C4400', padding: 12,
-          }}>
-            <Text style={{ color: '#FFD166', fontSize: 13 }}>
-              ⚠️ Cambiar tabla o fecha regenera el calendario
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={!name.trim() || !genetics.trim() || saving}
-          style={{
-            marginTop: 28, backgroundColor: '#52CC64', borderRadius: 18,
-            paddingVertical: 18, alignItems: 'center',
-            opacity: (!name.trim() || !genetics.trim() || saving) ? 0.4 : 1,
-          }}
-        >
-          {saving
-            ? <ActivityIndicator color="white" />
-            : <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>Guardar →</Text>
-          }
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleDelete}
-          style={{ marginTop: 16, paddingVertical: 16, alignItems: 'center' }}
-        >
-          <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>🗑 Eliminar planta</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-function StepperField({ value, min, max, step, onChange, unit }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit: string }) {
+// ─── Componentes locales ─────────────────────────────────────────────────────
+
+function Section({ label, icon, children }: { label: string; icon: string; children: React.ReactNode }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 16, overflow: 'hidden' }}>
+    <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
+        <Text style={{ fontSize: 16 }}>{icon}</Text>
+        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>{label}</Text>
+      </View>
+      <View style={{ padding: 16, gap: 14 }}>
+        {children}
+      </View>
+    </LinearGradient>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 7 }}>
+      <Text style={{ color: '#4A6A50', fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
+      {children}
+    </View>
+  )
+}
+
+function Stepper({ value, min, max, step, unit, onChange }: { value: number; min: number; max: number; step: number; unit: string; onChange: (v: number) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, overflow: 'hidden' }}>
       <TouchableOpacity
         onPress={() => onChange(Math.max(min, value - step))}
         style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}
       >
-        <Text style={{ color: value <= min ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '700', lineHeight: 24 }}>−</Text>
+        <Text style={{ color: value <= min ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '600', lineHeight: 24 }}>−</Text>
       </TouchableOpacity>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 48 }}>
-        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{value}{unit}</Text>
+      <View style={{ flex: 1, alignItems: 'center' }}>
+        <Text style={{ color: '#E4F2E7', fontSize: 17, fontWeight: '900' }}>{value}{unit}</Text>
       </View>
       <TouchableOpacity
         onPress={() => onChange(Math.min(max, value + step))}
         style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}
       >
-        <Text style={{ color: value >= max ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '700', lineHeight: 24 }}>+</Text>
+        <Text style={{ color: value >= max ? '#2D4A30' : '#52CC64', fontSize: 22, fontWeight: '600', lineHeight: 24 }}>+</Text>
       </TouchableOpacity>
     </View>
   )
 }
 
-const lbl = {
-  color: '#728C74' as const,
-  fontSize: 11,
-  fontWeight: '700' as const,
-  letterSpacing: 1.5,
-  textTransform: 'uppercase' as const,
-  marginBottom: 8,
-}
-
 const inp = {
-  backgroundColor: '#131D14',
+  backgroundColor: 'rgba(0,0,0,0.35)',
   borderWidth: 1,
   borderColor: '#1C2E1E',
-  borderRadius: 16,
-  paddingHorizontal: 16,
-  paddingVertical: 14,
+  borderRadius: 14,
+  paddingHorizontal: 14,
+  paddingVertical: 13,
   color: '#E4F2E7',
   fontSize: 15,
 }
