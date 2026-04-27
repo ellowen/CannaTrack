@@ -1,7 +1,19 @@
 import '../global.css'
 import { useEffect, useState } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { Platform, View, ActivityIndicator } from 'react-native'
 import { Stack, router } from 'expo-router'
+
+// Suprimir warnings conocidos de librerias de terceros en web
+if (Platform.OS === 'web' && typeof console !== 'undefined') {
+  const _warn = console.warn.bind(console)
+  console.warn = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : ''
+    if (msg.includes('"shadow*" style props are deprecated')) return
+    if (msg.includes('props.pointerEvents is deprecated')) return
+    if (msg.includes('Listening to push token changes is not yet fully supported on web')) return
+    _warn(...args)
+  }
+}
 import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
