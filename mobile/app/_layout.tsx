@@ -1,5 +1,6 @@
 import '../global.css'
 import { useEffect, useState } from 'react'
+import { View, ActivityIndicator } from 'react-native'
 import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { supabase } from '@/lib/supabase'
@@ -20,11 +21,10 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
 }
 
 export default function RootLayout() {
+  // undefined = todavia cargando, null = sin sesion, Session = logueado
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const setUser = useUserStore(s => s.setUser)
 
-  // Initialize sync once at app start (instead of in each screen)
-  // Expected: 2-4 fewer requests compared to calling from multiple screens
   useInitSync()
 
   useEffect(() => {
@@ -53,7 +53,6 @@ export default function RootLayout() {
 
       setUser(s.user.id, s.user.email ?? '', s.user.email?.split('@')[0] ?? '')
 
-      // Re-schedule notificacion diaria si el usuario la tiene activada
       const { data: prof } = await supabase
         .from('profiles')
         .select('notifications_enabled')
@@ -69,8 +68,6 @@ export default function RootLayout() {
 
     return () => subscription.unsubscribe()
   }, [])
-
-  if (session === undefined) return null
 
   return (
     <ThemeProvider>
@@ -90,6 +87,16 @@ export default function RootLayout() {
         <Stack.Screen name="achievements" />
       </Stack>
       <StatusBar style="light" />
+      {/* Overlay mientras resuelve la sesion inicial - tapa el flash de pantalla */}
+      {session === undefined && (
+        <View style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: '#0C1410',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <ActivityIndicator color="#52CC64" size="large" />
+        </View>
+      )}
     </ThemeProvider>
   )
 }
