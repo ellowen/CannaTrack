@@ -4,6 +4,7 @@ import {
   Modal, KeyboardAvoidingView, Platform, TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -73,28 +74,15 @@ export default function PlantDetailScreen() {
   }
 
   async function confirmFlora() {
-    if (!plant) {
-      console.error('[confirmFlora] No plant data')
-      return
-    }
-    // Validate YYYY-MM-DD
+    if (!plant) return
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(floraDateInput)
-    if (!match) {
-      alert('Formato inválido. Use YYYY-MM-DD')
-      return
-    }
+    if (!match) { alert('Formato invalido. Use YYYY-MM-DD'); return }
     const candidate = new Date(floraDateInput)
-    if (isNaN(candidate.getTime())) {
-      alert('Fecha inválida')
-      return
-    }
-
-    console.log('[confirmFlora] Looking for table:', plant.nutritionTableId, 'Available tables:', tables.map(t => t.id))
+    if (isNaN(candidate.getTime())) { alert('Fecha invalida'); return }
 
     const table = tables.find(t => t.id === plant.nutritionTableId)
     if (!table) {
-      console.error('[confirmFlora] Table not found:', plant.nutritionTableId)
-      alert(`Tabla no encontrada: ${plant.nutritionTableId}\n\nTablas disponibles: ${tables.map(t => t.id).join(', ')}`)
+      alert(`Tabla no encontrada: ${plant.nutritionTableId}`)
       setFloraDateModal(false)
       return
     }
@@ -102,7 +90,6 @@ export default function PlantDetailScreen() {
     try {
       setFloraError(null)
       const floraStartDate = candidate
-      console.log('[confirmFlora] Starting flora with table:', table.id, 'date:', floraStartDate)
       const newTasks = startFloraPhase(plant, floraStartDate, table)
 
       await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
@@ -131,18 +118,11 @@ export default function PlantDetailScreen() {
       setPlant({ ...plant, floraStartDate })
       setTasks(newTasks)
       if (user) awardXP(user.id, XP_VALUES.START_FLORA)
-      console.log('[confirmFlora] Success! Flora started')
       setFloraDateModal(false)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al iniciar floración'
-      console.error('[confirmFlora] Error:', e)
+      const msg = e instanceof Error ? e.message : 'Error al iniciar floracion'
       setFloraError(msg)
     }
-  }
-
-  async function handleHarvest() {
-    if (!plant) return
-    setHarvestModal(true)
   }
 
   async function confirmHarvest(grams?: number) {
@@ -185,13 +165,13 @@ export default function PlantDetailScreen() {
   }
 
   if (loading) return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator color="#52CC64" size="large" />
     </SafeAreaView>
   )
 
   if (!plant) return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#728C74' }}>Planta no encontrada</Text>
     </SafeAreaView>
   )
@@ -214,7 +194,25 @@ export default function PlantDetailScreen() {
   const health   = calculatePlantHealth(tasks)
   const healthColor = health >= 75 ? '#52CC64' : health >= 45 ? '#F59E0B' : '#EF4444'
 
-  // Fecha estimada de cosecha
+  // Phase theming
+  const phaseAccent = isFlora ? '#F59E0B' : '#52CC64'
+  const headerGradient: [string, string, string] = isFlora
+    ? ['#1A1000', '#100900', '#080E09']
+    : ['#0A1A0B', '#060E07', '#080E09']
+
+  // Phase day/week
+  let phaseDay = 0
+  let phaseLabel = ''
+  if (isFlora && plant.floraStartDate) {
+    phaseDay = differenceInDays(today, plant.floraStartDate) + 1
+    const week = Math.ceil(phaseDay / 7)
+    phaseLabel = `F${week} · D${phaseDay}`
+  } else {
+    phaseDay = daysSinceStart + 1
+    const week = Math.ceil(phaseDay / 7)
+    phaseLabel = `V${week} · D${phaseDay}`
+  }
+
   const isAutoflower = plant.geneticType === 'autoflower'
   let estimatedHarvest: Date | null = null
   if (isAutoflower) {
@@ -222,11 +220,9 @@ export default function PlantDetailScreen() {
   } else if (plant.floraStartDate) {
     estimatedHarvest = addDays(plant.floraStartDate, 56)
   }
-  const showHarvestChip = estimatedHarvest !== null
   const daysToHarvest = estimatedHarvest ? differenceInDays(estimatedHarvest, today) : null
   const harvestChipColor = daysToHarvest != null && daysToHarvest <= 14 ? '#C084FC' : '#6DC278'
 
-  // Tarjeta de nutricion: tarea de nutricion mas cercana (hoy o proxima)
   const nutritionTask = tasks
     .filter(t => t.type === 'nutrition')
     .sort((a, b) => {
@@ -236,71 +232,100 @@ export default function PlantDetailScreen() {
     })[0] ?? null
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* Header */}
-        <View style={{ backgroundColor: '#1A3D1E', padding: 20, paddingTop: 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={{ color: '#6DC278', fontSize: 26 }}>←</Text>
+        <LinearGradient colors={headerGradient} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={{ padding: 20, paddingTop: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '700' }}>←</Text>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View style={{ backgroundColor: '#0D2010', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
-                <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>
+              <View style={{
+                borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
+                backgroundColor: isFlora ? 'rgba(245,158,11,0.15)' : 'rgba(82,204,100,0.15)',
+                borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.3)' : 'rgba(82,204,100,0.3)',
+              }}>
+                <Text style={{ color: phaseAccent, fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>
                   {isFlora ? 'FLORA' : 'VEGE'}
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => router.push(`/plants/${id}/edit`)} style={{ backgroundColor: '#0D2010', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
-                <Text style={{ color: '#52CC64', fontSize: 16 }}>⚙️</Text>
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/edit`)}
+                style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 15 }}>⚙️</Text>
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900' }}>{plant.name}</Text>
-          <Text style={{ color: '#6DC278', fontSize: 14, marginTop: 2 }}>{plant.genetics}</Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-            <Text style={{ color: '#6DC278', fontSize: 12 }}>📅 Dia {daysSinceStart}</Text>
-            <Text style={{ color: '#6DC278', fontSize: 12 }}>
-              {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
-            </Text>
-            <Text style={{ color: '#6DC278', fontSize: 12 }}>🪴 {plant.potCount} × {plant.potVolumeLiters}L</Text>
-            {showHarvestChip && estimatedHarvest && (
-              <Text style={{ color: harvestChipColor, fontSize: 12 }}>
-                🌾 Cosecha ~{format(estimatedHarvest, 'd MMM', { locale: es })}
+
+          <Text style={{ color: '#E4F2E7', fontSize: 30, fontWeight: '900', letterSpacing: -0.5 }}>{plant.name}</Text>
+          <Text style={{ color: phaseAccent, fontSize: 14, marginTop: 3, opacity: 0.8 }}>{plant.genetics}</Text>
+
+          {/* Chips row */}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Text style={{ color: phaseAccent, fontSize: 12, fontWeight: '700' }}>{phaseLabel}</Text>
+            </View>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Text style={{ color: '#728C74', fontSize: 12 }}>
+                {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
               </Text>
+            </View>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Text style={{ color: '#728C74', fontSize: 12 }}>🪴 {plant.potCount}x{plant.potVolumeLiters}L</Text>
+            </View>
+            {estimatedHarvest && (
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: harvestChipColor, fontSize: 12 }}>
+                  🌾 {daysToHarvest != null && daysToHarvest > 0 ? `${daysToHarvest}d para cosecha` : format(estimatedHarvest, 'd MMM', { locale: es })}
+                </Text>
+              </View>
             )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: healthColor }} />
-              <Text style={{ color: healthColor, fontSize: 12, fontWeight: '700' }}>Salud {health}%</Text>
+          </View>
+
+          {/* Health bar */}
+          <View style={{ marginTop: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: healthColor, fontSize: 10, fontWeight: '800' }}>{health}%</Text>
+            </View>
+            <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+              <View style={{ height: '100%', borderRadius: 2, backgroundColor: healthColor, width: `${health}%` }} />
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <View style={{ padding: 16, gap: 20 }}>
 
-          {/* Notas de la planta */}
+          {/* Notas */}
           {plant.notes ? (
-            <View style={{ backgroundColor: '#131D14', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, flexDirection: 'row', gap: 10 }}>
+            <LinearGradient colors={['#131A0F', '#0C1009']} style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, flexDirection: 'row', gap: 10 }}>
               <Text style={{ fontSize: 16 }}>📝</Text>
               <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 19, flex: 1 }}>{plant.notes}</Text>
-            </View>
+            </LinearGradient>
           ) : null}
 
           {/* Tareas de hoy */}
           {todayTasks.length > 0 && (
             <View>
               <Text style={sectionLabel}>⚡ HOY</Text>
-              <View style={card}>
+              <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1E3020', overflow: 'hidden' }}>
                 {todayTasks.map((task, i) => (
                   <View key={task.id} style={{
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                    paddingVertical: 12, paddingHorizontal: 14,
-                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
+                    flexDirection: 'row', alignItems: 'center',
+                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#182018',
                     opacity: task.completed ? 0.4 : 1,
                   }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TYPE_COLOR[task.type] }} />
-                      <View>
+                    {/* Left accent bar */}
+                    <View style={{ width: 3, alignSelf: 'stretch', backgroundColor: TYPE_COLOR[task.type] }} />
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 }}>
+                      <View style={{ flex: 1 }}>
                         <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
                           {TYPE_LABEL[task.type]}
                         </Text>
@@ -308,29 +333,35 @@ export default function PlantDetailScreen() {
                           {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {task.stage}
                         </Text>
                         {task.products?.length > 0 && (
-                          <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 2 }}>
-                            {task.products.slice(0, 2).map((p: {name: string}) => p.name).join(' · ')}
-                            {task.products.length > 2 ? ` +${task.products.length - 2}` : ''}
-                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
+                            {task.products.slice(0, 3).map((p: {name: string}, idx: number) => (
+                              <View key={idx} style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                <Text style={{ color: '#4A7A54', fontSize: 10, fontWeight: '600' }}>{p.name}</Text>
+                              </View>
+                            ))}
+                            {task.products.length > 3 && (
+                              <Text style={{ color: '#3A5040', fontSize: 10, alignSelf: 'center' }}>+{task.products.length - 3}</Text>
+                            )}
+                          </View>
                         )}
                       </View>
+                      {!task.completed && (
+                        <TouchableOpacity
+                          onPress={() => setSheetTask({
+                            id: task.id, type: task.type, week: task.week, cycle: task.cycle,
+                            products: task.products, ecMin: task.ecMin, ecMax: task.ecMax,
+                            phMin: task.phMin, phMax: task.phMax,
+                            potCount: plant.potCount, potVolumeLiters: plant.potVolumeLiters,
+                          })}
+                          style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7, marginLeft: 10 }}
+                        >
+                          <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    {!task.completed && (
-                      <TouchableOpacity
-                        onPress={() => setSheetTask({
-                          id: task.id, type: task.type, week: task.week, cycle: task.cycle,
-                          products: task.products, ecMin: task.ecMin, ecMax: task.ecMax,
-                          phMin: task.phMin, phMax: task.phMax,
-                          potCount: plant.potCount, potVolumeLiters: plant.potVolumeLiters,
-                        })}
-                        style={{ backgroundColor: '#0D2010', borderWidth: 1, borderColor: '#1A3D1E', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 }}
-                      >
-                        <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
-                      </TouchableOpacity>
-                    )}
                   </View>
                 ))}
-              </View>
+              </LinearGradient>
             </View>
           )}
 
@@ -338,58 +369,65 @@ export default function PlantDetailScreen() {
           {upcoming.length > 0 && (
             <View>
               <Text style={sectionLabel}>PROXIMAS TAREAS</Text>
-              <View style={card}>
+              <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1E3020', overflow: 'hidden' }}>
                 {upcoming.map((task, i) => (
                   <View key={task.id} style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 12,
-                    paddingVertical: 12, paddingHorizontal: 14,
-                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
+                    flexDirection: 'row', alignItems: 'center',
+                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#182018',
                   }}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TYPE_COLOR[task.type] }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#E4F2E7', fontWeight: '600', fontSize: 13 }}>
-                        {TYPE_LABEL[task.type]}
-                        <Text style={{ color: '#3A5040' }}> · {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`}</Text>
-                      </Text>
-                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1, textTransform: 'capitalize' }}>
-                        {format(new Date(task.scheduledDate), "EEEE d MMM", { locale: es })}
-                      </Text>
+                    <View style={{ width: 3, alignSelf: 'stretch', backgroundColor: TYPE_COLOR[task.type], opacity: 0.5 }} />
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#B8D4BC', fontWeight: '600', fontSize: 13 }}>
+                          {TYPE_LABEL[task.type]}
+                          <Text style={{ color: '#3A5040' }}> · {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`}</Text>
+                        </Text>
+                        <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2, textTransform: 'capitalize' }}>
+                          {format(new Date(task.scheduledDate), "EEEE d MMM", { locale: es })}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 ))}
-              </View>
+              </LinearGradient>
             </View>
           )}
 
           {todayTasks.length === 0 && upcoming.length === 0 && (
-            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+            <LinearGradient colors={['#131A10', '#0C1009']} style={{ alignItems: 'center', paddingVertical: 40, borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E' }}>
               <Text style={{ fontSize: 32 }}>🌤️</Text>
               <Text style={{ color: '#728C74', marginTop: 8, fontSize: 14 }}>Sin tareas pendientes</Text>
-            </View>
+            </LinearGradient>
           )}
 
+          {/* Iniciar floracion */}
           {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
-            <TouchableOpacity
-              onPress={handleStartFlora}
-              style={{ backgroundColor: '#A855F7', borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '900', fontSize: 15 }}>🌸 Iniciar floración</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 3 }}>
-                Recalcula el calendario desde hoy
-              </Text>
+            <TouchableOpacity onPress={handleStartFlora} activeOpacity={0.85}>
+              <LinearGradient
+                colors={['#6D28D9', '#4C1D95']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ borderRadius: 18, paddingVertical: 18, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.4)' }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>🌸 Iniciar floracion</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 }}>
+                  Recalcula el calendario desde hoy
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
-          {/* Boton cosechar */}
+          {/* Cosechar */}
           {(plant.floraStartDate || plant.geneticType === 'autoflower') && (
-            <TouchableOpacity
-              onPress={handleHarvest}
-              style={{ backgroundColor: '#1A0A0A', borderRadius: 16, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#4B1515' }}
-            >
-              <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 15 }}>🌾 Cosechar</Text>
-              <Text style={{ color: 'rgba(239,68,68,0.6)', fontSize: 11, marginTop: 3 }}>
-                Marca esta planta como cosechada
-              </Text>
+            <TouchableOpacity onPress={() => setHarvestModal(true)} activeOpacity={0.85}>
+              <LinearGradient
+                colors={['#1A0505', '#100303']}
+                style={{ borderRadius: 18, paddingVertical: 18, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}
+              >
+                <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 16 }}>🌾 Cosechar</Text>
+                <Text style={{ color: 'rgba(239,68,68,0.5)', fontSize: 11, marginTop: 4 }}>
+                  Marca esta planta como cosechada
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
@@ -399,88 +437,88 @@ export default function PlantDetailScreen() {
               <Text style={sectionLabel}>
                 🧪 NUTRICION · {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
               </Text>
-              <View style={card}>
-                {/* Header con EC/pH */}
-                <View style={{
-                  backgroundColor: nutritionTask.cycle === 'flora' ? '#1A0D2E' : '#0D2010',
-                  paddingHorizontal: 14, paddingVertical: 12,
-                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 22 }}>{nutritionTask.cycle === 'flora' ? '🌸' : '🌿'}</Text>
+              <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+                {/* Header EC/PH */}
+                <LinearGradient
+                  colors={nutritionTask.cycle === 'flora'
+                    ? ['#1A0D2E', '#110820']
+                    : ['#0D2010', '#081508']}
+                  style={{ paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={{ fontSize: 24 }}>{nutritionTask.cycle === 'flora' ? '🌸' : '🌿'}</Text>
                     <View>
                       <Text style={{
                         color: nutritionTask.cycle === 'flora' ? '#C084FC' : '#52CC64',
-                        fontSize: 11, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase',
+                        fontSize: 12, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase',
                       }}>
                         Semana {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
                       </Text>
-                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>{nutritionTask.stage}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 2 }}>{nutritionTask.stage}</Text>
                     </View>
                   </View>
                   {nutritionTask.ecMin != null && (
-                    <View style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, alignItems: 'flex-end' }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800' }}>EC {nutritionTask.ecMin}–{nutritionTask.ecMax}</Text>
+                    <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'flex-end' }}>
+                      <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800' }}>EC {nutritionTask.ecMin}–{nutritionTask.ecMax}</Text>
                       <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>pH {nutritionTask.phMin}–{nutritionTask.phMax}</Text>
                     </View>
                   )}
-                </View>
+                </LinearGradient>
 
                 {/* Calculadora de litros */}
                 <View style={{
                   flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                  paddingHorizontal: 14, paddingVertical: 10,
+                  paddingHorizontal: 16, paddingVertical: 10,
                   borderBottomWidth: 1, borderBottomColor: '#1C2E1E',
-                  backgroundColor: '#0C1410',
                 }}>
                   <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>Preparar para</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <TouchableOpacity
                       onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => Math.max(step, parseFloat((v - step).toFixed(1)))) }}
-                      style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#131D14', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ color: '#E4F2E7', fontSize: 16, lineHeight: 18 }}>−</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 18, lineHeight: 20 }}>−</Text>
                     </TouchableOpacity>
-                    <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900', minWidth: 36, textAlign: 'center' }}>{liters}L</Text>
+                    <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900', minWidth: 40, textAlign: 'center' }}>{liters}L</Text>
                     <TouchableOpacity
                       onPress={() => { const step = plant.potVolumeLiters ?? 11; setLiters(v => parseFloat((v + step).toFixed(1))) }}
-                      style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#131D14', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ color: '#E4F2E7', fontSize: 16, lineHeight: 18 }}>+</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 18, lineHeight: 20 }}>+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
-                {/* Productos con dosis calculadas */}
+                {/* Productos */}
                 {nutritionTask.products?.length > 0 ? (
                   nutritionTask.products.map((p: { name: string; minDose: number; maxDose: number; unit: string; line?: string }, i: number) => {
                     const totalMin = parseFloat((p.minDose * liters).toFixed(1))
                     const totalMax = parseFloat((p.maxDose * liters).toFixed(1))
                     const isFixed  = p.minDose === p.maxDose
                     const LINE_COLOR: Record<string, { bg: string; text: string }> = {
-                      BIO:   { bg: '#14532D', text: '#4ADE80' },
-                      ECO:   { bg: '#451A03', text: '#FB923C' },
-                      LIFE:  { bg: '#1E3A5F', text: '#60A5FA' },
-                      FUEL:  { bg: '#3B0764', text: '#C084FC' },
-                      PRO:   { bg: '#431407', text: '#FB923C' },
-                      MID:   { bg: '#4a0d2e', text: '#F472B6' },
-                      BASIC: { bg: '#4c0519', text: '#FDA4AF' },
+                      BIO:   { bg: 'rgba(20,83,45,0.7)',  text: '#4ADE80' },
+                      ECO:   { bg: 'rgba(69,26,3,0.7)',   text: '#FB923C' },
+                      LIFE:  { bg: 'rgba(30,58,95,0.7)',  text: '#60A5FA' },
+                      FUEL:  { bg: 'rgba(59,7,100,0.7)', text: '#C084FC' },
+                      PRO:   { bg: 'rgba(67,20,7,0.7)',  text: '#FB923C' },
+                      MID:   { bg: 'rgba(74,13,46,0.7)', text: '#F472B6' },
+                      BASIC: { bg: 'rgba(76,5,25,0.7)',  text: '#FDA4AF' },
                     }
-                    const lc = LINE_COLOR[p.line ?? ''] ?? { bg: '#1C2E1E', text: '#728C74' }
+                    const lc = LINE_COLOR[p.line ?? ''] ?? { bg: 'rgba(28,46,30,0.7)', text: '#728C74' }
                     return (
                       <View key={i} style={{
-                        flexDirection: 'row', alignItems: 'center', gap: 8,
-                        paddingHorizontal: 14, paddingVertical: 12,
+                        flexDirection: 'row', alignItems: 'center', gap: 10,
+                        paddingHorizontal: 16, paddingVertical: 13,
                         borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E',
                       }}>
                         {p.line && (
-                          <View style={{ backgroundColor: lc.bg, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                          <View style={{ backgroundColor: lc.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>
                             <Text style={{ color: lc.text, fontSize: 9, fontWeight: '800' }}>{p.line}</Text>
                           </View>
                         )}
                         <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
                         <View style={{ alignItems: 'flex-end' }}>
-                          <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '900' }}>
+                          <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '900' }}>
                             {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
                           </Text>
                           <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
@@ -491,7 +529,7 @@ export default function PlantDetailScreen() {
                     )
                   })
                 ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 16 }}>
                     <Text style={{ fontSize: 18 }}>💧</Text>
                     <Text style={{ color: '#728C74', fontSize: 13 }}>Solo agua - semana de limpieza</Text>
                   </View>
@@ -499,7 +537,7 @@ export default function PlantDetailScreen() {
 
                 {/* Footer */}
                 {nutritionTask.products?.length > 0 && (
-                  <View style={{ paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E', flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E', flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={{ color: '#3A5040', fontSize: 10 }}>
                       {liters !== (plant.potCount ?? 1) * (plant.potVolumeLiters ?? 11)
                         ? `Calculado para ${liters}L`
@@ -518,32 +556,33 @@ export default function PlantDetailScreen() {
             </View>
           )}
 
-          <View style={{ gap: 10 }}>
-            <Text style={sectionLabel}>📱 ACCIONES RAPIDAS</Text>
+          {/* Acciones rapidas */}
+          <View>
+            <Text style={sectionLabel}>ACCIONES RAPIDAS</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                onPress={() => router.push(`/plants/${id}/diary`)}
-                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
-              >
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>📸</Text>
-                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Diario</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push(`/plants/${id}/measurements`)}
-                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
-              >
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>📊</Text>
-                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Medida</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push(`/plants/${id}/timeline`)}
-                style={{ flex: 1, backgroundColor: '#131D14', borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}
-              >
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>📅</Text>
-                <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '700' }}>Timeline</Text>
-              </TouchableOpacity>
+              {[
+                { icon: '📸', label: 'Diario', route: `/plants/${id}/diary` },
+                { icon: '📊', label: 'Medidas', route: `/plants/${id}/measurements` },
+                { icon: '📅', label: 'Timeline', route: `/plants/${id}/timeline` },
+              ].map(action => (
+                <TouchableOpacity
+                  key={action.label}
+                  onPress={() => router.push(action.route)}
+                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
+                >
+                  <LinearGradient
+                    colors={['#141E15', '#0C1009']}
+                    style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 22, marginBottom: 6 }}>{action.icon}</Text>
+                    <Text style={{ color: '#B8D4BC', fontSize: 11, fontWeight: '700' }}>{action.label}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
+
         </View>
       </ScrollView>
 
@@ -562,7 +601,7 @@ export default function PlantDetailScreen() {
         onComplete={completeTask}
       />
 
-      {/* Modal: Iniciar floración */}
+      {/* Modal: Iniciar floracion */}
       <Modal
         visible={floraDateModal}
         transparent
@@ -573,43 +612,43 @@ export default function PlantDetailScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1, justifyContent: 'flex-end' }}
         >
-          <View style={{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-          <View style={{
-            backgroundColor: '#131D14',
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            borderWidth: 1,
-            borderColor: '#1C2E1E',
-            padding: 24,
-            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-          }}>
-            {/* Handle */}
-            <View style={{ width: 36, height: 4, backgroundColor: '#1C2E1E', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          <LinearGradient
+            colors={['#1A1030', '#100A20', '#0C0A14']}
+            style={{
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              borderWidth: 1,
+              borderColor: 'rgba(139,92,246,0.25)',
+              padding: 24,
+              paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+            }}
+          >
+            <View style={{ width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
-            <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', marginBottom: 6 }}>
-              Iniciar floracion
+            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginBottom: 6 }}>
+              Iniciar floracion 🌸
             </Text>
             <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 24, lineHeight: 18 }}>
               El calendario se recalcula desde la fecha seleccionada
             </Text>
 
-            {/* Input */}
-            <Text style={{ color: '#6DC278', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>
+            <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
               Fecha de inicio
             </Text>
             <TextInput
               value={floraDateInput}
               onChangeText={setFloraDateInput}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor="#3A5040"
+              placeholderTextColor="#3A3060"
               keyboardType="numeric"
               style={{
-                backgroundColor: '#0C1410',
+                backgroundColor: 'rgba(0,0,0,0.4)',
                 borderWidth: 1,
-                borderColor: floraError ? '#EF4444' : '#1C2E1E',
-                borderRadius: 12,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                borderColor: floraError ? '#EF4444' : 'rgba(139,92,246,0.3)',
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
                 color: '#E4F2E7',
                 fontSize: 16,
                 fontWeight: '600',
@@ -617,58 +656,41 @@ export default function PlantDetailScreen() {
               }}
             />
             {floraError ? (
-              <Text style={{ color: '#EF4444', fontSize: 11, marginBottom: 20 }}>
-                ❌ {floraError}
-              </Text>
+              <Text style={{ color: '#EF4444', fontSize: 11, marginBottom: 20 }}>❌ {floraError}</Text>
             ) : (
-              <Text style={{ color: '#3A5040', fontSize: 11, marginBottom: 20 }}>
-                Formato: AAAA-MM-DD (ej: 2025-04-15)
-              </Text>
+              <Text style={{ color: '#3A3060', fontSize: 11, marginBottom: 20 }}>Formato: AAAA-MM-DD</Text>
             )}
 
-            {/* Warning */}
             <View style={{
-              backgroundColor: '#1A0D00',
+              backgroundColor: 'rgba(245,158,11,0.08)',
               borderWidth: 1,
-              borderColor: '#3D2200',
-              borderRadius: 10,
-              paddingHorizontal: 12,
+              borderColor: 'rgba(245,158,11,0.2)',
+              borderRadius: 12,
+              paddingHorizontal: 14,
               paddingVertical: 10,
               marginBottom: 24,
             }}>
-              <Text style={{ color: '#F59E0B', fontSize: 12 }}>
-                ⚠️ Esta accion no se puede deshacer
-              </Text>
+              <Text style={{ color: '#F59E0B', fontSize: 12 }}>⚠️ Esta accion no se puede deshacer</Text>
             </View>
 
-            {/* Buttons */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <TouchableOpacity
                 onPress={() => setFloraDateModal(false)}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#1C2E1E',
-                  borderRadius: 14,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                }}
+                style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, paddingVertical: 15, alignItems: 'center' }}
               >
                 <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={confirmFlora}
-                style={{
-                  flex: 2,
-                  backgroundColor: '#A855F7',
-                  borderRadius: 14,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>Confirmar floracion</Text>
+              <TouchableOpacity onPress={confirmFlora} activeOpacity={0.85} style={{ flex: 2 }}>
+                <LinearGradient
+                  colors={['#7C3AED', '#5B21B6']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={{ borderRadius: 16, paddingVertical: 15, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>Confirmar floracion</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-          </View>
+          </LinearGradient>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -682,14 +704,6 @@ const sectionLabel = {
   letterSpacing: 1.5,
   textTransform: 'uppercase' as const,
   marginBottom: 8,
-}
-
-const card = {
-  backgroundColor: '#131D14',
-  borderRadius: 20,
-  borderWidth: 1,
-  borderColor: '#1C2E1E',
-  overflow: 'hidden' as const,
 }
 
 function rowToPlant(row: Record<string, unknown>): Plant {

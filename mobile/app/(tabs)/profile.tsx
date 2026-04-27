@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -57,7 +58,6 @@ export default function ProfileScreen() {
         totalPhotos:          photos ?? 0,
       })
 
-      // Wall of fame: completion rates por planta cosechada
       if (harvestedPlants && harvestedPlants.length > 0) {
         const ids = harvestedPlants.map(h => h.id)
         const { data: allTasks } = await supabase
@@ -94,7 +94,7 @@ export default function ProfileScreen() {
 
   if (loading || !profile) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
         <TouchableOpacity
           onPress={handleSignOut}
@@ -111,79 +111,90 @@ export default function ProfileScreen() {
   const ad = achievementData
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
-        {/* Header con gradiente */}
-        <View style={{ backgroundColor: '#0D0A1A', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24 }}>
-          {/* Fondo radial simulado */}
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120, backgroundColor: '#1A0D35', opacity: 0.6 }} />
+        {/* Hero header */}
+        <LinearGradient
+          colors={['#150D28', '#0D0820', '#080E09']}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 28 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+            {/* Avatar */}
+            <LinearGradient
+              colors={['#7C3AED', '#5B21B6']}
+              style={{ width: 68, height: 68, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(167,139,250,0.3)' }}
+            >
+              <Text style={{ fontSize: 32 }}>{lvl.emoji}</Text>
+            </LinearGradient>
 
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14, position: 'relative' }}>
-            {/* Avatar nivel */}
-            <View style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: '#6D28D9', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 30 }}>{lvl.emoji}</Text>
-            </View>
-
-            {/* Info */}
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900', lineHeight: 22 }}>{profile.username}</Text>
-              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '600', marginTop: 2 }}>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{profile.username}</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '600', marginTop: 3 }}>
                 Nivel {lvl.level} — {lvl.name}
               </Text>
               {/* XP bar */}
-              <View style={{ marginTop: 10 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700' }}>{profile.xp} XP</Text>
-                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>{nextLvl.xpRequired} XP</Text>}
+              <View style={{ marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700' }}>{profile.xp} XP</Text>
+                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10 }}>{nextLvl.xpRequired} XP</Text>}
                 </View>
-                <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                  <View style={{ height: '100%', borderRadius: 3, backgroundColor: '#8B5CF6', width: `${Math.round(progressToNext * 100)}%` }} />
+                <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <LinearGradient
+                    colors={['#7C3AED', '#A855F7', '#C084FC']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ height: '100%', borderRadius: 3, width: `${Math.round(progressToNext * 100)}%` }}
+                  />
                 </View>
                 {nextLvl && (
-                  <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
-                    {nextLvl.xpRequired - profile.xp} XP para {nextLvl.name}
+                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 4 }}>
+                    {nextLvl.xpRequired - profile.xp} XP para {nextLvl.name} {nextLvl.emoji}
                   </Text>
                 )}
               </View>
             </View>
 
-            {/* Settings */}
             <TouchableOpacity
               onPress={() => router.push('/settings')}
-              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 16 }}>⚙️</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Stats rapidos: racha, mejor racha, cumplimiento */}
+          {/* Quick stats */}
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 20 }}>
             {[
-              { value: profile.streak, label: profile.streak === 1 ? 'Dia racha' : 'Dias racha', icon: '🔥', hot: profile.streak >= 7 },
-              { value: profile.bestStreak, label: 'Mejor racha', icon: '⚡', hot: false },
-              { value: completedToday, label: 'Completadas hoy', icon: '✅', hot: false },
+              { value: profile.streak, label: 'Dias racha', icon: '🔥', hot: profile.streak >= 7, color: '#F59E0B' },
+              { value: profile.bestStreak, label: 'Mejor racha', icon: '⚡', hot: false, color: '#A78BFA' },
+              { value: completedToday, label: 'Hoy', icon: '✅', hot: completedToday > 0, color: '#52CC64' },
             ].map(s => (
-              <View key={s.label} style={{
-                flex: 1, borderRadius: 16, padding: 10, alignItems: 'center',
-                backgroundColor: s.hot ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.08)',
-                borderWidth: 1, borderColor: s.hot ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)',
-              }}>
-                <Text style={{ fontSize: 14 }}>{s.icon}</Text>
-                <Text style={{ color: s.hot ? '#F59E0B' : '#fff', fontSize: 20, fontWeight: '900', marginTop: 2 }}>{s.value}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '600', marginTop: 1, textAlign: 'center' }}>{s.label}</Text>
-              </View>
+              <LinearGradient
+                key={s.label}
+                colors={s.hot
+                  ? (s.icon === '🔥' ? ['rgba(245,158,11,0.18)', 'rgba(245,158,11,0.06)'] : ['rgba(82,204,100,0.18)', 'rgba(82,204,100,0.06)'])
+                  : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
+                style={{
+                  flex: 1, borderRadius: 16, padding: 12, alignItems: 'center',
+                  borderWidth: 1, borderColor: s.hot ? `${s.color}33` : 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <Text style={{ fontSize: 16 }}>{s.icon}</Text>
+                <Text style={{ color: s.hot ? s.color : '#E4F2E7', fontSize: 22, fontWeight: '900', marginTop: 3 }}>{s.value}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
+              </LinearGradient>
             ))}
           </View>
-        </View>
+        </LinearGradient>
 
         <View style={{ padding: 16, gap: 24 }}>
 
           {/* Camino del cultivador */}
           <View>
             <Text style={sectionLabel}>Camino del cultivador</Text>
-            <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 14 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+            <LinearGradient colors={['#130E22', '#0C0A18']} style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(139,92,246,0.15)', padding: 16 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
                   {LEVELS.map((level, i) => {
                     const isCurrent = level.level === lvl.level
@@ -191,17 +202,17 @@ export default function ProfileScreen() {
                     return (
                       <View key={level.level} style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{
-                          width: 36, height: 36, borderRadius: 10,
+                          width: 38, height: 38, borderRadius: 11,
                           alignItems: 'center', justifyContent: 'center',
-                          backgroundColor: isCurrent ? 'rgba(139,92,246,0.2)' : '#0C1410',
+                          backgroundColor: isCurrent ? 'rgba(124,58,237,0.25)' : 'rgba(0,0,0,0.3)',
                           borderWidth: isCurrent ? 2 : 1,
-                          borderColor: isCurrent ? '#8B5CF6' : '#1C2E1E',
-                          opacity: isPassed ? 1 : 0.35,
+                          borderColor: isCurrent ? '#8B5CF6' : 'rgba(255,255,255,0.08)',
+                          opacity: isPassed ? 1 : 0.3,
                         }}>
-                          <Text style={{ fontSize: 16 }}>{level.emoji}</Text>
+                          <Text style={{ fontSize: 18 }}>{level.emoji}</Text>
                         </View>
                         {i < LEVELS.length - 1 && (
-                          <View style={{ width: 12, height: 2, backgroundColor: isPassed && level.level < lvl.level ? '#8B5CF6' : '#1C2E1E' }} />
+                          <View style={{ width: 14, height: 2, backgroundColor: isPassed && level.level < lvl.level ? '#8B5CF6' : 'rgba(255,255,255,0.06)' }} />
                         )}
                       </View>
                     )
@@ -210,36 +221,42 @@ export default function ProfileScreen() {
               </ScrollView>
               <Text style={{ color: '#728C74', fontSize: 11 }}>
                 {nextLvl
-                  ? `${nextLvl.xpRequired - profile.xp} XP para llegar a ${nextLvl.name} ${nextLvl.emoji}`
+                  ? `${nextLvl.xpRequired - profile.xp} XP para ${nextLvl.name} ${nextLvl.emoji}`
                   : 'Nivel maximo alcanzado ⚡'}
               </Text>
-            </View>
+            </LinearGradient>
           </View>
 
-          {/* Stats detalladas 2x3 */}
+          {/* Stats grid */}
           {ad && (
             <View>
               <Text style={sectionLabel}>Estadisticas</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {[
-                  { icon: '✅', value: ad.totalTasksCompleted, label: 'Tareas completadas' },
-                  { icon: '🧪', value: ad.tasksWithMeasurement, label: 'Mediciones EC/pH' },
-                  { icon: '📸', value: ad.totalPhotos,          label: 'Fotos en el diario' },
-                  { icon: '🌿', value: ad.activePlants,         label: 'Plantas activas' },
-                  { icon: '✂️', value: ad.harvestedPlants,      label: 'Cosechas' },
-                  { icon: '💎', value: ad.totalXP,              label: 'XP total' },
+                  { icon: '✅', value: ad.totalTasksCompleted, label: 'Tareas completadas', color: '#52CC64' },
+                  { icon: '🧪', value: ad.tasksWithMeasurement, label: 'Mediciones EC/pH', color: '#3B82F6' },
+                  { icon: '📸', value: ad.totalPhotos,          label: 'Fotos en el diario', color: '#F59E0B' },
+                  { icon: '🌿', value: ad.activePlants,         label: 'Plantas activas', color: '#22C55E' },
+                  { icon: '✂️', value: ad.harvestedPlants,      label: 'Cosechas', color: '#A855F7' },
+                  { icon: '💎', value: ad.totalXP,              label: 'XP total', color: '#C084FC' },
                 ].map(s => (
-                  <View key={s.label} style={{
-                    width: '47%', backgroundColor: '#131D14', borderRadius: 14,
-                    borderWidth: 1, borderColor: '#1C2E1E', padding: 14,
-                    flexDirection: 'row', alignItems: 'center', gap: 10,
-                  }}>
-                    <Text style={{ fontSize: 22 }}>{s.icon}</Text>
+                  <LinearGradient
+                    key={s.label}
+                    colors={['#131A10', '#0C1009']}
+                    style={{
+                      width: '47%', borderRadius: 16,
+                      borderWidth: 1, borderColor: `${s.color}22`,
+                      padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12,
+                    }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${s.color}15`, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 20 }}>{s.icon}</Text>
+                    </View>
                     <View>
-                      <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', lineHeight: 22 }}>{s.value}</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{s.value}</Text>
                       <Text style={{ color: '#728C74', fontSize: 10, marginTop: 2 }}>{s.label}</Text>
                     </View>
-                  </View>
+                  </LinearGradient>
                 ))}
               </View>
             </View>
@@ -248,7 +265,7 @@ export default function ProfileScreen() {
           {/* Logros desbloqueados */}
           <View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <Text style={sectionLabel}>🏅 Logros desbloqueados</Text>
+              <Text style={sectionLabel}>Logros desbloqueados</Text>
               <TouchableOpacity onPress={() => router.push('/achievements')}>
                 <Text style={{ color: '#8B5CF6', fontSize: 11, fontWeight: '700' }}>
                   {unlocked.length}/{unlocked.length + locked.length} Ver todos →
@@ -256,26 +273,32 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
             {unlocked.length === 0 ? (
-              <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 24, alignItems: 'center' }}>
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>🔒</Text>
+              <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', padding: 28, alignItems: 'center' }}>
+                <Text style={{ fontSize: 30, marginBottom: 10 }}>🔒</Text>
                 <Text style={{ color: '#728C74', fontSize: 13, textAlign: 'center' }}>
                   Completa tu primera tarea para desbloquear logros
                 </Text>
-              </View>
+              </LinearGradient>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {unlocked.map(a => (
-                  <View key={a.id} style={{
-                    width: '47%', backgroundColor: '#131D14', borderRadius: 14,
-                    borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)',
-                    padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10,
-                  }}>
-                    <Text style={{ fontSize: 24 }}>{a.emoji}</Text>
+                  <LinearGradient
+                    key={a.id}
+                    colors={['#1A1030', '#100A20']}
+                    style={{
+                      width: '47%', borderRadius: 16,
+                      borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
+                      padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10,
+                    }}
+                  >
+                    <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(139,92,246,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800', lineHeight: 14 }}>{a.name}</Text>
-                      <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 2, lineHeight: 12 }}>{a.description}</Text>
+                      <Text style={{ color: '#4A3070', fontSize: 9, marginTop: 3, lineHeight: 12 }}>{a.description}</Text>
                     </View>
-                  </View>
+                  </LinearGradient>
                 ))}
               </View>
             )}
@@ -284,19 +307,24 @@ export default function ProfileScreen() {
           {/* Por desbloquear */}
           {locked.length > 0 && (
             <View>
-              <Text style={sectionLabel}>🔒 Por desbloquear</Text>
+              <Text style={sectionLabel}>Por desbloquear</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {locked.slice(0, 4).map(a => (
-                  <View key={a.id} style={{
-                    width: '47%', backgroundColor: '#131D14', borderRadius: 14,
-                    borderWidth: 1, borderColor: '#1C2E1E',
-                    padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10,
-                    opacity: 0.4,
-                  }}>
-                    <Text style={{ fontSize: 24 }}>{a.emoji}</Text>
+                  <View
+                    key={a.id}
+                    style={{
+                      width: '47%', backgroundColor: '#0E1210', borderRadius: 16,
+                      borderWidth: 1, borderColor: '#1C2E1E',
+                      padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10,
+                      opacity: 0.4,
+                    }}
+                  >
+                    <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800', lineHeight: 14 }}>{a.name}</Text>
-                      <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 2, lineHeight: 12 }}>{a.description}</Text>
+                      <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 3, lineHeight: 12 }}>{a.description}</Text>
                     </View>
                   </View>
                 ))}
@@ -307,32 +335,37 @@ export default function ProfileScreen() {
           {/* Wall of Fame */}
           {harvestedList.length > 0 && (
             <View>
-              <Text style={sectionLabel}>🏆 Wall of Fame</Text>
+              <Text style={sectionLabel}>Wall of Fame</Text>
               <View style={{ gap: 10 }}>
                 {harvestedList.map(plant => (
                   <TouchableOpacity
                     key={plant.id}
                     onPress={() => router.push(`/plants/${plant.id}`)}
-                    style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}
                     activeOpacity={0.8}
                   >
-                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#0C1410', borderWidth: 1, borderColor: '#1C2E1E', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 22 }}>✂️</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{plant.name}</Text>
-                      <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>{plant.genetics}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>
-                          {plant.completionRate}% cumplimiento
-                        </Text>
-                        <Text style={{ color: '#3A5040', fontSize: 10 }}>
-                          · {differenceInDays(new Date(), plant.startDate)}d
-                          · {format(plant.startDate, "d MMM yyyy", { locale: es })}
-                        </Text>
+                    <LinearGradient
+                      colors={['#1A1000', '#0E0900']}
+                      style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                    >
+                      <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 24 }}>✂️</Text>
                       </View>
-                    </View>
-                    <Text style={{ color: '#3A5040', fontSize: 16 }}>›</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '800' }}>{plant.name}</Text>
+                        <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>{plant.genetics}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                          <View style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>
+                              {plant.completionRate}% cumpl.
+                            </Text>
+                          </View>
+                          <Text style={{ color: '#3A5040', fontSize: 10 }}>
+                            {differenceInDays(new Date(), plant.startDate)}d · {format(plant.startDate, "d MMM yyyy", { locale: es })}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={{ color: '#728C74', fontSize: 18 }}>›</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -340,19 +373,24 @@ export default function ProfileScreen() {
           )}
 
           {/* Cuenta */}
-          <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-            <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 3 }}>Correo</Text>
-              <Text style={{ color: '#E4F2E7', fontSize: 13 }}>{user?.email}</Text>
+          <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+              <Text style={{ color: '#B8D4BC', fontSize: 13 }}>{user?.email}</Text>
             </View>
-            <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 3 }}>Plan</Text>
-              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
+                <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                  <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>ACTIVO</Text>
+                </View>
+              </View>
             </View>
-            <TouchableOpacity onPress={handleSignOut} style={{ padding: 14 }}>
+            <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
               <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
 
         </View>
       </ScrollView>

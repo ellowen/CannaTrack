@@ -1,33 +1,12 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { ACHIEVEMENTS, getAchievements } from '@shared/lib/gamification'
-import type { AchievementData, Achievement } from '@shared/lib/gamification'
-
-const CATEGORY_LABELS: Record<Achievement['category'], string> = {
-  consistencia: '🔥 Consistencia',
-  cultivo:      '🌱 Cultivo',
-  conocimiento: '🧪 Conocimiento',
-}
-
-const CATEGORY_ORDER: Achievement['category'][] = ['consistencia', 'cultivo', 'conocimiento']
-
-function getProgressHint(a: Achievement, data: AchievementData): string | null {
-  if (a.id.startsWith('streak_')) {
-    if (data.bestStreak > 0) return `Racha actual: ${data.bestStreak} dias`
-    return null
-  }
-  if (a.id.startsWith('tasks_') || a.id === 'first_task') {
-    return `Tareas completadas: ${data.totalTasksCompleted}`
-  }
-  if (a.id.startsWith('harvest_')) {
-    return `Cosechas: ${data.harvestedPlants}`
-  }
-  return null
-}
+import { getAchievements } from '@shared/lib/gamification'
+import type { AchievementData } from '@shared/lib/gamification'
 
 export default function AchievementsScreen() {
   const { user, loading: authLoading } = useAuth()
@@ -35,10 +14,8 @@ export default function AchievementsScreen() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading) return
-    if (!user) { setLoading(false); return }
+    if (authLoading || !user) { setLoading(false); return }
     async function load() {
-
       const [
         { data: p },
         { data: activePlants },
@@ -47,17 +24,16 @@ export default function AchievementsScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, best_streak').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('xp, streak_days').eq('id', user.id).maybeSingle(),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'harvested'),
         supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('completed', true),
         supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
         supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id).not('photo_url', 'is', null),
       ])
-
       setAchievementData({
         streak:               p?.streak_days ?? 0,
-        bestStreak:           p?.best_streak ?? 0,
+        bestStreak:           0,
         totalXP:              p?.xp ?? 0,
         totalTasksCompleted:  totalTasks ?? 0,
         tasksWithMeasurement: measurements ?? 0,
@@ -65,7 +41,6 @@ export default function AchievementsScreen() {
         activePlants:         activePlants?.length ?? 0,
         totalPhotos:          photos ?? 0,
       })
-
       setLoading(false)
     }
     load()
@@ -73,84 +48,127 @@ export default function AchievementsScreen() {
 
   if (loading || !achievementData) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
       </SafeAreaView>
     )
   }
 
   const { unlocked, locked } = getAchievements(achievementData)
-  const total = unlocked.length + locked.length
-  const progress = total > 0 ? unlocked.length / total : 0
-
-  // Group all achievements by category preserving unlocked/locked state
-  const byCategory = CATEGORY_ORDER.map((cat) => {
-    const unlockedInCat = unlocked.filter((a) => a.category === cat)
-    const lockedInCat   = locked.filter((a) => a.category === cat)
-    return { cat, achievements: [...unlockedInCat, ...lockedInCat] }
-  })
-
-  const unlockedIds = new Set(unlocked.map((a) => a.id))
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12, padding: 4 }}>
-          <Text style={{ color: '#52CC64', fontSize: 20 }}>←</Text>
-        </TouchableOpacity>
-        <View>
-          <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Logros</Text>
-          <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700', marginTop: 1 }}>
-            {unlocked.length} / {total} desbloqueados
-          </Text>
-        </View>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
-      {/* Progress bar */}
-      <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-        <View style={{ height: 8, backgroundColor: '#1C2E1E', borderRadius: 4, overflow: 'hidden' }}>
-          <View style={{ height: '100%', backgroundColor: '#52CC64', borderRadius: 4, width: `${Math.round(progress * 100)}%` }} />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
-        {byCategory.map(({ cat, achievements }) => (
-          <View key={cat} style={{ marginBottom: 28 }}>
-            <Text style={sectionLabel}>{CATEGORY_LABELS[cat]}</Text>
-            {achievements.map((a) => {
-              const isUnlocked = unlockedIds.has(a.id)
-              const hint = isUnlocked ? null : getProgressHint(a, achievementData)
-              return (
-                <View
-                  key={a.id}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: isUnlocked ? '#131D14' : '#0C1410',
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: isUnlocked ? '#2A5A2E' : '#1C2E1E',
-                    borderLeftWidth: isUnlocked ? 3 : 1,
-                    borderLeftColor: isUnlocked ? '#52CC64' : '#1C2E1E',
-                    padding: 14,
-                    marginBottom: 8,
-                    opacity: isUnlocked ? 1 : 0.45,
-                  }}
-                >
-                  <Text style={{ fontSize: 32, marginRight: 14 }}>{isUnlocked ? a.emoji : '🔒'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '800' }}>{a.name}</Text>
-                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>{a.description}</Text>
-                    {hint !== null && (
-                      <Text style={{ color: '#3A7040', fontSize: 11, fontWeight: '700', marginTop: 4 }}>{hint}</Text>
-                    )}
-                  </View>
-                </View>
-              )
-            })}
+        {/* Header */}
+        <LinearGradient
+          colors={['#150D28', '#0D0820', '#080E09']}
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: 'rgba(139,92,246,0.15)' }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: '#A78BFA', fontSize: 20, fontWeight: '700' }}>←</Text>
+            </TouchableOpacity>
+            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Logros</Text>
           </View>
-        ))}
+
+          {/* Summary pills */}
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <LinearGradient
+              colors={['rgba(139,92,246,0.2)', 'rgba(139,92,246,0.06)']}
+              style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)' }}
+            >
+              <Text style={{ color: '#A78BFA', fontSize: 26, fontWeight: '900' }}>{unlocked.length}</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 2, fontWeight: '600' }}>Desbloqueados</Text>
+            </LinearGradient>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+              style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' }}
+            >
+              <Text style={{ color: '#728C74', fontSize: 26, fontWeight: '900' }}>{locked.length}</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.22)', fontSize: 10, marginTop: 2, fontWeight: '600' }}>Bloqueados</Text>
+            </LinearGradient>
+            <LinearGradient
+              colors={['rgba(82,204,100,0.12)', 'rgba(82,204,100,0.04)']}
+              style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(82,204,100,0.18)' }}
+            >
+              <Text style={{ color: '#52CC64', fontSize: 26, fontWeight: '900' }}>
+                {unlocked.length + locked.length > 0
+                  ? Math.round((unlocked.length / (unlocked.length + locked.length)) * 100)
+                  : 0}%
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, marginTop: 2, fontWeight: '600' }}>Completado</Text>
+            </LinearGradient>
+          </View>
+        </LinearGradient>
+
+        <View style={{ padding: 16, gap: 24 }}>
+
+          {/* Unlocked */}
+          {unlocked.length > 0 ? (
+            <View>
+              <Text style={sectionLabel}>Desbloqueados</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                {unlocked.map(a => (
+                  <LinearGradient
+                    key={a.id}
+                    colors={['#1A1030', '#100A20']}
+                    style={{
+                      width: '47%', borderRadius: 18,
+                      borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
+                      padding: 16,
+                    }}
+                  >
+                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(139,92,246,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                      <Text style={{ fontSize: 26 }}>{a.emoji}</Text>
+                    </View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800', lineHeight: 15 }}>{a.name}</Text>
+                    <Text style={{ color: '#4A3070', fontSize: 10, marginTop: 4, lineHeight: 13 }}>{a.description}</Text>
+                  </LinearGradient>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <LinearGradient
+              colors={['#131A10', '#0C1009']}
+              style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 40, alignItems: 'center' }}
+            >
+              <Text style={{ fontSize: 40, marginBottom: 12 }}>🌱</Text>
+              <Text style={{ color: '#728C74', fontSize: 14, textAlign: 'center', lineHeight: 20 }}>
+                Completa tareas y registra mediciones para desbloquear tus primeros logros
+              </Text>
+            </LinearGradient>
+          )}
+
+          {/* Locked */}
+          {locked.length > 0 && (
+            <View>
+              <Text style={sectionLabel}>Por desbloquear</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                {locked.map(a => (
+                  <View
+                    key={a.id}
+                    style={{
+                      width: '47%', backgroundColor: '#0E1210', borderRadius: 18,
+                      borderWidth: 1, borderColor: '#1C2E1E',
+                      padding: 16, opacity: 0.4,
+                    }}
+                  >
+                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                      <Text style={{ fontSize: 26 }}>{a.emoji}</Text>
+                    </View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800', lineHeight: 15 }}>{a.name}</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 4, lineHeight: 13 }}>{a.description}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -162,5 +180,5 @@ const sectionLabel = {
   fontWeight: '700' as const,
   letterSpacing: 1.5,
   textTransform: 'uppercase' as const,
-  marginBottom: 10,
+  marginBottom: 12,
 }

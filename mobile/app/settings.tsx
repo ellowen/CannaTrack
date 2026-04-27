@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Switch, Alert, ActivityIndicator, TextInput } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -61,35 +62,18 @@ export default function SettingsScreen() {
     if (!user) return
     setTimeChangeState('saving')
     const timeString = `${String(notificationHour).padStart(2, '0')}:${String(notificationMinute).padStart(2, '0')}`
-    const { error } = await supabase
-      .from('profiles')
-      .update({ notification_time: timeString })
-      .eq('id', user.id)
-
-    if (error) {
-      setTimeChangeState('idle')
-      return
-    }
-
-    if (notifications) {
-      await scheduleDailyReminder(notificationHour, notificationMinute)
-    }
-
+    const { error } = await supabase.from('profiles').update({ notification_time: timeString }).eq('id', user.id)
+    if (error) { setTimeChangeState('idle'); return }
+    if (notifications) await scheduleDailyReminder(notificationHour, notificationMinute)
     setTimeChangeState('saved')
     timeChangeTimeoutRef.current = setTimeout(() => setTimeChangeState('idle'), 2000)
   }
 
   useEffect(() => {
     if (!notifications) return
-
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
-    debounceTimeoutRef.current = setTimeout(() => {
-      handleNotificationTimeChange()
-    }, 500)
-
-    return () => {
-      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
-    }
+    debounceTimeoutRef.current = setTimeout(() => { handleNotificationTimeChange() }, 500)
+    return () => { if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current) }
   }, [notificationHour, notificationMinute, notifications])
 
   function handleUsernameChange(value: string) {
@@ -99,28 +83,12 @@ export default function SettingsScreen() {
 
   async function handleSaveUsername() {
     const trimmed = username.trim()
-    if (!trimmed) {
-      setUsernameError('El nombre no puede estar vacio')
-      return
-    }
-    if (trimmed.length > 30) {
-      setUsernameError('Maximo 30 caracteres')
-      return
-    }
+    if (!trimmed) { setUsernameError('El nombre no puede estar vacio'); return }
+    if (trimmed.length > 30) { setUsernameError('Maximo 30 caracteres'); return }
     if (!user) return
-
     setSaveState('saving')
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username: trimmed })
-      .eq('id', user.id)
-
-    if (error) {
-      setSaveState('idle')
-      setUsernameError('Error al guardar')
-      return
-    }
-
+    const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
+    if (error) { setSaveState('idle'); setUsernameError('Error al guardar'); return }
     setLoadedUsername(trimmed)
     setUsername(trimmed)
     setSaveState('saved')
@@ -142,170 +110,214 @@ export default function SettingsScreen() {
   }
 
   async function handleSignOut() {
-    Alert.alert('Cerrar sesion', '\u00bfEstas seguro?', [
+    Alert.alert('Cerrar sesion', '¿Estas seguro?', [
       { text: 'Cancelar' },
-      {
-        text: 'Cerrar',
-        onPress: async () => {
-          await supabase.auth.signOut()
-          router.replace('/auth')
-        },
-      },
+      { text: 'Cerrar', style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
     ])
   }
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
       </SafeAreaView>
     )
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
-          </TouchableOpacity>
-          <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginLeft: 12 }}>Configuracion</Text>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
-        {/* Username section */}
-        <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, marginBottom: 16 }}>
-          <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
-            Nombre de usuario
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TextInput
-              value={username}
-              onChangeText={handleUsernameChange}
-              maxLength={30}
-              autoCorrect={false}
-              autoCapitalize="none"
-              style={{
-                flex: 1,
-                backgroundColor: '#0C1410',
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: usernameError ? '#EF4444' : '#1C2E1E',
-                color: '#E4F2E7',
-                fontSize: 15,
-                padding: 12,
-              }}
-            />
+        {/* Header */}
+        <LinearGradient
+          colors={['#0F1F10', '#080E09']}
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity
-              onPress={handleSaveUsername}
-              disabled={saveDisabled}
-              style={{
-                backgroundColor: saveDisabled ? '#1C2E1E' : '#52CC64',
-                borderRadius: 10,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-              }}
+              onPress={() => router.back()}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: saveDisabled ? '#3A5040' : '#0C1410', fontWeight: '700', fontSize: 14 }}>
-                {saveState === 'saved' ? '✓ Guardado' : 'Guardar'}
-              </Text>
+              <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>←</Text>
             </TouchableOpacity>
+            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Configuracion</Text>
           </View>
-          {usernameError ? (
-            <Text style={{ color: '#EF4444', fontSize: 11, marginTop: 4 }}>{usernameError}</Text>
-          ) : null}
-        </View>
+        </LinearGradient>
 
-        <View style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-            <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Modo oscuro</Text>
-              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Tema {isDark ? 'oscuro' : 'claro'}</Text>
-            </View>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
-              thumbColor={isDark ? '#1A3D1E' : '#728C74'}
-            />
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-            <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>
-              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>Recordatorio diario a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}</Text>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={handleToggleNotifications}
-              trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
-              thumbColor={notifications ? '#1A3D1E' : '#728C74'}
-            />
+        <View style={{ padding: 16, gap: 16 }}>
+
+          {/* Username */}
+          <View>
+            <Text style={sectionLabel}>Nombre de usuario</Text>
+            <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', padding: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <TextInput
+                  value={username}
+                  onChangeText={handleUsernameChange}
+                  maxLength={30}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: usernameError ? '#EF4444' : '#1C2E1E',
+                    color: '#E4F2E7',
+                    fontSize: 15,
+                    padding: 12,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={handleSaveUsername}
+                  disabled={saveDisabled}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={saveDisabled ? ['#1C2E1E', '#182018'] : ['#52CC64', '#3DAA50']}
+                    style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 }}
+                  >
+                    <Text style={{ color: saveDisabled ? '#3A5040' : '#080E09', fontWeight: '700', fontSize: 13 }}>
+                      {saveState === 'saved' ? '✓' : 'Guardar'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              {usernameError ? (
+                <Text style={{ color: '#EF4444', fontSize: 11, marginTop: 6 }}>{usernameError}</Text>
+              ) : null}
+            </LinearGradient>
           </View>
 
-          {notifications && (
-            <View style={{ backgroundColor: '#131D14', borderTopWidth: 1, borderTopColor: '#1C2E1E', padding: 16 }}>
-              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', marginBottom: 12 }}>
-                Hora del recordatorio
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                {/* Hours */}
-                <View style={{ alignItems: 'center' }}>
-                  <TouchableOpacity
-                    onPress={() => setNotificationHour((h) => (h === 23 ? 0 : h + 1))}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▲</Text>
-                  </TouchableOpacity>
-                  <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900', minWidth: 60, textAlign: 'center' }}>
-                    {String(notificationHour).padStart(2, '0')}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setNotificationHour((h) => (h === 0 ? 23 : h - 1))}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▼</Text>
-                  </TouchableOpacity>
+          {/* Settings toggles */}
+          <View>
+            <Text style={sectionLabel}>Preferencias</Text>
+            <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+
+              {/* Dark mode */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 18 }}>{isDark ? '🌙' : '☀️'}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Modo oscuro</Text>
+                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>Tema {isDark ? 'oscuro' : 'claro'}</Text>
+                  </View>
                 </View>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
+                  thumbColor={isDark ? '#1A3D1E' : '#728C74'}
+                />
+              </View>
 
-                <Text style={{ color: '#728C74', fontSize: 24, fontWeight: '700' }}>:</Text>
+              {/* Notifications */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: notifications ? 1 : 0, borderBottomColor: '#1C2E1E' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: notifications ? 'rgba(82,204,100,0.1)' : 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 18 }}>🔔</Text>
+                  </View>
+                  <View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>
+                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>
+                      Recordatorio a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={notifications}
+                  onValueChange={handleToggleNotifications}
+                  trackColor={{ false: '#1C2E1E', true: '#52CC64' }}
+                  thumbColor={notifications ? '#1A3D1E' : '#728C74'}
+                />
+              </View>
 
-                {/* Minutes */}
-                <View style={{ alignItems: 'center' }}>
-                  <TouchableOpacity
-                    onPress={() => setNotificationMinute((m) => (m === 55 ? 0 : m + 5))}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▲</Text>
-                  </TouchableOpacity>
-                  <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900', minWidth: 60, textAlign: 'center' }}>
-                    {String(notificationMinute).padStart(2, '0')}
+              {/* Time picker */}
+              {notifications && (
+                <View style={{ padding: 16 }}>
+                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 16 }}>
+                    Hora del recordatorio
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setNotificationMinute((m) => (m === 0 ? 55 : m - 5))}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>▼</Text>
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                    {/* Hours */}
+                    <View style={{ alignItems: 'center', gap: 4 }}>
+                      <TouchableOpacity
+                        onPress={() => setNotificationHour(h => h === 23 ? 0 : h + 1)}
+                        style={{ width: 40, height: 36, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>▲</Text>
+                      </TouchableOpacity>
+                      <Text style={{ color: '#E4F2E7', fontSize: 36, fontWeight: '900', minWidth: 64, textAlign: 'center' }}>
+                        {String(notificationHour).padStart(2, '0')}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setNotificationHour(h => h === 0 ? 23 : h - 1)}
+                        style={{ width: 40, height: 36, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>▼</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text style={{ color: '#52CC64', fontSize: 36, fontWeight: '900', marginBottom: 4 }}>:</Text>
+
+                    {/* Minutes */}
+                    <View style={{ alignItems: 'center', gap: 4 }}>
+                      <TouchableOpacity
+                        onPress={() => setNotificationMinute(m => m === 55 ? 0 : m + 5)}
+                        style={{ width: 40, height: 36, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>▲</Text>
+                      </TouchableOpacity>
+                      <Text style={{ color: '#E4F2E7', fontSize: 36, fontWeight: '900', minWidth: 64, textAlign: 'center' }}>
+                        {String(notificationMinute).padStart(2, '0')}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setNotificationMinute(m => m === 0 ? 55 : m - 5)}
+                        style={{ width: 40, height: 36, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>▼</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  {timeChangeState === 'saved' && (
+                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 12 }}>✓ Guardado</Text>
+                  )}
+                </View>
+              )}
+            </LinearGradient>
+          </View>
+
+          {/* About + Sign out */}
+          <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 18 }}>🌿</Text>
+                </View>
+                <View>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Acerca de</Text>
+                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>CannaTrack v1.0.0</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 8 }}>
-                <Text style={{ color: '#728C74', fontSize: 12 }}>
-                  Recordatorio a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}
-                </Text>
-                {timeChangeState === 'saved' && (
-                  <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>✓ Guardado</Text>
-                )}
-              </View>
             </View>
-          )}
-          <TouchableOpacity style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Acerca de</Text>
-            <Text style={{ color: '#728C74', fontSize: 12, marginTop: 4 }}>CannaTrack v1.0.0</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
-            <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
+              <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+
         </View>
       </ScrollView>
     </SafeAreaView>
   )
+}
+
+const sectionLabel = {
+  color: '#728C74' as const,
+  fontSize: 11,
+  fontWeight: '700' as const,
+  letterSpacing: 1.5,
+  textTransform: 'uppercase' as const,
+  marginBottom: 10,
 }
