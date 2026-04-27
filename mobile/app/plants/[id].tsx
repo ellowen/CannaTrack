@@ -255,12 +255,6 @@ export default function PlantDetailScreen() {
                   {isFlora ? 'FLORA' : 'VEGE'}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => router.push(`/plants/${id}/edit`)}
-                style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ fontSize: 15 }}>⚙️</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -580,6 +574,57 @@ export default function PlantDetailScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
               ))}
+            </View>
+          </View>
+
+          {/* Zona de peligro */}
+          <View style={{ borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 }}>
+            <Text style={{ color: '#3A3A3A', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+              Zona de peligro
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {/* Descartar (always available) */}
+              {plant.status === 'active' && (
+                <TouchableOpacity
+                  onPress={() => {
+                    Alert.alert(
+                      'Descartar planta',
+                      `¿Seguro que queres descartar "${plant.name}"? Esta accion no se puede deshacer.`,
+                      [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Descartar', style: 'destructive', onPress: confirmDiscard },
+                      ]
+                    )
+                  }}
+                  activeOpacity={0.85}
+                  style={{ flex: 1 }}
+                >
+                  <LinearGradient
+                    colors={['#180505', '#100303']}
+                    style={{ borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' }}
+                  >
+                    <Text style={{ fontSize: 18, marginBottom: 3 }}>🗑️</Text>
+                    <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 12 }}>Descartar</Text>
+                    <Text style={{ color: 'rgba(239,68,68,0.4)', fontSize: 9, marginTop: 2 }}>Murio / no sirve</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+
+              {/* Editar */}
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/edit`)}
+                activeOpacity={0.85}
+                style={{ flex: 1 }}
+              >
+                <LinearGradient
+                  colors={['#141E15', '#0C1009']}
+                  style={{ borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: '#1C2E1E' }}
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 3 }}>⚙️</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 12 }}>Editar</Text>
+                  <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 2 }}>Nombre, macetas...</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </View>
 
