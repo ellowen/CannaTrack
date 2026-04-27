@@ -24,12 +24,21 @@ import { useUserStore } from '@/store/userStore'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('onboarding_completed')
-    .eq('id', userId)
-    .maybeSingle()
-  return data?.onboarding_completed ? '/(tabs)' : '/onboarding'
+  const [{ data: profile }, { count: plantCount }] = await Promise.all([
+    supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
+    supabase.from('plants').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+  ])
+
+  // Si ya tiene plantas, siempre ir a tabs aunque onboarding_completed sea false
+  if (plantCount && plantCount > 0) {
+    // Corregir el flag si estaba mal
+    if (!profile?.onboarding_completed) {
+      void supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
+    }
+    return '/(tabs)'
+  }
+
+  return profile?.onboarding_completed ? '/(tabs)' : '/onboarding'
 }
 
 export default function RootLayout() {
