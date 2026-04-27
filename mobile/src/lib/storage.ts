@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 /**
@@ -15,7 +16,6 @@ export const dateReviver = (_: string, value: unknown): unknown => {
   if (typeof value !== 'string') return value
   if (!/^\d{4}-\d{2}-\d{2}T/.test(value)) return value
 
-  // Check cache first
   if (dateCache.has(value)) {
     return dateCache.get(value)
   }
@@ -26,18 +26,21 @@ export const dateReviver = (_: string, value: unknown): unknown => {
     return value
   }
 
-  // Store in cache for future calls
   dateCache.set(value, date)
   return date
 }
 
 /**
- * Storage adapter para Zustand persist middleware usando AsyncStorage.
- * Maneja serialización/deserialización automática de Dates.
+ * Storage adapter para Zustand persist middleware.
+ * Usa localStorage en web y AsyncStorage en mobile.
  */
 export const createAsyncStorage = () => ({
   getItem: async (name: string) => {
     try {
+      if (Platform.OS === 'web') {
+        const value = typeof localStorage !== 'undefined' ? localStorage.getItem(name) : null
+        return value ? JSON.parse(value, dateReviver) : null
+      }
       const value = await AsyncStorage.getItem(name)
       return value ? JSON.parse(value, dateReviver) : null
     } catch (error) {
@@ -47,6 +50,12 @@ export const createAsyncStorage = () => ({
   },
   setItem: async (name: string, value: unknown) => {
     try {
+      if (Platform.OS === 'web') {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(name, JSON.stringify(value))
+        }
+        return
+      }
       await AsyncStorage.setItem(name, JSON.stringify(value))
     } catch (error) {
       console.error(`Failed to set item ${name}:`, error)
@@ -54,6 +63,12 @@ export const createAsyncStorage = () => ({
   },
   removeItem: async (name: string) => {
     try {
+      if (Platform.OS === 'web') {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem(name)
+        }
+        return
+      }
       await AsyncStorage.removeItem(name)
     } catch (error) {
       console.error(`Failed to remove item ${name}:`, error)
