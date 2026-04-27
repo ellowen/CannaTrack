@@ -99,7 +99,7 @@ export class SyncService {
       .from('plants')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 

@@ -62,7 +62,7 @@ export default function OnboardingScreen() {
           available_products: availableProducts ?? [],
         })
         .select()
-        .single()
+        .maybeSingle()
 
       if (plantErr || !plantRow) throw plantErr ?? new Error('Error al crear la planta')
 

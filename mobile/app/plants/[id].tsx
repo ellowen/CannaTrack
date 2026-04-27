@@ -52,7 +52,7 @@ export default function PlantDetailScreen() {
   useEffect(() => {
     async function load() {
       const [{ data: p }, { data: t }] = await Promise.all([
-        supabase.from('plants').select('*').eq('id', id).single(),
+        supabase.from('plants').select('*').eq('id', id).maybeSingle(),
         supabase.from('scheduled_tasks').select('*').eq('plant_id', id).order('scheduled_date'),
       ])
       if (p) {

@@ -120,7 +120,7 @@ export default function NewPlantScreen() {
           status: 'active',
         })
         .select()
-        .single()
+        .maybeSingle()
 
       if (plantErr || !plantRow) throw plantErr || new Error('No se pudo crear la planta')
 

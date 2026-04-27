@@ -103,7 +103,7 @@ export default function MeasurementsScreen() {
 
   async function load() {
     if (!id || !user) return
-    supabase.from('plants').select('name').eq('id', id).single()
+    supabase.from('plants').select('name').eq('id', id).maybeSingle()
       .then(({ data }) => { if (data) setPlantName(data.name) })
     const { data } = await supabase
       .from('measurements')

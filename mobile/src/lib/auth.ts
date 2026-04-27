@@ -102,7 +102,7 @@ export async function loadProfile(userId: string) {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) throw error
   return data
@@ -188,7 +188,7 @@ export async function updateProfile(userId: string, updates: Record<string, any>
       .update(updates)
       .eq('id', userId)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) throw error
     resetActivityTimer()

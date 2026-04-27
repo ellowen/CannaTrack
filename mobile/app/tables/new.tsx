@@ -116,7 +116,7 @@ export default function NewTableScreen() {
             day_end: dayEnd,
           })
           .select('id')
-          .single()
+          .maybeSingle()
 
         if (wErr || !weekRow) continue
 

@@ -121,7 +121,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
           .update({ notes: notes.trim() || null, photo_url: finalPhotoUrl })
           .eq('id', existing.id)
           .select()
-          .single()
+          .maybeSingle()
         if (error) throw error
         onSaved(rowToLog(data as WeekLogRow))
       } else {
@@ -138,7 +138,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
             photo_url:  finalPhotoUrl,
           })
           .select()
-          .single()
+          .maybeSingle()
         if (error) throw error
         onSaved(rowToLog(data as WeekLogRow))
       }
@@ -309,7 +309,7 @@ export default function DiaryScreen() {
         .from('plants')
         .select('name, start_date')
         .eq('id', id)
-        .single()
+        .maybeSingle()
       if (plant) {
         setPlantName(plant.name as string)
         setStartDate(new Date(plant.start_date as string))

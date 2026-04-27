@@ -15,7 +15,7 @@ export async function awardXP(userId: string, amount: number): Promise<void> {
     .from('profiles')
     .select('xp')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
   await supabase
     .from('profiles')
     .update({ xp: (data?.xp ?? 0) + amount })
@@ -32,7 +32,7 @@ export async function recordDailyActivity(userId: string): Promise<void> {
     .from('profiles')
     .select('xp, streak_days, best_streak, last_activity_date')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (!data) return
 
