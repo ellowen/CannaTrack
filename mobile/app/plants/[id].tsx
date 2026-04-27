@@ -529,6 +529,34 @@ export default function PlantDetailScreen() {
                   </View>
                 )}
 
+                {/* Productos propios del usuario */}
+                {(plant.customProducts?.length ?? 0) > 0 && plant.customProducts!.map((p, i) => {
+                  const totalMin = parseFloat((p.minDose * liters).toFixed(1))
+                  const totalMax = parseFloat((p.maxDose * liters).toFixed(1))
+                  const isFixed  = p.minDose === p.maxDose
+                  const baseIdx  = nutritionTask.products?.length ?? 0
+                  return (
+                    <View key={`custom-${i}`} style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 10,
+                      paddingHorizontal: 16, paddingVertical: 13,
+                      borderTopWidth: 1, borderTopColor: '#1C2E1E',
+                    }}>
+                      <View style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>
+                        <Text style={{ color: '#728C74', fontSize: 9, fontWeight: '800' }}>PROPIO</Text>
+                      </View>
+                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '900' }}>
+                          {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
+                        </Text>
+                        <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
+                          {isFixed ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
+                        </Text>
+                      </View>
+                    </View>
+                  )
+                })}
+
                 {/* Footer */}
                 {nutritionTask.products?.length > 0 && (
                   <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E', flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -765,6 +793,7 @@ function rowToPlant(row: Record<string, unknown>): Plant {
     potVolumeLiters:  (row.pot_volume_liters as number) ?? 11,
     nutritionTableId: (row.nutrition_table_id as string) ?? 'revegetar',
     availableProducts: (row.available_products as string[]) ?? [],
+    customProducts:   Array.isArray(row.custom_products) ? row.custom_products as Plant['customProducts'] : [],
     status:           (row.status as Plant['status']) ?? 'active',
     notes:            (row.notes as string) ?? '',
     autoFlowerTotalDays: row.auto_flower_total_days != null ? (row.auto_flower_total_days as number) : undefined,

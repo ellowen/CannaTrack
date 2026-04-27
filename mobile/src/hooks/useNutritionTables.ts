@@ -72,7 +72,9 @@ export function useNutritionTables() {
         })
       }
 
-      if (enriched.length > 0) setTables(enriched)
+      // Deduplicar por id (evita doblar si la tabla ya estaba en el fallback)
+      const unique = enriched.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i)
+      if (unique.length > 0) setTables(unique)
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Error cargando tablas nutricionales'
       setError(message)

@@ -8,6 +8,8 @@ import { useNutritionTables } from '@/hooks/useNutritionTables'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type PlantSex = 'female' | 'male' | 'unknown'
+type CustomProduct = { name: string; unit: 'ml' | 'gr'; minDose: number; maxDose: number }
+const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', minDose: 1, maxDose: 2 }
 
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -26,6 +28,9 @@ export default function EditPlantScreen() {
   const [saving, setSaving]                     = useState(false)
   const [selectedTableId, setSelectedTableId]   = useState('')
   const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
+  const [customProducts, setCustomProducts]     = useState<CustomProduct[]>([])
+  const [showAddForm, setShowAddForm]           = useState(false)
+  const [newProduct, setNewProduct]             = useState<CustomProduct>(EMPTY_NEW)
 
   const { tables, loading: tablesLoading } = useNutritionTables()
 
@@ -51,6 +56,7 @@ export default function EditPlantScreen() {
         setPotCount(String(data.pot_count ?? 1))
         setPotVolumeLiters(String(data.pot_volume_liters ?? 11))
         setNotes(data.notes ?? '')
+        setCustomProducts(Array.isArray(data.custom_products) ? data.custom_products : [])
       }
       setLoading(false)
     }
@@ -102,6 +108,7 @@ export default function EditPlantScreen() {
           pot_count:            parseInt(potCount) || 1,
           pot_volume_liters:    parseFloat(potVolumeLiters) || 11,
           notes:                notes.trim() || null,
+          custom_products:      customProducts,
         })
         .eq('id', id)
         .eq('user_id', user.id)
@@ -398,6 +405,105 @@ export default function EditPlantScreen() {
             })()}
           </View>
         )}
+
+        {/* Productos personalizados */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={[lbl, { marginTop: 16 }]}>PRODUCTOS PROPIOS</Text>
+          <Text style={{ color: '#3A5040', fontSize: 12, marginBottom: 12, lineHeight: 17 }}>
+            Productos de otras marcas que uses en tu cultivo. Se muestran en la tarjeta de nutricion junto con la tabla.
+          </Text>
+
+          {customProducts.length > 0 && (
+            <View style={{ gap: 8, marginBottom: 12 }}>
+              {customProducts.map((p, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D1A0F', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, gap: 8 }}>
+                  <View style={{ backgroundColor: '#1C2E1E', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: '#728C74', fontSize: 9, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
+                  </View>
+                  <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                  <Text style={{ color: '#3A5040', fontSize: 11 }}>
+                    {p.minDose === p.maxDose ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{ width: 26, height: 26, borderRadius: 7, backgroundColor: 'rgba(239,68,68,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ color: '#EF4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {showAddForm ? (
+            <View style={{ backgroundColor: '#0D1A0F', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, padding: 14, gap: 12 }}>
+              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>NUEVO PRODUCTO</Text>
+
+              {/* Nombre */}
+              <TextInput
+                value={newProduct.name}
+                onChangeText={v => setNewProduct(p => ({ ...p, name: v }))}
+                placeholder="Ej: BioBizz Grow, Canna A+B..."
+                placeholderTextColor="#2D4A30"
+                style={inp}
+              />
+
+              {/* Unidad */}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {(['ml', 'gr'] as const).map(u => (
+                  <TouchableOpacity
+                    key={u}
+                    onPress={() => setNewProduct(p => ({ ...p, unit: u }))}
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: newProduct.unit === u ? '#1A3D1E' : '#0C1410', borderWidth: 1, borderColor: newProduct.unit === u ? '#52CC64' : '#1C2E1E' }}
+                  >
+                    <Text style={{ color: newProduct.unit === u ? '#52CC64' : '#728C74', fontWeight: '700', fontSize: 12 }}>{u}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Dosis */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Min / litro</Text>
+                  <StepperField value={newProduct.minDose} min={0} max={500} step={1} unit={newProduct.unit} onChange={v => setNewProduct(p => ({ ...p, minDose: v, maxDose: Math.max(v, p.maxDose) }))} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Max / litro</Text>
+                  <StepperField value={newProduct.maxDose} min={newProduct.minDose} max={500} step={1} unit={newProduct.unit} onChange={v => setNewProduct(p => ({ ...p, maxDose: v }))} />
+                </View>
+              </View>
+
+              {/* Botones */}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => { setShowAddForm(false); setNewProduct(EMPTY_NEW) }}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: '#0C1410', borderWidth: 1, borderColor: '#1C2E1E' }}
+                >
+                  <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!newProduct.name.trim()) return
+                    setCustomProducts(prev => [...prev, { ...newProduct, name: newProduct.name.trim() }])
+                    setNewProduct(EMPTY_NEW)
+                    setShowAddForm(false)
+                  }}
+                  style={{ flex: 2, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: '#52CC64' }}
+                >
+                  <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 13 }}>Agregar producto</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => setShowAddForm(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
+            >
+              <Text style={{ color: '#52CC64', fontSize: 16, lineHeight: 18 }}>+</Text>
+              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 13 }}>Agregar producto propio</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Aviso regeneracion — si cambia tabla o fecha */}
         {selectedTableId && (
