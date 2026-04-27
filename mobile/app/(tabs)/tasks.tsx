@@ -110,9 +110,11 @@ export default function CalendarScreen() {
         .eq('user_id', user.id)
         .gte('scheduled_date', monthStart.toISOString())
         .lte('scheduled_date', monthEnd.toISOString()),
-      supabase.from('plants').select('id, name').eq('user_id', user.id),
+      supabase.from('plants').select('id, name').eq('user_id', user.id).eq('status', 'active'),
     ])
-    setTasks((taskData ?? []).map(rowToTask))
+    const activePlantIds = new Set((plantData ?? []).map(p => p.id))
+    // Solo mostrar tareas de plantas activas
+    setTasks((taskData ?? []).map(rowToTask).filter(t => activePlantIds.has(t.plantId)))
     const nameMap: Record<string, string> = {}
     for (const p of (plantData ?? [])) nameMap[p.id] = p.name
     setPlantNames(nameMap)
