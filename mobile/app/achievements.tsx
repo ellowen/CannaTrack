@@ -47,7 +47,7 @@ export default function AchievementsScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, best_streak').eq('id', user.id).single(),
+        supabase.from('profiles').select('xp, streak_days, best_streak').eq('id', user.id).maybeSingle(),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'harvested'),
         supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('completed', true),

@@ -33,7 +33,7 @@ export default function SettingsScreen() {
         .from('profiles')
         .select('notifications_enabled, username, notification_time')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       if (data) {
         setNotifications(data.notifications_enabled ?? false)
         const name = data.username ?? ''

@@ -34,7 +34,7 @@ export default function ProfileScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, username').eq('id', user.id).single(),
+        supabase.from('profiles').select('xp, streak_days, username').eq('id', user.id).maybeSingle(),
         supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
         supabase.from('plants').select('id, name, genetics, start_date').eq('user_id', user.id).eq('status', 'harvested'),
         supabase.from('scheduled_tasks').select('id').eq('user_id', user.id).eq('completed', true)

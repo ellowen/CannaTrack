@@ -16,7 +16,7 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
     .from('profiles')
     .select('onboarding_completed')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
   return data?.onboarding_completed ? '/(tabs)' : '/onboarding'
 }
 
@@ -57,7 +57,7 @@ export default function RootLayout() {
         .from('profiles')
         .select('notifications_enabled')
         .eq('id', s.user.id)
-        .single()
+        .maybeSingle()
       if (prof?.notifications_enabled) {
         void scheduleDailyReminder(9, 0)
       }

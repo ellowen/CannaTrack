@@ -74,7 +74,7 @@ export default function HomeScreen() {
     const todayStr = today.toISOString().split('T')[0]
 
     const [profileRes, overdueRes, archivedRes] = await Promise.all([
-      supabase.from('profiles').select('username, streak_days, xp').eq('id', user.id).single(),
+      supabase.from('profiles').select('username, streak_days, xp').eq('id', user.id).maybeSingle(),
       supabase.from('scheduled_tasks')
         .select('*')
         .eq('user_id', user.id)

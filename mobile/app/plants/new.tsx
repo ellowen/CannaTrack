@@ -46,7 +46,7 @@ export default function NewPlantScreen() {
     if (!user) return
     try {
       const [{ data: prof }, { count }] = await Promise.all([
-        supabase.from('profiles').select('is_pro').eq('id', user.id).single(),
+        supabase.from('profiles').select('is_pro').eq('id', user.id).maybeSingle(),
         supabase.from('plants').select('*', { count: 'exact', head: true })
           .eq('user_id', user.id).eq('status', 'active'),
       ])
