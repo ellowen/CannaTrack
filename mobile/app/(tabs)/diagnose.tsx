@@ -163,7 +163,7 @@ export default function DiagnoseScreen() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <View style={{ backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-              <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>FOTOS</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>FOTOS</Text>
             </View>
           </View>
           <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Diario visual</Text>
@@ -178,7 +178,7 @@ export default function DiagnoseScreen() {
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#A78BFA' }} />
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                 Planta
               </Text>
             </View>
@@ -199,14 +199,14 @@ export default function DiagnoseScreen() {
                           style={{ borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14 }}
                         >
                           <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>{plant.name}</Text>
-                          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginTop: 1 }}>
+                          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 1 }}>
                             {pFlora ? 'FLORA' : 'VEGE'}
                           </Text>
                         </LinearGradient>
                       ) : (
                         <View style={{ borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
                           <Text style={{ color: '#8AAF8E', fontWeight: '700', fontSize: 13 }}>{plant.name}</Text>
-                          <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
+                          <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
                             {pFlora ? 'FLORA' : 'VEGE'}
                           </Text>
                         </View>
@@ -228,14 +228,17 @@ export default function DiagnoseScreen() {
                 style={{ flex: 1 }}
               >
                 <LinearGradient
-                  colors={uploading ? ['#1C2E1E', '#1C2E1E'] : isFlora ? ['#1A1200', '#0E0900'] : ['#131A10', '#0C1009']}
-                  style={{ borderRadius: 16, borderWidth: 1, borderColor: isFlora ? '#2A1E00' : '#1C2E1E', paddingVertical: 16, alignItems: 'center', gap: 6, opacity: uploading ? 0.4 : 1 }}
+                  colors={uploading ? ['#110D1E', '#0D0A18'] : ['#1A1030', '#100A22']}
+                  style={{ borderRadius: 18, borderWidth: 1, borderColor: uploading ? '#1A1530' : 'rgba(167,139,250,0.3)', paddingVertical: 20, paddingHorizontal: 14, alignItems: 'center', gap: 8, opacity: uploading ? 0.5 : 1 }}
                 >
                   {uploading
-                    ? <ActivityIndicator color="#A78BFA" size="small" />
+                    ? <ActivityIndicator color="#A78BFA" size="large" />
                     : <>
-                        <Text style={{ fontSize: 26 }}>📷</Text>
-                        <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 13 }}>Camara</Text>
+                        <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(167,139,250,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
+                          <Text style={{ fontSize: 24 }}>📷</Text>
+                        </View>
+                        <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>Camara</Text>
+                        <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>Foto nueva</Text>
                       </>
                   }
                 </LinearGradient>
@@ -248,11 +251,14 @@ export default function DiagnoseScreen() {
                 style={{ flex: 1 }}
               >
                 <LinearGradient
-                  colors={uploading ? ['#1C2E1E', '#1C2E1E'] : ['#131A10', '#0C1009']}
-                  style={{ borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', paddingVertical: 16, alignItems: 'center', gap: 6, opacity: uploading ? 0.4 : 1 }}
+                  colors={uploading ? ['#110D1E', '#0D0A18'] : ['#1A1030', '#100A22']}
+                  style={{ borderRadius: 18, borderWidth: 1, borderColor: uploading ? '#1A1530' : 'rgba(167,139,250,0.3)', paddingVertical: 20, paddingHorizontal: 14, alignItems: 'center', gap: 8, opacity: uploading ? 0.5 : 1 }}
                 >
-                  <Text style={{ fontSize: 26 }}>🖼️</Text>
-                  <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 13 }}>Galeria</Text>
+                  <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(167,139,250,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
+                    <Text style={{ fontSize: 24 }}>🖼️</Text>
+                  </View>
+                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>Galeria</Text>
+                  <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>Desde el rol</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -263,7 +269,7 @@ export default function DiagnoseScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
-                <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                   Fotos ({photos.length})
                 </Text>
               </View>
@@ -303,7 +309,7 @@ export default function DiagnoseScreen() {
                           {photo.weekLabel ? (
                             <Text style={{ color: labelColor, fontSize: 11, fontWeight: '800' }}>{photo.weekLabel}</Text>
                           ) : null}
-                          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginTop: 1 }}>
+                          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 1 }}>
                             {format(photo.createdAt, "d MMM", { locale: es })}
                           </Text>
                         </LinearGradient>
@@ -326,8 +332,8 @@ export default function DiagnoseScreen() {
               </View>
               <View>
                 <Text style={{ color: '#A78BFA', fontWeight: '900', fontSize: 15 }}>Diagnostico por IA</Text>
-                <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 1, marginTop: 3, alignSelf: 'flex-start' }}>
-                  <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }}>PROXIMO</Text>
+                <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginTop: 3, alignSelf: 'flex-start' }}>
+                  <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PROXIMO</Text>
                 </View>
               </View>
             </View>
