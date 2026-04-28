@@ -446,30 +446,36 @@ export default function PlantDetailScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
-                {plant.customProducts!.map((p, i) => {
-                  const cp = p as { name: string; unit: string; vegeMin?: number; vegeMax?: number; floraMin?: number; floraMax?: number; minDose?: number; maxDose?: number }
-                  const dMin = isFlora ? (cp.floraMin ?? cp.minDose ?? 0) : (cp.vegeMin ?? cp.minDose ?? 0)
-                  const dMax = isFlora ? (cp.floraMax ?? cp.maxDose ?? 0) : (cp.vegeMax ?? cp.maxDose ?? 0)
-                  const totalMin = parseFloat((dMin * liters).toFixed(1))
-                  const totalMax = parseFloat((dMax * liters).toFixed(1))
-                  const isFixed  = dMin === dMax
-                  return (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E' }}>
-                      <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.1)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 3 }}>
-                        <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 9, fontWeight: '800' }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+                {plant.customProducts!
+                  .filter(p => {
+                    const ph = (p as { phases?: string }).phases ?? 'both'
+                    if (isFlora) return ph === 'flora' || ph === 'both'
+                    return ph === 'vege' || ph === 'both'
+                  })
+                  .map((p, i) => {
+                    const cp = p as { name: string; unit: string; phases?: string; vegeMin?: number; vegeMax?: number; floraMin?: number; floraMax?: number; minDose?: number; maxDose?: number }
+                    const dMin = isFlora ? (cp.floraMin ?? cp.minDose ?? 0) : (cp.vegeMin ?? cp.minDose ?? 0)
+                    const dMax = isFlora ? (cp.floraMax ?? cp.maxDose ?? 0) : (cp.vegeMax ?? cp.maxDose ?? 0)
+                    const totalMin = parseFloat((dMin * liters).toFixed(1))
+                    const totalMax = parseFloat((dMax * liters).toFixed(1))
+                    const isFixed  = dMin === dMax
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E' }}>
+                        <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.1)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 3 }}>
+                          <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 10, fontWeight: '800' }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+                        </View>
+                        <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{cp.name}</Text>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900' }}>
+                            {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {cp.unit}
+                          </Text>
+                          <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
+                            {isFixed ? `${dMax}` : `${dMin}–${dMax}`} {cp.unit}/L
+                          </Text>
+                        </View>
                       </View>
-                      <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{cp.name}</Text>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900' }}>
-                          {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {cp.unit}
-                        </Text>
-                        <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
-                          {isFixed ? `${dMax}` : `${dMin}–${dMax}`} {cp.unit}/L
-                        </Text>
-                      </View>
-                    </View>
-                  )
-                })}
+                    )
+                  })}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
                   <Text style={{ color: '#3A5040', fontSize: 11 }}>
                     {plant.potCount > 1 ? `${plant.potCount} macetas · ${liters}L total` : `${liters}L`}
@@ -598,7 +604,13 @@ export default function PlantDetailScreen() {
                 )}
 
                 {/* Productos propios suplementarios (tabla oficial activa) */}
-                {(plant.customProducts?.length ?? 0) > 0 && plant.customProducts!.map((p, i) => {
+                {(plant.customProducts?.length ?? 0) > 0 && plant.customProducts!
+                  .filter(p => {
+                    const ph = (p as { phases?: string }).phases ?? 'both'
+                    if (isFlora) return ph === 'flora' || ph === 'both'
+                    return ph === 'vege' || ph === 'both'
+                  })
+                  .map((p, i) => {
                   const dMin = isFlora ? ((p as {floraMin?: number}).floraMin ?? (p as {minDose?: number}).minDose ?? 0) : ((p as {vegeMin?: number}).vegeMin ?? (p as {minDose?: number}).minDose ?? 0)
                   const dMax = isFlora ? ((p as {floraMax?: number}).floraMax ?? (p as {maxDose?: number}).maxDose ?? 0) : ((p as {vegeMax?: number}).vegeMax ?? (p as {maxDose?: number}).maxDose ?? 0)
                   const totalMin = parseFloat((dMin * liters).toFixed(1))

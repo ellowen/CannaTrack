@@ -13,10 +13,11 @@ type PlantSex = 'female' | 'male' | 'unknown'
 type CustomProduct = {
   name: string
   unit: 'ml' | 'gr'
+  phases: 'vege' | 'flora' | 'both'
   vegeMin: number; vegeMax: number
   floraMin: number; floraMax: number
 }
-const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', vegeMin: 1, vegeMax: 2, floraMin: 1, floraMax: 2 }
+const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', phases: 'both', vegeMin: 1, vegeMax: 2, floraMin: 1, floraMax: 2 }
 const CUSTOM_TABLE_ID = 'custom'
 
 function migrateProduct(p: Record<string, unknown>): CustomProduct {
@@ -25,6 +26,7 @@ function migrateProduct(p: Record<string, unknown>): CustomProduct {
   return {
     name: p.name as string,
     unit: (p.unit as 'ml' | 'gr') ?? 'ml',
+    phases: (p.phases as CustomProduct['phases']) ?? 'both',
     vegeMin: (p.vegeMin as number) ?? legacy,
     vegeMax: (p.vegeMax as number) ?? legacyMax,
     floraMin: (p.floraMin as number) ?? legacy,
@@ -470,10 +472,24 @@ export default function EditPlantScreen() {
             <View style={{ gap: 8, marginBottom: 4 }}>
               {customProducts.map((p, i) => (
                 <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 16, overflow: 'hidden' }}>
+                  {/* Header row */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 }}>
-                    <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: '#B8D4BC', fontSize: 11, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
-                    </View>
+                    {/* Phase badge */}
+                    {p.phases === 'vege' && (
+                      <View style={{ backgroundColor: 'rgba(82,204,100,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)' }}>
+                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '900' }}>🌿 VEGE</Text>
+                      </View>
+                    )}
+                    {p.phases === 'flora' && (
+                      <View style={{ backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)' }}>
+                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '900' }}>🌸 FLORA</Text>
+                      </View>
+                    )}
+                    {p.phases === 'both' && (
+                      <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
+                      </View>
+                    )}
                     <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', flex: 1 }}>{p.name}</Text>
                     <TouchableOpacity
                       onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
@@ -484,19 +500,23 @@ export default function EditPlantScreen() {
                   </View>
                   {/* Doses row */}
                   <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
-                    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
-                      <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>VEGE</Text>
-                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
-                        {p.vegeMin === p.vegeMax ? p.vegeMax : `${p.vegeMin}–${p.vegeMax}`} {p.unit}/L
-                      </Text>
-                    </View>
-                    <View style={{ width: 1, backgroundColor: '#1C2E1E' }} />
-                    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
-                      <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>FLORA</Text>
-                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
-                        {p.floraMin === p.floraMax ? p.floraMax : `${p.floraMin}–${p.floraMax}`} {p.unit}/L
-                      </Text>
-                    </View>
+                    {(p.phases === 'vege' || p.phases === 'both') && (
+                      <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
+                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>VEGE</Text>
+                        <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
+                          {p.vegeMin === p.vegeMax ? p.vegeMax : `${p.vegeMin}–${p.vegeMax}`} {p.unit}/L
+                        </Text>
+                      </View>
+                    )}
+                    {p.phases === 'both' && <View style={{ width: 1, backgroundColor: '#1C2E1E' }} />}
+                    {(p.phases === 'flora' || p.phases === 'both') && (
+                      <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
+                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>FLORA</Text>
+                        <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
+                          {p.floraMin === p.floraMax ? p.floraMax : `${p.floraMin}–${p.floraMax}`} {p.unit}/L
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               ))}
@@ -536,39 +556,65 @@ export default function EditPlantScreen() {
                 ))}
               </View>
 
-              {/* VEGE doses */}
-              <View style={{ backgroundColor: 'rgba(82,204,100,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)', padding: 12, gap: 10 }}>
-                <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌿 VEGETACION (dosis/L)</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
-                    <Stepper value={newProduct.vegeMin} min={0} max={500} step={1} unit={newProduct.unit}
-                      onChange={v => setNewProduct(p => ({ ...p, vegeMin: v, vegeMax: Math.max(v, p.vegeMax) }))} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
-                    <Stepper value={newProduct.vegeMax} min={newProduct.vegeMin} max={500} step={1} unit={newProduct.unit}
-                      onChange={v => setNewProduct(p => ({ ...p, vegeMax: v }))} />
-                  </View>
+              {/* Fase */}
+              <View>
+                <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Usar en</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {([
+                    ['vege',  '🌿', 'Solo VEGE',  '#52CC64', 'rgba(82,204,100,0.15)',  'rgba(82,204,100,0.3)' ],
+                    ['flora', '🌸', 'Solo FLORA', '#F59E0B', 'rgba(245,158,11,0.15)', 'rgba(245,158,11,0.3)' ],
+                    ['both',  '✨', 'Ambas',      '#A78BFA', 'rgba(167,139,250,0.15)','rgba(167,139,250,0.3)'],
+                  ] as const).map(([phase, icon, label, color, bg, border]) => (
+                    <TouchableOpacity
+                      key={phase}
+                      onPress={() => setNewProduct(p => ({ ...p, phases: phase }))}
+                      activeOpacity={0.8}
+                      style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', gap: 3, backgroundColor: newProduct.phases === phase ? bg : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: newProduct.phases === phase ? border : '#1C2E1E' }}
+                    >
+                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <Text style={{ color: newProduct.phases === phase ? color : '#4A6A50', fontSize: 11, fontWeight: '800' }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
 
-              {/* FLORA doses */}
-              <View style={{ backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)', padding: 12, gap: 10 }}>
-                <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌸 FLORACION (dosis/L)</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
-                    <Stepper value={newProduct.floraMin} min={0} max={500} step={1} unit={newProduct.unit}
-                      onChange={v => setNewProduct(p => ({ ...p, floraMin: v, floraMax: Math.max(v, p.floraMax) }))} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
-                    <Stepper value={newProduct.floraMax} min={newProduct.floraMin} max={500} step={1} unit={newProduct.unit}
-                      onChange={v => setNewProduct(p => ({ ...p, floraMax: v }))} />
+              {/* VEGE doses */}
+              {(newProduct.phases === 'vege' || newProduct.phases === 'both') && (
+                <View style={{ backgroundColor: 'rgba(82,204,100,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)', padding: 12, gap: 10 }}>
+                  <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌿 VEGETACION (dosis/L)</Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                      <Stepper value={newProduct.vegeMin} min={0} max={500} step={1} unit={newProduct.unit}
+                        onChange={v => setNewProduct(p => ({ ...p, vegeMin: v, vegeMax: Math.max(v, p.vegeMax) }))} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                      <Stepper value={newProduct.vegeMax} min={newProduct.vegeMin} max={500} step={1} unit={newProduct.unit}
+                        onChange={v => setNewProduct(p => ({ ...p, vegeMax: v }))} />
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
+
+              {/* FLORA doses */}
+              {(newProduct.phases === 'flora' || newProduct.phases === 'both') && (
+                <View style={{ backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)', padding: 12, gap: 10 }}>
+                  <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌸 FLORACION (dosis/L)</Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                      <Stepper value={newProduct.floraMin} min={0} max={500} step={1} unit={newProduct.unit}
+                        onChange={v => setNewProduct(p => ({ ...p, floraMin: v, floraMax: Math.max(v, p.floraMax) }))} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                      <Stepper value={newProduct.floraMax} min={newProduct.floraMin} max={500} step={1} unit={newProduct.unit}
+                        onChange={v => setNewProduct(p => ({ ...p, floraMax: v }))} />
+                    </View>
+                  </View>
+                </View>
+              )}
 
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
