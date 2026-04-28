@@ -426,8 +426,75 @@ export default function PlantDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Nutricion de la semana */}
-          {nutritionTask && (nutritionTask.products?.length > 0 || nutritionTask.ecMin) && (
+          {/* Plan CUSTOM: mostrar productos propios con dosis de la fase actual */}
+          {plant.nutritionTableId === 'custom' && (plant.customProducts?.length ?? 0) > 0 && (
+            <View>
+              <Text style={sectionLabel}>
+                🧪 MIS PRODUCTOS · {isFlora ? 'FLORA' : 'VEGE'}
+              </Text>
+              <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+                {/* Litros stepper */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>Preparar para</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
+                    <TouchableOpacity onPress={() => setLiters(v => Math.max(1, v - 1))} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
+                      <Text style={{ color: liters <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900', minWidth: 48, textAlign: 'center' }}>{liters}L</Text>
+                    <TouchableOpacity onPress={() => setLiters(v => v + 1)} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}>
+                      <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {plant.customProducts!.map((p, i) => {
+                  const cp = p as { name: string; unit: string; vegeMin?: number; vegeMax?: number; floraMin?: number; floraMax?: number; minDose?: number; maxDose?: number }
+                  const dMin = isFlora ? (cp.floraMin ?? cp.minDose ?? 0) : (cp.vegeMin ?? cp.minDose ?? 0)
+                  const dMax = isFlora ? (cp.floraMax ?? cp.maxDose ?? 0) : (cp.vegeMax ?? cp.maxDose ?? 0)
+                  const totalMin = parseFloat((dMin * liters).toFixed(1))
+                  const totalMax = parseFloat((dMax * liters).toFixed(1))
+                  const isFixed  = dMin === dMax
+                  return (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E' }}>
+                      <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.1)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 3 }}>
+                        <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 9, fontWeight: '800' }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+                      </View>
+                      <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{cp.name}</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900' }}>
+                          {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {cp.unit}
+                        </Text>
+                        <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
+                          {isFixed ? `${dMax}` : `${dMin}–${dMax}`} {cp.unit}/L
+                        </Text>
+                      </View>
+                    </View>
+                  )
+                })}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
+                  <Text style={{ color: '#3A5040', fontSize: 11 }}>
+                    {plant.potCount > 1 ? `${plant.potCount} macetas · ${liters}L total` : `${liters}L`}
+                    {' · '}Plan personalizado
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {plant.nutritionTableId === 'custom' && (plant.customProducts?.length ?? 0) === 0 && (
+            <LinearGradient
+              colors={['rgba(124,58,237,0.08)', 'rgba(91,33,182,0.04)']}
+              style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', padding: 20, alignItems: 'center', gap: 8 }}
+            >
+              <Text style={{ fontSize: 28 }}>✨</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 14, fontWeight: '700' }}>Plan personalizado</Text>
+              <Text style={{ color: '#6A4A9A', fontSize: 13, textAlign: 'center', lineHeight: 19 }}>
+                Agrega tus productos en Editar planta con dosis separadas por VEGE y FLORA.
+              </Text>
+            </LinearGradient>
+          )}
+
+          {/* Nutricion de la semana (tablas oficiales) */}
+          {plant.nutritionTableId !== 'custom' && nutritionTask && (nutritionTask.products?.length > 0 || nutritionTask.ecMin) && (
             <View>
               <Text style={sectionLabel}>
                 🧪 NUTRICION · {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
@@ -530,20 +597,17 @@ export default function PlantDetailScreen() {
                   </View>
                 )}
 
-                {/* Productos propios del usuario */}
+                {/* Productos propios suplementarios (tabla oficial activa) */}
                 {(plant.customProducts?.length ?? 0) > 0 && plant.customProducts!.map((p, i) => {
-                  const totalMin = parseFloat((p.minDose * liters).toFixed(1))
-                  const totalMax = parseFloat((p.maxDose * liters).toFixed(1))
-                  const isFixed  = p.minDose === p.maxDose
-                  const baseIdx  = nutritionTask.products?.length ?? 0
+                  const dMin = isFlora ? ((p as {floraMin?: number}).floraMin ?? (p as {minDose?: number}).minDose ?? 0) : ((p as {vegeMin?: number}).vegeMin ?? (p as {minDose?: number}).minDose ?? 0)
+                  const dMax = isFlora ? ((p as {floraMax?: number}).floraMax ?? (p as {maxDose?: number}).maxDose ?? 0) : ((p as {vegeMax?: number}).vegeMax ?? (p as {maxDose?: number}).maxDose ?? 0)
+                  const totalMin = parseFloat((dMin * liters).toFixed(1))
+                  const totalMax = parseFloat((dMax * liters).toFixed(1))
+                  const isFixed  = dMin === dMax
                   return (
-                    <View key={`custom-${i}`} style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 10,
-                      paddingHorizontal: 16, paddingVertical: 13,
-                      borderTopWidth: 1, borderTopColor: '#1C2E1E',
-                    }}>
+                    <View key={`custom-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>
-                        <Text style={{ color: '#728C74', fontSize: 9, fontWeight: '800' }}>PROPIO</Text>
+                        <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '800' }}>PROPIO</Text>
                       </View>
                       <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{p.name}</Text>
                       <View style={{ alignItems: 'flex-end' }}>
@@ -551,7 +615,7 @@ export default function PlantDetailScreen() {
                           {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
                         </Text>
                         <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
-                          {isFixed ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
+                          {isFixed ? `${dMax}` : `${dMin}–${dMax}`} {p.unit}/L
                         </Text>
                       </View>
                     </View>

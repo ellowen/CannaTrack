@@ -10,8 +10,27 @@ import { useNutritionTables } from '@/hooks/useNutritionTables'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type PlantSex = 'female' | 'male' | 'unknown'
-type CustomProduct = { name: string; unit: 'ml' | 'gr'; minDose: number; maxDose: number }
-const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', minDose: 1, maxDose: 2 }
+type CustomProduct = {
+  name: string
+  unit: 'ml' | 'gr'
+  vegeMin: number; vegeMax: number
+  floraMin: number; floraMax: number
+}
+const EMPTY_NEW: CustomProduct = { name: '', unit: 'ml', vegeMin: 1, vegeMax: 2, floraMin: 1, floraMax: 2 }
+const CUSTOM_TABLE_ID = 'custom'
+
+function migrateProduct(p: Record<string, unknown>): CustomProduct {
+  const legacy = (p.minDose as number) ?? 1
+  const legacyMax = (p.maxDose as number) ?? legacy
+  return {
+    name: p.name as string,
+    unit: (p.unit as 'ml' | 'gr') ?? 'ml',
+    vegeMin: (p.vegeMin as number) ?? legacy,
+    vegeMax: (p.vegeMax as number) ?? legacyMax,
+    floraMin: (p.floraMin as number) ?? legacy,
+    floraMax: (p.floraMax as number) ?? legacyMax,
+  }
+}
 
 const LINE_COLOR: Record<string, { bg: string; text: string }> = {
   BIO:   { bg: 'rgba(20,83,45,0.7)',  text: '#4ADE80' },
@@ -63,7 +82,7 @@ export default function EditPlantScreen() {
         setPotCount(data.pot_count ?? 1)
         setPotVolumeLiters(data.pot_volume_liters ?? 11)
         setNotes(data.notes ?? '')
-        setCustomProducts(Array.isArray(data.custom_products) ? data.custom_products : [])
+        setCustomProducts(Array.isArray(data.custom_products) ? data.custom_products.map(migrateProduct) : [])
       }
       setLoading(false)
     }
@@ -315,45 +334,60 @@ export default function EditPlantScreen() {
 
         {/* Seccion: Tabla nutricional */}
         <Section label="Tabla nutricional" icon="🧪">
-          {/* Selector de tabla */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {tables.map(table => (
-                <TouchableOpacity
-                  key={table.id}
-                  onPress={() => { setSelectedTableId(table.id); setAvailableProducts(null) }}
-                  activeOpacity={0.8}
-                >
-                  {selectedTableId === table.id ? (
-                    <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 }}>
-                      <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>{table.name.split(' ')[0]}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                      <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 13 }}>{table.name.split(' ')[0]}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
+            {/* Selector de tabla - deduplicado por nombre normalizado + Custom */}
+          {(() => {
+            const seen = new Set<string>()
+            const deduped = tables.filter(t => {
+              const key = t.name.toLowerCase().replace(/\s+/g, '')
+              if (seen.has(key)) return false
+              seen.add(key)
+              return true
+            })
+            const allOptions = [...deduped, { id: CUSTOM_TABLE_ID, name: 'Custom' }]
+            return (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {allOptions.map(opt => {
+                  const isSelected = selectedTableId === opt.id
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => { setSelectedTableId(opt.id); setAvailableProducts(null) }}
+                      activeOpacity={0.8}
+                    >
+                      {isSelected ? (
+                        <LinearGradient
+                          colors={opt.id === CUSTOM_TABLE_ID ? ['#7C3AED', '#5B21B6'] : ['#52CC64', '#3DAA50']}
+                          style={{ borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }}
+                        >
+                          <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>{opt.name}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={{ borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                          <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>{opt.name}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            )
+          })()}
 
-          {/* Productos de la tabla */}
-          {selectedTableId && (() => {
+          {/* Filtro de productos - solo si tabla oficial seleccionada */}
+          {selectedTableId && selectedTableId !== CUSTOM_TABLE_ID && (() => {
             const table = tables.find(t => t.id === selectedTableId)
             if (!table) return null
-
             return (
               <View style={{ gap: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase' }}>
                     Filtrar productos
                   </Text>
                   <TouchableOpacity
                     onPress={() => setAvailableProducts(null)}
                     style={{ backgroundColor: availableProducts === null ? 'rgba(82,204,100,0.12)' : 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: availableProducts === null ? 'rgba(82,204,100,0.25)' : '#1C2E1E' }}
                   >
-                    <Text style={{ color: availableProducts === null ? '#52CC64' : '#728C74', fontSize: 11, fontWeight: '700' }}>
+                    <Text style={{ color: availableProducts === null ? '#52CC64' : '#728C74', fontSize: 12, fontWeight: '700' }}>
                       {availableProducts === null ? '✓ Todos' : `${availableProducts.length} sel.`}
                     </Text>
                   </TouchableOpacity>
@@ -365,14 +399,13 @@ export default function EditPlantScreen() {
                   })
                   if (lineProducts.size === 0) return null
                   const lc = LINE_COLOR[line.id] ?? { bg: 'rgba(28,46,30,0.6)', text: '#728C74' }
-
                   return (
                     <View key={line.id}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                         <View style={{ backgroundColor: lc.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                          <Text style={{ color: lc.text, fontSize: 10, fontWeight: '800' }}>{line.id}</Text>
+                          <Text style={{ color: lc.text, fontSize: 11, fontWeight: '800' }}>{line.id}</Text>
                         </View>
-                        <Text style={{ color: '#4A6A50', fontSize: 12, fontWeight: '600' }}>{line.name}</Text>
+                        <Text style={{ color: '#4A6A50', fontSize: 13, fontWeight: '600' }}>{line.name}</Text>
                       </View>
                       <View style={{ gap: 6 }}>
                         {Array.from(lineProducts).map(productName => {
@@ -390,22 +423,12 @@ export default function EditPlantScreen() {
                                 }
                               }}
                               activeOpacity={0.8}
-                              style={{
-                                flexDirection: 'row', alignItems: 'center', gap: 10,
-                                paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12,
-                                backgroundColor: checked ? 'rgba(82,204,100,0.06)' : 'rgba(255,255,255,0.03)',
-                                borderWidth: 1, borderColor: checked ? 'rgba(82,204,100,0.2)' : '#1A2A1A',
-                              }}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderRadius: 12, backgroundColor: checked ? 'rgba(82,204,100,0.06)' : 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: checked ? 'rgba(82,204,100,0.2)' : '#1A2A1A' }}
                             >
-                              <View style={{
-                                width: 18, height: 18, borderRadius: 5,
-                                borderWidth: 2, borderColor: checked ? '#52CC64' : '#2D4A30',
-                                backgroundColor: checked ? '#52CC64' : 'transparent',
-                                alignItems: 'center', justifyContent: 'center',
-                              }}>
-                                {checked && <Text style={{ color: '#080E09', fontSize: 11, fontWeight: '900', lineHeight: 13 }}>✓</Text>}
+                              <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? '#52CC64' : '#2D4A30', backgroundColor: checked ? '#52CC64' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                                {checked && <Text style={{ color: '#080E09', fontSize: 12, fontWeight: '900', lineHeight: 14 }}>✓</Text>}
                               </View>
-                              <Text style={{ color: checked ? '#E4F2E7' : '#4A6A50', fontSize: 13, fontWeight: '600', flex: 1 }}>
+                              <Text style={{ color: checked ? '#E4F2E7' : '#4A6A50', fontSize: 14, fontWeight: '600', flex: 1 }}>
                                 {productName}
                               </Text>
                             </TouchableOpacity>
@@ -418,38 +441,74 @@ export default function EditPlantScreen() {
               </View>
             )
           })()}
+
+          {/* Custom: aviso */}
+          {selectedTableId === CUSTOM_TABLE_ID && (
+            <LinearGradient
+              colors={['rgba(124,58,237,0.1)', 'rgba(91,33,182,0.05)']}
+              style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <Text style={{ fontSize: 20 }}>✨</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, flex: 1, lineHeight: 19 }}>
+                Agrega tus propios productos con dosis separadas para{' '}
+                <Text style={{ fontWeight: '800' }}>VEGE</Text> y{' '}
+                <Text style={{ fontWeight: '800' }}>FLORA</Text> en la seccion de abajo.
+              </Text>
+            </LinearGradient>
+          )}
         </Section>
 
         {/* Seccion: Productos propios */}
         <Section label="Productos propios" icon="✏️">
-          <Text style={{ color: '#3A5040', fontSize: 12, lineHeight: 17, marginBottom: 14 }}>
-            Agrega productos de otras marcas. Se calculan con el mismo stepper de litros de la tarjeta de nutricion.
+          <Text style={{ color: '#3A5040', fontSize: 13, lineHeight: 19, marginBottom: 6 }}>
+            {selectedTableId === CUSTOM_TABLE_ID
+              ? 'Carga tus productos con dosis por etapa. Se aplican segun la fase actual de la planta.'
+              : 'Suplementos de otras marcas. Se muestran junto a la tabla seleccionada.'}
           </Text>
 
-          {customProducts.map((p, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }}>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ color: '#B8D4BC', fontSize: 10, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
-              </View>
-              <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '700', flex: 1 }}>{p.name}</Text>
-              <Text style={{ color: '#4A7A50', fontSize: 11 }}>
-                {p.minDose === p.maxDose ? p.maxDose : `${p.minDose}–${p.maxDose}`}/{p.unit[0]}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
-                style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: '#EF4444', fontSize: 13, lineHeight: 15 }}>✕</Text>
-              </TouchableOpacity>
+          {customProducts.length > 0 && (
+            <View style={{ gap: 8, marginBottom: 4 }}>
+              {customProducts.map((p, i) => (
+                <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 16, overflow: 'hidden' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 }}>
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <Text style={{ color: '#B8D4BC', fontSize: 11, fontWeight: '800' }}>{p.unit.toUpperCase()}</Text>
+                    </View>
+                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', flex: 1 }}>{p.name}</Text>
+                    <TouchableOpacity
+                      onPress={() => setCustomProducts(prev => prev.filter((_, idx) => idx !== i))}
+                      style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: '#EF4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* Doses row */}
+                  <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
+                    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
+                      <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>VEGE</Text>
+                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
+                        {p.vegeMin === p.vegeMax ? p.vegeMax : `${p.vegeMin}–${p.vegeMax}`} {p.unit}/L
+                      </Text>
+                    </View>
+                    <View style={{ width: 1, backgroundColor: '#1C2E1E' }} />
+                    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
+                      <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>FLORA</Text>
+                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
+                        {p.floraMin === p.floraMax ? p.floraMax : `${p.floraMin}–${p.floraMax}`} {p.unit}/L
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
+          )}
 
           {showAddForm ? (
             <LinearGradient
               colors={['#0D1A10', '#090E09']}
-              style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', padding: 16, gap: 14 }}
+              style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', padding: 16, gap: 16 }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
+              <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
 
               <TextInput
                 value={newProduct.name}
@@ -460,49 +519,63 @@ export default function EditPlantScreen() {
                 style={inp}
               />
 
+              {/* Unidad */}
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {(['ml', 'gr'] as const).map(u => (
                   <TouchableOpacity key={u} onPress={() => setNewProduct(p => ({ ...p, unit: u }))} activeOpacity={0.8} style={{ flex: 1 }}>
                     {newProduct.unit === u ? (
-                      <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 10, paddingVertical: 11, alignItems: 'center' }}>
-                        <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 14 }}>{u}</Text>
+                      <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}>
+                        <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 15 }}>{u}</Text>
                       </LinearGradient>
                     ) : (
-                      <View style={{ borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                        <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 14 }}>{u}</Text>
+                      <View style={{ borderRadius: 10, paddingVertical: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                        <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 15 }}>{u}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-                    Min por litro
-                  </Text>
-                  <Stepper
-                    value={newProduct.minDose} min={0} max={500} step={1} unit={newProduct.unit}
-                    onChange={v => setNewProduct(p => ({ ...p, minDose: v, maxDose: Math.max(v, p.maxDose) }))}
-                  />
+              {/* VEGE doses */}
+              <View style={{ backgroundColor: 'rgba(82,204,100,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)', padding: 12, gap: 10 }}>
+                <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌿 VEGETACION (dosis/L)</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                    <Stepper value={newProduct.vegeMin} min={0} max={500} step={1} unit={newProduct.unit}
+                      onChange={v => setNewProduct(p => ({ ...p, vegeMin: v, vegeMax: Math.max(v, p.vegeMax) }))} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                    <Stepper value={newProduct.vegeMax} min={newProduct.vegeMin} max={500} step={1} unit={newProduct.unit}
+                      onChange={v => setNewProduct(p => ({ ...p, vegeMax: v }))} />
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-                    Max por litro
-                  </Text>
-                  <Stepper
-                    value={newProduct.maxDose} min={newProduct.minDose} max={500} step={1} unit={newProduct.unit}
-                    onChange={v => setNewProduct(p => ({ ...p, maxDose: v }))}
-                  />
+              </View>
+
+              {/* FLORA doses */}
+              <View style={{ backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)', padding: 12, gap: 10 }}>
+                <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌸 FLORACION (dosis/L)</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                    <Stepper value={newProduct.floraMin} min={0} max={500} step={1} unit={newProduct.unit}
+                      onChange={v => setNewProduct(p => ({ ...p, floraMin: v, floraMax: Math.max(v, p.floraMax) }))} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                    <Stepper value={newProduct.floraMax} min={newProduct.floraMin} max={500} step={1} unit={newProduct.unit}
+                      onChange={v => setNewProduct(p => ({ ...p, floraMax: v }))} />
+                  </View>
                 </View>
               </View>
 
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
                   onPress={() => { setShowAddForm(false); setNewProduct(EMPTY_NEW) }}
-                  style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}
+                  style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}
                 >
-                  <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 13 }}>Cancelar</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 14 }}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -517,10 +590,10 @@ export default function EditPlantScreen() {
                 >
                   <LinearGradient
                     colors={newProduct.name.trim() ? ['#52CC64', '#3DAA50'] : ['#1C2E1E', '#182018']}
-                    style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                    style={{ borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}
                   >
-                    <Text style={{ color: newProduct.name.trim() ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 13 }}>
-                      Agregar
+                    <Text style={{ color: newProduct.name.trim() ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 14 }}>
+                      Agregar producto
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -530,10 +603,10 @@ export default function EditPlantScreen() {
             <TouchableOpacity
               onPress={() => setShowAddForm(true)}
               activeOpacity={0.8}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 20, lineHeight: 22, fontWeight: '300' }}>+</Text>
-              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 13 }}>Agregar producto propio</Text>
+              <Text style={{ color: '#52CC64', fontSize: 22, lineHeight: 24, fontWeight: '300' }}>+</Text>
+              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>Agregar producto</Text>
             </TouchableOpacity>
           )}
         </Section>
