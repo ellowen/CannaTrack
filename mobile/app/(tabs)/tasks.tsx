@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
+import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
@@ -18,13 +19,18 @@ const TYPE_LABEL: Record<string, string> = {
   nutrition: 'Nutricion', irrigation: 'Riego',
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
 }
+const TYPE_ICON: Record<string, string> = {
+  nutrition: '🧪', irrigation: '💧', observation: '👁', foliar: '🌿', harvest: '✂️',
+}
+
+type PlantMeta = { name: string; floraStartDate: Date | null }
 
 export default function CalendarScreen() {
   const { user, loading: authLoading } = useAuth()
   const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [displayMonth, setDisplayMonth] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
-  const [plantNames, setPlantNames] = useState<Record<string, string>>({})
+  const [plantMeta, setPlantMeta] = useState<Record<string, PlantMeta>>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -33,22 +39,23 @@ export default function CalendarScreen() {
   const headerScaleAnim = useRef(new Animated.Value(1)).current
   const celebrationAnim = useRef(new Animated.Value(0)).current
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0,0,0,0)
   const start = startOfMonth(displayMonth)
   const daysInMonth = getDaysInMonth(displayMonth)
   const firstDayOfWeek = start.getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1))
+  const mondayOffset = (firstDayOfWeek + 6) % 7
+  const days = Array.from({ length: daysInMonth }, (_, i) =>
+    new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1)
+  )
 
   function animateMonthChange(direction: 'next' | 'prev') {
-    const startValue = direction === 'next' ? 1 : -1
-    slideAnim.setValue(startValue * 500)
+    slideAnim.setValue(direction === 'next' ? 400 : -400)
     fadeAnim.setValue(0)
     headerScaleAnim.setValue(0.95)
     Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
-      Animated.timing(headerScaleAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 80, friction: 10, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.spring(headerScaleAnim, { toValue: 1, tension: 80, friction: 10, useNativeDriver: true }),
     ]).start()
   }
 
@@ -57,32 +64,25 @@ export default function CalendarScreen() {
     animateMonthChange('prev')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   }
-
   function nextMonth() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     animateMonthChange('next')
     setDisplayMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   }
-
   function goToday() {
-    const d = new Date(); d.setHours(0, 0, 0, 0)
-    if (d.getMonth() !== displayMonth.getMonth() || d.getFullYear() !== displayMonth.getFullYear()) {
-      animateMonthChange('next')
-    }
+    const d = new Date(); d.setHours(0,0,0,0)
+    animateMonthChange('next')
     setDisplayMonth(d)
     setSelected(d)
   }
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy),
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dx < -50) nextMonth()
-        else if (gs.dx > 50) prevMonth()
-      },
-    })
-  ).current
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy),
+    onPanResponderRelease: (_, gs) => {
+      if (gs.dx < -50) nextMonth()
+      else if (gs.dx > 50) prevMonth()
+    },
+  })).current
 
   async function load() {
     if (!user) return
@@ -92,13 +92,18 @@ export default function CalendarScreen() {
       supabase.from('scheduled_tasks').select('*').eq('user_id', user.id)
         .gte('scheduled_date', monthStart.toISOString())
         .lte('scheduled_date', monthEnd.toISOString()),
-      supabase.from('plants').select('id, name').eq('user_id', user.id).eq('status', 'active'),
+      supabase.from('plants').select('id, name, flora_start_date').eq('user_id', user.id).eq('status', 'active'),
     ])
     const activePlantIds = new Set((plantData ?? []).map(p => p.id))
     setTasks((taskData ?? []).map(rowToTask).filter(t => activePlantIds.has(t.plantId)))
-    const nameMap: Record<string, string> = {}
-    for (const p of (plantData ?? [])) nameMap[p.id] = p.name
-    setPlantNames(nameMap)
+    const meta: Record<string, PlantMeta> = {}
+    for (const p of (plantData ?? [])) {
+      meta[p.id] = {
+        name: p.name,
+        floraStartDate: p.flora_start_date ? new Date(p.flora_start_date) : null,
+      }
+    }
+    setPlantMeta(meta)
     setLoading(false)
   }
 
@@ -106,47 +111,54 @@ export default function CalendarScreen() {
     if (!authLoading && user) load()
   }, [displayMonth, user, authLoading])
 
-  async function onRefresh() {
-    setRefreshing(true)
-    await load()
-    setRefreshing(false)
-  }
+  async function onRefresh() { setRefreshing(true); await load(); setRefreshing(false) }
 
-  const tasksByDate: Record<string, { types: Set<string>; count: number; overdue: boolean }> = {}
+  // Build per-day task summaries
+  const tasksByDate: Record<string, { types: Set<string>; pending: number; done: number; overdue: boolean }> = {}
   for (const t of tasks) {
     const key = format(t.scheduledDate, 'yyyy-MM-dd')
-    if (!tasksByDate[key]) tasksByDate[key] = { types: new Set(), count: 0, overdue: false }
-    if (!t.completed) {
+    if (!tasksByDate[key]) tasksByDate[key] = { types: new Set(), pending: 0, done: 0, overdue: false }
+    if (t.completed) {
+      tasksByDate[key].done += 1
+    } else {
       tasksByDate[key].types.add(t.type)
-      tasksByDate[key].count += 1
-      if (new Date(t.scheduledDate) < today) tasksByDate[key].overdue = true
+      tasksByDate[key].pending += 1
+      const d = new Date(t.scheduledDate); d.setHours(0,0,0,0)
+      if (d < today) tasksByDate[key].overdue = true
     }
   }
 
-  function getIndicatorColor(dayKey: string): string {
-    const dayData = tasksByDate[dayKey]
-    if (!dayData) return 'transparent'
-    if (dayData.overdue) return '#EF4444'
-    if (new Date(dayKey) <= today) return '#F59E0B'
-    return '#10B981'
+  function getDayAccent(dayKey: string): string {
+    const d = tasksByDate[dayKey]
+    if (!d || (d.pending === 0 && d.done === 0)) return 'transparent'
+    if (d.pending === 0) return '#52CC64'   // all done
+    if (d.overdue) return '#EF4444'         // overdue
+    const dDate = new Date(dayKey); dDate.setHours(0,0,0,0)
+    if (dDate.getTime() === today.getTime()) return '#F59E0B' // today with pending
+    return '#3B82F6'                        // future
   }
 
   const selectedTasks = tasks.filter(t => {
-    const d = new Date(t.scheduledDate); d.setHours(0, 0, 0, 0)
+    const d = new Date(t.scheduledDate); d.setHours(0,0,0,0)
     return d.getTime() === selected.getTime()
   })
+  const pendingSelected = selectedTasks.filter(t => !t.completed)
+  const doneSelected = selectedTasks.filter(t => t.completed)
+  const allDone = selectedTasks.length > 0 && pendingSelected.length === 0
 
   function triggerCelebration() {
     celebrationAnim.setValue(0)
     Animated.sequence([
-      Animated.timing(celebrationAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.timing(celebrationAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.spring(celebrationAnim, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true }),
+      Animated.timing(celebrationAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start()
   }
 
   async function completeTask(taskId: string) {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    await supabase.from('scheduled_tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', taskId)
+    await supabase.from('scheduled_tasks')
+      .update({ completed: true, completed_at: new Date().toISOString() })
+      .eq('id', taskId)
     setTasks(prev => {
       const updated = prev.map(t => t.id === taskId ? { ...t, completed: true } : t)
       const dayTasks = updated.filter(t => {
@@ -162,68 +174,60 @@ export default function CalendarScreen() {
     }
   }
 
-  const celebrationScale = celebrationAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.03, 1] })
-
-  // Day-of-week offset (Sunday=0 -> Monday=0 mapping)
-  const mondayOffset = (firstDayOfWeek + 6) % 7
+  const celebrationScale = celebrationAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.025, 1] })
+  const isSelectedToday = selected.getTime() === today.getTime()
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <View style={{ flex: 1 }}>
 
-        {/* Calendar header */}
-        <Animated.View
-          style={{ transform: [{ scale: celebrationScale }] }}
-          {...panResponder.panHandlers}
-        >
+        {/* ── Calendar ─────────────────────────────────────── */}
+        <Animated.View style={{ transform: [{ scale: celebrationScale }] }} {...panResponder.panHandlers}>
           <LinearGradient
             colors={['#0F1F10', '#080E09']}
-            style={{ padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}
+            style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#1A2E1A' }}
           >
             {/* Month nav */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <TouchableOpacity
                 onPress={prevMonth}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'<'}</Text>
+                <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'‹'}</Text>
               </TouchableOpacity>
 
               <Animated.Text style={{
-                color: '#B8D4BC',
-                fontSize: 13,
-                fontWeight: '700',
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-                transform: [{ scale: headerScaleAnim }],
-                opacity: fadeAnim,
+                color: '#E8F5EA', fontSize: 17, fontWeight: '800', letterSpacing: 0.5, textTransform: 'capitalize',
+                transform: [{ scale: headerScaleAnim }], opacity: fadeAnim,
               }}>
                 {format(displayMonth, 'MMMM yyyy', { locale: es })}
               </Animated.Text>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <TouchableOpacity
-                  onPress={goToday}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: 'rgba(82,204,100,0.1)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}
-                >
-                  <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700' }}>Hoy</Text>
-                </TouchableOpacity>
+                {!(isSelectedToday && displayMonth.getMonth() === today.getMonth()) && (
+                  <TouchableOpacity
+                    onPress={goToday}
+                    hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                    style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(82,204,100,0.12)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)' }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800' }}>Hoy</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   onPress={nextMonth}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+                  <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'›'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Day labels */}
-            <View style={{ flexDirection: 'row', marginBottom: 6, justifyContent: 'space-between' }}>
-              {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                <Text key={d} style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', width: '14.28%', textAlign: 'center' }}>
+            {/* Day-of-week labels */}
+            <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+              {['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'].map(d => (
+                <Text key={d} style={{ color: '#2D4A30', fontSize: 10, fontWeight: '800', width: '14.28%', textAlign: 'center', letterSpacing: 0.5 }}>
                   {d}
                 </Text>
               ))}
@@ -232,15 +236,16 @@ export default function CalendarScreen() {
             {/* Day grid */}
             <Animated.View style={{ flexDirection: 'row', flexWrap: 'wrap', opacity: fadeAnim, transform: [{ translateX: slideAnim }] }}>
               {Array.from({ length: mondayOffset }).map((_, i) => (
-                <View key={`e-${i}`} style={{ width: '14.28%', height: 60 }} />
+                <View key={`e-${i}`} style={{ width: '14.28%', height: 54 }} />
               ))}
               {days.map(day => {
                 const isSelected = selected.getTime() === day.getTime()
                 const isToday = today.getTime() === day.getTime()
                 const dayKey = format(day, 'yyyy-MM-dd')
                 const dayData = tasksByDate[dayKey]
-                const taskCount = dayData?.count ?? 0
-                const indicatorColor = getIndicatorColor(dayKey)
+                const accentColor = getDayAccent(dayKey)
+                const hasTasks = dayData && (dayData.pending + dayData.done) > 0
+                const allComplete = hasTasks && dayData!.pending === 0
 
                 return (
                   <TouchableOpacity
@@ -248,43 +253,34 @@ export default function CalendarScreen() {
                     onPress={() => {
                       void Haptics.selectionAsync()
                       setSelected(day)
-                      if (day.getMonth() !== displayMonth.getMonth() || day.getFullYear() !== displayMonth.getFullYear()) {
-                        setDisplayMonth(new Date(day.getFullYear(), day.getMonth(), 1))
-                      }
                     }}
-                    style={{
-                      width: '14.28%', height: 60, alignItems: 'center', justifyContent: 'center',
-                      borderRadius: 10, marginBottom: 2,
-                    }}
+                    style={{ width: '14.28%', height: 54, alignItems: 'center', paddingTop: 6 }}
                   >
                     {isSelected ? (
                       <LinearGradient
-                        colors={['#3DAA50', '#52CC64']}
-                        style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}
+                        colors={isToday ? ['#52CC64', '#3DAA50'] : ['#1A3D20', '#0F2214']}
+                        style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: isToday ? 0 : 1, borderColor: '#52CC64' }}
                       >
-                        <Text style={{ color: '#080E09', fontSize: 13, fontWeight: '900' }}>{day.getDate()}</Text>
+                        <Text style={{ color: isToday ? '#080E09' : '#52CC64', fontSize: 15, fontWeight: '900' }}>{day.getDate()}</Text>
                       </LinearGradient>
                     ) : (
                       <View style={{
-                        width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+                        width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
                         borderWidth: isToday ? 1.5 : 0, borderColor: '#52CC64',
                         backgroundColor: isToday ? 'rgba(82,204,100,0.08)' : 'transparent',
                       }}>
-                        <Text style={{ color: isToday ? '#52CC64' : '#B8D4BC', fontSize: 13, fontWeight: isToday ? '700' : '400' }}>
+                        <Text style={{ color: isToday ? '#52CC64' : day < today ? '#3A5040' : '#B8D4BC', fontSize: 15, fontWeight: isToday ? '800' : '400' }}>
                           {day.getDate()}
                         </Text>
                       </View>
                     )}
-                    {taskCount > 0 && (
-                      <View style={{ marginTop: 1, alignItems: 'center' }}>
-                        {taskCount > 3 ? (
-                          <Text style={{ color: indicatorColor, fontSize: 9, fontWeight: '800', lineHeight: 10 }}>{taskCount}</Text>
+                    {/* Dot indicator */}
+                    {hasTasks && (
+                      <View style={{ marginTop: 2 }}>
+                        {allComplete ? (
+                          <Text style={{ fontSize: 7, lineHeight: 8 }}>✓</Text>
                         ) : (
-                          <View style={{ flexDirection: 'row', gap: 2 }}>
-                            {[...Array(taskCount)].map((_, i) => (
-                              <View key={i} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: indicatorColor }} />
-                            ))}
-                          </View>
+                          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: accentColor }} />
                         )}
                       </View>
                     )}
@@ -295,7 +291,7 @@ export default function CalendarScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* Task list */}
+        {/* ── Task list ────────────────────────────────────── */}
         {loading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <ActivityIndicator color="#52CC64" size="large" />
@@ -303,61 +299,124 @@ export default function CalendarScreen() {
         ) : (
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
           >
+            {/* Selected day header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '700', textTransform: 'capitalize' }}>
-                {format(selected, "EEEE d 'de' MMMM", { locale: es })}
-              </Text>
-              {selectedTasks.length > 0 && selectedTasks.every(t => t.completed) && (
-                <LinearGradient
-                  colors={['rgba(82,204,100,0.15)', 'rgba(82,204,100,0.05)']}
-                  style={{ borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}
-                >
-                  <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700' }}>Todo listo ✓</Text>
-                </LinearGradient>
+              <View>
+                <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', textTransform: 'capitalize' }}>
+                  {format(selected, "EEEE", { locale: es })}
+                </Text>
+                <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '600', marginTop: 1 }}>
+                  {format(selected, "d 'de' MMMM, yyyy", { locale: es })}
+                </Text>
+              </View>
+              {selectedTasks.length > 0 && (
+                allDone ? (
+                  <LinearGradient
+                    colors={['rgba(82,204,100,0.18)', 'rgba(82,204,100,0.06)']}
+                    style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(82,204,100,0.3)', flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 14 }}>🎉</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Todo listo</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#1C2E1E', alignItems: 'center' }}>
+                    <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', lineHeight: 20 }}>{pendingSelected.length}</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700' }}>pendiente{pendingSelected.length !== 1 ? 's' : ''}</Text>
+                  </View>
+                )
               )}
             </View>
 
             {selectedTasks.length === 0 ? (
               <LinearGradient
-                colors={['#131A10', '#0C1009']}
-                style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', paddingVertical: 48, alignItems: 'center' }}
+                colors={['#0D1A10', '#080E09']}
+                style={{ borderRadius: 22, borderWidth: 1, borderColor: '#1A2E1A', paddingVertical: 52, alignItems: 'center', gap: 10 }}
               >
-                <Text style={{ fontSize: 36, marginBottom: 10 }}>🌤️</Text>
-                <Text style={{ color: '#728C74', fontSize: 14 }}>Sin tareas este dia</Text>
+                <Text style={{ fontSize: 40 }}>🌤️</Text>
+                <Text style={{ color: '#4A7A50', fontSize: 16, fontWeight: '700' }}>Dia libre</Text>
+                <Text style={{ color: '#2D4A30', fontSize: 13, textAlign: 'center', lineHeight: 19 }}>
+                  Sin tareas programadas{'\n'}para este dia
+                </Text>
               </LinearGradient>
             ) : (
-              <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-                {selectedTasks.map((task, i) => (
-                  <View key={task.id} style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#182018',
-                    opacity: task.completed ? 0.35 : 1,
-                  }}>
-                    {/* Left accent bar */}
-                    <View style={{ width: 3, alignSelf: 'stretch', backgroundColor: TYPE_COLOR[task.type] }} />
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
-                          {TYPE_LABEL[task.type] ?? task.type}
-                        </Text>
-                        <Text style={{ color: '#728C74', fontSize: 11, marginTop: 2 }}>
-                          {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {plantNames[task.plantId] ?? '...'}
-                        </Text>
-                      </View>
-                      {!task.completed && (
-                        <TouchableOpacity
-                          onPress={() => completeTask(task.id)}
-                          style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7, marginLeft: 10 }}
-                        >
-                          <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+              <View style={{ gap: 8 }}>
+                {/* Pending tasks */}
+                {pendingSelected.length > 0 && (
+                  <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
+                    {pendingSelected.map((task, i) => {
+                      const meta = plantMeta[task.plantId]
+                      const isFlora = !!(meta?.floraStartDate)
+                      const accentColor = TYPE_COLOR[task.type] ?? '#728C74'
+                      const phaseColor = isFlora ? '#F59E0B' : '#52CC64'
+                      return (
+                        <View key={task.id} style={{ flexDirection: 'row', alignItems: 'stretch', borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#182018' }}>
+                          {/* Left accent */}
+                          <View style={{ width: 3, backgroundColor: accentColor }} />
+                          <View style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 14, paddingLeft: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                            {/* Icon */}
+                            <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: `${accentColor}18`, borderWidth: 1, borderColor: `${accentColor}30`, alignItems: 'center', justifyContent: 'center' }}>
+                              <Text style={{ fontSize: 20 }}>{TYPE_ICON[task.type] ?? '📋'}</Text>
+                            </View>
+                            {/* Text */}
+                            <View style={{ flex: 1, gap: 3 }}>
+                              <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '800', lineHeight: 18 }}>
+                                {TYPE_LABEL[task.type] ?? task.type}
+                              </Text>
+                              <TouchableOpacity onPress={() => router.push(`/plants/${task.plantId}`)} activeOpacity={0.7}>
+                                <Text style={{ color: phaseColor, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
+                                  {meta?.name ?? '...'}
+                                </Text>
+                              </TouchableOpacity>
+                              <Text style={{ color: '#3A5040', fontSize: 12 }}>
+                                {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`}
+                                {task.stage ? ` · ${task.stage}` : ''}
+                              </Text>
+                            </View>
+                            {/* CTA */}
+                            <TouchableOpacity onPress={() => completeTask(task.id)} activeOpacity={0.85}>
+                              <LinearGradient
+                                colors={['rgba(82,204,100,0.18)', 'rgba(82,204,100,0.08)']}
+                                style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9, borderWidth: 1, borderColor: 'rgba(82,204,100,0.3)', alignItems: 'center' }}
+                              >
+                                <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>Hecho ✓</Text>
+                              </LinearGradient>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      )
+                    })}
                   </View>
-                ))}
+                )}
+
+                {/* Completed tasks */}
+                {doneSelected.length > 0 && (
+                  <View style={{ backgroundColor: '#0A0F0A', borderRadius: 18, borderWidth: 1, borderColor: '#141E14', overflow: 'hidden' }}>
+                    <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#141E14', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ width: 3, height: 12, borderRadius: 1.5, backgroundColor: '#52CC64', opacity: 0.4 }} />
+                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
+                        Completadas ({doneSelected.length})
+                      </Text>
+                    </View>
+                    {doneSelected.map((task, i) => {
+                      const meta = plantMeta[task.plantId]
+                      return (
+                        <View key={task.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 11, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#141E14', opacity: 0.4 }}>
+                          <Text style={{ fontSize: 18 }}>{TYPE_ICON[task.type] ?? '📋'}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#4A6A50', fontSize: 14, fontWeight: '700', textDecorationLine: 'line-through' }}>
+                              {TYPE_LABEL[task.type] ?? task.type}
+                            </Text>
+                            <Text style={{ color: '#2D4A30', fontSize: 12, marginTop: 1 }}>{meta?.name ?? '...'}</Text>
+                          </View>
+                          <Text style={{ color: '#2A5030', fontSize: 18 }}>✓</Text>
+                        </View>
+                      )
+                    })}
+                  </View>
+                )}
               </View>
             )}
           </ScrollView>
@@ -377,10 +436,7 @@ function rowToTask(row: Record<string, unknown>): ScheduledTask {
     week: row.week as number,
     stage: (row.stage as ScheduledTask['stage']) ?? 'rooting',
     products: [],
-    ecMin: undefined,
-    ecMax: undefined,
-    phMin: undefined,
-    phMax: undefined,
+    ecMin: undefined, ecMax: undefined, phMin: undefined, phMax: undefined,
     completed: (row.completed as boolean) ?? false,
   }
 }
