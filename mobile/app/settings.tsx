@@ -7,8 +7,9 @@ import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/context/ThemeContext'
-import { scheduleDailyReminder } from '@/lib/notifications'
+import { scheduleDailyReminder, schedulePlantTaskNotification } from '@/lib/notifications'
 import * as Notifications from 'expo-notifications'
+import { loadTasksFromSupabase, loadPlantsFromSupabase } from '@/lib/sync'
 
 export default function SettingsScreen() {
   const { user } = useAuth()
@@ -105,6 +106,23 @@ export default function SettingsScreen() {
     await supabase.from('profiles').update({ notifications_enabled: value }).eq('id', user.id)
     if (value) {
       await scheduleDailyReminder(notificationHour, notificationMinute)
+      // Re-programar tareas pendientes de los proximos 7 dias
+      const [plants, tasks] = await Promise.all([
+        loadPlantsFromSupabase(user.id),
+        loadTasksFromSupabase(user.id),
+      ])
+      const plantMap = new Map(plants.map(p => [p.id, p]))
+      const now = new Date()
+      const horizon = new Date(now)
+      horizon.setDate(horizon.getDate() + 7)
+      for (const task of tasks) {
+        if (task.completed) continue
+        const d = task.scheduledDate instanceof Date ? task.scheduledDate : new Date(task.scheduledDate)
+        if (d <= now || d > horizon) continue
+        const plant = plantMap.get(task.plantId)
+        if (!plant) continue
+        void schedulePlantTaskNotification(task.plantId, plant.name, task.type, d)
+      }
     } else {
       await Notifications.cancelAllScheduledNotificationsAsync()
     }
@@ -238,7 +256,7 @@ export default function SettingsScreen() {
               {/* Time picker */}
               {notifications && (
                 <View style={{ padding: 16 }}>
-                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 16 }}>
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 16 }}>
                     Hora del recordatorio
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
@@ -316,7 +334,7 @@ export default function SettingsScreen() {
 
 const sectionLabel = {
   color: '#728C74' as const,
-  fontSize: 11,
+  fontSize: 13,
   fontWeight: '700' as const,
   letterSpacing: 1.5,
   textTransform: 'uppercase' as const,
