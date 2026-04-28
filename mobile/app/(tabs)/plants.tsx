@@ -153,7 +153,7 @@ export default function PlantsScreen() {
             <>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: '#52CC64' }} />
-                <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
                   Activas ({activePlants.length})
                 </Text>
               </View>
@@ -173,7 +173,7 @@ export default function PlantsScreen() {
           <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: '#728C74' }} />
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
                 Historial ({filteredHistory.length})
               </Text>
             </View>
@@ -288,7 +288,7 @@ export default function PlantsScreen() {
                 <FormField label="Macetas">
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
+                      <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
                       <Stepper
                         value={parseInt(formData.potCount) || 1}
                         min={1} max={20} step={1}
@@ -297,7 +297,7 @@ export default function PlantsScreen() {
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Litros por maceta</Text>
+                      <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>Litros por maceta</Text>
                       <Stepper
                         value={parseInt(formData.potVolumeLiters) || 11}
                         min={1} max={200} step={1}
@@ -409,7 +409,7 @@ function ActivePlantCard({ plant, pendingToday }: { plant: Plant; pendingToday: 
 
           {/* Bottom stats bar */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: isFlora ? '#2D1800' : '#142214', gap: 8, flexWrap: 'wrap' }}>
-            <Text style={{ color: isFlora ? '#5A3800' : '#2A5040', fontSize: 11 }}>
+            <Text style={{ color: isFlora ? '#5A3800' : '#2A5040', fontSize: 13 }}>
               📅 {format(plant.startDate, 'd MMM yyyy', { locale: es })}
             </Text>
 
@@ -464,22 +464,22 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
 
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <Text style={{ color: '#B8B8B8', fontSize: 15, fontWeight: '800' }} numberOfLines={1}>{plant.name}</Text>
+              <Text style={{ color: '#B8B8B8', fontSize: 17, fontWeight: '800' }} numberOfLines={1}>{plant.name}</Text>
               <View style={{ backgroundColor: isHarvested ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.1)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 1 }}>
                 <Text style={{ color: accentColor, fontSize: 9, fontWeight: '900' }}>
                   {isHarvested ? 'COSECHADA' : 'DESCARTADA'}
                 </Text>
               </View>
             </View>
-            <Text style={{ color: '#555', fontSize: 11 }} numberOfLines={1}>{plant.genetics}</Text>
+            <Text style={{ color: '#555', fontSize: 13 }} numberOfLines={1}>{plant.genetics}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
-              <Text style={{ color: '#3A3A3A', fontSize: 10 }}>
+              <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
                 📅 {format(plant.startDate, 'd MMM yy', { locale: es })}
               </Text>
-              <Text style={{ color: '#3A3A3A', fontSize: 10 }}>
+              <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
                 {totalDays}d cultivada
               </Text>
-              <Text style={{ color: '#3A3A3A', fontSize: 10 }}>
+              <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
                 {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
               </Text>
             </View>
@@ -521,7 +521,7 @@ function Stepper({ value, min, max, step, onChange, unit }: { value: number; min
 function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <View>
-      <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+      <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
         {label}{required ? ' *' : ''}
       </Text>
       {children}

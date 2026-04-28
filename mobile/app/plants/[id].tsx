@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -243,7 +244,7 @@ export default function PlantDetailScreen() {
               onPress={() => router.back()}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '700' }}>←</Text>
+              <BackIcon size={20} color={phaseAccent} />
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <View style={{
@@ -286,8 +287,8 @@ export default function PlantDetailScreen() {
           {/* Health bar */}
           <View style={{ marginTop: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
-              <Text style={{ color: healthColor, fontSize: 10, fontWeight: '800' }}>{health}%</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: healthColor, fontSize: 12, fontWeight: '800' }}>{health}%</Text>
             </View>
             <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
               <View style={{ height: '100%', borderRadius: 2, backgroundColor: healthColor, width: `${health}%` }} />
@@ -320,17 +321,17 @@ export default function PlantDetailScreen() {
                     <View style={{ width: 3, alignSelf: 'stretch', backgroundColor: TYPE_COLOR[task.type] }} />
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 14 }}>
+                        <Text style={{ color: '#E4F2E7', fontWeight: '700', fontSize: 16 }}>
                           {TYPE_LABEL[task.type]}
                         </Text>
-                        <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>
+                        <Text style={{ color: '#728C74', fontSize: 13, marginTop: 2 }}>
                           {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`} · {task.stage}
                         </Text>
                         {task.products?.length > 0 && (
                           <View style={{ flexDirection: 'row', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
                             {task.products.slice(0, 3).map((p: {name: string}, idx: number) => (
                               <View key={idx} style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                                <Text style={{ color: '#4A7A54', fontSize: 10, fontWeight: '600' }}>{p.name}</Text>
+                                <Text style={{ color: '#4A7A54', fontSize: 12, fontWeight: '600' }}>{p.name}</Text>
                               </View>
                             ))}
                             {task.products.length > 3 && (
@@ -448,7 +449,7 @@ export default function PlantDetailScreen() {
                       }}>
                         Semana {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
                       </Text>
-                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 2 }}>{nutritionTask.stage}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>{nutritionTask.stage}</Text>
                     </View>
                   </View>
                   {nutritionTask.ecMin != null && (
@@ -510,12 +511,12 @@ export default function PlantDetailScreen() {
                             <Text style={{ color: lc.text, fontSize: 9, fontWeight: '800' }}>{p.line}</Text>
                           </View>
                         )}
-                        <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                        <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{p.name}</Text>
                         <View style={{ alignItems: 'flex-end' }}>
-                          <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '900' }}>
+                          <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900' }}>
                             {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
                           </Text>
-                          <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
+                          <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
                             {isFixed ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
                           </Text>
                         </View>
@@ -525,7 +526,7 @@ export default function PlantDetailScreen() {
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 16 }}>
                     <Text style={{ fontSize: 18 }}>💧</Text>
-                    <Text style={{ color: '#728C74', fontSize: 13 }}>Solo agua - semana de limpieza</Text>
+                    <Text style={{ color: '#728C74', fontSize: 15 }}>Solo agua - semana de limpieza</Text>
                   </View>
                 )}
 
@@ -544,12 +545,12 @@ export default function PlantDetailScreen() {
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>
                         <Text style={{ color: '#728C74', fontSize: 9, fontWeight: '800' }}>PROPIO</Text>
                       </View>
-                      <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                      <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{p.name}</Text>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '900' }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 15, fontWeight: '900' }}>
                           {isFixed ? `${totalMax}` : `${totalMin}–${totalMax}`} {p.unit}
                         </Text>
-                        <Text style={{ color: '#3A5040', fontSize: 10, marginTop: 1 }}>
+                        <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
                           {isFixed ? `${p.maxDose}` : `${p.minDose}–${p.maxDose}`} {p.unit}/L
                         </Text>
                       </View>
@@ -598,7 +599,7 @@ export default function PlantDetailScreen() {
                     style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, alignItems: 'center' }}
                   >
                     <Text style={{ fontSize: 22, marginBottom: 6 }}>{action.icon}</Text>
-                    <Text style={{ color: '#B8D4BC', fontSize: 11, fontWeight: '700' }}>{action.label}</Text>
+                    <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>{action.label}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               ))}
@@ -607,7 +608,7 @@ export default function PlantDetailScreen() {
 
           {/* Zona de peligro */}
           <View style={{ borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 }}>
-            <Text style={{ color: '#3A3A3A', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+            <Text style={{ color: '#3A3A3A', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>
               Zona de peligro
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -633,7 +634,7 @@ export default function PlantDetailScreen() {
                   >
                     <Text style={{ fontSize: 18, marginBottom: 3 }}>🗑️</Text>
                     <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 12 }}>Descartar</Text>
-                    <Text style={{ color: 'rgba(239,68,68,0.4)', fontSize: 9, marginTop: 2 }}>Murio / no sirve</Text>
+                    <Text style={{ color: 'rgba(239,68,68,0.4)', fontSize: 11, marginTop: 2 }}>Murio / no sirve</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               )}
@@ -650,7 +651,7 @@ export default function PlantDetailScreen() {
                 >
                   <Text style={{ fontSize: 18, marginBottom: 3 }}>⚙️</Text>
                   <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 12 }}>Editar</Text>
-                  <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 2 }}>Nombre, macetas...</Text>
+                  <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 2 }}>Nombre, macetas...</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -772,9 +773,9 @@ export default function PlantDetailScreen() {
 
 const sectionLabel = {
   color: '#728C74' as const,
-  fontSize: 11,
+  fontSize: 13,
   fontWeight: '700' as const,
-  letterSpacing: 1.5,
+  letterSpacing: 1.2,
   textTransform: 'uppercase' as const,
   marginBottom: 8,
 }

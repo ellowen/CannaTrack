@@ -13,15 +13,29 @@ import { completeTaskInSupabase } from '@/lib/sync'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { getLevelInfo } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
+import {
+  LogoMark, GearIcon, ProgressRing,
+  DropIcon, FlaskIcon, EyeIcon, ScissorsIcon, SprayIcon,
+} from '@/components/icons/AppIcons'
 import type { ScheduledTask, Plant } from '@shared/types/plant'
 
-const TYPE_ICON: Record<string, string> = {
-  nutrition: '🍃', irrigation: '💧',
-  observation: '🔍', foliar: '🌫️', harvest: '✂️',
+// ─── Type colors & labels ─────────────────────────────────────────────────────
+const TYPE_COLOR: Record<string, string> = {
+  nutrition: '#22C55E', irrigation: '#3B82F6',
+  observation: '#F59E0B', foliar: '#A855F7', harvest: '#EF4444',
 }
 const TYPE_LABEL: Record<string, string> = {
   nutrition: 'Nutricion', irrigation: 'Riego',
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
+}
+
+function TaskTypeIcon({ type, size = 22 }: { type: string; size?: number }) {
+  if (type === 'irrigation')  return <DropIcon size={size} color="#3B82F6" />
+  if (type === 'nutrition')   return <FlaskIcon size={size} color="#22C55E" />
+  if (type === 'observation') return <EyeIcon size={size} color="#F59E0B" />
+  if (type === 'foliar')      return <SprayIcon size={size} color="#A855F7" />
+  if (type === 'harvest')     return <ScissorsIcon size={size} color="#EF4444" />
+  return <FlaskIcon size={size} color="#52CC64" />
 }
 
 type ProfileData = {
@@ -100,24 +114,34 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
+        showsVerticalScrollIndicator={false}
       >
 
-        {/* ══ HERO HEADER ══════════════════════════════════════════ */}
+        {/* ══ HEADER COMPACTO ══════════════════════════════════════ */}
         <LinearGradient
           colors={['#0F1F10', '#080E09']}
-          style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 }}
+          style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ color: '#3D6642', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
-              {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Logo + nombre */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <LogoMark size={42} primaryColor="#52CC64" secondaryColor="#3DAA50" />
+              <View>
+                <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 }}>CannaTrack</Text>
+                <Text style={{ color: '#3D6642', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
+                  {format(new Date(), "EEE d 'de' MMM", { locale: es })}
+                </Text>
+              </View>
+            </View>
+
+            {/* Streak + gear */}
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               {profile.streak > 0 && (
                 <LinearGradient
                   colors={profile.streak >= 7 ? ['#3D1E00', '#1F0E00'] : ['#1A2E1C', '#0F1A10']}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: profile.streak >= 7 ? '#6B3800' : '#2A4A2E' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: profile.streak >= 7 ? '#6B3800' : '#2A4A2E' }}
                 >
                   <Text style={{ fontSize: 14 }}>🔥</Text>
                   <Text style={{ color: profile.streak >= 7 ? '#F59E0B' : '#52CC64', fontSize: 14, fontWeight: '900' }}>{profile.streak}d</Text>
@@ -125,422 +149,396 @@ export default function HomeScreen() {
               )}
               <TouchableOpacity
                 onPress={() => router.push('/settings')}
-                style={{ backgroundColor: '#1A2E1C', borderRadius: 20, padding: 8, borderWidth: 1, borderColor: '#2A4A2E' }}
+                style={{ width: 38, height: 38, backgroundColor: '#1A2E1C', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A4A2E' }}
               >
-                <Text style={{ fontSize: 14 }}>⚙️</Text>
+                <GearIcon size={19} color="#3D6642" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>
-            {greeting},
-          </Text>
-          <Text style={{ color: '#52CC64', fontSize: 28, fontWeight: '900', letterSpacing: -0.5, marginBottom: 0 }}>
-            {profile.username || 'Cultivador'} 🌿
-          </Text>
-        </LinearGradient>
+          {/* Greeting */}
+          <View style={{ marginTop: 18 }}>
+            <Text style={{ color: '#728C74', fontSize: 14, fontWeight: '600' }}>{greeting}</Text>
+            <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5, marginTop: 2 }}>
+              {profile.username || 'Cultivador'}
+            </Text>
+          </View>
 
-        {/* ══ TARJETA XP / NIVEL ═══════════════════════════════════ */}
-        <View style={{ marginHorizontal: 16, marginBottom: 20 }}>
-          <TouchableOpacity onPress={() => router.push('/achievements')} activeOpacity={0.9}>
-            <LinearGradient
-              colors={['#1A0D2E', '#0E0819', '#0F1A10']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2D1F4A' }}
-            >
-              {/* Nivel */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: '#2D1F4A', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#4A2E7A' }}>
-                  <Text style={{ fontSize: 28 }}>{levelInfo.current.emoji}</Text>
-                </View>
+          {/* XP strip - compact, inline */}
+          {levelInfo.next && (
+            <TouchableOpacity onPress={() => router.push('/achievements')} activeOpacity={0.8}>
+              <View style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(139,92,246,0.08)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139,92,246,0.18)', paddingHorizontal: 14, paddingVertical: 10 }}>
+                <Text style={{ fontSize: 16 }}>{levelInfo.current.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#C4A8F0', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nivel actual</Text>
-                  <Text style={{ color: '#F0E8FF', fontSize: 20, fontWeight: '900', marginTop: 2 }}>{levelInfo.current.name}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#A78BFA', fontSize: 28, fontWeight: '900', lineHeight: 30 }}>{profile.xp}</Text>
-                  <Text style={{ color: '#6B46C1', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>XP TOTAL</Text>
-                </View>
-              </View>
-
-              {/* Barra XP */}
-              {levelInfo.next && (
-                <View style={{ marginBottom: 16 }}>
-                  <View style={{ height: 8, backgroundColor: '#1C1030', borderRadius: 4, overflow: 'hidden' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{levelInfo.current.name}</Text>
+                    <Text style={{ color: '#6B46C1', fontSize: 12, fontWeight: '700' }}>{xpToNext} XP para {levelInfo.next.name}</Text>
+                  </View>
+                  <View style={{ height: 4, backgroundColor: 'rgba(139,92,246,0.15)', borderRadius: 2, overflow: 'hidden' }}>
                     <LinearGradient
                       colors={['#7C3AED', '#A855F7', '#C084FC']}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                      style={{ height: '100%', borderRadius: 4, width: `${Math.round(levelInfo.progressToNext * 100)}%` }}
+                      style={{ height: '100%', borderRadius: 2, width: `${Math.round(levelInfo.progressToNext * 100)}%` }}
                     />
                   </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                    <Text style={{ color: '#6B46C1', fontSize: 10 }}>{levelInfo.current.name}</Text>
-                    <Text style={{ color: '#6B46C1', fontSize: 10 }}>{xpToNext} XP para {levelInfo.next.name}</Text>
-                  </View>
+                </View>
+                <Text style={{ color: '#4A3870', fontSize: 12 }}>›</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </LinearGradient>
+
+        <View style={{ paddingHorizontal: 16, gap: 16 }}>
+
+          {/* ══ ALERTA VENCIDAS ══════════════════════════════════════ */}
+          {overdueTasks.length > 0 && (
+            <LinearGradient
+              colors={['#2A0808', '#1A0404']}
+              style={{ borderRadius: 18, borderWidth: 1, borderColor: '#4A1515', overflow: 'hidden' }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 18 }}>⚠️</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#EF4444', fontSize: 15, fontWeight: '900' }}>
+                    {overdueTasks.length} tarea{overdueTasks.length > 1 ? 's' : ''} vencida{overdueTasks.length > 1 ? 's' : ''}
+                  </Text>
+                  <Text style={{ color: '#7A2A2A', fontSize: 13, marginTop: 2 }}>
+                    {overdueTasks.map(t => plants.find(p => p.id === t.plantId)?.name).filter(Boolean).join(', ')}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => openSheet(overdueTasks[0])}
+                  style={{ borderRadius: 12, overflow: 'hidden' }}
+                >
+                  <LinearGradient colors={['#C0392B', '#922B21']} style={{ paddingHorizontal: 14, paddingVertical: 9 }}>
+                    <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>Resolver</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              {overdueTasks.length > 1 && (
+                <View style={{ paddingHorizontal: 16, paddingBottom: 12, gap: 6 }}>
+                  {overdueTasks.slice(1).map(task => {
+                    const plant = plants.find(p => p.id === task.plantId)
+                    return (
+                      <TouchableOpacity key={task.id} onPress={() => openSheet(task)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}>
+                        <TaskTypeIcon type={task.type} size={16} />
+                        <Text style={{ color: '#C47070', fontSize: 13, flex: 1, fontWeight: '600' }}>
+                          {TYPE_LABEL[task.type]} — {plant?.name ?? '—'}
+                        </Text>
+                        <Text style={{ color: '#7A2A2A', fontSize: 12 }}>Marcar hecho</Text>
+                      </TouchableOpacity>
+                    )
+                  })}
                 </View>
               )}
-
-              {/* Stats */}
-              <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#2D1F4A', paddingTop: 14, gap: 0 }}>
-                {[
-                  { emoji: '🔥', value: `${profile.streak}d`, label: 'Racha', sub: `Record ${profile.bestStreak}d` },
-                  { emoji: '🌱', value: String(plants.length), label: 'Activas', sub: 'plantas' },
-                  { emoji: '✂️', value: String(profile.harvestedCount), label: 'Cosechas', sub: 'historico' },
-                ].map((s, i) => (
-                  <View key={s.label} style={{
-                    flex: 1, alignItems: 'center',
-                    borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: '#2D1F4A',
-                  }}>
-                    <Text style={{ fontSize: 16, marginBottom: 3 }}>{s.emoji}</Text>
-                    <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900' }}>{s.value}</Text>
-                    <Text style={{ color: '#8B6FBE', fontSize: 10, fontWeight: '700' }}>{s.label}</Text>
-                    <Text style={{ color: '#4A3870', fontSize: 9, marginTop: 1 }}>{s.sub}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <Text style={{ color: '#4A3870', fontSize: 10, textAlign: 'center', marginTop: 12 }}>
-                Toca para ver todos los logros ›
-              </Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </View>
+          )}
 
-        {/* ══ AGENDA HOY ═══════════════════════════════════════════ */}
-        <View style={{ marginHorizontal: 16, marginBottom: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-            <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', marginHorizontal: 10 }}>
-              Agenda de hoy
-            </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-          </View>
-
-          {plants.length === 0 && (
-            <TouchableOpacity onPress={() => router.push('/onboarding')} activeOpacity={0.85}>
+          {/* ══ HERO: QUE HACER HOY ══════════════════════════════════ */}
+          {plants.length === 0 ? (
+            /* Estado vacio: sin plantas */
+            <TouchableOpacity onPress={() => router.push('/(tabs)/plants')} activeOpacity={0.85}>
               <LinearGradient
                 colors={['#0D2010', '#080E09']}
-                style={{ borderRadius: 22, padding: 36, alignItems: 'center', borderWidth: 2, borderColor: '#1A4A20', borderStyle: 'dashed' }}
+                style={{ borderRadius: 24, padding: 40, alignItems: 'center', borderWidth: 1.5, borderColor: '#1A4A20', borderStyle: 'dashed' }}
               >
-                <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
-                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 18 }}>Empeza a cultivar</Text>
-                <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center' }}>Crea tu primera planta</Text>
-                <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ marginTop: 16, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 }}>
-                  <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 14 }}>Comenzar →</Text>
+                <LogoMark size={72} primaryColor="#52CC64" secondaryColor="#3DAA50" />
+                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 20, marginTop: 18 }}>Empeza a cultivar</Text>
+                <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 8, textAlign: 'center', lineHeight: 22 }}>
+                  Crea tu primera planta{'\n'}para empezar a seguirla
+                </Text>
+                <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ marginTop: 22, borderRadius: 16, paddingHorizontal: 28, paddingVertical: 14 }}>
+                  <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>Nueva planta →</Text>
                 </LinearGradient>
               </LinearGradient>
             </TouchableOpacity>
-          )}
-
-          {/* Vencidas */}
-          {overdueTasks.length > 0 && (
-            <View style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 12, borderWidth: 1, borderColor: '#4A1515' }}>
-              <LinearGradient colors={['#1F0808', '#120404']} style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <View style={{ backgroundColor: '#EF4444', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>
-                      ⚠️ {overdueTasks.length} VENCIDA{overdueTasks.length > 1 ? 'S' : ''}
-                    </Text>
-                  </View>
+          ) : tasks.length === 0 && overdueTasks.length === 0 ? (
+            /* Sin tareas hoy */
+            <LinearGradient
+              colors={['#0D2010', '#080E09']}
+              style={{ borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#1A3020' }}
+            >
+              <View style={{ width: 80, height: 80, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                <ProgressRing done={1} total={1} size={80} color="#52CC64" />
+                <View style={{ position: 'absolute' }}>
+                  <Text style={{ fontSize: 28 }}>🌿</Text>
                 </View>
-              </LinearGradient>
-              {overdueTasks.map((task, i) => {
-                const plant = plants.find(p => p.id === task.plantId)
-                return (
-                  <View key={task.id} style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    backgroundColor: '#0E0404', paddingHorizontal: 16, paddingVertical: 14,
-                    borderTopWidth: i === 0 ? 1 : 1, borderTopColor: '#2A0808',
-                  }}>
-                    <Text style={{ fontSize: 22, marginRight: 12 }}>{TYPE_ICON[task.type]}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#F5C4C4', fontSize: 14, fontWeight: '800' }}>
-                        {TYPE_LABEL[task.type]} — {plant?.name ?? '—'}
-                      </Text>
-                      <Text style={{ color: '#7A2A2A', fontSize: 11, marginTop: 2 }}>
-                        Vencio el {format(new Date(task.scheduledDate), "d 'de' MMM", { locale: es })}
-                        {task.week ? ` · S${task.week}` : ''}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => openSheet(task)}
-                      style={{ borderRadius: 12, overflow: 'hidden' }}
-                    >
-                      <LinearGradient colors={['#C0392B', '#922B21']} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>
-                        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 12 }}>Hecho</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
-                )
-              })}
-            </View>
-          )}
-
-          {/* Tareas de hoy */}
-          {tasks.length > 0 && (
-            <View style={{ borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: allDone ? '#2A5A30' : '#1E3020' }}>
-              {/* Header con progreso */}
+              </View>
+              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>Dia libre!</Text>
+              <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 6 }}>Sin tareas programadas hoy</Text>
+            </LinearGradient>
+          ) : allDone ? (
+            /* Todas completadas */
+            <LinearGradient
+              colors={['#0A2010', '#060E08']}
+              style={{ borderRadius: 24, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: '#1A4A20' }}
+            >
+              <View style={{ width: 90, height: 90, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                <ProgressRing done={done.length} total={tasks.length} size={90} color="#52CC64" />
+                <View style={{ position: 'absolute', alignItems: 'center' }}>
+                  <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{done.length}</Text>
+                  <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>listas</Text>
+                </View>
+              </View>
+              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>Todo al dia!</Text>
+              <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 6 }}>
+                {done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''} hoy
+              </Text>
+            </LinearGradient>
+          ) : (
+            /* Tareas pendientes — hero */
+            <View>
+              {/* Cabecera del bloque con anillo de progreso */}
               <LinearGradient
-                colors={allDone ? ['#0D2A10', '#091508'] : ['#112016', '#080E09']}
-                style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 }}
+                colors={['#0F1F10', '#080E09']}
+                style={{ borderRadius: 24, borderWidth: 1, borderColor: '#1C3020', overflow: 'hidden', marginBottom: 3 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <Text style={{ color: allDone ? '#52CC64' : '#E8F5EA', fontSize: 15, fontWeight: '900', flex: 1 }}>
-                    {allDone ? '🎉 Todo al dia!' : `⚡ ${pending.length} pendiente${pending.length > 1 ? 's' : ''} hoy`}
-                  </Text>
-                  <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#1A3D1E' }}>
-                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800' }}>{done.length}/{tasks.length}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18, gap: 18 }}>
+                  {/* Ring */}
+                  <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', width: 76, height: 76 }}>
+                    <ProgressRing done={done.length} total={tasks.length} size={76} color="#52CC64" />
+                    <View style={{ position: 'absolute', alignItems: 'center' }}>
+                      <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', lineHeight: 22 }}>{pending.length}</Text>
+                      <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>pendiente{pending.length > 1 ? 's' : ''}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={{ height: 5, backgroundColor: '#0D1A0F', borderRadius: 3, overflow: 'hidden' }}>
-                  <LinearGradient
-                    colors={['#52CC64', '#3DAA50']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={{ height: '100%', borderRadius: 3, width: `${tasks.length > 0 ? Math.round((done.length / tasks.length) * 100) : 0}%` }}
-                  />
+
+                  {/* Text */}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#E8F5EA', fontSize: 24, fontWeight: '900', lineHeight: 26 }}>
+                      Para hacer hoy
+                    </Text>
+                    <Text style={{ color: '#3D6642', fontSize: 14, marginTop: 4 }}>
+                      {done.length > 0
+                        ? `${done.length} de ${tasks.length} completada${done.length > 1 ? 's' : ''}`
+                        : `${tasks.length} tarea${tasks.length > 1 ? 's' : ''} programada${tasks.length > 1 ? 's' : ''}`
+                      }
+                    </Text>
+                    {/* Mini progress bar */}
+                    <View style={{ marginTop: 10, height: 5, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                      <LinearGradient
+                        colors={['#52CC64', '#3DAA50']}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={{ height: '100%', borderRadius: 3, width: `${tasks.length > 0 ? (done.length / tasks.length) * 100 : 0}%` }}
+                      />
+                    </View>
+                  </View>
                 </View>
               </LinearGradient>
 
-              {allDone ? (
-                <LinearGradient colors={['#091508', '#0A1A0B']} style={{ padding: 32, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 48, marginBottom: 10 }}>✅</Text>
-                  <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '900' }}>Excelente trabajo!</Text>
-                  <Text style={{ color: '#3D6642', fontSize: 12, marginTop: 4 }}>{done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''}</Text>
-                </LinearGradient>
-              ) : (
-                pending.map((task, i) => {
-                  const plant     = plants.find(p => p.id === task.plantId)
-                  const isFlora   = !!plant?.floraStartDate
-                  const phaseDay  = isFlora && plant?.floraStartDate
+              {/* Lista de tareas */}
+              <LinearGradient
+                colors={['#0C1A0D', '#080E09']}
+                style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C3020', overflow: 'hidden' }}
+              >
+                {pending.map((task, i) => {
+                  const plant      = plants.find(p => p.id === task.plantId)
+                  const isFlora    = !!plant?.floraStartDate
+                  const phaseDay   = isFlora && plant?.floraStartDate
                     ? differenceInDays(today, plant.floraStartDate) + 1
                     : plant ? differenceInDays(today, plant.startDate) + 1 : 0
-                  const typeColor = task.type === 'nutrition' ? '#22C55E' : task.type === 'irrigation' ? '#3B82F6' : task.type === 'foliar' ? '#A855F7' : '#F59E0B'
+                  const weekNum    = Math.ceil(phaseDay / 7)
+                  const typeColor  = TYPE_COLOR[task.type] ?? '#52CC64'
 
                   return (
-                    <View key={task.id} style={{
-                      backgroundColor: '#080E09',
-                      borderTopWidth: 1, borderTopColor: '#0F1A10',
-                    }}>
-                      {/* Accent bar izquierdo */}
+                    <View key={task.id} style={{ borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#142016' }}>
                       <View style={{ flexDirection: 'row' }}>
-                        <View style={{ width: 3, backgroundColor: typeColor, borderRadius: 0 }} />
-                        <View style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 14 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                            <Text style={{ fontSize: 22, marginRight: 12 }}>{TYPE_ICON[task.type]}</Text>
+                        {/* Left accent */}
+                        <View style={{ width: 4, backgroundColor: typeColor, opacity: 0.8 }} />
+
+                        <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16 }}>
+                          {/* Plant name — PROMINENTE */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                             <TouchableOpacity onPress={() => router.push(`/plants/${task.plantId}`)} style={{ flex: 1 }}>
-                              <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 15 }}>{TYPE_LABEL[task.type]}</Text>
-                              <Text style={{ color: '#4A7A50', fontSize: 12, marginTop: 2 }}>
-                                {plant?.name ?? '—'} · {isFlora ? '🌸 Flora' : '🌿 Vege'} D{phaseDay}{task.week ? ` S${task.week}` : ''}
+                              <Text style={{ color: '#E8F5EA', fontSize: 18, fontWeight: '900', letterSpacing: -0.3 }}>
+                                {plant?.name ?? '—'}
                               </Text>
-
-                              {/* Productos */}
-                              {task.products && task.products.length > 0 && (
-                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
-                                  {task.products.slice(0, 4).map((prod, pi) => (
-                                    <View key={pi} style={{ backgroundColor: '#0D1A0F', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: '#1A3020' }}>
-                                      <Text style={{ color: '#6DAA78', fontSize: 10, fontWeight: '700' }}>
-                                        {prod.name}{prod.minDose != null ? ` · ${prod.minDose}${prod.maxDose && prod.maxDose !== prod.minDose ? `-${prod.maxDose}` : ''}ml/L` : ''}
-                                      </Text>
-                                    </View>
-                                  ))}
-                                  {task.products.length > 4 && (
-                                    <View style={{ backgroundColor: '#0D1A0F', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                                      <Text style={{ color: '#3D6642', fontSize: 10 }}>+{task.products.length - 4} mas</Text>
-                                    </View>
-                                  )}
-                                </View>
-                              )}
-
-                              {/* EC / PH chips */}
-                              {(task.ecMin != null || task.phMin != null) && (
-                                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                                  {task.ecMin != null && (
-                                    <LinearGradient colors={['#0A2010', '#091508']} style={{ borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#1A4020' }}>
-                                      <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>
-                                        EC {task.ecMin}{task.ecMax && task.ecMax !== task.ecMin ? `-${task.ecMax}` : ''}
-                                      </Text>
-                                    </LinearGradient>
-                                  )}
-                                  {task.phMin != null && (
-                                    <LinearGradient colors={['#0A1020', '#090810']} style={{ borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#1A2A50' }}>
-                                      <Text style={{ color: '#60A5FA', fontSize: 11, fontWeight: '800' }}>
-                                        PH {task.phMin}{task.phMax && task.phMax !== task.phMin ? `-${task.phMax}` : ''}
-                                      </Text>
-                                    </LinearGradient>
-                                  )}
-                                </View>
-                              )}
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => openSheet(task)} style={{ marginLeft: 10, borderRadius: 12, overflow: 'hidden' }}>
-                              <LinearGradient colors={['#1A4A20', '#0D2810']} style={{ paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#2A6A30' }}>
-                                <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 14 }}>✓</Text>
+                            {/* Accion rapida */}
+                            <TouchableOpacity onPress={() => openSheet(task)} activeOpacity={0.8} style={{ borderRadius: 12, overflow: 'hidden', marginLeft: 12 }}>
+                              <LinearGradient colors={['#1A4A20', '#0D2810']} style={{ paddingHorizontal: 18, paddingVertical: 9, borderWidth: 1, borderColor: '#2A6A30' }}>
+                                <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 15 }}>✓ Hecho</Text>
                               </LinearGradient>
                             </TouchableOpacity>
                           </View>
-                        </View>
-                      </View>
-                    </View>
-                  )
-                })
-              )}
 
-              {done.length > 0 && !allDone && (
-                <LinearGradient colors={['#060C07', '#080E09']} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#0F1A10' }}>
-                  <Text style={{ fontSize: 13 }}>✅</Text>
-                  <Text style={{ color: '#2D5A35', fontSize: 12, fontWeight: '600' }}>{done.length} completada{done.length > 1 ? 's' : ''} hoy</Text>
-                </LinearGradient>
-              )}
-            </View>
-          )}
-
-          {plants.length > 0 && tasks.length === 0 && overdueTasks.length === 0 && (
-            <LinearGradient colors={['#0D1A0F', '#080E09']} style={{ borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: '#1A3020' }}>
-              <Text style={{ fontSize: 36, marginBottom: 8 }}>🌿</Text>
-              <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '900' }}>Dia libre!</Text>
-              <Text style={{ color: '#3D6642', fontSize: 12, marginTop: 4 }}>Sin tareas para hoy</Text>
-            </LinearGradient>
-          )}
-        </View>
-
-        {/* ══ PROXIMOS 7 DIAS ══════════════════════════════════════ */}
-        {plants.length > 0 && (
-          <View style={{ marginHorizontal: 16, marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-              <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', marginHorizontal: 10 }}>
-                Proximos 7 dias
-              </Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {upcomingDays.map((day, i) => {
-                const hasTask = day.count > 0
-                const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6
-                return (
-                  <TouchableOpacity key={i} onPress={() => router.push('/(tabs)/tasks')} style={{ flex: 1 }} activeOpacity={0.8}>
-                    {hasTask ? (
-                      <LinearGradient
-                        colors={['#112016', '#090F0A']}
-                        style={{ borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#1E3A22' }}
-                      >
-                        <Text style={{ color: isWeekend ? '#52CC64' : '#4A7A50', fontSize: 9, fontWeight: '800', textTransform: 'uppercase' }}>
-                          {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
-                        </Text>
-                        <Text style={{ color: '#E8F5EA', fontSize: 15, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
-                        <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: '#52CC64', marginTop: 4 }} />
-                        <Text style={{ color: '#52CC64', fontSize: 8, fontWeight: '800', marginTop: 2 }}>{day.count}</Text>
-                      </LinearGradient>
-                    ) : (
-                      <View style={{ borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: '#0C1410', borderWidth: 1, borderColor: '#141E15' }}>
-                        <Text style={{ color: isWeekend ? '#2A5A30' : '#1E3020', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>
-                          {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
-                        </Text>
-                        <Text style={{ color: '#2A4A2E', fontSize: 15, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
-                        <View style={{ width: 5, height: 5, marginTop: 4 }} />
-                        <View style={{ height: 10, marginTop: 2 }} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* ══ MIS PLANTAS ══════════════════════════════════════════ */}
-        {plants.length > 0 && (
-          <View style={{ marginHorizontal: 16, marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-              <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', marginHorizontal: 10 }}>
-                Mis plantas
-              </Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
-            </View>
-
-            <View style={{ gap: 10 }}>
-              {plants.map((plant: Plant) => {
-                const isFlora    = !!plant.floraStartDate
-                const phaseDay   = isFlora && plant.floraStartDate
-                  ? differenceInDays(today, plant.floraStartDate) + 1
-                  : differenceInDays(today, plant.startDate) + 1
-                const weekNum    = Math.ceil(phaseDay / 7)
-                const plantPending = pending.filter(t => t.plantId === plant.id).length
-                const plantOverdue = overdueTasks.filter(t => t.plantId === plant.id).length
-
-                return (
-                  <TouchableOpacity key={plant.id} onPress={() => router.push(`/plants/${plant.id}`)} activeOpacity={0.85}>
-                    <LinearGradient
-                      colors={isFlora ? ['#1A0E00', '#0E0800', '#080A09'] : ['#0D1A0F', '#070D08', '#080A09']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={{ borderRadius: 20, borderWidth: 1, borderColor: isFlora ? '#3D2000' : '#162A18', overflow: 'hidden' }}
-                    >
-                      <View style={{ padding: 16 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                          {/* Fase badge */}
-                          <View style={{ marginRight: 14 }}>
-                            <LinearGradient
-                              colors={isFlora ? ['#3D2000', '#1F1000'] : ['#1A3D1E', '#0D2010']}
-                              style={{ width: 50, height: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isFlora ? '#6B3800' : '#2A5A2E' }}
-                            >
-                              <Text style={{ fontSize: 24 }}>{isFlora ? '🌸' : '🌿'}</Text>
-                            </LinearGradient>
+                          {/* Tipo + fase */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <TaskTypeIcon type={task.type} size={18} />
+                            <Text style={{ color: typeColor, fontSize: 15, fontWeight: '700' }}>{TYPE_LABEL[task.type]}</Text>
+                            <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2D4A30' }} />
+                            <Text style={{ color: '#4A7A50', fontSize: 13 }}>
+                              {isFlora ? 'Flora' : 'Vege'} S{weekNum} · D{phaseDay}
+                            </Text>
                           </View>
-                          {/* Info */}
-                          <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                              <View style={{ backgroundColor: isFlora ? '#3D2000' : '#1A3D1E', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 }}>
-                                  {isFlora ? 'FLORA' : 'VEGE'}
-                                </Text>
-                              </View>
-                              <View style={{ backgroundColor: '#0D1A10', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                <Text style={{ color: '#4A7A50', fontSize: 9, fontWeight: '700' }}>
-                                  {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
-                                </Text>
-                              </View>
+
+                          {/* EC / pH chips */}
+                          {(task.ecMin != null || task.phMin != null) && (
+                            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                              {task.ecMin != null && (
+                                <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}>
+                                  <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>
+                                    EC {task.ecMin}{task.ecMax && task.ecMax !== task.ecMin ? `-${task.ecMax}` : ''}
+                                  </Text>
+                                </View>
+                              )}
+                              {task.phMin != null && (
+                                <View style={{ backgroundColor: 'rgba(96,165,250,0.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(96,165,250,0.2)' }}>
+                                  <Text style={{ color: '#60A5FA', fontSize: 13, fontWeight: '800' }}>
+                                    pH {task.phMin}{task.phMax && task.phMax !== task.phMin ? `-${task.phMax}` : ''}
+                                  </Text>
+                                </View>
+                              )}
                             </View>
-                            <Text style={{ color: '#E8F5EA', fontSize: 17, fontWeight: '900' }}>{plant.name}</Text>
-                            <Text style={{ color: isFlora ? '#A06020' : '#4A7A50', fontSize: 12, marginTop: 1 }}>{plant.genetics}</Text>
-                          </View>
-                          {/* Dia/Semana */}
-                          <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 26, fontWeight: '900', lineHeight: 28 }}>D{phaseDay}</Text>
-                            <Text style={{ color: isFlora ? '#6B3800' : '#2A5A2E', fontSize: 10, fontWeight: '700' }}>S{weekNum} {isFlora ? 'FLORA' : 'VEGE'}</Text>
-                          </View>
-                        </View>
+                          )}
 
-                        {/* Footer */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: isFlora ? '#2D1800' : '#142214' }}>
-                          <Text style={{ color: isFlora ? '#5A3010' : '#2A4A2E', fontSize: 11, flex: 1 }}>
-                            📅 Desde {format(plant.startDate, "d MMM yyyy", { locale: es })} · 🪴 {plant.potCount}×{plant.potVolumeLiters}L
-                          </Text>
-                          {plantOverdue > 0 ? (
-                            <LinearGradient colors={['#3D0A0A', '#200505']} style={{ borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#6A1515' }}>
-                              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '900' }}>⚠️ {plantOverdue} vencida{plantOverdue > 1 ? 's' : ''}</Text>
-                            </LinearGradient>
-                          ) : plantPending > 0 ? (
-                            <LinearGradient colors={['#0D2A10', '#091508']} style={{ borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#1A4A1E' }}>
-                              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>⚡ {plantPending} hoy</Text>
-                            </LinearGradient>
-                          ) : (
-                            <View style={{ borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: '#0A1A0C', borderWidth: 1, borderColor: '#142214' }}>
-                              <Text style={{ color: '#2A5A30', fontSize: 11, fontWeight: '700' }}>✓ Al dia</Text>
+                          {/* Productos */}
+                          {task.products && task.products.length > 0 && (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                              {task.products.slice(0, 3).map((prod: { name: string; minDose?: number; maxDose?: number }, pi: number) => (
+                                <View key={pi} style={{ backgroundColor: '#0D1A0F', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: '#1A3020' }}>
+                                  <Text style={{ color: '#6DAA78', fontSize: 12, fontWeight: '600' }}>
+                                    {prod.name}{prod.minDose != null ? ` ${prod.minDose}${prod.maxDose && prod.maxDose !== prod.minDose ? `-${prod.maxDose}` : ''}ml/L` : ''}
+                                  </Text>
+                                </View>
+                              ))}
+                              {task.products.length > 3 && (
+                                <View style={{ backgroundColor: '#0D1A0F', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 }}>
+                                  <Text style={{ color: '#3D6642', fontSize: 12 }}>+{task.products.length - 3}</Text>
+                                </View>
+                              )}
                             </View>
                           )}
                         </View>
                       </View>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                )
-              })}
-              <TouchableOpacity onPress={() => router.push('/(tabs)/plants')} style={{ alignItems: 'center', paddingVertical: 10 }}>
-                <Text style={{ color: '#3D6642', fontSize: 12, fontWeight: '700' }}>Ver historial de plantas →</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+                    </View>
+                  )
+                })}
 
+                {/* Completadas del dia (colapsadas) */}
+                {done.length > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#0F1A10', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(82,204,100,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '900' }}>✓</Text>
+                    </View>
+                    <Text style={{ color: '#2D5A35', fontSize: 13, fontWeight: '600' }}>
+                      {done.length} completada{done.length > 1 ? 's' : ''} hoy
+                    </Text>
+                  </View>
+                )}
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* ══ MIS PLANTAS — strip horizontal ══════════════════════ */}
+          {plants.length > 0 && (
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                  Mis plantas
+                </Text>
+                <TouchableOpacity onPress={() => router.push('/(tabs)/plants')}>
+                  <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '700' }}>Ver todas →</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+                <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 4 }}>
+                  {plants.map((plant: Plant) => {
+                    const isFlora  = !!plant.floraStartDate
+                    const phaseDay = isFlora && plant.floraStartDate
+                      ? differenceInDays(today, plant.floraStartDate) + 1
+                      : differenceInDays(today, plant.startDate) + 1
+                    const weekNum  = Math.ceil(phaseDay / 7)
+                    const plantPending = pending.filter(t => t.plantId === plant.id).length
+                    const accent = isFlora ? '#F59E0B' : '#52CC64'
+
+                    return (
+                      <TouchableOpacity key={plant.id} onPress={() => router.push(`/plants/${plant.id}`)} activeOpacity={0.8}>
+                        <LinearGradient
+                          colors={isFlora ? ['#1A0E00', '#0E0800'] : ['#0D1A0F', '#070D08']}
+                          style={{ borderRadius: 18, borderWidth: 1, borderColor: isFlora ? '#3D2000' : '#162A18', padding: 14, minWidth: 130 }}
+                        >
+                          {/* Phase badge */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                            <Text style={{ fontSize: 20 }}>{isFlora ? '🌸' : '🌿'}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: accent, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>
+                                {isFlora ? 'FLORA' : 'VEGE'}
+                              </Text>
+                              <Text style={{ color: isFlora ? '#6B3800' : '#2A5A2E', fontSize: 11, fontWeight: '600' }}>
+                                S{weekNum} · D{phaseDay}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={{ color: '#E8F5EA', fontSize: 15, fontWeight: '900' }} numberOfLines={1}>{plant.name}</Text>
+                          <Text style={{ color: isFlora ? '#7A5020' : '#3D6642', fontSize: 12, marginTop: 3 }} numberOfLines={1}>{plant.genetics}</Text>
+                          {plantPending > 0 && (
+                            <View style={{ marginTop: 8, backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}>
+                              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>⚡ {plantPending} hoy</Text>
+                            </View>
+                          )}
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    )
+                  })}
+
+                  {/* Boton nueva planta */}
+                  <TouchableOpacity onPress={() => router.push('/(tabs)/plants')} activeOpacity={0.8}>
+                    <View style={{ borderRadius: 18, borderWidth: 1.5, borderColor: '#1C3020', borderStyle: 'dashed', padding: 14, minWidth: 100, alignItems: 'center', justifyContent: 'center', minHeight: 110 }}>
+                      <Text style={{ color: '#2D5040', fontSize: 28, fontWeight: '300' }}>+</Text>
+                      <Text style={{ color: '#2D5040', fontSize: 12, fontWeight: '700', marginTop: 4 }}>Nueva</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          )}
+
+          {/* ══ PROXIMOS 7 DIAS ══════════════════════════════════════ */}
+          {plants.length > 0 && (
+            <View>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>
+                Proxima semana
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 5 }}>
+                {upcomingDays.map((day, i) => {
+                  const hasTask = day.count > 0
+                  const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6
+                  return (
+                    <TouchableOpacity key={i} onPress={() => router.push('/(tabs)/tasks')} style={{ flex: 1 }} activeOpacity={0.8}>
+                      {hasTask ? (
+                        <LinearGradient
+                          colors={['#112016', '#090F0A']}
+                          style={{ borderRadius: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#1E3A22' }}
+                        >
+                          <Text style={{ color: '#4A7A50', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>
+                            {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
+                          </Text>
+                          <Text style={{ color: '#E8F5EA', fontSize: 16, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#52CC64', marginTop: 5 }} />
+                          <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', marginTop: 2 }}>{day.count}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={{ borderRadius: 14, paddingVertical: 10, alignItems: 'center', backgroundColor: '#0A1009', borderWidth: 1, borderColor: '#0F1A10' }}>
+                          <Text style={{ color: isWeekend ? '#2A4A30' : '#1E2A20', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
+                            {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
+                          </Text>
+                          <Text style={{ color: '#1E2A20', fontSize: 16, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
+                          <View style={{ height: 6, marginTop: 5 }} />
+                          <View style={{ height: 13, marginTop: 2 }} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            </View>
+          )}
+
+        </View>
       </ScrollView>
 
       <CompleteTaskSheet visible={!!sheetTask} task={sheetTask} onClose={() => setSheetTask(null)} onComplete={handleComplete} />
@@ -548,13 +546,24 @@ export default function HomeScreen() {
   )
 }
 
+// ─── Helper ───────────────────────────────────────────────────────────────────
 function rowToTask(row: Record<string, unknown>): ScheduledTask {
   return {
-    id: row.id as string, plantId: row.plant_id as string, type: row.type as ScheduledTask['type'],
-    scheduledDate: new Date(row.scheduled_date as string), cycle: row.cycle as ScheduledTask['cycle'],
-    week: row.week as number, stage: (row.stage as ScheduledTask['stage']) ?? 'rooting',
-    products: (row.products as ScheduledTask['products']) ?? [],
-    ecMin: row.ec_min as number, ecMax: row.ec_max as number, phMin: row.ph_min as number, phMax: row.ph_max as number,
-    completed: (row.completed as boolean) ?? false,
+    id:             row.id as string,
+    plantId:        row.plant_id as string,
+    userId:         row.user_id as string,
+    type:           row.type as ScheduledTask['type'],
+    scheduledDate:  new Date(row.scheduled_date as string),
+    cycle:          row.cycle as 'vege' | 'flora',
+    week:           row.week as number,
+    stage:          row.stage as string,
+    products:       (row.products as ScheduledTask['products']) ?? [],
+    ecMin:          row.ec_min as number | null,
+    ecMax:          row.ec_max as number | null,
+    phMin:          row.ph_min as number | null,
+    phMax:          row.ph_max as number | null,
+    completed:      row.completed as boolean,
+    completedAt:    row.completed_at ? new Date(row.completed_at as string) : undefined,
+    completionNotes: row.completion_notes as string | undefined,
   }
 }

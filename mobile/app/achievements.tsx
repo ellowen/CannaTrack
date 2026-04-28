@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { BackIcon } from '@/components/icons/AppIcons'
 import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -70,7 +71,7 @@ export default function AchievementsScreen() {
               onPress={() => router.back()}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: '#A78BFA', fontSize: 20, fontWeight: '700' }}>←</Text>
+              <BackIcon size={20} color="#A78BFA" />
             </TouchableOpacity>
             <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Logros</Text>
           </View>

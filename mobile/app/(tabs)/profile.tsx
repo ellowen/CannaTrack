@@ -137,8 +137,8 @@ export default function ProfileScreen() {
               {/* XP bar */}
               <View style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700' }}>{profile.xp} XP</Text>
-                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10 }}>{nextLvl.xpRequired} XP</Text>}
+                  <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '700' }}>{profile.xp} XP</Text>
+                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>{nextLvl.xpRequired} XP</Text>}
                 </View>
                 <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                   <LinearGradient
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
                   />
                 </View>
                 {nextLvl && (
-                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 4 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 4 }}>
                     {nextLvl.xpRequired - profile.xp} XP para {nextLvl.name} {nextLvl.emoji}
                   </Text>
                 )}
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
               >
                 <Text style={{ fontSize: 16 }}>{s.icon}</Text>
                 <Text style={{ color: s.hot ? s.color : '#E4F2E7', fontSize: 22, fontWeight: '900', marginTop: 3 }}>{s.value}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
               </LinearGradient>
             ))}
           </View>
@@ -219,7 +219,7 @@ export default function ProfileScreen() {
                   })}
                 </View>
               </ScrollView>
-              <Text style={{ color: '#728C74', fontSize: 11 }}>
+              <Text style={{ color: '#728C74', fontSize: 13 }}>
                 {nextLvl
                   ? `${nextLvl.xpRequired - profile.xp} XP para ${nextLvl.name} ${nextLvl.emoji}`
                   : 'Nivel maximo alcanzado ⚡'}
@@ -254,7 +254,7 @@ export default function ProfileScreen() {
                     </View>
                     <View>
                       <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{s.value}</Text>
-                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 2 }}>{s.label}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>{s.label}</Text>
                     </View>
                   </LinearGradient>
                 ))}
@@ -295,8 +295,8 @@ export default function ProfileScreen() {
                       <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800', lineHeight: 14 }}>{a.name}</Text>
-                      <Text style={{ color: '#4A3070', fontSize: 9, marginTop: 3, lineHeight: 12 }}>{a.description}</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>{a.name}</Text>
+                      <Text style={{ color: '#6A5090', fontSize: 11, marginTop: 3, lineHeight: 14 }}>{a.description}</Text>
                     </View>
                   </LinearGradient>
                 ))}
@@ -323,8 +323,8 @@ export default function ProfileScreen() {
                       <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 11, fontWeight: '800', lineHeight: 14 }}>{a.name}</Text>
-                      <Text style={{ color: '#3A5040', fontSize: 9, marginTop: 3, lineHeight: 12 }}>{a.description}</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>{a.name}</Text>
+                      <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 3, lineHeight: 14 }}>{a.description}</Text>
                     </View>
                   </View>
                 ))}
@@ -352,7 +352,7 @@ export default function ProfileScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '800' }}>{plant.name}</Text>
-                        <Text style={{ color: '#728C74', fontSize: 11, marginTop: 1 }}>{plant.genetics}</Text>
+                        <Text style={{ color: '#728C74', fontSize: 13, marginTop: 1 }}>{plant.genetics}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
                           <View style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
                             <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>
@@ -375,11 +375,11 @@ export default function ProfileScreen() {
           {/* Cuenta */}
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
-              <Text style={{ color: '#B8D4BC', fontSize: 13 }}>{user?.email}</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+              <Text style={{ color: '#B8D4BC', fontSize: 15 }}>{user?.email}</Text>
             </View>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
                 <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
@@ -400,9 +400,9 @@ export default function ProfileScreen() {
 
 const sectionLabel = {
   color: '#728C74' as const,
-  fontSize: 11,
+  fontSize: 13,
   fontWeight: '700' as const,
-  letterSpacing: 1.5,
+  letterSpacing: 1.2,
   textTransform: 'uppercase' as const,
   marginBottom: 12,
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -135,7 +136,7 @@ export default function EditPlantScreen() {
               onPress={() => router.back()}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>←</Text>
+              <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View>
               <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Editar planta</Text>
