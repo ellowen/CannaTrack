@@ -130,7 +130,7 @@ export default function HomeScreen() {
               <LogoMark size={42} primaryColor="#52CC64" secondaryColor="#3DAA50" />
               <View>
                 <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 }}>CannaTrack</Text>
-                <Text style={{ color: '#3D6642', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
+                <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' }}>
                   {format(new Date(), "EEE d 'de' MMM", { locale: es })}
                 </Text>
               </View>
@@ -341,12 +341,14 @@ export default function HomeScreen() {
                     : plant ? differenceInDays(today, plant.startDate) + 1 : 0
                   const weekNum    = Math.ceil(phaseDay / 7)
                   const typeColor  = TYPE_COLOR[task.type] ?? '#52CC64'
+                  // Left accent refleja fase, no tipo de tarea — consistente con tasks.tsx
+                  const phaseColor = isFlora ? '#F59E0B' : '#52CC64'
 
                   return (
                     <View key={task.id} style={{ borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#142016' }}>
                       <View style={{ flexDirection: 'row' }}>
-                        {/* Left accent */}
-                        <View style={{ width: 4, backgroundColor: typeColor, opacity: 0.8 }} />
+                        {/* Left accent — color de fase */}
+                        <View style={{ width: 4, backgroundColor: phaseColor, opacity: 0.8 }} />
 
                         <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16 }}>
                           {/* Plant name — PROMINENTE */}
@@ -397,10 +399,10 @@ export default function HomeScreen() {
                           {/* Productos */}
                           {task.products && task.products.length > 0 && (
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                              {task.products.slice(0, 3).map((prod: { name: string; minDose?: number; maxDose?: number }, pi: number) => (
+                              {task.products.slice(0, 3).map((prod: { name: string; unit?: string; minDose?: number; maxDose?: number }, pi: number) => (
                                 <View key={pi} style={{ backgroundColor: '#0D1A0F', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: '#1A3020' }}>
                                   <Text style={{ color: '#6DAA78', fontSize: 12, fontWeight: '600' }}>
-                                    {prod.name}{prod.minDose != null ? ` ${prod.minDose}${prod.maxDose && prod.maxDose !== prod.minDose ? `-${prod.maxDose}` : ''}ml/L` : ''}
+                                    {prod.name}{prod.minDose != null ? ` ${prod.minDose}${prod.maxDose && prod.maxDose !== prod.minDose ? `-${prod.maxDose}` : ''}${prod.unit ?? 'ml'}/L` : ''}
                                   </Text>
                                 </View>
                               ))}
@@ -468,7 +470,7 @@ export default function HomeScreen() {
                               <Text style={{ color: accent, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>
                                 {isFlora ? 'FLORA' : 'VEGE'}
                               </Text>
-                              <Text style={{ color: isFlora ? '#6B3800' : '#2A5A2E', fontSize: 11, fontWeight: '600' }}>
+                              <Text style={{ color: isFlora ? '#C08040' : '#4A9A54', fontSize: 12, fontWeight: '600' }}>
                                 S{weekNum} · D{phaseDay}
                               </Text>
                             </View>
@@ -476,8 +478,8 @@ export default function HomeScreen() {
                           <Text style={{ color: '#E8F5EA', fontSize: 15, fontWeight: '900' }} numberOfLines={1}>{plant.name}</Text>
                           <Text style={{ color: isFlora ? '#7A5020' : '#3D6642', fontSize: 12, marginTop: 3 }} numberOfLines={1}>{plant.genetics}</Text>
                           {plantPending > 0 && (
-                            <View style={{ marginTop: 8, backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}>
-                              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>⚡ {plantPending} hoy</Text>
+                            <View style={{ marginTop: 8, backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.12)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start', borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.25)' : 'rgba(82,204,100,0.2)' }}>
+                              <Text style={{ color: accent, fontSize: 11, fontWeight: '800' }}>⚡ {plantPending} hoy</Text>
                             </View>
                           )}
                         </LinearGradient>
