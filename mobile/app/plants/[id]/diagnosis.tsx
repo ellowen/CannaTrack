@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
+import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '@/lib/supabase'
@@ -12,19 +14,25 @@ interface DiagnosisResult {
   recommendations: string[]
 }
 
-const SEVERITY_COLOR = { alta: '#EF4444', media: '#F59E0B', baja: '#52CC64' }
+const SEVERITY_COLOR  = { alta: '#EF4444', media: '#F59E0B', baja: '#52CC64' }
+const SEVERITY_BG     = { alta: 'rgba(239,68,68,0.1)', media: 'rgba(245,158,11,0.1)', baja: 'rgba(82,204,100,0.1)' }
+const SEVERITY_BORDER = { alta: 'rgba(239,68,68,0.25)', media: 'rgba(245,158,11,0.25)', baja: 'rgba(82,204,100,0.25)' }
+
+const TIPS = [
+  'Foto con buena iluminacion, sin sombras',
+  'Enfoca las hojas con posibles problemas',
+  'Incluye la hoja entera, no solo el problema',
+  'Foto nitida, sin movimiento ni desenfoque',
+]
 
 export default function DiagnosisScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const [imageUri, setImageUri]     = useState<string | null>(null)
-  const [loading, setLoading]       = useState(false)
-  const [result, setResult]         = useState<DiagnosisResult | null>(null)
+  const [imageUri, setImageUri] = useState<string | null>(null)
+  const [loading, setLoading]   = useState(false)
+  const [result, setResult]     = useState<DiagnosisResult | null>(null)
 
   async function pickImage(fromCamera: boolean) {
-    const picker = fromCamera
-      ? ImagePicker.launchCameraAsync
-      : ImagePicker.launchImageLibraryAsync
-
+    const picker = fromCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync
     const res = await picker({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -32,187 +40,225 @@ export default function DiagnosisScreen() {
       quality: 0.7,
       base64: true,
     })
-
     if (!res.canceled && res.assets[0]) {
       setImageUri(res.assets[0].uri)
       setResult(null)
-      if (res.assets[0].base64) {
-        await analyze(res.assets[0].base64)
-      }
+      if (res.assets[0].base64) await analyze(res.assets[0].base64)
     }
   }
 
   async function analyze(base64: string) {
     setLoading(true)
     try {
-      // Llama a Supabase Edge Function que proxea Anthropic API
-
       const { data, error } = await supabase.functions.invoke('diagnose-plant', {
         body: { image: base64, plantId: id },
       })
-
       if (error) throw new Error(error.message)
       setResult(data as DiagnosisResult)
     } catch (e) {
-      Alert.alert(
-        'Error en diagnostico',
-        e instanceof Error ? e.message : 'No se pudo conectar al servicio de diagnostico',
-        [{ text: 'OK' }]
-      )
+      Alert.alert('Error en diagnostico', e instanceof Error ? e.message : 'No se pudo conectar al servicio', [{ text: 'OK' }])
     } finally {
       setLoading(false)
     }
   }
 
+  const healthColor = result
+    ? result.healthScore >= 75 ? '#52CC64' : result.healthScore >= 45 ? '#F59E0B' : '#EF4444'
+    : '#52CC64'
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: '#52CC64', fontSize: 28 }}>←</Text>
-          </TouchableOpacity>
-          <View style={{ marginLeft: 12 }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Diagnostico IA</Text>
-            <Text style={{ color: '#728C74', fontSize: 12 }}>Analisis visual por Claude</Text>
-          </View>
-        </View>
-
-        {/* Foto seleccionada */}
-        {imageUri ? (
-          <View style={{ marginBottom: 16 }}>
-            <Image
-              source={{ uri: imageUri }}
-              style={{ width: '100%', height: 240, borderRadius: 16, marginBottom: 12 }}
-              resizeMode="cover"
-            />
-            {!loading && (
-              <TouchableOpacity
-                onPress={() => { setImageUri(null); setResult(null) }}
-                style={{ alignItems: 'center', paddingVertical: 8 }}
-              >
-                <Text style={{ color: '#728C74', fontSize: 13 }}>Cambiar foto</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          /* Selector de foto */
-          <View style={{ gap: 10, marginBottom: 24 }}>
+        <LinearGradient
+          colors={['#150D28', '#0D0820', '#080E09']}
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: 'rgba(139,92,246,0.12)' }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 }}>
             <TouchableOpacity
-              onPress={() => pickImage(true)}
-              style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 2, borderColor: '#52CC64', borderStyle: 'dashed', padding: 28, alignItems: 'center' }}
+              onPress={() => router.back()}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ fontSize: 40, marginBottom: 8 }}>📷</Text>
-              <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 16 }}>Tomar foto</Text>
-              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
-                Foto clara de hojas o planta completa
-              </Text>
+              <BackIcon size={20} color="#A78BFA" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => pickImage(false)}
-              style={{ backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', padding: 16, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>📂 Elegir de galeria</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 32, alignItems: 'center', marginBottom: 20 }}>
-            <ActivityIndicator color="#52CC64" size="large" style={{ marginBottom: 16 }} />
-            <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 15 }}>Analizando...</Text>
-            <Text style={{ color: '#728C74', fontSize: 12, marginTop: 6, textAlign: 'center' }}>
-              Claude esta revisando tu planta
-            </Text>
-          </View>
-        )}
-
-        {/* Resultado */}
-        {result && !loading && (
-          <View style={{ gap: 14 }}>
-
-            {/* Puntuacion de salud */}
-            <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 20 }}>
-              <Text style={sectionLabel}>SALUD DETECTADA</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{
-                  width: 64, height: 64, borderRadius: 32,
-                  backgroundColor: result.healthScore >= 75 ? '#0D2010' : result.healthScore >= 45 ? '#1A1200' : '#1A0606',
-                  borderWidth: 3,
-                  borderColor: result.healthScore >= 75 ? '#52CC64' : result.healthScore >= 45 ? '#F59E0B' : '#EF4444',
-                  alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Text style={{
-                    color: result.healthScore >= 75 ? '#52CC64' : result.healthScore >= 45 ? '#F59E0B' : '#EF4444',
-                    fontSize: 18, fontWeight: '900',
-                  }}>
-                    {result.healthScore}%
-                  </Text>
-                </View>
-                <Text style={{ color: '#E4F2E7', fontSize: 14, flex: 1, lineHeight: 20 }}>{result.summary}</Text>
-              </View>
+            <View>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Diagnostico IA</Text>
+              <Text style={{ color: '#6D4FB0', fontSize: 13, marginTop: 1 }}>Analisis visual por Claude</Text>
             </View>
+          </View>
 
-            {/* Problemas detectados */}
-            {result.issues.length > 0 && (
-              <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
-                <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-                  <Text style={sectionLabel}>PROBLEMAS DETECTADOS · {result.issues.length}</Text>
+          {/* Badge */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 }}>BETA</Text>
+            </View>
+            <Text style={{ color: '#4A3070', fontSize: 13 }}>Detecta plagas, deficiencias y hongos</Text>
+          </View>
+        </LinearGradient>
+
+        <View style={{ padding: 16, gap: 16 }}>
+
+          {/* Foto seleccionada */}
+          {imageUri ? (
+            <View>
+              <Image
+                source={{ uri: imageUri }}
+                style={{ width: '100%', height: 240, borderRadius: 20, marginBottom: 10 }}
+                resizeMode="cover"
+              />
+              {!loading && (
+                <TouchableOpacity
+                  onPress={() => { setImageUri(null); setResult(null) }}
+                  style={{ alignItems: 'center', paddingVertical: 8 }}
+                >
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>Cambiar foto</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            /* Selector de foto */
+            <View style={{ gap: 10 }}>
+              <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.85}>
+                <LinearGradient
+                  colors={['#1A1030', '#100A22']}
+                  style={{ borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(167,139,250,0.35)', borderStyle: 'dashed', padding: 36, alignItems: 'center', gap: 10 }}
+                >
+                  <View style={{ width: 64, height: 64, borderRadius: 18, backgroundColor: 'rgba(167,139,250,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
+                    <Text style={{ fontSize: 32 }}>📷</Text>
+                  </View>
+                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Tomar foto</Text>
+                  <Text style={{ color: '#6D4FB0', fontSize: 13, textAlign: 'center' }}>
+                    Foto clara de hojas o planta completa
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.85}>
+                <LinearGradient
+                  colors={['#131A10', '#0C1009']}
+                  style={{ borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+                >
+                  <Text style={{ fontSize: 20 }}>🖼️</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 15 }}>Elegir de galeria</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <LinearGradient
+              colors={['#1A1030', '#100A22']}
+              style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)', padding: 36, alignItems: 'center', gap: 14 }}
+            >
+              <ActivityIndicator color="#A78BFA" size="large" />
+              <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Analizando...</Text>
+              <Text style={{ color: '#6D4FB0', fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
+                Claude esta revisando tu planta{'\n'}en busca de problemas
+              </Text>
+            </LinearGradient>
+          )}
+
+          {/* Resultado */}
+          {result && !loading && (
+            <View style={{ gap: 14 }}>
+
+              {/* Health score */}
+              <LinearGradient
+                colors={['#131A10', '#0C1009']}
+                style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 20 }}
+              >
+                <Text style={sectionLabel}>Salud detectada</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                  <View style={{
+                    width: 72, height: 72, borderRadius: 36,
+                    backgroundColor: result.healthScore >= 75 ? 'rgba(82,204,100,0.1)' : result.healthScore >= 45 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                    borderWidth: 3, borderColor: healthColor,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ color: healthColor, fontSize: 20, fontWeight: '900', lineHeight: 24 }}>
+                      {result.healthScore}%
+                    </Text>
+                  </View>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, flex: 1, lineHeight: 22 }}>{result.summary}</Text>
                 </View>
-                {result.issues.map((issue, i) => (
-                  <View key={i} style={{ padding: 16, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: SEVERITY_COLOR[issue.severity] }} />
-                      <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 14, flex: 1 }}>{issue.name}</Text>
-                      <View style={{ backgroundColor: SEVERITY_COLOR[issue.severity] + '22', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: SEVERITY_COLOR[issue.severity], fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>
-                          {issue.severity}
-                        </Text>
+              </LinearGradient>
+
+              {/* Problemas */}
+              {result.issues.length > 0 && (
+                <LinearGradient
+                  colors={['#131A10', '#0C1009']}
+                  style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}
+                >
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
+                    <Text style={sectionLabel}>Problemas detectados · {result.issues.length}</Text>
+                  </View>
+                  {result.issues.map((issue, i) => (
+                    <View key={i} style={{ padding: 16, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1A2A1A' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 15, flex: 1 }}>{issue.name}</Text>
+                        <View style={{ backgroundColor: SEVERITY_BG[issue.severity], borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: SEVERITY_BORDER[issue.severity] }}>
+                          <Text style={{ color: SEVERITY_COLOR[issue.severity], fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>
+                            {issue.severity}
+                          </Text>
+                        </View>
                       </View>
+                      <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 20, marginBottom: 10 }}>{issue.description}</Text>
+                      <LinearGradient
+                        colors={['#0F2010', '#0A1809']}
+                        style={{ borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)' }}
+                      >
+                        <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 }}>SOLUCION</Text>
+                        <Text style={{ color: '#B0D4B8', fontSize: 13, lineHeight: 20 }}>{issue.solution}</Text>
+                      </LinearGradient>
                     </View>
-                    <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 18, marginBottom: 8 }}>{issue.description}</Text>
-                    <View style={{ backgroundColor: '#0D2010', borderRadius: 10, padding: 10 }}>
-                      <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700', marginBottom: 2 }}>SOLUCION</Text>
-                      <Text style={{ color: '#E4F2E7', fontSize: 13, lineHeight: 18 }}>{issue.solution}</Text>
-                    </View>
+                  ))}
+                </LinearGradient>
+              )}
+
+              {/* Recomendaciones */}
+              {result.recommendations.length > 0 && (
+                <LinearGradient
+                  colors={['#131A10', '#0C1009']}
+                  style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 18 }}
+                >
+                  <Text style={sectionLabel}>Recomendaciones</Text>
+                  <View style={{ gap: 10 }}>
+                    {result.recommendations.map((r, i) => (
+                      <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.12)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                          <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '900' }}>{i + 1}</Text>
+                        </View>
+                        <Text style={{ color: '#8AAF8E', fontSize: 13, lineHeight: 20, flex: 1 }}>{r}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </LinearGradient>
+              )}
+
+            </View>
+          )}
+
+          {/* Tips iniciales */}
+          {!imageUri && !loading && (
+            <LinearGradient
+              colors={['#0F0A1E', '#090613']}
+              style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', padding: 18 }}
+            >
+              <Text style={sectionLabel}>Consejos para mejor diagnostico</Text>
+              <View style={{ gap: 10 }}>
+                {TIPS.map((tip, i) => (
+                  <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#7C3AED' }} />
+                    <Text style={{ color: '#6D4FB0', fontSize: 13, flex: 1, lineHeight: 18 }}>{tip}</Text>
                   </View>
                 ))}
               </View>
-            )}
+            </LinearGradient>
+          )}
 
-            {/* Recomendaciones */}
-            {result.recommendations.length > 0 && (
-              <View style={{ backgroundColor: '#131D14', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 16 }}>
-                <Text style={sectionLabel}>RECOMENDACIONES</Text>
-                {result.recommendations.map((r, i) => (
-                  <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: i > 0 ? 10 : 0 }}>
-                    <Text style={{ color: '#52CC64', fontSize: 14 }}>•</Text>
-                    <Text style={{ color: '#728C74', fontSize: 13, lineHeight: 18, flex: 1 }}>{r}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-          </View>
-        )}
-
-        {/* Tip inicial */}
-        {!imageUri && !loading && (
-          <View style={{ backgroundColor: '#0D2010', borderRadius: 16, padding: 16 }}>
-            <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12, marginBottom: 6 }}>💡 CONSEJOS PARA MEJOR DIAGNOSTICO</Text>
-            {[
-              'Foto con buena iluminacion, sin sombras',
-              'Enfoca las hojas con posibles problemas',
-              'Incluye hoja entera, no solo el problema',
-              'Foto nitida, sin movimiento',
-            ].map((tip, i) => (
-              <Text key={i} style={{ color: '#728C74', fontSize: 12, lineHeight: 20 }}>• {tip}</Text>
-            ))}
-          </View>
-        )}
-
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -220,7 +266,7 @@ export default function DiagnosisScreen() {
 
 const sectionLabel = {
   color: '#728C74' as const,
-  fontSize: 11,
+  fontSize: 13,
   fontWeight: '700' as const,
   letterSpacing: 1.5,
   textTransform: 'uppercase' as const,

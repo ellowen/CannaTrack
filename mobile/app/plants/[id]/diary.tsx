@@ -237,7 +237,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
 
             {/* Notes */}
             <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>Notas</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>Notas</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, color: '#E4F2E7', fontSize: 14, minHeight: 110, textAlignVertical: 'top' }}
                 placeholder="Que observas esta semana? Altura, aromas, color de hojas..."
@@ -405,11 +405,11 @@ export default function DiaryScreen() {
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: isFlora ? '#2A1E00' : '#1C2E1E', padding: 12, alignItems: 'center' }}>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{logs.length}</Text>
-              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', marginTop: 1 }}>entradas</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>entradas</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: isFlora ? '#2A1E00' : '#1C2E1E', padding: 12, alignItems: 'center' }}>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{photosLogs.length}</Text>
-              <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', marginTop: 1 }}>fotos</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>fotos</Text>
             </View>
             <TouchableOpacity
               onPress={openNewSheet}
@@ -434,7 +434,7 @@ export default function DiaryScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: isFlora ? '#F59E0B' : '#52CC64' }} />
-                <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                   Galeria ({photosLogs.length})
                 </Text>
               </View>
@@ -475,7 +475,7 @@ export default function DiaryScreen() {
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                 Historial ({logs.length})
               </Text>
             </View>

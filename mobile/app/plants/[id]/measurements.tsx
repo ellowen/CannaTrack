@@ -204,7 +204,7 @@ export default function MeasurementsScreen() {
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}>
-              <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>EC · pH · TEMP</Text>
+              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>EC · pH · TEMP</Text>
             </View>
           </View>
 
@@ -222,7 +222,7 @@ export default function MeasurementsScreen() {
             ].map(s => (
               <View key={s.label} style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}>
                 <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{s.value}</Text>
-                <Text style={{ color: '#3A5040', fontSize: 9, fontWeight: '600', marginTop: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>{s.label}</Text>
+                <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '600', marginTop: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>{s.label}</Text>
               </View>
             ))}
           </View>
@@ -249,7 +249,7 @@ export default function MeasurementsScreen() {
             {/* Section header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
               <Text style={{ fontSize: 16 }}>🧪</Text>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nueva medicion</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nueva medicion</Text>
             </View>
 
             <View style={{ padding: 16, gap: 12 }}>
@@ -325,7 +325,7 @@ export default function MeasurementsScreen() {
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                 Historial ({history.length})
               </Text>
             </View>
@@ -410,7 +410,7 @@ export default function MeasurementsScreen() {
 
 const fieldLabel = {
   color: '#728C74' as const,
-  fontSize: 10,
+  fontSize: 12,
   fontWeight: '700' as const,
   letterSpacing: 1.2,
   textTransform: 'uppercase' as const,
