@@ -6,14 +6,18 @@ import { router } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useAuth } from '@/hooks/useAuth'
+import { usePlan } from '@/hooks/usePlan'
 import { supabase } from '@/lib/supabase'
 import { getLevelInfo, getAchievements, LEVELS } from '@shared/lib/gamification'
 import type { AchievementData } from '@shared/lib/gamification'
+import PaywallModal from '@/components/PaywallModal'
 
 type HarvestedPlant = { id: string; name: string; genetics: string; startDate: Date; completionRate: number }
 
 export default function ProfileScreen() {
   const { user, loading: authLoading } = useAuth()
+  const { isPro } = usePlan()
+  const [showPaywall, setShowPaywall] = useState(false)
   const [profile, setProfile]         = useState<{ xp: number; streak: number; bestStreak: number; username: string } | null>(null)
   const [loading, setLoading]         = useState(true)
   const [completedToday, setCompletedToday] = useState(0)
@@ -372,25 +376,90 @@ export default function ProfileScreen() {
             </View>
           )}
 
+          {/* Banner Pro / upgrade */}
+          {!isPro ? (
+            <TouchableOpacity onPress={() => setShowPaywall(true)} activeOpacity={0.88}>
+              <LinearGradient
+                colors={['#1A1040', '#100A28', '#0D0820']}
+                style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(167,139,250,0.35)', padding: 20 }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  <LinearGradient
+                    colors={['#7C3AED', '#5B21B6']}
+                    style={{ width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ fontSize: 26 }}>👑</Text>
+                  </LinearGradient>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>Activar Pro</Text>
+                      <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.3)' }}>
+                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 }}>USD 5/MES</Text>
+                      </View>
+                    </View>
+                    <Text style={{ color: '#6D4FB0', fontSize: 13, lineHeight: 18 }}>
+                      Plantas ilimitadas · Todas las tablas · IA
+                    </Text>
+                  </View>
+                  <Text style={{ color: '#7C3AED', fontSize: 20 }}>›</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <LinearGradient
+              colors={['#1A1040', '#100A28']}
+              style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <LinearGradient
+                colors={['#7C3AED', '#5B21B6']}
+                style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 22 }}>👑</Text>
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#A78BFA', fontSize: 15, fontWeight: '900' }}>Plan Pro activo</Text>
+                <Text style={{ color: '#6D4FB0', fontSize: 12, marginTop: 2 }}>Acceso completo a todas las funciones</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(167,139,250,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+              </View>
+            </LinearGradient>
+          )}
+
           {/* Cuenta */}
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
               <Text style={{ color: '#B8D4BC', fontSize: 15 }}>{user?.email}</Text>
             </View>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
-                <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
-                  <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>ACTIVO</Text>
-                </View>
+                {isPro ? (
+                  <>
+                    <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '900' }}>Pro</Text>
+                    <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
+                      <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>ACTIVO</Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
+                    <TouchableOpacity onPress={() => setShowPaywall(true)}>
+                      <View style={{ backgroundColor: 'rgba(167,139,250,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
+                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800' }}>UPGRADE →</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
             <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
               <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
             </TouchableOpacity>
           </LinearGradient>
+
+          <PaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
 
         </View>
       </ScrollView>
@@ -402,7 +471,7 @@ const sectionLabel = {
   color: '#728C74' as const,
   fontSize: 13,
   fontWeight: '700' as const,
-  letterSpacing: 1.2,
+  letterSpacing: 1.5,
   textTransform: 'uppercase' as const,
   marginBottom: 12,
 }
