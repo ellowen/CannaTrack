@@ -18,6 +18,15 @@ import type { Plant } from '@shared/types/plant'
 
 // pending tasks count per plant for today
 type TaskMap = Record<string, number>
+type FilterType = 'todas' | 'activas' | 'flora' | 'cosechadas' | 'descartadas'
+
+const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: string }[] = [
+  { key: 'todas',      label: 'Todas',      color: '#52CC64', emptyIcon: '🌱' },
+  { key: 'activas',    label: 'Vege',       color: '#52CC64', emptyIcon: '🌿' },
+  { key: 'flora',      label: 'Flora',      color: '#F59E0B', emptyIcon: '🌸' },
+  { key: 'cosechadas', label: 'Cosechadas', color: '#A78BFA', emptyIcon: '✂️' },
+  { key: 'descartadas',label: 'Descartadas',color: '#EF4444', emptyIcon: '🗑️' },
+]
 
 export default function PlantsScreen() {
   const { user } = useAuth()
@@ -37,6 +46,7 @@ export default function PlantsScreen() {
     potCount: '1', potVolumeLiters: '11',
   })
   const [selectedTableId, setSelectedTableId] = useState('')
+  const [activeFilter, setActiveFilter] = useState<FilterType>('todas')
 
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
@@ -74,12 +84,27 @@ export default function PlantsScreen() {
   }
 
   const q = searchQuery.toLowerCase().trim()
-  const activePlants = plants.filter(p =>
-    !q || p.name.toLowerCase().includes(q) || p.genetics.toLowerCase().includes(q)
-  )
-  const filteredHistory = historyPlants.filter(p =>
-    !q || p.name.toLowerCase().includes(q) || p.genetics.toLowerCase().includes(q)
-  )
+  const allPlants = [...plants, ...historyPlants]
+
+  const counts: Record<FilterType, number> = {
+    todas:       allPlants.length,
+    activas:     plants.filter(p => !p.floraStartDate).length,
+    flora:       plants.filter(p => !!p.floraStartDate).length,
+    cosechadas:  historyPlants.filter(p => p.status === 'harvested').length,
+    descartadas: historyPlants.filter(p => p.status === 'discarded').length,
+  }
+
+  const filteredPlants = allPlants.filter(p => {
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.genetics.toLowerCase().includes(q)
+    if (!matchSearch) return false
+    switch (activeFilter) {
+      case 'activas':     return p.status === 'active' && !p.floraStartDate
+      case 'flora':       return p.status === 'active' && !!p.floraStartDate
+      case 'cosechadas':  return p.status === 'harvested'
+      case 'descartadas': return p.status === 'discarded'
+      default:            return true
+    }
+  })
 
   async function handleDeletePlant(plantId: string) {
     const { error } = await supabase.from('plants').update({ status: 'discarded' }).eq('id', plantId)
@@ -161,12 +186,12 @@ export default function PlantsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
       >
         {/* Header */}
-        <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingTop: 20, paddingBottom: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingHorizontal: 20 }}>
             <View>
               <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Mis plantas</Text>
               <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 2 }}>
-                {activePlants.length} activa{activePlants.length !== 1 ? 's' : ''}
+                {counts.activas + counts.flora} activa{counts.activas + counts.flora !== 1 ? 's' : ''}
                 {historyPlants.length > 0 ? ` · ${historyPlants.length} en historial` : ''}
               </Text>
             </View>
@@ -176,7 +201,9 @@ export default function PlantsScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1A3020', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 }}>
+
+          {/* Search */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1A3020', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, marginHorizontal: 20, marginBottom: 14 }}>
             <Text style={{ color: '#2D4A30', marginRight: 8 }}>🔍</Text>
             <TextInput
               value={searchQuery}
@@ -191,32 +218,76 @@ export default function PlantsScreen() {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Filter pills */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
+            {FILTERS.map(f => {
+              const isActive = activeFilter === f.key
+              const count = counts[f.key]
+              return (
+                <TouchableOpacity key={f.key} onPress={() => setActiveFilter(f.key)} activeOpacity={0.8}>
+                  {isActive ? (
+                    <LinearGradient
+                      colors={
+                        f.key === 'flora'       ? ['rgba(245,158,11,0.25)', 'rgba(245,158,11,0.12)'] :
+                        f.key === 'cosechadas'  ? ['rgba(167,139,250,0.25)', 'rgba(167,139,250,0.12)'] :
+                        f.key === 'descartadas' ? ['rgba(239,68,68,0.2)', 'rgba(239,68,68,0.1)'] :
+                        ['rgba(82,204,100,0.22)', 'rgba(82,204,100,0.1)']
+                      }
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: f.color + '50' }}
+                    >
+                      <Text style={{ color: f.color, fontSize: 13, fontWeight: '800' }}>{f.label}</Text>
+                      {count > 0 && (
+                        <View style={{ backgroundColor: f.color + '30', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1 }}>
+                          <Text style={{ color: f.color, fontSize: 11, fontWeight: '900' }}>{count}</Text>
+                        </View>
+                      )}
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1A2A1A' }}>
+                      <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700' }}>{f.label}</Text>
+                      {count > 0 && (
+                        <Text style={{ color: '#2D4A30', fontSize: 11, fontWeight: '700' }}>{count}</Text>
+                      )}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
+          </ScrollView>
         </LinearGradient>
 
-        {/* Activas */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          {activePlants.length === 0 ? (
-            <TouchableOpacity onPress={() => setShowNewModal(true)} activeOpacity={0.85}>
+        {/* Lista filtrada */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          {filteredPlants.length === 0 ? (
+            <TouchableOpacity
+              onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'flora' ? () => setShowNewModal(true) : undefined}
+              activeOpacity={0.85}
+            >
               <LinearGradient
                 colors={['#0D1A0F', '#080E09']}
                 style={{ borderRadius: 22, padding: 48, alignItems: 'center', borderWidth: 1, borderColor: '#1A3020', borderStyle: 'dashed' }}
               >
-                <Text style={{ fontSize: 48, marginBottom: 14 }}>🌱</Text>
-                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 17 }}>Sin plantas activas</Text>
-                <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-                  Crea tu primera planta{'\n'}para empezar a cultivar
+                <Text style={{ fontSize: 48, marginBottom: 14 }}>
+                  {FILTERS.find(f => f.key === activeFilter)?.emptyIcon ?? '🌱'}
                 </Text>
+                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 17 }}>
+                  {activeFilter === 'todas' ? 'Sin plantas' :
+                   activeFilter === 'activas' ? 'Sin plantas en vege' :
+                   activeFilter === 'flora' ? 'Sin plantas en flora' :
+                   activeFilter === 'cosechadas' ? 'Sin cosechas aun' :
+                   'Sin plantas descartadas'}
+                </Text>
+                {(activeFilter === 'todas' || activeFilter === 'activas') && (
+                  <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
+                    Toca para crear tu primera planta
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: '#52CC64' }} />
-                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
-                  Activas ({activePlants.length})
-                </Text>
-              </View>
-              {activePlants.map(plant => (
+            filteredPlants.map(plant =>
+              plant.status === 'active' ? (
                 <ActivePlantCard
                   key={plant.id}
                   plant={plant}
@@ -232,25 +303,12 @@ export default function PlantsScreen() {
                     )
                   }}
                 />
-              ))}
-            </>
+              ) : (
+                <HistoryPlantCard key={plant.id} plant={plant} />
+              )
+            )
           )}
         </View>
-
-        {/* Historial */}
-        {filteredHistory.length > 0 && (
-          <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: '#728C74' }} />
-              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
-                Historial ({filteredHistory.length})
-              </Text>
-            </View>
-            {filteredHistory.map(plant => (
-              <HistoryPlantCard key={plant.id} plant={plant} />
-            ))}
-          </View>
-        )}
       </ScrollView>
 
       {/* Modal Nueva Planta */}
