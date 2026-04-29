@@ -661,17 +661,17 @@ export default function PlantDetailScreen() {
           {/* Acciones rapidas */}
           <View>
             <Text style={sectionLabel}>ACCIONES RAPIDAS</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
               {[
-                { icon: '📸', label: 'Diario', route: `/plants/${id}/diary` },
-                { icon: '📊', label: 'Medidas', route: `/plants/${id}/measurements` },
-                { icon: '📅', label: 'Timeline', route: `/plants/${id}/timeline` },
+                { icon: '📸', label: 'Diario',   route: `/plants/${id}/diary`,        pro: false, color: '#52CC64' },
+                { icon: '📊', label: 'Medidas',  route: `/plants/${id}/measurements`, pro: false, color: '#52CC64' },
+                { icon: '📅', label: 'Timeline', route: `/plants/${id}/timeline`,     pro: false, color: '#52CC64' },
               ].map(action => (
                 <TouchableOpacity
                   key={action.label}
                   onPress={() => router.push(action.route)}
                   activeOpacity={0.8}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, minWidth: '30%' }}
                 >
                   <LinearGradient
                     colors={['#141E15', '#0C1009']}
@@ -682,12 +682,30 @@ export default function PlantDetailScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
               ))}
+
+              {/* Diagnostico IA — Pro */}
+              <TouchableOpacity
+                onPress={() => router.push(`/plants/${id}/diagnosis`)}
+                activeOpacity={0.8}
+                style={{ flex: 1, minWidth: '30%' }}
+              >
+                <LinearGradient
+                  colors={['#160F2A', '#0E0820']}
+                  style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', padding: 14, alignItems: 'center' }}
+                >
+                  <Text style={{ fontSize: 22, marginBottom: 6 }}>🤖</Text>
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>IA</Text>
+                  <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
+                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* Zona de peligro */}
           <View style={{ borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 }}>
-            <Text style={{ color: '#3A3A3A', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>
+            <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
               Zona de peligro
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -854,7 +872,7 @@ const sectionLabel = {
   color: '#728C74' as const,
   fontSize: 13,
   fontWeight: '700' as const,
-  letterSpacing: 1.2,
+  letterSpacing: 1.5,
   textTransform: 'uppercase' as const,
   marginBottom: 8,
 }
