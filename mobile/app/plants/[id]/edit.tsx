@@ -528,7 +528,7 @@ export default function EditPlantScreen() {
               colors={['#0D1A10', '#090E09']}
               style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', padding: 16, gap: 16 }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
+              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
 
               <TextInput
                 value={newProduct.name}
@@ -558,7 +558,7 @@ export default function EditPlantScreen() {
 
               {/* Fase */}
               <View>
-                <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Usar en</Text>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Usar en</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {([
                     ['vege',  '🌿', 'Solo VEGE',  '#52CC64', 'rgba(82,204,100,0.15)',  'rgba(82,204,100,0.3)' ],
@@ -660,7 +660,7 @@ export default function EditPlantScreen() {
         {/* Zona de peligro */}
         <View style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(239,68,68,0.15)', overflow: 'hidden' }}>
           <LinearGradient colors={['#150505', '#0E0303']} style={{ padding: 16 }}>
-            <Text style={{ color: '#3A3A3A', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
+            <Text style={{ color: '#3A3A3A', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
               Zona de peligro
             </Text>
             <TouchableOpacity
@@ -685,7 +685,7 @@ function Section({ label, icon, children }: { label: string; icon: string; child
     <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
         <Text style={{ fontSize: 16 }}>{icon}</Text>
-        <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>{label}</Text>
+        <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>{label}</Text>
       </View>
       <View style={{ padding: 16, gap: 14 }}>
         {children}
@@ -697,7 +697,7 @@ function Section({ label, icon, children }: { label: string; icon: string; child
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ color: '#4A6A50', fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
+      <Text style={{ color: '#4A6A50', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
       {children}
     </View>
   )

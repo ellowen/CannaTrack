@@ -182,7 +182,7 @@ export default function ProfileScreen() {
               >
                 <Text style={{ fontSize: 16 }}>{s.icon}</Text>
                 <Text style={{ color: s.hot ? s.color : '#E4F2E7', fontSize: 22, fontWeight: '900', marginTop: 3 }}>{s.value}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
               </LinearGradient>
             ))}
           </View>
@@ -267,7 +267,7 @@ export default function ProfileScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text style={sectionLabel}>Logros desbloqueados</Text>
               <TouchableOpacity onPress={() => router.push('/achievements')}>
-                <Text style={{ color: '#8B5CF6', fontSize: 11, fontWeight: '700' }}>
+                <Text style={{ color: '#8B5CF6', fontSize: 13, fontWeight: '700' }}>
                   {unlocked.length}/{unlocked.length + locked.length} Ver todos →
                 </Text>
               </TouchableOpacity>
@@ -375,11 +375,11 @@ export default function ProfileScreen() {
           {/* Cuenta */}
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+              <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
               <Text style={{ color: '#B8D4BC', fontSize: 15 }}>{user?.email}</Text>
             </View>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+              <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
                 <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>

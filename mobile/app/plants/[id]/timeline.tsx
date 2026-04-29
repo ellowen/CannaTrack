@@ -168,7 +168,7 @@ export default function TimelineScreen() {
           </View>
           <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', alignItems: 'center' }}>
             <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '900', lineHeight: 18 }}>{totalDays}</Text>
-            <Text style={{ color: '#2D5030', fontSize: 10, fontWeight: '700' }}>dias</Text>
+            <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700' }}>dias</Text>
           </View>
         </View>
 
@@ -214,7 +214,7 @@ export default function TimelineScreen() {
             <View key={gi} style={{ marginBottom: 28 }}>
               {/* Date divider */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', textTransform: 'capitalize' }}>
+                <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700', textTransform: 'capitalize' }}>
                   {group.label}
                 </Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: '#1A2E1A' }} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { signIn, signUp } from '@/lib/auth'
 import { isBiometricAvailable, hasSavedSession, restoreSessionWithBiometric, getBiometricLabel } from '@/lib/biometric'
 
@@ -33,7 +34,6 @@ export default function AuthScreen() {
     try {
       if (mode === 'login') {
         await signIn({ email: email.trim(), password })
-        // _layout.tsx onAuthStateChange (SIGNED_IN) se encarga del redirect
       } else {
         await signUp({ email: email.trim(), password, name: name.trim() })
         Alert.alert(
@@ -58,87 +58,121 @@ export default function AuthScreen() {
     try {
       const ok = await restoreSessionWithBiometric()
       if (!ok) Alert.alert('Error', 'No se pudo autenticar')
-      // Si ok, _layout.tsx detecta la sesion y redirige
     } finally {
       setLoading(false)
     }
   }
 
+  const canSubmit = !!email.trim() && !!password && (mode === 'login' || !!name.trim())
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
+
           {/* Logo */}
           <View style={{ alignItems: 'center', marginBottom: 48 }}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🌿</Text>
+            <LinearGradient
+              colors={['#1A3D1E', '#0F2412']}
+              style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#2A5A2E' }}
+            >
+              <Text style={{ fontSize: 44 }}>🌿</Text>
+            </LinearGradient>
             <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900' }}>CannaTrack</Text>
             <Text style={{ color: '#728C74', fontSize: 14, marginTop: 6 }}>
               {mode === 'login' ? 'Ingresa a tu cuenta' : 'Crea tu cuenta gratis'}
             </Text>
           </View>
 
-          {/* Inputs */}
+          {/* Campo nombre (solo registro) */}
           {mode === 'register' && (
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Nombre"
-              placeholderTextColor="#3A5040"
-              autoCapitalize="words"
-              style={{
-                backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
-                borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14,
-                color: '#E4F2E7', fontSize: 15, marginBottom: 12,
-              }}
-            />
+            <LinearGradient
+              colors={name ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
+              style={{ borderRadius: 16, padding: 1, marginBottom: 12 }}
+            >
+              <View style={{ borderRadius: 15, borderWidth: 1, borderColor: name ? '#52CC64' : '#1C2E1E', overflow: 'hidden' }}>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Nombre"
+                  placeholderTextColor="#3A5040"
+                  autoCapitalize="words"
+                  style={{
+                    backgroundColor: 'transparent',
+                    paddingHorizontal: 16, paddingVertical: 14,
+                    color: '#E4F2E7', fontSize: 15,
+                  }}
+                />
+              </View>
+            </LinearGradient>
           )}
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            placeholderTextColor="#3A5040"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={{
-              backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14,
-              color: '#E4F2E7', fontSize: 15, marginBottom: 12,
-            }}
-          />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Contrasena"
-            placeholderTextColor="#3A5040"
-            secureTextEntry
-            style={{
-              backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14,
-              color: '#E4F2E7', fontSize: 15, marginBottom: 24,
-            }}
-          />
+
+          {/* Campo email */}
+          <LinearGradient
+            colors={email ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
+            style={{ borderRadius: 16, padding: 1, marginBottom: 12 }}
+          >
+            <View style={{ borderRadius: 15, borderWidth: 1, borderColor: email ? '#52CC64' : '#1C2E1E', overflow: 'hidden' }}>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email"
+                placeholderTextColor="#3A5040"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={{
+                  backgroundColor: 'transparent',
+                  paddingHorizontal: 16, paddingVertical: 14,
+                  color: '#E4F2E7', fontSize: 15,
+                }}
+              />
+            </View>
+          </LinearGradient>
+
+          {/* Campo contrasena */}
+          <LinearGradient
+            colors={password ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
+            style={{ borderRadius: 16, padding: 1, marginBottom: 24 }}
+          >
+            <View style={{ borderRadius: 15, borderWidth: 1, borderColor: password ? '#52CC64' : '#1C2E1E', overflow: 'hidden' }}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Contrasena"
+                placeholderTextColor="#3A5040"
+                secureTextEntry
+                style={{
+                  backgroundColor: 'transparent',
+                  paddingHorizontal: 16, paddingVertical: 14,
+                  color: '#E4F2E7', fontSize: 15,
+                }}
+              />
+            </View>
+          </LinearGradient>
 
           {/* Boton principal */}
           <TouchableOpacity
             onPress={handleAuth}
-            disabled={loading || !email.trim() || !password}
-            style={{
-              backgroundColor: '#52CC64', borderRadius: 16,
-              paddingVertical: 16, alignItems: 'center',
-              opacity: (loading || !email.trim() || !password) ? 0.5 : 1,
-              marginBottom: 12,
-            }}
+            disabled={loading || !canSubmit}
+            activeOpacity={0.85}
+            style={{ marginBottom: 12, opacity: (loading || !canSubmit) ? 0.4 : 1 }}
           >
-            {loading
-              ? <ActivityIndicator color="white" />
-              : <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 16 }}>
-                  {mode === 'login' ? 'Ingresar →' : 'Crear cuenta →'}
-                </Text>
-            }
+            <LinearGradient
+              colors={['#52CC64', '#3DAA50']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+            >
+              {loading
+                ? <ActivityIndicator color="#080E09" />
+                : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>
+                    {mode === 'login' ? 'Ingresar ->' : 'Crear cuenta ->'}
+                  </Text>
+              }
+            </LinearGradient>
           </TouchableOpacity>
 
           {/* Biometrico */}
@@ -146,14 +180,17 @@ export default function AuthScreen() {
             <TouchableOpacity
               onPress={handleBiometric}
               disabled={loading}
-              style={{
-                backgroundColor: '#131D14', borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E',
-                paddingVertical: 14, alignItems: 'center', marginBottom: 12,
-              }}
+              activeOpacity={0.85}
+              style={{ marginBottom: 12 }}
             >
-              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>
-                🔐 {biometricLabel}
-              </Text>
+              <LinearGradient
+                colors={['#1A3D1E', '#0F2412']}
+                style={{ borderRadius: 16, borderWidth: 1, borderColor: '#2A5A2E', paddingVertical: 14, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>
+                  🔐 {biometricLabel}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
@@ -166,6 +203,7 @@ export default function AuthScreen() {
               {mode === 'login' ? 'No tenes cuenta? Registrate' : 'Ya tenes cuenta? Ingresa'}
             </Text>
           </TouchableOpacity>
+
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

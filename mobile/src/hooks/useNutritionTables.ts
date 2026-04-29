@@ -14,9 +14,17 @@ export function useNutritionTables() {
     setLoading(true)
     setError(null)
     try {
-      const { data: tablesData, error: tableError } = await supabase
-        .from('nutrition_tables')
-        .select('*')
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Solo oficiales + tablas propias del usuario
+      const query = supabase.from('nutrition_tables').select('*').eq('is_official', true)
+      const { data: officialData, error: tableError } = await query
+      const { data: customData } = user
+        ? await supabase.from('nutrition_tables').select('*').eq('is_official', false).eq('creator_id', user.id)
+        : { data: [] }
+
+      const tablesData = [...(officialData ?? []), ...(customData ?? [])]
+      if (tableError) throw tableError
 
       if (tableError) throw tableError
       if (!tablesData || tablesData.length === 0) return

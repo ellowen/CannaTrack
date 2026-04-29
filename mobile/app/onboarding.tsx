@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +13,22 @@ type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type Location    = 'indoor' | 'outdoor'
 
 const TOTAL_STEPS = 6
+
+const GENETIC_OPTIONS: { value: GeneticType; emoji: string; label: string; desc: string }[] = [
+  { value: 'feminized',  emoji: '♀️',  label: 'Feminizada',     desc: 'Floracion manual - vos decides cuando' },
+  { value: 'autoflower', emoji: '⚡',  label: 'Autofloreciente', desc: 'Florece sola a las 5 semanas' },
+  { value: 'regular',    emoji: '🌿', label: 'Regular',          desc: 'Puede ser macho o hembra' },
+]
+
+const LOCATION_OPTIONS: { value: Location; emoji: string; label: string; desc: string }[] = [
+  { value: 'indoor',  emoji: '🏠', label: 'Indoor',  desc: 'Ambiente controlado - luz artificial' },
+  { value: 'outdoor', emoji: '☀️', label: 'Outdoor', desc: 'Luz natural - ciclos del sol' },
+]
+
+const sectionLabel = {
+  color: '#728C74', fontSize: 13, fontWeight: '700' as const,
+  letterSpacing: 1.5, textTransform: 'uppercase' as const,
+}
 
 export default function OnboardingScreen() {
   const { user } = useAuth()
@@ -123,11 +140,17 @@ export default function OnboardingScreen() {
     else handleFinish()
   }
 
+  const progressPct = `${((step + 1) / TOTAL_STEPS) * 100}%` as `${number}%`
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       {/* Barra de progreso */}
       <View style={{ height: 3, backgroundColor: '#1C2E1E', marginHorizontal: 20, marginTop: 16, borderRadius: 2 }}>
-        <View style={{ height: '100%', backgroundColor: '#52CC64', width: `${((step + 1) / TOTAL_STEPS) * 100}%`, borderRadius: 2 }} />
+        <LinearGradient
+          colors={['#52CC64', '#3DAA50']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={{ height: '100%', width: progressPct, borderRadius: 2 }}
+        />
       </View>
 
       <ScrollView
@@ -140,20 +163,36 @@ export default function OnboardingScreen() {
           {/* PASO 0: Bienvenida */}
           {step === 0 && (
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: 80, marginBottom: 24 }}>🌱</Text>
+              <LinearGradient
+                colors={['#1A3D1E', '#0F2412']}
+                style={{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 28 }}
+              >
+                <Text style={{ fontSize: 56 }}>🌱</Text>
+              </LinearGradient>
               <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12 }}>
                 Bienvenido a CannaTrack
               </Text>
               <Text style={{ color: '#728C74', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>
                 Vamos a configurar tu primera planta.{'\n'}Te lleva menos de un minuto.
               </Text>
+              <View style={{ flexDirection: 'row', gap: 20, marginTop: 36 }}>
+                {['📅 Calendario', '📊 Nutricion', '🤖 IA'].map(item => (
+                  <LinearGradient
+                    key={item}
+                    colors={['#1A3D1E', '#0F2412']}
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#2A5A2E' }}
+                  >
+                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>{item}</Text>
+                  </LinearGradient>
+                ))}
+              </View>
             </View>
           )}
 
-          {/* PASO 1: Nombre de la planta */}
+          {/* PASO 1: Nombre */}
           {step === 1 && (
             <View>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <Text style={[sectionLabel, { marginBottom: 20 }]}>
                 PASO 1 DE {TOTAL_STEPS - 1}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
@@ -162,26 +201,32 @@ export default function OnboardingScreen() {
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
                 Puede ser un apodo o nombre descriptivo
               </Text>
-              <TextInput
-                value={plantName}
-                onChangeText={setPlantName}
-                placeholder="Ej: White Widow #1"
-                placeholderTextColor="#3A5040"
-                autoFocus
-                style={{
-                  backgroundColor: '#131D14', borderWidth: 1,
-                  borderColor: plantName ? '#52CC64' : '#1C2E1E',
-                  borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16,
-                  color: '#E4F2E7', fontSize: 18, fontWeight: '700',
-                }}
-              />
+              <LinearGradient
+                colors={plantName ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
+                style={{ borderRadius: 16, padding: 1 }}
+              >
+                <View style={{ borderRadius: 15, borderWidth: 1, borderColor: plantName ? '#52CC64' : '#1C2E1E', overflow: 'hidden' }}>
+                  <TextInput
+                    value={plantName}
+                    onChangeText={setPlantName}
+                    placeholder="Ej: White Widow #1"
+                    placeholderTextColor="#3A5040"
+                    autoFocus
+                    style={{
+                      backgroundColor: 'transparent',
+                      paddingHorizontal: 16, paddingVertical: 16,
+                      color: '#E4F2E7', fontSize: 18, fontWeight: '700',
+                    }}
+                  />
+                </View>
+              </LinearGradient>
             </View>
           )}
 
           {/* PASO 2: Genetica */}
           {step === 2 && (
             <View>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <Text style={[sectionLabel, { marginBottom: 20 }]}>
                 PASO 2 DE {TOTAL_STEPS - 1}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
@@ -190,77 +235,100 @@ export default function OnboardingScreen() {
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
                 La variedad o cruce de la planta
               </Text>
-              <TextInput
-                value={genetics}
-                onChangeText={setGenetics}
-                placeholder="Ej: White Widow, OG Kush..."
-                placeholderTextColor="#3A5040"
-                autoFocus
-                style={{
-                  backgroundColor: '#131D14', borderWidth: 1,
-                  borderColor: genetics ? '#52CC64' : '#1C2E1E',
-                  borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16,
-                  color: '#E4F2E7', fontSize: 18, fontWeight: '700',
-                }}
-              />
+              <LinearGradient
+                colors={genetics ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
+                style={{ borderRadius: 16, padding: 1 }}
+              >
+                <View style={{ borderRadius: 15, borderWidth: 1, borderColor: genetics ? '#52CC64' : '#1C2E1E', overflow: 'hidden' }}>
+                  <TextInput
+                    value={genetics}
+                    onChangeText={setGenetics}
+                    placeholder="Ej: White Widow, OG Kush..."
+                    placeholderTextColor="#3A5040"
+                    autoFocus
+                    style={{
+                      backgroundColor: 'transparent',
+                      paddingHorizontal: 16, paddingVertical: 16,
+                      color: '#E4F2E7', fontSize: 18, fontWeight: '700',
+                    }}
+                  />
+                </View>
+              </LinearGradient>
             </View>
           )}
 
           {/* PASO 3: Tipo de genetica */}
           {step === 3 && (
             <View>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <Text style={[sectionLabel, { marginBottom: 20 }]}>
                 PASO 3 DE {TOTAL_STEPS - 1}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
                 Tipo de planta
               </Text>
-              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
+              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
                 Esto define como se genera el calendario
               </Text>
               <View style={{ gap: 10 }}>
-                {([
-                  { value: 'feminized', label: 'Feminizada', desc: 'Floración manual - vos decides cuando' },
-                  { value: 'autoflower', label: 'Autofloreciente', desc: 'Florece sola a las 5 semanas' },
-                  { value: 'regular', label: 'Regular', desc: 'Puede ser macho o hembra' },
-                ] as { value: GeneticType; label: string; desc: string }[]).map(opt => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => setGeneticType(opt.value)}
-                    style={{
-                      borderRadius: 16, padding: 16,
-                      backgroundColor: geneticType === opt.value ? '#1A3D1E' : '#131D14',
-                      borderWidth: 1,
-                      borderColor: geneticType === opt.value ? '#52CC64' : '#1C2E1E',
-                    }}
-                  >
-                    <Text style={{ color: geneticType === opt.value ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
-                      {opt.label}
-                    </Text>
-                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{opt.desc}</Text>
-                  </TouchableOpacity>
-                ))}
+                {GENETIC_OPTIONS.map(opt => {
+                  const active = geneticType === opt.value
+                  return (
+                    <TouchableOpacity key={opt.value} onPress={() => setGeneticType(opt.value)} activeOpacity={0.8}>
+                      <LinearGradient
+                        colors={active ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#0A120B']}
+                        style={{ borderRadius: 16, borderWidth: 1, borderColor: active ? '#52CC64' : '#1C2E1E', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}
+                      >
+                        <View style={{
+                          width: 44, height: 44, borderRadius: 22,
+                          backgroundColor: active ? '#0D2410' : '#0F1A10',
+                          borderWidth: 1, borderColor: active ? '#52CC64' : '#1C2E1E',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: active ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
+                            {opt.label}
+                          </Text>
+                          <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>{opt.desc}</Text>
+                        </View>
+                        {active && (
+                          <LinearGradient
+                            colors={['#52CC64', '#3DAA50']}
+                            style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Text style={{ color: '#080E09', fontSize: 12, fontWeight: '900' }}>✓</Text>
+                          </LinearGradient>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
 
               {/* Dias totales para autofloreciente */}
               {geneticType === 'autoflower' && (
                 <View style={{ marginTop: 16 }}>
-                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
+                  <Text style={[sectionLabel, { marginBottom: 8 }]}>
                     Dias totales del ciclo
                   </Text>
-                  <TextInput
-                    value={autoFlowerTotalDays}
-                    onChangeText={setAutoFlowerTotalDays}
-                    keyboardType="number-pad"
-                    placeholder="77"
-                    placeholderTextColor="#3A5040"
-                    style={{
-                      backgroundColor: '#131D14', borderWidth: 1, borderColor: '#1C2E1E',
-                      borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-                      color: '#E4F2E7', fontSize: 15,
-                    }}
-                  />
-                  <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 4 }}>
+                  <LinearGradient
+                    colors={['#111A12', '#080E09']}
+                    style={{ borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E' }}
+                  >
+                    <TextInput
+                      value={autoFlowerTotalDays}
+                      onChangeText={setAutoFlowerTotalDays}
+                      keyboardType="number-pad"
+                      placeholder="77"
+                      placeholderTextColor="#3A5040"
+                      style={{
+                        paddingHorizontal: 14, paddingVertical: 12,
+                        color: '#E4F2E7', fontSize: 15,
+                      }}
+                    />
+                  </LinearGradient>
+                  <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 4 }}>
                     Tipico: 70-84 dias desde germinacion
                   </Text>
                 </View>
@@ -269,28 +337,29 @@ export default function OnboardingScreen() {
               {/* Sexo para regular */}
               {geneticType === 'regular' && (
                 <View style={{ marginTop: 16 }}>
-                  <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>
+                  <Text style={[sectionLabel, { marginBottom: 8 }]}>
                     Sexo (opcional)
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {([
-                      { value: 'female', label: 'Hembra', color: '#52CC64' },
-                      { value: 'male',   label: 'Macho',  color: '#3B82F6' },
+                      { value: 'female',  label: 'Hembra', color: '#52CC64' },
+                      { value: 'male',    label: 'Macho',  color: '#3B82F6' },
                       { value: 'unknown', label: 'No se',  color: '#728C74' },
                     ] as const).map(opt => (
                       <TouchableOpacity
                         key={opt.value}
                         onPress={() => setSex(opt.value)}
-                        style={{
-                          flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
-                          backgroundColor: sex === opt.value ? '#1A3D1E' : '#131D14',
-                          borderWidth: 1,
-                          borderColor: sex === opt.value ? opt.color : '#1C2E1E',
-                        }}
+                        activeOpacity={0.8}
+                        style={{ flex: 1 }}
                       >
-                        <Text style={{ color: sex === opt.value ? opt.color : '#728C74', fontWeight: '800', fontSize: 13 }}>
-                          {opt.label}
-                        </Text>
+                        <LinearGradient
+                          colors={sex === opt.value ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#0A120B']}
+                          style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: sex === opt.value ? opt.color : '#1C2E1E' }}
+                        >
+                          <Text style={{ color: sex === opt.value ? opt.color : '#728C74', fontWeight: '800', fontSize: 13 }}>
+                            {opt.label}
+                          </Text>
+                        </LinearGradient>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -302,36 +371,50 @@ export default function OnboardingScreen() {
           {/* PASO 4: Ubicacion */}
           {step === 4 && (
             <View>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <Text style={[sectionLabel, { marginBottom: 20 }]}>
                 PASO 4 DE {TOTAL_STEPS - 1}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
                 Donde esta tu planta?
               </Text>
-              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
+              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
                 Esto afecta las condiciones recomendadas
               </Text>
               <View style={{ gap: 10 }}>
-                {([
-                  { value: 'indoor', label: '🏠 Indoor', desc: 'Ambiente controlado - luz artificial' },
-                  { value: 'outdoor', label: '☀️ Outdoor', desc: 'Luz natural - ciclos del sol' },
-                ] as { value: Location; label: string; desc: string }[]).map(opt => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => setLocation(opt.value)}
-                    style={{
-                      borderRadius: 16, padding: 20,
-                      backgroundColor: location === opt.value ? '#1A3D1E' : '#131D14',
-                      borderWidth: 1,
-                      borderColor: location === opt.value ? '#52CC64' : '#1C2E1E',
-                    }}
-                  >
-                    <Text style={{ color: location === opt.value ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 16 }}>
-                      {opt.label}
-                    </Text>
-                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 4 }}>{opt.desc}</Text>
-                  </TouchableOpacity>
-                ))}
+                {LOCATION_OPTIONS.map(opt => {
+                  const active = location === opt.value
+                  return (
+                    <TouchableOpacity key={opt.value} onPress={() => setLocation(opt.value)} activeOpacity={0.8}>
+                      <LinearGradient
+                        colors={active ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#0A120B']}
+                        style={{ borderRadius: 16, borderWidth: 1, borderColor: active ? '#52CC64' : '#1C2E1E', padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16 }}
+                      >
+                        <View style={{
+                          width: 52, height: 52, borderRadius: 26,
+                          backgroundColor: active ? '#0D2410' : '#0F1A10',
+                          borderWidth: 1, borderColor: active ? '#52CC64' : '#1C2E1E',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Text style={{ fontSize: 24 }}>{opt.emoji}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: active ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 17 }}>
+                            {opt.label}
+                          </Text>
+                          <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>{opt.desc}</Text>
+                        </View>
+                        {active && (
+                          <LinearGradient
+                            colors={['#52CC64', '#3DAA50']}
+                            style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Text style={{ color: '#080E09', fontSize: 13, fontWeight: '900' }}>✓</Text>
+                          </LinearGradient>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
             </View>
           )}
@@ -339,37 +422,55 @@ export default function OnboardingScreen() {
           {/* PASO 5: Tabla nutricional */}
           {step === 5 && (
             <View>
-              <Text style={{ color: '#728C74', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <Text style={[sectionLabel, { marginBottom: 20 }]}>
                 PASO 5 DE {TOTAL_STEPS - 1}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
                 Que tabla usas?
               </Text>
-              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
+              <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
                 Selecciona los fertilizantes que vas a usar
               </Text>
               <View style={{ gap: 10 }}>
-                {tables.map(table => (
-                  <TouchableOpacity
-                    key={table.id}
-                    onPress={() => setSelectedTableId(table.id)}
-                    style={{
-                      borderRadius: 16, padding: 16,
-                      backgroundColor: selectedTableId === table.id ? '#1A3D1E' : '#131D14',
-                      borderWidth: 1,
-                      borderColor: selectedTableId === table.id ? '#52CC64' : '#1C2E1E',
-                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                  >
-                    <View>
-                      <Text style={{ color: selectedTableId === table.id ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
-                        {table.name}
-                      </Text>
-                      <Text style={{ color: '#728C74', fontSize: 12, marginTop: 3 }}>Acceso: {table.accessTier === 'pro' ? 'Pro' : 'Gratis'}</Text>
-                    </View>
-                    {selectedTableId === table.id && <Text style={{ color: '#52CC64', fontSize: 18 }}>✓</Text>}
-                  </TouchableOpacity>
-                ))}
+                {tables.map(table => {
+                  const active = selectedTableId === table.id
+                  return (
+                    <TouchableOpacity key={table.id} onPress={() => setSelectedTableId(table.id)} activeOpacity={0.8}>
+                      <LinearGradient
+                        colors={active ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#0A120B']}
+                        style={{ borderRadius: 16, borderWidth: 1, borderColor: active ? '#52CC64' : '#1C2E1E', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: active ? '#52CC64' : '#E4F2E7', fontWeight: '800', fontSize: 15 }}>
+                            {table.name}
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <View style={{
+                              paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8,
+                              backgroundColor: table.accessTier === 'pro' ? '#1A1440' : '#0F2412',
+                              borderWidth: 1, borderColor: table.accessTier === 'pro' ? '#A78BFA' : '#2A5A2E',
+                            }}>
+                              <Text style={{ fontSize: 11, fontWeight: '700', color: table.accessTier === 'pro' ? '#A78BFA' : '#52CC64' }}>
+                                {table.accessTier === 'pro' ? 'PRO' : 'GRATIS'}
+                              </Text>
+                            </View>
+                            <Text style={{ color: '#3A5040', fontSize: 12 }}>
+                              {table.vegeWeeks.length + table.floraWeeks.length} semanas
+                            </Text>
+                          </View>
+                        </View>
+                        {active && (
+                          <LinearGradient
+                            colors={['#52CC64', '#3DAA50']}
+                            style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}
+                          >
+                            <Text style={{ color: '#080E09', fontSize: 13, fontWeight: '900' }}>✓</Text>
+                          </LinearGradient>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
             </View>
           )}
@@ -381,25 +482,28 @@ export default function OnboardingScreen() {
           <TouchableOpacity
             onPress={handleNext}
             disabled={!canAdvance() || loading}
-            style={{
-              backgroundColor: '#52CC64', borderRadius: 18,
-              paddingVertical: 18, alignItems: 'center',
-              opacity: (!canAdvance() || loading) ? 0.4 : 1,
-            }}
+            activeOpacity={0.85}
+            style={{ opacity: (!canAdvance() || loading) ? 0.4 : 1 }}
           >
-            {loading
-              ? <ActivityIndicator color="white" />
-              : <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 16 }}>
-                  {step === TOTAL_STEPS - 1 ? 'Crear mi planta →' : 'Siguiente →'}
-                </Text>
-            }
+            <LinearGradient
+              colors={['#52CC64', '#3DAA50']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ borderRadius: 18, paddingVertical: 18, alignItems: 'center' }}
+            >
+              {loading
+                ? <ActivityIndicator color="#080E09" />
+                : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>
+                    {step === TOTAL_STEPS - 1 ? 'Crear mi planta  →' : 'Siguiente  →'}
+                  </Text>
+              }
+            </LinearGradient>
           </TouchableOpacity>
           {step > 0 && !loading && (
             <TouchableOpacity
               onPress={() => setStep(step - 1)}
               style={{ paddingVertical: 14, alignItems: 'center' }}
             >
-              <Text style={{ color: '#728C74', fontSize: 14 }}>← Atras</Text>
+              <Text style={{ color: '#728C74', fontSize: 14, fontWeight: '600' }}>← Atras</Text>
             </TouchableOpacity>
           )}
         </View>

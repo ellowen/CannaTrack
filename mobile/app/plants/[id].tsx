@@ -18,6 +18,7 @@ import type { NutritionTable } from '@shared/types/plant'
 import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
+import { cancelPlantNotifications } from '@/lib/notifications'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -133,6 +134,7 @@ export default function PlantDetailScreen() {
       status: 'harvested',
       notes: harvestNote ?? plant.notes ?? null,
     }).eq('id', plant.id)
+    void cancelPlantNotifications(plant.id)
     if (user) void awardXP(user.id, XP_VALUES.HARVEST)
     router.replace('/(tabs)')
   }
@@ -140,6 +142,7 @@ export default function PlantDetailScreen() {
   async function confirmDiscard() {
     if (!plant) return
     await supabase.from('plants').update({ status: 'discarded' }).eq('id', plant.id)
+    void cancelPlantNotifications(plant.id)
     router.replace('/(tabs)')
   }
 

@@ -227,7 +227,7 @@ export default function CalendarScreen() {
             {/* Day-of-week labels */}
             <View style={{ flexDirection: 'row', marginBottom: 4 }}>
               {['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'].map(d => (
-                <Text key={d} style={{ color: '#2D4A30', fontSize: 10, fontWeight: '800', width: '14.28%', textAlign: 'center', letterSpacing: 0.5 }}>
+                <Text key={d} style={{ color: '#2D4A30', fontSize: 11, fontWeight: '800', width: '14.28%', textAlign: 'center', letterSpacing: 0.5 }}>
                   {d}
                 </Text>
               ))}
@@ -324,7 +324,7 @@ export default function CalendarScreen() {
                 ) : (
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#1C2E1E', alignItems: 'center' }}>
                     <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', lineHeight: 20 }}>{pendingSelected.length}</Text>
-                    <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '700' }}>pendiente{pendingSelected.length !== 1 ? 's' : ''}</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>pendiente{pendingSelected.length !== 1 ? 's' : ''}</Text>
                   </View>
                 )
               )}
@@ -396,7 +396,7 @@ export default function CalendarScreen() {
                   <View style={{ backgroundColor: '#0A0F0A', borderRadius: 18, borderWidth: 1, borderColor: '#141E14', overflow: 'hidden' }}>
                     <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#141E14', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <View style={{ width: 3, height: 12, borderRadius: 1.5, backgroundColor: '#52CC64', opacity: 0.4 }} />
-                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
+                      <Text style={{ color: '#2D5030', fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
                         Completadas ({doneSelected.length})
                       </Text>
                     </View>
