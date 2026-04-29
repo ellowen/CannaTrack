@@ -5,10 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/hooks/useAuth'
+import { usePlan } from '@/hooks/usePlan'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { BackIcon } from '@/components/icons/AppIcons'
+import PaywallModal from '@/components/PaywallModal'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -20,8 +21,8 @@ const GENETIC_OPTIONS: { value: GeneticType; label: string; emoji: string; desc:
 ]
 
 export default function NewPlantScreen() {
-  const { user, loading: authLoading } = useAuth()
   const { tables } = useNutritionTables()
+  const { isPro, loading: planLoading, canCreatePlant, refetch: refetchPlan } = usePlan()
 
   const [name, setName]             = useState('')
   const [geneticType, setGeneticType] = useState<GeneticType>('feminized')
@@ -32,32 +33,16 @@ export default function NewPlantScreen() {
   const [error, setError]           = useState<string | null>(null)
   const [success, setSuccess]       = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [isPro, setIsPro]           = useState(false)
-  const [activePlantCount, setActivePlantCount] = useState<number | null>(null)
+  const [showPaywall, setShowPaywall] = useState(false)
 
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
   }, [tables, selectedTableId])
 
+  // Show paywall once plan loads and user can't create
   useEffect(() => {
-    if (authLoading) return
-    if (!user) { setActivePlantCount(0); return }
-    checkProStatus()
-  }, [user, authLoading])
-
-  async function checkProStatus() {
-    if (!user) return
-    try {
-      const [{ data: prof }, { count }] = await Promise.all([
-        supabase.from('profiles').select('is_pro').eq('id', user.id).maybeSingle(),
-        supabase.from('plants').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'active'),
-      ])
-      setIsPro(prof?.is_pro ?? false)
-      setActivePlantCount(count ?? 0)
-    } catch {
-      setActivePlantCount(0)
-    }
-  }
+    if (!planLoading && !canCreatePlant) setShowPaywall(true)
+  }, [planLoading, canCreatePlant])
 
   function validateForm(): boolean {
     const errors: Record<string, string> = {}
@@ -113,6 +98,7 @@ export default function NewPlantScreen() {
           })))
         }
       }
+      refetchPlan()
       setSuccess(true)
       setTimeout(() => router.replace('/(tabs)/plants'), 1500)
     } catch (e: unknown) {
@@ -123,41 +109,11 @@ export default function NewPlantScreen() {
     }
   }
 
-  // Loading
-  if (activePlantCount === null) {
+  // Loading plan
+  if (planLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#52CC64" size="large" />
-      </SafeAreaView>
-    )
-  }
-
-  // Limite plan free
-  if (activePlantCount >= 1 && !isPro) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
-        <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24 }}>
-          <TouchableOpacity
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-            style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <BackIcon size={20} color="#52CC64" />
-          </TouchableOpacity>
-        </LinearGradient>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-          <Text style={{ fontSize: 56, marginBottom: 20 }}>🌿</Text>
-          <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 10 }}>Plan Gratuito</Text>
-          <Text style={{ color: '#728C74', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
-            El plan gratuito incluye 1 planta activa.{'\n'}Upgrade a Pro para cultivos ilimitados.
-          </Text>
-          <LinearGradient
-            colors={['#1A3D1E', '#0F2410']}
-            style={{ borderRadius: 20, borderWidth: 1, borderColor: '#52CC64', padding: 20, width: '100%', alignItems: 'center', marginBottom: 16 }}
-          >
-            <Text style={{ color: '#52CC64', fontSize: 17, fontWeight: '900', marginBottom: 4 }}>Pro - USD 5/mes</Text>
-            <Text style={{ color: '#3D6642', fontSize: 13, textAlign: 'center' }}>Plantas ilimitadas · Todas las tablas · IA</Text>
-          </LinearGradient>
-        </View>
       </SafeAreaView>
     )
   }
@@ -180,6 +136,11 @@ export default function NewPlantScreen() {
   // Formulario
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => { setShowPaywall(false); router.canGoBack() ? router.back() : router.replace('/(tabs)') }}
+        feature="Plantas ilimitadas"
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
