@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert,
   Modal, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -657,7 +657,7 @@ export default function PlantDetailScreen() {
               ].map(action => (
                 <TouchableOpacity
                   key={action.label}
-                  onPress={() => router.push(action.route)}
+                  onPress={() => router.push(action.route as never)}
                   activeOpacity={0.8}
                   style={{ flex: 1, minWidth: '30%' }}
                 >
@@ -673,7 +673,7 @@ export default function PlantDetailScreen() {
 
               {/* Diagnostico IA — Pro */}
               <TouchableOpacity
-                onPress={() => router.push(`/plants/${id}/diagnosis`)}
+                onPress={() => router.push(`/plants/${id}/diagnosis` as never)}
                 activeOpacity={0.8}
                 style={{ flex: 1, minWidth: '30%' }}
               >

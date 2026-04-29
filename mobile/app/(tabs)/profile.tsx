@@ -27,6 +27,8 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (authLoading) return
     if (!user) { setLoading(false); return }
+    const uid = user.id
+    const email = user.email
     async function load() {
       const today0 = new Date(); today0.setHours(0, 0, 0, 0)
 
@@ -39,17 +41,17 @@ export default function ProfileScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, username').eq('id', user.id).maybeSingle(),
-        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
-        supabase.from('plants').select('id, name, genetics, start_date').eq('user_id', user.id).eq('status', 'harvested'),
-        supabase.from('scheduled_tasks').select('id').eq('user_id', user.id).eq('completed', true)
+        supabase.from('profiles').select('xp, streak_days, username').eq('id', uid).maybeSingle(),
+        supabase.from('plants').select('id').eq('user_id', uid).eq('status', 'active'),
+        supabase.from('plants').select('id, name, genetics, start_date').eq('user_id', uid).eq('status', 'harvested'),
+        supabase.from('scheduled_tasks').select('id').eq('user_id', uid).eq('completed', true)
           .gte('completed_at', today0.toISOString()),
-        supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('completed', true),
-        supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id).not('photo_url', 'is', null),
+        supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('completed', true),
+        supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', uid),
+        supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', uid).not('photo_url', 'is', null),
       ])
 
-      setProfile({ xp: p?.xp ?? 0, streak: p?.streak_days ?? 0, bestStreak: 0, username: p?.username ?? user.email?.split('@')[0] ?? 'Cultivador' })
+      setProfile({ xp: p?.xp ?? 0, streak: p?.streak_days ?? 0, bestStreak: 0, username: p?.username ?? email?.split('@')[0] ?? 'Cultivador' })
       setCompletedToday(tasksToday?.length ?? 0)
       setAchievementData({
         streak:               p?.streak_days ?? 0,
