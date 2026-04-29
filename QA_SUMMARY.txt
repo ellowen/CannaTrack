@@ -1,0 +1,210 @@
+================================================================================
+CANNATRACK MOBILE — QA & TESTING ANALYSIS SUMMARY
+Date: April 24, 2026
+================================================================================
+
+CRITICAL FINDINGS
+================================================================================
+
+Test Coverage: 1 file, 5 basic tests (store initialization only)
+  - NO integration tests (offline-online sync untested)
+  - NO E2E tests (user workflows not tested)
+  - NO component tests (UI behavior untested)
+  - NO error scenario tests
+
+Risk Level: HIGH — Production not ready
+
+5 CRITICAL/HIGH-SEVERITY BUGS FOUND
+================================================================================
+
+1. MISSING awardXP CALL [CRITICAL]
+   Location: src/components/CompleteTaskSheet.tsx (line 194)
+   Impact: User sees +25 XP animation, but XP never synced to database
+           On reload, XP is gone. Streak never increments.
+   Fix Time: 30 minutes
+
+2. useInitSync OVERWRITES LOCAL DATA [CRITICAL]
+   Location: src/hooks/useInitSync.ts (line 26)
+   Impact: If network request fails, local plants/tasks are cleared
+           User loses offline changes when app starts
+   Fix Time: 20 minutes
+
+3. RACE CONDITION IN STREAK UPDATE [HIGH]
+   Location: src/lib/xp.ts (line 30)
+   Impact: User completes 2 tasks rapidly → streak increments once
+           Misses 7-day and 30-day milestone bonuses
+   Fix Time: 45 minutes
+
+4. NETWORK POLLING MEMORY LEAK [HIGH]
+   Location: src/lib/network.ts (line 34-44)
+   Impact: Network check every 5 sec accumulates over time
+           Battery drain, memory growth, stale listeners
+   Fix Time: 30 minutes
+
+5. ASYNCSTORAGE CORRUPTION NOT CAUGHT [MEDIUM]
+   Location: src/lib/storage.ts (line 7-26)
+   Impact: Invalid dates cause silent failures during sync
+           "Invalid Date" sent to Supabase, sync fails
+   Fix Time: 25 minutes
+
+CRITICAL USER WORKFLOWS NOT TESTED
+================================================================================
+
+Workflow 1: User Registration → Biometric Setup → Onboarding
+  Status: NOT TESTED
+  Risks:
+    - What if signUp fails? No error UI.
+    - What if SecureStore.setItemAsync throws? Session not saved.
+    - What if user closes app during signup? Orphaned incomplete profile.
+
+Workflow 2: Create Plant → Generate Schedule → Complete Tasks → Get XP
+  Status: PARTIALLY TESTED
+  Risks:
+    - Schedule generation correctness not verified
+    - Task with 0 available products crashes
+    - XP not synced to DB (BUG #1)
+    - Streak not updated (BUG #3)
+
+Workflow 3: Go Offline → Make Changes → Go Online → Sync
+  Status: NOT TESTED (NO QUEUE SYSTEM)
+  Risks:
+    - syncQueue defined but never used in sync.ts
+    - Tasks marked done locally but not synced (BUG #2)
+    - Network flicker causes duplicate sync attempts
+    - Conflict resolution missing (web edit vs mobile edit)
+
+Workflow 4: App Restart While Offline
+  Status: PARTIALLY TESTED
+  Risks:
+    - useInitSync hangs if network timeout (30+ sec)
+    - Race condition: hydration vs sync overwrite (BUG #2)
+    - No clear offline indication (5 sec polling delay)
+
+PLATFORM-SPECIFIC ISSUES
+================================================================================
+
+iOS Notch Devices:
+  - CompleteTaskSheet not respecting SafeArea
+  - Text may hide behind notch
+
+Android Back Button:
+  - Modal doesn't respond to hardware back button
+  - Swiping down only way to close sheet
+
+Dark/Light Mode:
+  - App only works in dark mode
+  - Light mode: colors invisible (dark green on white)
+
+RECOMMENDED TEST FRAMEWORK
+================================================================================
+
+Setup:
+  - Jest (unit tests)
+  - @testing-library/react-native (component tests)
+  - Maestro (E2E tests, platform-agnostic)
+
+Configuration:
+  - jest.config.js with proper module aliases
+  - Test factories for creating mock plants/tasks
+  - Mock Supabase setup for offline testing
+  - 60%+ coverage threshold globally, 80%+ for critical paths
+
+Estimated setup time: 4-6 hours
+Estimated writing critical test suites: 16-20 hours
+
+IMPLEMENTATION ROADMAP
+================================================================================
+
+Phase 1 — This Week (Critical fixes)
+  [ ] Fix awardXP call chain (30 min)
+  [ ] Fix useInitSync error handling (20 min)
+  [ ] Fix streak race condition (45 min)
+  [ ] Fix network polling cleanup (30 min)
+  [ ] Fix AsyncStorage validation (25 min)
+  Total: 2.5 hours
+
+Phase 2 — Next Week (Test infrastructure)
+  [ ] Jest + testing-library setup (3 hours)
+  [ ] Plant store CRUD + persistence tests (2 hours)
+  [ ] Task store tests (2 hours)
+  [ ] Network + sync tests (3 hours)
+  Total: 10 hours
+
+Phase 3 — Week 3 (E2E + integration)
+  [ ] Offline-online sync round-trip test (2 hours)
+  [ ] Plant creation → task completion flow (2 hours)
+  [ ] Biometric auth restoration (2 hours)
+  [ ] 5 critical Maestro flows (5 hours)
+  Total: 11 hours
+
+DELIVERABLES INCLUDED
+================================================================================
+
+1. QA_ANALYSIS.md (12,000+ words)
+   - Comprehensive test coverage gaps
+   - 8 detailed sections on edge cases, UX issues, data integrity
+   - 20+ specific test scenarios with expected vs actual results
+   - Framework recommendations
+
+2. TEST_IMPLEMENTATION_GUIDE.md
+   - Step-by-step Jest setup
+   - Test factories and mocks
+   - 10 example test suites (ready to copy/paste)
+   - Troubleshooting section
+
+3. CRITICAL_BUGS_TO_FIX.md
+   - 5 bugs with root cause analysis
+   - Code diffs showing exact fix
+   - Race condition timeline diagrams
+   - Test cases for each bug
+
+KEY METRICS
+================================================================================
+
+Code Coverage (current):
+  - Overall: ~5% (only store initialization tested)
+  - Critical paths: <10% (sync, auth, XP barely tested)
+  - UI components: 0% (no component tests)
+
+Bugs Found:
+  - Critical/High severity: 5
+  - Medium severity: 3+
+  - Likely more in untested edge cases
+
+Risk Exposure:
+  - Data loss scenarios: 2 (BUG #1, #2)
+  - User-facing broken features: 3 (XP, streak, offline)
+  - Performance degradation: 1 (memory leak)
+
+NEXT STEPS
+================================================================================
+
+Immediate (Do Now):
+  1. Read CRITICAL_BUGS_TO_FIX.md
+  2. Implement 5 critical bug fixes (2.5 hours)
+  3. Test manually: create plant, complete task, verify XP in DB
+
+This Sprint:
+  1. Follow TEST_IMPLEMENTATION_GUIDE.md
+  2. Setup Jest (1 hour)
+  3. Write plant/task store tests (4 hours)
+  4. Write sync/offline tests (3 hours)
+
+Before Production:
+  1. 80%+ coverage on critical paths
+  2. All 5 bugs fixed + tests passing
+  3. 5 E2E user journeys green
+  4. Manual QA on iOS + Android
+
+CONTACT / QUESTIONS
+================================================================================
+
+All analysis in:
+  - /QA_ANALYSIS.md (detailed findings)
+  - /CRITICAL_BUGS_TO_FIX.md (implementation)
+  - /TEST_IMPLEMENTATION_GUIDE.md (setup + examples)
+
+Estimated reading time: 45 minutes
+Estimated implementation time: 50 hours for full coverage
+
+================================================================================
