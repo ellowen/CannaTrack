@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, KeyboardAvoidingView, Platform, TextInput,
+  Modal, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
@@ -30,14 +31,6 @@ const TYPE_LABEL: Record<string, string> = {
   observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
 }
 
-function todayAsYMD(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
@@ -49,8 +42,8 @@ export default function PlantDetailScreen() {
   const [harvestModal, setHarvestModal]   = useState(false)
   const [liters, setLiters]               = useState(0)
   const [floraDateModal, setFloraDateModal] = useState(false)
-  const [floraDateInput, setFloraDateInput] = useState(todayAsYMD())
-  const [floraError, setFloraError] = useState<string | null>(null)
+  const [floraDate, setFloraDate]           = useState(new Date())
+  const [floraError, setFloraError]         = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -71,17 +64,12 @@ export default function PlantDetailScreen() {
 
   function handleStartFlora() {
     if (!plant) return
-    setFloraDateInput(todayAsYMD())
+    setFloraDate(new Date())
     setFloraDateModal(true)
   }
 
   async function confirmFlora() {
     if (!plant) return
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(floraDateInput)
-    if (!match) { alert('Formato invalido. Use YYYY-MM-DD'); return }
-    const candidate = new Date(floraDateInput)
-    if (isNaN(candidate.getTime())) { alert('Fecha invalida'); return }
-
     const table = tables.find(t => t.id === plant.nutritionTableId)
     if (!table) {
       alert(`Tabla no encontrada: ${plant.nutritionTableId}`)
@@ -91,7 +79,7 @@ export default function PlantDetailScreen() {
 
     try {
       setFloraError(null)
-      const floraStartDate = candidate
+      const floraStartDate = floraDate
       const newTasks = startFloraPhase(plant, floraStartDate, table)
 
       await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
@@ -804,32 +792,43 @@ export default function PlantDetailScreen() {
               El calendario se recalcula desde la fecha seleccionada
             </Text>
 
-            <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
-              Fecha de inicio
+            <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>
+              Fecha de inicio de flora
             </Text>
-            <TextInput
-              value={floraDateInput}
-              onChangeText={setFloraDateInput}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#3A3060"
-              keyboardType="numeric"
+
+            {/* Date picker display */}
+            <TouchableOpacity
+              activeOpacity={0.85}
               style={{
-                backgroundColor: 'rgba(0,0,0,0.4)',
+                backgroundColor: 'rgba(139,92,246,0.08)',
                 borderWidth: 1,
-                borderColor: floraError ? '#EF4444' : 'rgba(139,92,246,0.3)',
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: '#E4F2E7',
-                fontSize: 16,
-                fontWeight: '600',
-                marginBottom: 8,
+                borderColor: 'rgba(139,92,246,0.3)',
+                borderRadius: 16,
+                paddingHorizontal: 18,
+                paddingVertical: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 14,
               }}
+            >
+              <Text style={{ color: '#E4F2E7', fontSize: 17, fontWeight: '700' }}>
+                {floraDate.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </Text>
+              <Text style={{ fontSize: 20 }}>📅</Text>
+            </TouchableOpacity>
+
+            <DateTimePicker
+              value={floraDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(_: unknown, d?: Date) => { if (d) setFloraDate(d) }}
+              maximumDate={new Date()}
+              style={{ marginBottom: 8 }}
             />
-            {floraError ? (
-              <Text style={{ color: '#EF4444', fontSize: 11, marginBottom: 20 }}>❌ {floraError}</Text>
-            ) : (
-              <Text style={{ color: '#3A3060', fontSize: 11, marginBottom: 20 }}>Formato: AAAA-MM-DD</Text>
+
+            {floraError && (
+              <Text style={{ color: '#EF4444', fontSize: 12, marginBottom: 10 }}>❌ {floraError}</Text>
             )}
 
             <View style={{
@@ -841,7 +840,7 @@ export default function PlantDetailScreen() {
               paddingVertical: 10,
               marginBottom: 24,
             }}>
-              <Text style={{ color: '#F59E0B', fontSize: 12 }}>⚠️ Esta accion no se puede deshacer</Text>
+              <Text style={{ color: '#F59E0B', fontSize: 12 }}>⚠️ Esta accion regenera el calendario desde cero</Text>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
