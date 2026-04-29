@@ -169,22 +169,19 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
                     filled={isFocused}
                   />
                 )}
+                {/* Label in same column as icon - no absolute positioning */}
+                <Animated.Text style={{
+                  color,
+                  fontSize: 9,
+                  fontWeight: '800',
+                  letterSpacing: 0.6,
+                  marginTop: 3,
+                  opacity: fadeAnims[index],
+                  textTransform: 'uppercase',
+                }}>
+                  {TAB_LABEL[tabName]}
+                </Animated.Text>
               </Animated.View>
-
-              {/* Label fades in only for active tab */}
-              <Animated.Text style={{
-                color,
-                fontSize: 9,
-                fontWeight: '800',
-                letterSpacing: 0.6,
-                marginTop: 3,
-                opacity: fadeAnims[index],
-                textTransform: 'uppercase',
-                position: 'absolute',
-                bottom: 6,
-              }}>
-                {TAB_LABEL[tabName]}
-              </Animated.Text>
             </TouchableOpacity>
           )
         })}

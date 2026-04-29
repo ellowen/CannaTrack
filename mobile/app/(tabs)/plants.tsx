@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform, Alert, RefreshControl,
 } from 'react-native'
+import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -79,6 +80,12 @@ export default function PlantsScreen() {
   const filteredHistory = historyPlants.filter(p =>
     !q || p.name.toLowerCase().includes(q) || p.genetics.toLowerCase().includes(q)
   )
+
+  async function handleDeletePlant(plantId: string) {
+    const { error } = await supabase.from('plants').update({ status: 'discarded' }).eq('id', plantId)
+    if (error) { Alert.alert('Error', error.message); return }
+    await load()
+  }
 
   async function handleCreatePlant() {
     if (!user || !formData.name.trim()) {
@@ -214,6 +221,16 @@ export default function PlantsScreen() {
                   key={plant.id}
                   plant={plant}
                   pendingToday={todayTaskMap[plant.id] ?? 0}
+                  onDelete={() => {
+                    Alert.alert(
+                      'Descartar planta',
+                      `¿Seguro que queres descartar "${plant.name}"?`,
+                      [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Descartar', style: 'destructive', onPress: () => handleDeletePlant(plant.id) },
+                      ]
+                    )
+                  }}
                 />
               ))}
             </>
@@ -410,7 +427,8 @@ export default function PlantsScreen() {
 
 // ─── Active Plant Card ──────────────────────────────────────────────────────
 
-function ActivePlantCard({ plant, pendingToday }: { plant: Plant; pendingToday: number }) {
+function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pendingToday: number; onDelete: () => void }) {
+  const swipeRef = useRef<Swipeable>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const isFlora = !!plant.floraStartDate
   const accentColor = isFlora ? '#F59E0B' : '#52CC64'
@@ -434,7 +452,26 @@ function ActivePlantCard({ plant, pendingToday }: { plant: Plant; pendingToday: 
   const borderColor = isFlora ? '#2D1800' : '#142214'
   const phaseIcon = isFlora ? '🌸' : '🌿'
 
+  function renderRightActions() {
+    return (
+      <TouchableOpacity
+        onPress={() => { swipeRef.current?.close(); onDelete() }}
+        style={{ width: 76, marginBottom: 12, borderRadius: 20, overflow: 'hidden' }}
+        activeOpacity={0.85}
+      >
+        <LinearGradient
+          colors={['#3D0A0A', '#200505']}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }}
+        >
+          <Text style={{ fontSize: 22 }}>🗑️</Text>
+          <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 }}>DESCARTAR</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    )
+  }
+
   return (
+    <Swipeable ref={swipeRef} renderRightActions={renderRightActions} overshootRight={false} friction={2}>
     <TouchableOpacity onPress={() => router.push(`/plants/${plant.id}`)} activeOpacity={0.85} style={{ marginBottom: 12 }}>
       <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={{ borderRadius: 20, borderWidth: 1, borderColor, overflow: 'hidden' }}
@@ -514,6 +551,7 @@ function ActivePlantCard({ plant, pendingToday }: { plant: Plant; pendingToday: 
         </View>
       </LinearGradient>
     </TouchableOpacity>
+    </Swipeable>
   )
 }
 
