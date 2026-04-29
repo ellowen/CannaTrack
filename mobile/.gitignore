@@ -4,3 +4,13 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Build cache y artefactos generados
+.expo/web/
+node_modules/
+dist/
+*.log
+
+# Env
+.env
+.env.local
