@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  View, Text, ScrollView, TouchableOpacity, FlatList,
+  View, Text, ScrollView, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform, Alert, RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -10,7 +10,9 @@ import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useAuth } from '@/hooks/useAuth'
+import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { supabase } from '@/lib/supabase'
+import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import type { Plant } from '@shared/types/plant'
 
 // pending tasks count per plant for today
@@ -19,6 +21,7 @@ type TaskMap = Record<string, number>
 export default function PlantsScreen() {
   const { user } = useAuth()
   const { plants } = usePlants()
+  const { tables } = useNutritionTables()
 
   const [historyPlants, setHistoryPlants] = useState<Plant[]>([])
   const [todayTaskMap, setTodayTaskMap] = useState<TaskMap>({})
@@ -32,6 +35,11 @@ export default function PlantsScreen() {
     location: 'indoor' as Plant['location'],
     potCount: '1', potVolumeLiters: '11',
   })
+  const [selectedTableId, setSelectedTableId] = useState('')
+
+  useEffect(() => {
+    if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
+  }, [tables, selectedTableId])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -77,19 +85,63 @@ export default function PlantsScreen() {
       Alert.alert('Error', 'Ingresa un nombre para la planta')
       return
     }
-    const { error } = await supabase.from('plants').insert({
-      user_id: user.id,
-      name: formData.name.trim(),
-      genetics: formData.genetics.trim() || 'Unknown',
-      genetic_type: formData.geneticType,
-      start_date: new Date(formData.startDate).toISOString(),
-      location: formData.location,
-      pot_count: parseInt(formData.potCount) || 1,
-      pot_volume_liters: parseInt(formData.potVolumeLiters) || 11,
-      nutrition_table_id: 'revegetar',
-      status: 'active',
-    })
-    if (error) { Alert.alert('Error', error.message); return }
+    const tableId = selectedTableId || (tables[0]?.id ?? 'revegetar-v1')
+    const startDate = new Date(formData.startDate)
+    const potCount = parseInt(formData.potCount) || 1
+    const potVolumeLiters = parseInt(formData.potVolumeLiters) || 11
+
+    const { data: plantRow, error } = await supabase.from('plants').insert({
+      user_id:            user.id,
+      name:               formData.name.trim(),
+      genetics:           formData.genetics.trim() || 'Unknown',
+      genetic_type:       formData.geneticType,
+      start_date:         startDate.toISOString().split('T')[0],
+      location:           formData.location,
+      pot_count:          potCount,
+      pot_volume_liters:  potVolumeLiters,
+      nutrition_table_id: tableId,
+      status:             'active',
+    }).select().maybeSingle()
+
+    if (error || !plantRow) { Alert.alert('Error', error?.message ?? 'No se pudo crear la planta'); return }
+
+    // Generar calendario de tareas
+    const table = tables.find(t => t.id === tableId)
+    if (table) {
+      const plant: Plant = {
+        id:              plantRow.id,
+        name:            plantRow.name,
+        genetics:        plantRow.genetics,
+        geneticType:     formData.geneticType,
+        sex:             'unknown',
+        startDate,
+        location:        formData.location,
+        potCount,
+        potVolumeLiters,
+        nutritionTableId: tableId,
+        status:          'active',
+      }
+      const tasks = generatePlantSchedule(plant, table)
+      if (tasks.length > 0) {
+        await supabase.from('scheduled_tasks').insert(
+          tasks.map(t => ({
+            user_id:        user.id,
+            plant_id:       plantRow.id,
+            type:           t.type,
+            scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+            cycle:          t.cycle,
+            week:           t.week,
+            stage:          t.stage,
+            products:       t.products,
+            ec_min:         t.ecMin ?? null,
+            ec_max:         t.ecMax ?? null,
+            ph_min:         t.phMin ?? null,
+            ph_max:         t.phMax ?? null,
+          }))
+        )
+      }
+    }
+
     setFormData({ name: '', genetics: '', geneticType: 'feminized', startDate: format(new Date(), 'yyyy-MM-dd'), location: 'indoor', potCount: '1', potVolumeLiters: '11' })
     setShowNewModal(false)
     await load()
@@ -283,6 +335,31 @@ export default function PlantsScreen() {
                     ))}
                   </View>
                 </FormField>
+
+                {/* Tabla nutricional */}
+                {tables.length > 1 && (
+                  <FormField label="Tabla nutricional">
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {tables.map(t => (
+                        <TouchableOpacity
+                          key={t.id}
+                          onPress={() => setSelectedTableId(t.id)}
+                          activeOpacity={0.8}
+                        >
+                          {selectedTableId === t.id ? (
+                            <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                              <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 12 }}>{t.name}</Text>
+                            </LinearGradient>
+                          ) : (
+                            <View style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                              <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 12 }}>{t.name}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </FormField>
+                )}
 
                 {/* Macetas */}
                 <FormField label="Macetas">

@@ -7,6 +7,8 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
+import { generatePlantSchedule, startFloraPhase } from '@shared/lib/nutrition-engine'
+import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type PlantSex = 'female' | 'male' | 'unknown'
@@ -57,9 +59,15 @@ export default function EditPlantScreen() {
   const [potCount, setPotCount]                 = useState(1)
   const [potVolumeLiters, setPotVolumeLiters]   = useState(11)
   const [notes, setNotes]                       = useState('')
+  const [floraStartDate, setFloraStartDate]     = useState<string | null>(null)
   const [loading, setLoading]                   = useState(true)
   const [saving, setSaving]                     = useState(false)
   const [selectedTableId, setSelectedTableId]   = useState('')
+  // Valores originales para detectar cambios que requieren regenerar calendario
+  const [origStartDate, setOrigStartDate]       = useState('')
+  const [origGeneticType, setOrigGeneticType]   = useState<GeneticType>('feminized')
+  const [origTableId, setOrigTableId]           = useState('')
+  const [origAutoFlowerDays, setOrigAutoFlowerDays] = useState(77)
   const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
   const [customProducts, setCustomProducts]     = useState<CustomProduct[]>([])
   const [showAddForm, setShowAddForm]           = useState(false)
@@ -72,19 +80,29 @@ export default function EditPlantScreen() {
       if (!id || !user) return
       const { data } = await supabase.from('plants').select('*').eq('id', id).eq('user_id', user.id).maybeSingle()
       if (data) {
+        const gt = (data.genetic_type as GeneticType) ?? 'feminized'
+        const sd = data.start_date ?? ''
+        const tid = data.nutrition_table_id || ''
+        const afd = data.auto_flower_total_days ?? 77
         setName(data.name)
         setGenetics(data.genetics)
-        setGeneticType((data.genetic_type as GeneticType) ?? 'feminized')
+        setGeneticType(gt)
         setSex((data.sex as PlantSex) ?? 'unknown')
-        setAutoFlowerTotalDays(data.auto_flower_total_days ?? 77)
-        setStartDate(data.start_date ?? '')
-        setSelectedTableId(data.nutrition_table_id || '')
+        setAutoFlowerTotalDays(afd)
+        setStartDate(sd)
+        setSelectedTableId(tid)
+        setFloraStartDate(data.flora_start_date ?? null)
         setAvailableProducts(data.available_products ? [...data.available_products] : null)
         setLocation(data.location ?? 'indoor')
         setPotCount(data.pot_count ?? 1)
         setPotVolumeLiters(data.pot_volume_liters ?? 11)
         setNotes(data.notes ?? '')
         setCustomProducts(Array.isArray(data.custom_products) ? data.custom_products.map(migrateProduct) : [])
+        // Guardar originales para detectar cambios
+        setOrigStartDate(sd)
+        setOrigGeneticType(gt)
+        setOrigTableId(tid)
+        setOrigAutoFlowerDays(afd)
       }
       setLoading(false)
     }
@@ -109,23 +127,102 @@ export default function EditPlantScreen() {
 
   async function handleSave() {
     if (!id || !user || !name.trim() || !genetics.trim()) return
+
+    const scheduleChanged =
+      startDate !== origStartDate ||
+      geneticType !== origGeneticType ||
+      selectedTableId !== origTableId ||
+      (geneticType === 'autoflower' && autoFlowerTotalDays !== origAutoFlowerDays)
+
+    if (scheduleChanged && selectedTableId && selectedTableId !== CUSTOM_TABLE_ID) {
+      Alert.alert(
+        'Regenerar calendario',
+        'Cambiaste la fecha de inicio, tipo de genetica o tabla nutricional. ¿Regenerar el calendario de tareas pendientes?',
+        [
+          { text: 'No regenerar', style: 'cancel', onPress: () => doSave(false) },
+          { text: 'Regenerar', onPress: () => doSave(true) },
+        ]
+      )
+    } else {
+      await doSave(false)
+    }
+  }
+
+  async function doSave(regenerate: boolean) {
+    if (!id || !user) return
     setSaving(true)
     try {
       await supabase.from('plants').update({
-        name:                 name.trim(),
-        genetics:             genetics.trim(),
-        genetic_type:         geneticType,
-        sex:                  geneticType === 'regular' ? sex : null,
+        name:                   name.trim(),
+        genetics:               genetics.trim(),
+        genetic_type:           geneticType,
+        sex:                    geneticType === 'regular' ? sex : null,
         auto_flower_total_days: geneticType === 'autoflower' ? autoFlowerTotalDays : null,
-        start_date:           startDate || null,
-        nutrition_table_id:   selectedTableId,
-        available_products:   availableProducts,
+        start_date:             startDate || null,
+        nutrition_table_id:     selectedTableId,
+        available_products:     availableProducts,
         location,
-        pot_count:            potCount,
-        pot_volume_liters:    potVolumeLiters,
-        notes:                notes.trim() || null,
-        custom_products:      customProducts,
+        pot_count:              potCount,
+        pot_volume_liters:      potVolumeLiters,
+        notes:                  notes.trim() || null,
+        custom_products:        customProducts,
       }).eq('id', id).eq('user_id', user.id)
+
+      if (regenerate && startDate && selectedTableId && selectedTableId !== CUSTOM_TABLE_ID) {
+        const table = tables.find(t => t.id === selectedTableId)
+        if (table) {
+          const plant: Plant = {
+            id,
+            name:                name.trim(),
+            genetics:            genetics.trim(),
+            geneticType,
+            sex:                 geneticType === 'regular' ? sex : 'unknown',
+            startDate:           new Date(startDate),
+            floraStartDate:      floraStartDate ? new Date(floraStartDate) : undefined,
+            autoFlowerTotalDays: geneticType === 'autoflower' ? autoFlowerTotalDays : undefined,
+            location,
+            potCount,
+            potVolumeLiters,
+            nutritionTableId:    selectedTableId,
+            availableProducts:   availableProducts ?? undefined,
+            status:              'active',
+          }
+
+          let newTasks
+          if (plant.floraStartDate) {
+            // En floracion: regenerar ambas fases
+            newTasks = startFloraPhase(plant, plant.floraStartDate, table)
+          } else {
+            newTasks = generatePlantSchedule(plant, table)
+          }
+
+          // Borrar solo tareas pendientes (preservar historial de completadas)
+          await supabase.from('scheduled_tasks')
+            .delete()
+            .eq('plant_id', id)
+            .eq('completed', false)
+
+          if (newTasks.length > 0) {
+            await supabase.from('scheduled_tasks').insert(
+              newTasks.map(t => ({
+                user_id:        user.id,
+                plant_id:       id,
+                type:           t.type,
+                scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+                cycle:          t.cycle,
+                week:           t.week,
+                stage:          t.stage,
+                products:       t.products,
+                ec_min:         t.ecMin ?? null,
+                ec_max:         t.ecMax ?? null,
+                ph_min:         t.phMin ?? null,
+                ph_max:         t.phMax ?? null,
+              }))
+            )
+          }
+        }
+      }
+
       router.back()
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
@@ -281,7 +378,7 @@ export default function EditPlantScreen() {
           >
             <Text style={{ fontSize: 16 }}>⚠️</Text>
             <Text style={{ color: '#F59E0B', fontSize: 12, flex: 1, lineHeight: 17 }}>
-              Cambiar la fecha o tipo regenera el calendario de nutricion
+              Al guardar con fecha o tipo modificado, se te ofrecera regenerar las tareas pendientes automaticamente
             </Text>
           </LinearGradient>
         </Section>
