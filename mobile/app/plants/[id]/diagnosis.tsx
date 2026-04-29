@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -6,6 +6,8 @@ import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '@/lib/supabase'
+import { usePlan } from '@/hooks/usePlan'
+import PaywallModal from '@/components/PaywallModal'
 
 interface DiagnosisResult {
   summary: string
@@ -27,11 +29,18 @@ const TIPS = [
 
 export default function DiagnosisScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const [imageUri, setImageUri] = useState<string | null>(null)
-  const [loading, setLoading]   = useState(false)
-  const [result, setResult]     = useState<DiagnosisResult | null>(null)
+  const { isPro, loading: planLoading } = usePlan()
+  const [imageUri, setImageUri]   = useState<string | null>(null)
+  const [loading, setLoading]     = useState(false)
+  const [result, setResult]       = useState<DiagnosisResult | null>(null)
+  const [showPaywall, setShowPaywall] = useState(false)
+
+  useEffect(() => {
+    if (!planLoading && !isPro) setShowPaywall(true)
+  }, [planLoading, isPro])
 
   async function pickImage(fromCamera: boolean) {
+    if (!isPro) { setShowPaywall(true); return }
     const picker = fromCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync
     const res = await picker({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -66,8 +75,21 @@ export default function DiagnosisScreen() {
     ? result.healthScore >= 75 ? '#52CC64' : result.healthScore >= 45 ? '#F59E0B' : '#EF4444'
     : '#52CC64'
 
+  if (planLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#A78BFA" size="large" />
+      </SafeAreaView>
+    )
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => { setShowPaywall(false); router.back() }}
+        feature="Diagnostico IA"
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
