@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#0C1410',
   },
   updates: {
-    url: 'https://u.expo.dev/' + (process.env.EAS_PROJECT_ID ?? ''),
+    url: 'https://u.expo.dev/9a9b9006-d949-4f7e-90e6-016abf5ccd90',
     fallbackToCacheTimeout: 0,
   },
   runtimeVersion: { policy: 'appVersion' },
@@ -85,7 +85,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Disponible en runtime via Constants.expoConfig.extra
     appEnv:    process.env.EXPO_PUBLIC_APP_ENV ?? 'development',
     eas: {
-      projectId: process.env.EAS_PROJECT_ID ?? '',
+      projectId: '9a9b9006-d949-4f7e-90e6-016abf5ccd90',
     },
   },
 })

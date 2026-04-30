@@ -38,18 +38,5 @@
         "buildType": "app-bundle"
       }
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
-      },
-      "android": {
-        "serviceAccountKeyPath": "./google-play-key.json",
-        "track": "internal"
-      }
-    }
   }
 }
