@@ -20,6 +20,8 @@ import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
 import { cancelPlantNotifications } from '@/lib/notifications'
+import { exportPlantHistory } from '@/lib/export'
+import { usePlan } from '@/hooks/usePlan'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -34,7 +36,9 @@ const TYPE_LABEL: Record<string, string> = {
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
+  const { isPro } = usePlan()
   const { tables } = useNutritionTables()
+  const [exporting, setExporting] = useState(false)
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
@@ -154,6 +158,44 @@ export default function PlantDetailScreen() {
       void recordDailyActivity(user.id)
     }
     setSheetTask(null)
+  }
+
+  async function handleExport() {
+    if (!plant || !user) return
+    if (!isPro) {
+      Alert.alert('Feature Pro', 'La exportacion de historial esta disponible en el plan Pro.', [
+        { text: 'Ver planes', onPress: () => router.push('/(tabs)/profile' as never) },
+        { text: 'Cancelar' },
+      ])
+      return
+    }
+    setExporting(true)
+    try {
+      const [{ data: weekLogs }, { data: diagnoses }] = await Promise.all([
+        supabase.from('week_logs').select('log_date, week_label, notes, photo_url').eq('plant_id', plant.id).order('log_date'),
+        supabase.from('diagnosis_logs').select('created_at, health_score, summary, issues').eq('plant_id', plant.id).order('created_at'),
+      ])
+      await exportPlantHistory({
+        plant,
+        tasks,
+        weekLogs: (weekLogs ?? []).map((l: { log_date: string; week_label: string | null; notes: string | null; photo_url: string | null }) => ({
+          date:      l.log_date,
+          weekLabel: l.week_label ?? '',
+          notes:     l.notes ?? '',
+          photoUrl:  l.photo_url,
+        })),
+        diagnoses: (diagnoses ?? []).map((d: { created_at: string; health_score: number; summary: string | null; issues: unknown }) => ({
+          date:        d.created_at.split('T')[0],
+          healthScore: d.health_score,
+          summary:     d.summary ?? '',
+          issues:      Array.isArray(d.issues) ? (d.issues as { name: string }[]).map(i => i.name).join('; ') : '',
+        })),
+      })
+    } catch (e) {
+      Alert.alert('Error al exportar', e instanceof Error ? e.message : 'Intenta de nuevo')
+    } finally {
+      setExporting(false)
+    }
   }
 
   if (loading) return (
@@ -683,6 +725,23 @@ export default function PlantDetailScreen() {
                 >
                   <Text style={{ fontSize: 22, marginBottom: 6 }}>🤖</Text>
                   <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>IA</Text>
+                  <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
+                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Exportar — Pro */}
+              <TouchableOpacity onPress={handleExport} disabled={exporting} activeOpacity={0.8} style={{ flex: 1, minWidth: '30%' }}>
+                <LinearGradient
+                  colors={['#160F2A', '#0E0820']}
+                  style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', padding: 14, alignItems: 'center' }}
+                >
+                  {exporting
+                    ? <ActivityIndicator color="#A78BFA" size="small" style={{ marginBottom: 6 }} />
+                    : <Text style={{ fontSize: 22, marginBottom: 6 }}>📤</Text>
+                  }
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Exportar</Text>
                   <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
                     <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
                   </View>

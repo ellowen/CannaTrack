@@ -43,6 +43,9 @@ export default function OnboardingScreen() {
   const [sex, setSex] = useState<'female' | 'male' | 'unknown'>('unknown')
   const [selectedTableId, setSelectedTableId] = useState('')
   const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
+  const [potCount, setPotCount] = useState(1)
+  const [potVolume, setPotVolume] = useState(11)
+  const [startDaysAgo, setStartDaysAgo] = useState(0)  // 0 = hoy, 1 = ayer, etc.
 
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) {
@@ -61,6 +64,7 @@ export default function OnboardingScreen() {
     setLoading(true)
     try {
       const startDate = new Date()
+      startDate.setDate(startDate.getDate() - startDaysAgo)
 
       const { data: plantRow, error: plantErr } = await supabase
         .from('plants')
@@ -71,8 +75,8 @@ export default function OnboardingScreen() {
           genetic_type:       geneticType,
           start_date:         startDate.toISOString().split('T')[0],
           location,
-          pot_count:          1,
-          pot_volume_liters:  11,
+          pot_count:          potCount,
+          pot_volume_liters:  potVolume,
           nutrition_table_id: selectedTableId,
           auto_flower_total_days: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : null,
           sex: geneticType === 'regular' ? sex : null,
@@ -92,8 +96,8 @@ export default function OnboardingScreen() {
         autoFlowerTotalDays: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : undefined,
         startDate,
         location,
-        potCount:         1,
-        potVolumeLiters:  11,
+        potCount,
+        potVolumeLiters:  potVolume,
         nutritionTableId: selectedTableId,
         availableProducts: availableProducts ?? undefined,
         status:           'active',
@@ -415,6 +419,64 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                   )
                 })}
+              </View>
+
+              {/* Macetas */}
+              <View style={{ marginTop: 24, gap: 16 }}>
+                <Text style={[sectionLabel, { marginBottom: 0 }]}>Macetas</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
+                    <LinearGradient colors={['#111A12', '#080E09']} style={{ borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', overflow: 'hidden' }}>
+                      <TouchableOpacity onPress={() => setPotCount(c => Math.max(1, c - 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
+                        <Text style={{ color: potCount <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700' }}>-</Text>
+                      </TouchableOpacity>
+                      <View style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{potCount}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => setPotCount(c => Math.min(20, c + 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}>
+                        <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>+</Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Litros</Text>
+                    <LinearGradient colors={['#111A12', '#080E09']} style={{ borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', overflow: 'hidden' }}>
+                      <TouchableOpacity onPress={() => setPotVolume(v => Math.max(1, v - 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
+                        <Text style={{ color: potVolume <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700' }}>-</Text>
+                      </TouchableOpacity>
+                      <View style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}>
+                        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{potVolume}L</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => setPotVolume(v => Math.min(200, v + 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}>
+                        <Text style={{ color: '#52CC64', fontSize: 20, fontWeight: '700' }}>+</Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
+                  </View>
+                </View>
+
+                {/* Inicio del cultivo */}
+                <Text style={[sectionLabel, { marginBottom: 0, marginTop: 4 }]}>Inicio del cultivo</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[
+                    { label: 'Hoy',       days: 0 },
+                    { label: 'Ayer',      days: 1 },
+                    { label: 'Hace 3d',   days: 3 },
+                    { label: 'Hace 1 sem',days: 7 },
+                  ].map(opt => (
+                    <TouchableOpacity key={opt.days} onPress={() => setStartDaysAgo(opt.days)} activeOpacity={0.8} style={{ flex: 1 }}>
+                      {startDaysAgo === opt.days ? (
+                        <LinearGradient colors={['#1A3D1E', '#0F2412']} style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#52CC64' }}>
+                          <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>{opt.label}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                          <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>{opt.label}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
           )}

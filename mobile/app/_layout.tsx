@@ -25,6 +25,7 @@ import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
 import { useInitSync } from '@/hooks/useInitSync'
+import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { useUserStore } from '@/store/userStore'
 import type { Session } from '@supabase/supabase-js'
@@ -53,6 +54,7 @@ function RootLayout() {
   const setUser = useUserStore(s => s.setUser)
 
   useInitSync()
+  useRealtimeSync()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
