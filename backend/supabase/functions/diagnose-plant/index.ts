@@ -6,6 +6,9 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Limites mensuales de diagnosticos por plan
+const LIMITS = { free: 5, pro: 30 }
+
 const SYSTEM_PROMPT = `Sos un experto agrónomo especializado en cannabis con amplio conocimiento en:
 - Deficiencias y toxicidades de macronutrientes (N, P, K) y micronutrientes (Ca, Mg, Fe, Mn, Zn)
 - Enfermedades fúngicas: oídio, botritis, fusarium, pythium
@@ -45,13 +48,15 @@ Reglas:
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
+
   // Auth check
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), {
-      status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
-  }
+  if (!authHeader) return json({ error: 'No autorizado' }, 401)
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -59,26 +64,66 @@ serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } },
   )
 
+  // Cliente admin para operaciones de rate limiting (sin RLS)
+  const adminClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
-  if (authErr || !user) {
-    return new Response(JSON.stringify({ error: 'Sesion invalida' }), {
-      status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
-  }
+  if (authErr || !user) return json({ error: 'Sesion invalida' }, 401)
 
   try {
     const { image, plantId } = await req.json() as { image: string; plantId?: string }
 
-    if (!image || image.length < 100) {
-      return new Response(JSON.stringify({ error: 'Imagen invalida' }), {
-        status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
-      })
+    if (!image || image.length < 100) return json({ error: 'Imagen invalida' }, 400)
+
+    // ── Rate limiting ──────────────────────────────────────────────
+    const month = new Date().toISOString().slice(0, 7)  // '2026-04'
+
+    // Verificar plan del usuario
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('is_pro')
+      .eq('id', user.id)
+      .single()
+
+    const isPro = profile?.is_pro ?? false
+    const limit = isPro ? LIMITS.pro : LIMITS.free
+
+    // Upsert del contador mensual
+    const { data: usage, error: usageErr } = await adminClient
+      .from('ai_usage')
+      .upsert(
+        { user_id: user.id, month, diagnosis_count: 0 },
+        { onConflict: 'user_id,month', ignoreDuplicates: false }
+      )
+      .select('diagnosis_count')
+      .single()
+
+    if (usageErr) console.error('[rate-limit] upsert error:', usageErr.message)
+
+    const currentCount = usage?.diagnosis_count ?? 0
+    if (currentCount >= limit) {
+      return json({
+        error: `Limite mensual alcanzado (${limit} diagnosticos/${isPro ? 'Pro' : 'Free'})`,
+        limitReached: true,
+        used: currentCount,
+        limit,
+      }, 429)
     }
 
+    // Incrementar contador antes de llamar a Anthropic
+    await adminClient
+      .from('ai_usage')
+      .update({ diagnosis_count: currentCount + 1 })
+      .eq('user_id', user.id)
+      .eq('month', month)
+
+    // ── Llamada a Anthropic ────────────────────────────────────────
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY no configurada')
 
-    // Detectar media type de la imagen (jpeg por defecto)
     const mediaType = image.startsWith('/9j/') ? 'image/jpeg'
       : image.startsWith('iVBOR') ? 'image/png'
       : 'image/jpeg'
@@ -86,9 +131,9 @@ serve(async (req) => {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key':          apiKey,
-        'anthropic-version':  '2023-06-01',
-        'content-type':       'application/json',
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type':      'application/json',
       },
       body: JSON.stringify({
         model:      'claude-sonnet-4-5',
@@ -97,10 +142,7 @@ serve(async (req) => {
         messages: [{
           role: 'user',
           content: [
-            {
-              type:   'image',
-              source: { type: 'base64', media_type: mediaType, data: image },
-            },
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
             { type: 'text', text: USER_PROMPT },
           ],
         }],
@@ -112,10 +154,9 @@ serve(async (req) => {
       throw new Error(`Anthropic error ${response.status}: ${err}`)
     }
 
-    const data      = await response.json()
-    const rawText   = (data.content[0].text as string).trim()
+    const data    = await response.json()
+    const rawText = (data.content[0].text as string).trim()
 
-    // Extraer JSON — tolera que Claude agregue whitespace o un bloque de código
     const jsonMatch = rawText.match(/\{[\s\S]*\}/)
     if (!jsonMatch) throw new Error('Respuesta de IA no contiene JSON valido')
 
@@ -126,37 +167,32 @@ serve(async (req) => {
       recommendations: string[]
     }
 
-    // Validar estructura mínima
     if (typeof result.healthScore !== 'number') result.healthScore = 50
     if (!Array.isArray(result.issues))          result.issues = []
     if (!Array.isArray(result.recommendations)) result.recommendations = []
 
-    // Guardar diagnostico en week_logs como entrada de diario (opcional, no bloquea la respuesta)
+    // ── Guardar en diagnosis_logs (fire and forget) ────────────────
     if (plantId) {
-      const issueCount = result.issues.length
-      const notes = issueCount > 0
-        ? `Diagnostico IA: ${result.summary} (${issueCount} problema${issueCount > 1 ? 's' : ''} detectado${issueCount > 1 ? 's' : ''})`
-        : `Diagnostico IA: ${result.summary}`
-
-      supabase.from('week_logs').insert({
-        plant_id:   plantId,
-        user_id:    user.id,
-        week_label: 'Diagnostico IA',
-        log_date:   new Date().toISOString().split('T')[0],
-        notes,
-        photo_url:  null,
+      adminClient.from('diagnosis_logs').insert({
+        user_id:         user.id,
+        plant_id:        plantId,
+        photo_url:       '',
+        health_score:    result.healthScore,
+        summary:         result.summary,
+        issues:          result.issues,
+        recommendations: result.recommendations,
       }).then(() => {/* fire and forget */})
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+    // Incluir info de uso en la respuesta para que el cliente pueda mostrarla
+    return json({
+      ...result,
+      _usage: { used: currentCount + 1, limit, isPro },
     })
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Error desconocido'
     console.error('[diagnose-plant]', msg)
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
+    return json({ error: msg }, 500)
   }
 })

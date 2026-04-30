@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity,
-  Modal, TextInput, KeyboardAvoidingView, Platform, Alert, RefreshControl,
+  Alert, RefreshControl, TextInput,
 } from 'react-native'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -11,9 +11,7 @@ import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useAuth } from '@/hooks/useAuth'
-import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { supabase } from '@/lib/supabase'
-import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import type { Plant } from '@shared/types/plant'
 
 // pending tasks count per plant for today
@@ -31,26 +29,12 @@ const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: strin
 export default function PlantsScreen() {
   const { user } = useAuth()
   const { plants } = usePlants()
-  const { tables } = useNutritionTables()
 
   const [historyPlants, setHistoryPlants] = useState<Plant[]>([])
   const [todayTaskMap, setTodayTaskMap] = useState<TaskMap>({})
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showNewModal, setShowNewModal] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '', genetics: '',
-    geneticType: 'feminized' as Plant['geneticType'],
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    location: 'indoor' as Plant['location'],
-    potCount: '1', potVolumeLiters: '11',
-  })
-  const [selectedTableId, setSelectedTableId] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('todas')
-
-  useEffect(() => {
-    if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
-  }, [tables, selectedTableId])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -112,73 +96,6 @@ export default function PlantsScreen() {
     await load()
   }
 
-  async function handleCreatePlant() {
-    if (!user || !formData.name.trim()) {
-      Alert.alert('Error', 'Ingresa un nombre para la planta')
-      return
-    }
-    const tableId = selectedTableId || (tables[0]?.id ?? 'revegetar-v1')
-    const startDate = new Date(formData.startDate)
-    const potCount = parseInt(formData.potCount) || 1
-    const potVolumeLiters = parseInt(formData.potVolumeLiters) || 11
-
-    const { data: plantRow, error } = await supabase.from('plants').insert({
-      user_id:            user.id,
-      name:               formData.name.trim(),
-      genetics:           formData.genetics.trim() || 'Unknown',
-      genetic_type:       formData.geneticType,
-      start_date:         startDate.toISOString().split('T')[0],
-      location:           formData.location,
-      pot_count:          potCount,
-      pot_volume_liters:  potVolumeLiters,
-      nutrition_table_id: tableId,
-      status:             'active',
-    }).select().maybeSingle()
-
-    if (error || !plantRow) { Alert.alert('Error', error?.message ?? 'No se pudo crear la planta'); return }
-
-    // Generar calendario de tareas
-    const table = tables.find(t => t.id === tableId)
-    if (table) {
-      const plant: Plant = {
-        id:              plantRow.id,
-        name:            plantRow.name,
-        genetics:        plantRow.genetics,
-        geneticType:     formData.geneticType,
-        sex:             'unknown',
-        startDate,
-        location:        formData.location,
-        potCount,
-        potVolumeLiters,
-        nutritionTableId: tableId,
-        status:          'active',
-      }
-      const tasks = generatePlantSchedule(plant, table)
-      if (tasks.length > 0) {
-        await supabase.from('scheduled_tasks').insert(
-          tasks.map(t => ({
-            user_id:        user.id,
-            plant_id:       plantRow.id,
-            type:           t.type,
-            scheduled_date: t.scheduledDate.toISOString().split('T')[0],
-            cycle:          t.cycle,
-            week:           t.week,
-            stage:          t.stage,
-            products:       t.products,
-            ec_min:         t.ecMin ?? null,
-            ec_max:         t.ecMax ?? null,
-            ph_min:         t.phMin ?? null,
-            ph_max:         t.phMax ?? null,
-          }))
-        )
-      }
-    }
-
-    setFormData({ name: '', genetics: '', geneticType: 'feminized', startDate: format(new Date(), 'yyyy-MM-dd'), location: 'indoor', potCount: '1', potVolumeLiters: '11' })
-    setShowNewModal(false)
-    await load()
-  }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <ScrollView
@@ -195,7 +112,7 @@ export default function PlantsScreen() {
                 {historyPlants.length > 0 ? ` · ${historyPlants.length} en historial` : ''}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => setShowNewModal(true)} activeOpacity={0.85} style={{ borderRadius: 14, overflow: 'hidden' }}>
+            <TouchableOpacity onPress={() => router.push('/plants/new' as never)} activeOpacity={0.85} style={{ borderRadius: 14, overflow: 'hidden' }}>
               <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ paddingHorizontal: 18, paddingVertical: 10 }}>
                 <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>+ Nueva</Text>
               </LinearGradient>
@@ -261,7 +178,7 @@ export default function PlantsScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {filteredPlants.length === 0 ? (
             <TouchableOpacity
-              onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'flora' ? () => setShowNewModal(true) : undefined}
+              onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'flora' ? () => router.push('/plants/new' as never) : undefined}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -311,174 +228,6 @@ export default function PlantsScreen() {
         </View>
       </ScrollView>
 
-      {/* Modal Nueva Planta */}
-      <Modal visible={showNewModal} animationType="slide" transparent>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-            <LinearGradient
-              colors={['#131E14', '#0C1009']}
-              style={{ borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: '#1C2E1E', paddingBottom: Platform.OS === 'ios' ? 40 : 24 }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-                <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900' }}>Nueva planta 🌱</Text>
-                <TouchableOpacity onPress={() => setShowNewModal(false)} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: '#728C74', fontSize: 16 }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView contentContainerStyle={{ padding: 20, gap: 18 }} showsVerticalScrollIndicator={false}>
-                {/* Nombre */}
-                <FormField label="Nombre" required>
-                  <TextInput
-                    value={formData.name}
-                    onChangeText={name => setFormData(p => ({ ...p, name }))}
-                    placeholder="Ej: Planta #1"
-                    placeholderTextColor="#2D4A30"
-                    style={inputStyle}
-                  />
-                </FormField>
-
-                {/* Genetica */}
-                <FormField label="Genetica">
-                  <TextInput
-                    value={formData.genetics}
-                    onChangeText={genetics => setFormData(p => ({ ...p, genetics }))}
-                    placeholder="Ej: Blue Dream, OG Kush..."
-                    placeholderTextColor="#2D4A30"
-                    style={inputStyle}
-                  />
-                </FormField>
-
-                {/* Tipo */}
-                <FormField label="Tipo de genetica">
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {([['feminized', 'Fem', '♀'], ['autoflower', 'Auto', '⏱'], ['regular', 'Reg', '⚥']] as const).map(([t, label, icon]) => (
-                      <TouchableOpacity
-                        key={t}
-                        onPress={() => setFormData(p => ({ ...p, geneticType: t }))}
-                        activeOpacity={0.8}
-                        style={{ flex: 1 }}
-                      >
-                        {formData.geneticType === t ? (
-                          <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 16 }}>{icon}</Text>
-                            <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 11, marginTop: 2 }}>{label}</Text>
-                          </LinearGradient>
-                        ) : (
-                          <View style={{ borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                            <Text style={{ fontSize: 16 }}>{icon}</Text>
-                            <Text style={{ color: '#4A7A50', fontWeight: '700', fontSize: 11, marginTop: 2 }}>{label}</Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </FormField>
-
-                {/* Fecha */}
-                <FormField label="Fecha de inicio">
-                  <TextInput
-                    value={formData.startDate}
-                    onChangeText={startDate => setFormData(p => ({ ...p, startDate }))}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#2D4A30"
-                    keyboardType="numeric"
-                    style={inputStyle}
-                  />
-                </FormField>
-
-                {/* Ubicacion */}
-                <FormField label="Ubicacion">
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {([['indoor', '🏠 Indoor'], ['outdoor', '☀️ Outdoor']] as const).map(([loc, label]) => (
-                      <TouchableOpacity
-                        key={loc}
-                        onPress={() => setFormData(p => ({ ...p, location: loc }))}
-                        activeOpacity={0.8}
-                        style={{ flex: 1 }}
-                      >
-                        {formData.location === loc ? (
-                          <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
-                            <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 13 }}>{label}</Text>
-                          </LinearGradient>
-                        ) : (
-                          <View style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                            <Text style={{ color: '#4A7A50', fontWeight: '600', fontSize: 13 }}>{label}</Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </FormField>
-
-                {/* Tabla nutricional */}
-                {tables.length > 1 && (
-                  <FormField label="Tabla nutricional">
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {tables.map(t => (
-                        <TouchableOpacity
-                          key={t.id}
-                          onPress={() => setSelectedTableId(t.id)}
-                          activeOpacity={0.8}
-                        >
-                          {selectedTableId === t.id ? (
-                            <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-                              <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 12 }}>{t.name}</Text>
-                            </LinearGradient>
-                          ) : (
-                            <View style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                              <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 12 }}>{t.name}</Text>
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </FormField>
-                )}
-
-                {/* Macetas */}
-                <FormField label="Macetas">
-                  <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
-                      <Stepper
-                        value={parseInt(formData.potCount) || 1}
-                        min={1} max={20} step={1}
-                        onChange={v => setFormData(p => ({ ...p, potCount: String(v) }))}
-                        unit=""
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>Litros por maceta</Text>
-                      <Stepper
-                        value={parseInt(formData.potVolumeLiters) || 11}
-                        min={1} max={200} step={1}
-                        onChange={v => setFormData(p => ({ ...p, potVolumeLiters: String(v) }))}
-                        unit="L"
-                      />
-                    </View>
-                  </View>
-                </FormField>
-
-                {/* Botones */}
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-                  <TouchableOpacity
-                    onPress={() => setShowNewModal(false)}
-                    style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', borderWidth: 1, borderColor: '#1C2E1E' }}
-                  >
-                    <Text style={{ color: '#728C74', fontWeight: '700' }}>Cancelar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleCreatePlant} activeOpacity={0.85} style={{ flex: 2 }}>
-                    <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}>
-                      <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 15 }}>Crear planta</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </LinearGradient>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   )
 }
@@ -663,54 +412,6 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
       </LinearGradient>
     </TouchableOpacity>
   )
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// ─── Stepper ─────────────────────────────────────────────────────────────────
-
-function Stepper({ value, min, max, step, onChange, unit }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
-      <TouchableOpacity
-        onPress={() => onChange(Math.max(min, value - step))}
-        style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}
-      >
-        <Text style={{ color: value <= min ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>−</Text>
-      </TouchableOpacity>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 44 }}>
-        <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{value}{unit}</Text>
-      </View>
-      <TouchableOpacity
-        onPress={() => onChange(Math.min(max, value + step))}
-        style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#1C2E1E' }}
-      >
-        <Text style={{ color: value >= max ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>+</Text>
-      </TouchableOpacity>
-    </View>
-  )
-}
-
-function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <View>
-      <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-        {label}{required ? ' *' : ''}
-      </Text>
-      {children}
-    </View>
-  )
-}
-
-const inputStyle = {
-  backgroundColor: 'rgba(0,0,0,0.3)',
-  borderWidth: 1,
-  borderColor: '#1C2E1E',
-  borderRadius: 12,
-  paddingHorizontal: 14,
-  paddingVertical: 12,
-  color: '#E4F2E7',
-  fontSize: 14,
 }
 
 function rowToPlant(row: Record<string, unknown>): Plant {
