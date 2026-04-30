@@ -110,10 +110,10 @@ export default function DiagnoseScreen() {
       const response = await fetch(compressed.uri)
       const blob = await response.blob()
       const { data, error: uploadError } = await supabase.storage
-        .from('plant_photos')
+        .from('plant-photos')
         .upload(filename, blob, { contentType: 'image/jpeg', upsert: false })
       if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage.from('plant_photos').getPublicUrl(data.path)
+      const { data: urlData } = supabase.storage.from('plant-photos').getPublicUrl(data.path)
       const isFlora = !!plant.floraStartDate
       const weekNum = isFlora && plant.floraStartDate
         ? Math.max(1, Math.ceil((Date.now() - plant.floraStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000)))

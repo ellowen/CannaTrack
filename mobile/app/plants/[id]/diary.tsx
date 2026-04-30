@@ -103,10 +103,10 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
     const blob     = await response.blob()
     const fileName = `${userId}/${plantId}/${Date.now()}.jpg`
     const { error: uploadErr } = await supabase.storage
-      .from('plant_photos')
+      .from('plant-photos')
       .upload(fileName, blob, { contentType: 'image/jpeg' })
     if (uploadErr) throw uploadErr
-    return supabase.storage.from('plant_photos').getPublicUrl(fileName).data.publicUrl
+    return supabase.storage.from('plant-photos').getPublicUrl(fileName).data.publicUrl
   }
 
   async function handleSave() {
