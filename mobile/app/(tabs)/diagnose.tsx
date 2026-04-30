@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePlants } from '@/hooks/usePlants'
 import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
-import * as ImageManipulator from 'expo-image-manipulator'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Plant } from '@shared/types/plant'
@@ -86,44 +85,38 @@ export default function DiagnoseScreen() {
   async function handlePickPhoto(source: 'camera' | 'gallery') {
     if (!selectedPlant || !user) return
     try {
+      const opts = { mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [4, 3] as [number, number], quality: 0.7, base64: true }
       const result = source === 'camera'
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [4, 3], quality: 0.8 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [4, 3], quality: 0.8 })
-      if (!result.canceled) {
-        await uploadPhoto(result.assets[0].uri, selectedPlant)
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts)
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri, result.assets[0].base64 ?? null, selectedPlant)
       }
     } catch (e) {
       Alert.alert('Error', source === 'camera' ? 'No se pudo acceder a la camara' : 'No se pudo acceder a la galeria')
     }
   }
 
-  async function uploadPhoto(uri: string, plant: Plant) {
+  async function uploadPhoto(uri: string, base64: string | null, plant: Plant) {
     if (!user) return
     setUploading(true)
     try {
-      const compressed = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 1024, height: 1024 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-      )
       const filename = `${user.id}/${plant.id}/${Date.now()}.jpg`
-      const response = await fetch(compressed.uri)
-      const blob = await response.blob()
+      const bytes = base64ToBytes(base64, uri)
       const { data, error: uploadError } = await supabase.storage
         .from('plant-photos')
-        .upload(filename, blob, { contentType: 'image/jpeg', upsert: false })
+        .upload(filename, await bytes, { contentType: 'image/jpeg', upsert: true })
       if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage.from('plant-photos').getPublicUrl(data.path)
+      const publicUrl = supabase.storage.from('plant-photos').getPublicUrl(data.path).data.publicUrl
       const isFlora = !!plant.floraStartDate
       const weekNum = isFlora && plant.floraStartDate
         ? Math.max(1, Math.ceil((Date.now() - plant.floraStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000)))
         : Math.max(1, Math.ceil((Date.now() - plant.startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)))
-      const weekLabel = `Semana ${isFlora ? 'F' : 'V'}${weekNum}`
       await supabase.from('week_logs').insert({
         user_id:    user.id,
         plant_id:   plant.id,
-        photo_url:  urlData.publicUrl,
-        week_label: weekLabel,
+        photo_url:  publicUrl,
+        week_label: `Semana ${isFlora ? 'F' : 'V'}${weekNum}`,
         week:       weekNum,
         stage:      isFlora ? 'FLORA' : 'VEGE',
         log_date:   new Date().toISOString().split('T')[0],
@@ -131,7 +124,7 @@ export default function DiagnoseScreen() {
       })
       await loadPhotos(plant.id)
     } catch (e) {
-      Alert.alert('Error', 'No se pudo subir la foto')
+      Alert.alert('Error al subir', e instanceof Error ? e.message : 'Intenta de nuevo')
       console.error('Upload error:', e)
     } finally {
       setUploading(false)
@@ -355,4 +348,24 @@ export default function DiagnoseScreen() {
       </ScrollView>
     </SafeAreaView>
   )
+}
+
+// Convierte base64 string o uri local a Uint8Array para upload a Supabase Storage.
+// Usar base64 del image picker es mas confiable que fetch().blob() en React Native.
+async function base64ToBytes(base64: string | null, uriFallback: string): Promise<Uint8Array | Blob> {
+  if (base64) {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes
+  }
+  // Fallback XHR (mas confiable que fetch en RN para file:// URIs)
+  return new Promise<Blob>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.onload = () => resolve(xhr.response as Blob)
+    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'))
+    xhr.responseType = 'blob'
+    xhr.open('GET', uriFallback, true)
+    xhr.send(null)
+  })
 }

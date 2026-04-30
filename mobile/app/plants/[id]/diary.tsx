@@ -77,14 +77,16 @@ interface SheetProps {
 }
 
 function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, onDeleted, onClose }: SheetProps) {
-  const [notes, setNotes]     = useState('')
-  const [photoUri, setPhotoUri] = useState<string | null>(null)
-  const [saving, setSaving]   = useState(false)
+  const [notes, setNotes]         = useState('')
+  const [photoUri, setPhotoUri]   = useState<string | null>(null)
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null)
+  const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
     if (visible) {
       setNotes(existing?.notes ?? '')
       setPhotoUri(existing?.photoUrl ?? null)
+      setPhotoBase64(null)
     }
   }, [visible, existing])
 
@@ -93,20 +95,23 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.7,
+      base64: true,
     })
-    if (!result.canceled) setPhotoUri(result.assets[0].uri)
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri)
+      setPhotoBase64(result.assets[0].base64 ?? null)
+    }
   }
 
-  async function uploadPhoto(uri: string): Promise<string> {
-    const response = await fetch(uri)
-    const blob     = await response.blob()
+  async function uploadPhoto(uri: string, base64: string | null): Promise<string> {
     const fileName = `${userId}/${plantId}/${Date.now()}.jpg`
-    const { error: uploadErr } = await supabase.storage
+    const data = await base64ToBytes(base64, uri)
+    const { data: stored, error: uploadErr } = await supabase.storage
       .from('plant-photos')
-      .upload(fileName, blob, { contentType: 'image/jpeg' })
+      .upload(fileName, data, { contentType: 'image/jpeg', upsert: true })
     if (uploadErr) throw uploadErr
-    return supabase.storage.from('plant-photos').getPublicUrl(fileName).data.publicUrl
+    return supabase.storage.from('plant-photos').getPublicUrl(stored.path).data.publicUrl
   }
 
   async function handleSave() {
@@ -116,7 +121,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
       let finalPhotoUrl: string | null = existing?.photoUrl ?? null
       const isNewPhoto = photoUri && photoUri !== existing?.photoUrl
       if (isNewPhoto && photoUri) {
-        finalPhotoUrl = await uploadPhoto(photoUri)
+        finalPhotoUrl = await uploadPhoto(photoUri, photoBase64)
         awardXP(userId, XP_VALUES.UPLOAD_PHOTO)
       }
 
@@ -609,4 +614,21 @@ export default function DiaryScreen() {
       ) : null}
     </SafeAreaView>
   )
+}
+
+async function base64ToBytes(base64: string | null, uriFallback: string): Promise<Uint8Array | Blob> {
+  if (base64) {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes
+  }
+  return new Promise<Blob>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.onload = () => resolve(xhr.response as Blob)
+    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'))
+    xhr.responseType = 'blob'
+    xhr.open('GET', uriFallback, true)
+    xhr.send(null)
+  })
 }
