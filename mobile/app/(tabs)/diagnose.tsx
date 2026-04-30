@@ -28,8 +28,8 @@ type WeekLogRow = {
   id: string
   plant_id: string
   photo_url: string
-  week: number | null
-  stage: string | null
+  week?: number | null
+  stage?: string | null
   created_at: string
   notes: string | null
   week_label?: string | null
@@ -62,7 +62,7 @@ export default function DiagnoseScreen() {
     try {
       const { data, error } = await supabase
         .from('week_logs')
-        .select('id, plant_id, photo_url, week, stage, created_at, notes, week_label')
+        .select('id, plant_id, photo_url, created_at, notes, week_label')
         .eq('plant_id', plantId)
         .not('photo_url', 'is', null)
         .order('created_at', { ascending: false })
@@ -124,7 +124,7 @@ export default function DiagnoseScreen() {
         plant_id:   plant.id,
         photo_url:  urlData.publicUrl,
         week_label: weekLabel,
-        stage:      isFlora ? 'FLORA' : 'VEGE',
+        log_date:   new Date().toISOString().split('T')[0],
         notes:      '',
       })
       await loadPhotos(plant.id)
