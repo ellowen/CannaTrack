@@ -15,6 +15,7 @@ if (Platform.OS === 'web' && typeof console !== 'undefined') {
   }
 }
 import { StatusBar } from 'expo-status-bar'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
@@ -99,6 +100,7 @@ export default function RootLayout() {
   }, [])
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth" />
@@ -127,5 +129,6 @@ export default function RootLayout() {
         </View>
       )}
     </ThemeProvider>
+    </GestureHandlerRootView>
   )
 }
