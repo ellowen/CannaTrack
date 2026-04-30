@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePlants } from '@/hooks/usePlants'
 import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
+import { validatePhoto } from '@/lib/photoValidation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Plant } from '@shared/types/plant'
@@ -90,7 +91,10 @@ export default function DiagnoseScreen() {
         ? await ImagePicker.launchCameraAsync(opts)
         : await ImagePicker.launchImageLibraryAsync(opts)
       if (!result.canceled && result.assets[0]) {
-        await uploadPhoto(result.assets[0].uri, result.assets[0].base64 ?? null, selectedPlant)
+        const asset = result.assets[0]
+        const validation = validatePhoto(asset)
+        if (!validation.ok) { Alert.alert('Foto invalida', validation.error); return }
+        await uploadPhoto(asset.uri, asset.base64 ?? null, selectedPlant)
       }
     } catch (e) {
       Alert.alert('Error', source === 'camera' ? 'No se pudo acceder a la camara' : 'No se pudo acceder a la galeria')

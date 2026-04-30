@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
+import { validatePhoto } from '@/lib/photoValidation'
 import { differenceInDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -99,8 +100,11 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
       base64: true,
     })
     if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri)
-      setPhotoBase64(result.assets[0].base64 ?? null)
+      const asset = result.assets[0]
+      const validation = validatePhoto(asset)
+      if (!validation.ok) { Alert.alert('Foto invalida', validation.error); return }
+      setPhotoUri(asset.uri)
+      setPhotoBase64(asset.base64 ?? null)
     }
   }
 

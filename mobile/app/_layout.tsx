@@ -1,5 +1,8 @@
 import '../global.css'
+import { initSentry, Sentry } from '@/lib/sentry'
 import { useEffect, useState } from 'react'
+
+initSentry()
 import { Platform, View, ActivityIndicator } from 'react-native'
 import { Stack, router } from 'expo-router'
 
@@ -42,7 +45,7 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
   return profile?.onboarding_completed ? '/(tabs)' : '/onboarding'
 }
 
-export default function RootLayout() {
+function RootLayout() {
   // undefined = todavia cargando, null = sin sesion, Session = logueado
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const setUser = useUserStore(s => s.setUser)
@@ -132,3 +135,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   )
 }
+
+export default Sentry.wrap(RootLayout)
