@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert,
   Modal, KeyboardAvoidingView, Platform,
@@ -21,6 +21,7 @@ import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskShee
 import { HarvestSheet } from '@/components/HarvestSheet'
 import { cancelPlantNotifications, scheduleTaskNotificationsForPlant } from '@/lib/notifications'
 import { maybeRequestRating } from '@/lib/rating'
+import { sharePlantCard } from '@/lib/share'
 import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
@@ -41,6 +42,8 @@ export default function PlantDetailScreen() {
   const { isPro } = usePlan()
   const { tables } = useNutritionTables()
   const [exporting, setExporting] = useState(false)
+  const [sharing,   setSharing]   = useState(false)
+  const shareCardRef = useRef(null)
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
@@ -172,6 +175,18 @@ export default function PlantDetailScreen() {
     void maybeRequestRating()
   }
 
+  async function handleShare() {
+    if (!plant) return
+    setSharing(true)
+    try {
+      await sharePlantCard(shareCardRef, plant)
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo compartir')
+    } finally {
+      setSharing(false)
+    }
+  }
+
   async function handleExport() {
     if (!plant || !user) return
     if (!isPro) {
@@ -282,6 +297,45 @@ export default function PlantDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      {/* ShareCard — off-screen, capturada por react-native-view-shot */}
+      <View
+        ref={shareCardRef}
+        style={{ position: 'absolute', left: -2000, top: 0, width: 360 }}
+        collapsable={false}
+      >
+        <LinearGradient
+          colors={isFlora ? ['#1A1200', '#0C0800'] : ['#0C1A0E', '#060E07']}
+          style={{ padding: 28, borderRadius: 20 }}
+        >
+          <Text style={{ color: '#6D8C74', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>
+            CANNATRACK
+          </Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900', marginBottom: 4 }}>
+            {plant.name}
+          </Text>
+          <Text style={{ color: '#6D8C74', fontSize: 14, marginBottom: 20 }}>
+            {plant.genetics} · {plant.geneticType === 'autoflower' ? 'Autofloreciente' : plant.geneticType === 'feminized' ? 'Feminizada' : 'Regular'}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 20, marginBottom: 24 }}>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>DIA</Text>
+              <Text style={{ color: phaseAccent, fontSize: 32, fontWeight: '900' }}>{daysSinceStart}</Text>
+            </View>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: healthColor, fontSize: 32, fontWeight: '900' }}>{health}%</Text>
+            </View>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>ETAPA</Text>
+              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+            </View>
+          </View>
+          <Text style={{ color: '#2C3E2E', fontSize: 11, textAlign: 'right' }}>
+            {format(new Date(), 'dd MMM yyyy', { locale: es })} · cannatrack.app
+          </Text>
+        </LinearGradient>
+      </View>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* Header */}
@@ -760,6 +814,20 @@ export default function PlantDetailScreen() {
                   <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
                     <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
                   </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Compartir */}
+              <TouchableOpacity onPress={handleShare} disabled={sharing} activeOpacity={0.8} style={{ flex: 1, minWidth: '30%' }}>
+                <LinearGradient
+                  colors={['#141E15', '#0C1009']}
+                  style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, alignItems: 'center' }}
+                >
+                  {sharing
+                    ? <ActivityIndicator color="#52CC64" size="small" style={{ marginBottom: 6 }} />
+                    : <Text style={{ fontSize: 22, marginBottom: 6 }}>🔗</Text>
+                  }
+                  <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>Compartir</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
