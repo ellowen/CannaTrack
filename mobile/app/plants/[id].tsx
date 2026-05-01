@@ -21,6 +21,7 @@ import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskShee
 import { HarvestSheet } from '@/components/HarvestSheet'
 import { cancelPlantNotifications } from '@/lib/notifications'
 import { exportPlantHistory } from '@/lib/export'
+import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
@@ -112,6 +113,7 @@ export default function PlantDetailScreen() {
       setPlant({ ...plant, floraStartDate })
       setTasks(newTasks)
       if (user) awardXP(user.id, XP_VALUES.START_FLORA)
+      track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
       setFloraDateModal(false)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al iniciar floracion'
@@ -169,6 +171,7 @@ export default function PlantDetailScreen() {
       ])
       return
     }
+    track('export_started', { plant_id: plant.id })
     setExporting(true)
     try {
       const [{ data: weekLogs }, { data: diagnoses }] = await Promise.all([
@@ -191,7 +194,9 @@ export default function PlantDetailScreen() {
           issues:      Array.isArray(d.issues) ? (d.issues as { name: string }[]).map(i => i.name).join('; ') : '',
         })),
       })
+      track('export_completed', { plant_id: plant.id })
     } catch (e) {
+      track('export_error', { plant_id: plant.id, error: e instanceof Error ? e.message : 'unknown' })
       Alert.alert('Error al exportar', e instanceof Error ? e.message : 'Intenta de nuevo')
     } finally {
       setExporting(false)

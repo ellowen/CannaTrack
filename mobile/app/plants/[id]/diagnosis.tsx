@@ -6,6 +6,7 @@ import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '@/lib/supabase'
+import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 import PaywallModal from '@/components/PaywallModal'
 
@@ -57,14 +58,18 @@ export default function DiagnosisScreen() {
   }
 
   async function analyze(base64: string) {
+    track('diagnosis_started', { plant_id: id })
     setLoading(true)
     try {
       const { data, error } = await supabase.functions.invoke('diagnose-plant', {
         body: { image: base64, plantId: id },
       })
       if (error) throw new Error(error.message)
-      setResult(data as DiagnosisResult)
+      const res = data as DiagnosisResult
+      setResult(res)
+      track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length })
     } catch (e) {
+      track('diagnosis_error', { plant_id: id, error: e instanceof Error ? e.message : 'unknown' })
       Alert.alert('Error en diagnostico', e instanceof Error ? e.message : 'No se pudo conectar al servicio', [{ text: 'OK' }])
     } finally {
       setLoading(false)

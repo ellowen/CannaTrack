@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { purchasePro, restorePurchases } from '@/lib/purchases'
+import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 
 interface Props {
@@ -22,28 +23,37 @@ export default function PaywallModal({ visible, onClose }: Props) {
   const [loading, setLoading]     = useState(false)
   const [restoring, setRestoring] = useState(false)
 
+  // Track when modal becomes visible
+  if (visible) track('paywall_shown')
+
   async function handlePurchase() {
+    track('paywall_purchase_started')
     setLoading(true)
     const result = await purchasePro()
     setLoading(false)
     if (result.success) {
+      track('paywall_purchase_completed')
       await refetch()
       Alert.alert('Plan Pro activado', 'Bienvenido a CannaTrack Pro.', [{ text: 'Empezar', onPress: onClose }])
     } else if (result.error) {
+      track('paywall_purchase_error', { error: result.error })
       Alert.alert('No se pudo completar', result.error)
     }
   }
 
   async function handleRestore() {
+    track('paywall_restore_started')
     setRestoring(true)
     const result = await restorePurchases()
     setRestoring(false)
     if (result.isPro) {
+      track('paywall_restore_completed', { restored: true })
       await refetch()
       Alert.alert('Compra restaurada', 'Tu plan Pro fue restaurado.', [{ text: 'Continuar', onPress: onClose }])
     } else if (result.error) {
       Alert.alert('Error', result.error)
     } else {
+      track('paywall_restore_completed', { restored: false })
       Alert.alert('Sin compras previas', 'No encontramos ninguna compra de Pro en tu cuenta.')
     }
   }

@@ -1,10 +1,12 @@
 import '../global.css'
 import { initSentry, Sentry } from '@/lib/sentry'
 import { initPurchases, identifyUser, resetUser } from '@/lib/purchases'
+import { initAnalytics, identifyAnalytics, resetAnalytics, track } from '@/lib/analytics'
 import { useEffect, useState } from 'react'
 
 initSentry()
 initPurchases()
+initAnalytics()
 import { Platform, View, ActivityIndicator } from 'react-native'
 import { Stack, router } from 'expo-router'
 
@@ -65,6 +67,8 @@ function RootLayout() {
       if (event === 'SIGNED_OUT') {
         await clearSavedSession()
         void resetUser()
+        resetAnalytics()
+        track('sign_out')
         router.replace('/auth')
         return
       }
@@ -80,6 +84,8 @@ function RootLayout() {
         await saveSessionForBiometric(s)
         void registerForPushNotifications()
         void identifyUser(s.user.id)
+        identifyAnalytics(s.user.id, { email: s.user.email })
+        track('sign_in')
       }
 
       // Garantizar que el profile existe (por si el trigger de DB no fireo)

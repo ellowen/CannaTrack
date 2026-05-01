@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
+import { track } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
@@ -130,6 +131,9 @@ export default function OnboardingScreen() {
         .from('profiles')
         .update({ onboarding_completed: true })
         .eq('id', user.id)
+
+      track('onboarding_completed', { genetic_type: geneticType, location })
+      track('plant_created', { genetic_type: geneticType, location, tasks_count: tasks.length })
 
       router.replace(`/plants/${plantRow.id}`)
     } catch (e) {
