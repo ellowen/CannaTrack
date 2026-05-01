@@ -26,6 +26,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
 import { registerForPushNotifications, scheduleDailyReminder, scheduleAllTaskNotifications } from '@/lib/notifications'
+import * as Notifications from 'expo-notifications'
 import { useInitSync } from '@/hooks/useInitSync'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
@@ -57,6 +58,29 @@ function RootLayout() {
 
   useInitSync()
   useRealtimeSync()
+
+  // Deep linking desde notificaciones — navega a la planta correcta al tapear
+  useEffect(() => {
+    // Notificacion que abre la app desde estado cerrado
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (!response) return
+      const data = response.notification.request.content.data
+      if (data?.type === 'task_reminder' && data.plantId) {
+        router.push(`/plants/${data.plantId}` as never)
+      }
+    })
+
+    // Notificacion mientras la app esta en foreground/background
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data
+      if (data?.type === 'task_reminder' && data.plantId) {
+        router.push(`/plants/${data.plantId}` as never)
+      }
+      // daily_reminder → va a tabs (comportamiento default)
+    })
+
+    return () => sub.remove()
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))

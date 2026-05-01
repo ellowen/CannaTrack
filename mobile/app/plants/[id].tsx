@@ -20,6 +20,7 @@ import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
 import { cancelPlantNotifications, scheduleTaskNotificationsForPlant } from '@/lib/notifications'
+import { maybeRequestRating } from '@/lib/rating'
 import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
@@ -167,6 +168,8 @@ export default function PlantDetailScreen() {
       const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, completed: true } : t)
       void scheduleTaskNotificationsForPlant(plant, updatedTasks)
     }
+    // Rating prompt despues de N tareas completadas (fire and forget)
+    void maybeRequestRating()
   }
 
   async function handleExport() {
