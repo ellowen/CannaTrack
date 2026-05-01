@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { router } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlants } from '@/hooks/usePlants'
+import { usePlan } from '@/hooks/usePlan'
 import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
 import { validatePhoto } from '@/lib/photoValidation'
@@ -38,6 +40,7 @@ type WeekLogRow = {
 export default function DiagnoseScreen() {
   const { user } = useAuth()
   const { plants } = usePlants()
+  const { isPro } = usePlan()
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null)
   const [photos, setPhotos]     = useState<PhotoLog[]>([])
   const [loading, setLoading]   = useState(false)
@@ -320,33 +323,49 @@ export default function DiagnoseScreen() {
             </View>
           )}
 
-          {/* AI coming soon */}
-          <LinearGradient
-            colors={['#150D28', '#100A20']}
-            style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)', padding: 20 }}
+          {/* Diagnostico IA */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              if (!selectedPlant) {
+                Alert.alert('Sin planta seleccionada', 'Selecciona una planta activa para diagnosticar.')
+                return
+              }
+              router.push(`/plants/${selectedPlant.id}/diagnosis` as never)
+            }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(139,92,246,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)' }}>
-                <Text style={{ fontSize: 20 }}>🤖</Text>
-              </View>
-              <View>
-                <Text style={{ color: '#A78BFA', fontWeight: '900', fontSize: 15 }}>Diagnostico por IA</Text>
-                <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginTop: 3, alignSelf: 'flex-start' }}>
-                  <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PROXIMO</Text>
+            <LinearGradient
+              colors={isPro ? ['#150D28', '#100A20'] : ['#1A1040', '#120C30']}
+              style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)', padding: 20 }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(139,92,246,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)' }}>
+                  <Text style={{ fontSize: 22 }}>🤖</Text>
                 </View>
-              </View>
-            </View>
-            <Text style={{ color: '#6D4FB0', fontSize: 13, lineHeight: 19 }}>
-              Analisis automatico de plagas, enfermedades y deficiencias nutricionales con vision IA. Sube una foto y obtene un diagnostico en segundos.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
-              {['Plagas 🪲', 'Hongos 🍄', 'Deficiencias 🌿', 'pH stress 💧'].map(tag => (
-                <View key={tag} style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(139,92,246,0.15)' }}>
-                  <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '600' }}>{tag}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#C4B5FD', fontWeight: '900', fontSize: 15 }}>Diagnostico por IA</Text>
+                  <Text style={{ color: '#7C5FB5', fontSize: 12, marginTop: 2 }}>
+                    {selectedPlant ? `Analizar ${selectedPlant.name}` : 'Selecciona una planta'}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          </LinearGradient>
+                {!isPro && (
+                  <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: 'rgba(124,58,237,0.2)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.4)' }}>
+                    <Text style={{ color: '#C4B5FD', fontSize: 11, fontWeight: '700' }}>✦ PRO</Text>
+                  </View>
+                )}
+                {isPro && (
+                  <Text style={{ color: '#A78BFA', fontSize: 18 }}>→</Text>
+                )}
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                {['Plagas 🪲', 'Hongos 🍄', 'Deficiencias 🌿', 'pH stress 💧'].map(tag => (
+                  <View key={tag} style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' }}>
+                    <Text style={{ color: '#9D6FE8', fontSize: 11, fontWeight: '600' }}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
         </View>
       </ScrollView>
