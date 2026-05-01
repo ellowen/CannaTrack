@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
+import { useDiagnosisQuota } from '@/hooks/useDiagnosisQuota'
 import PaywallModal from '@/components/PaywallModal'
 
 interface DiagnosisResult {
@@ -31,6 +32,7 @@ const TIPS = [
 export default function DiagnosisScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { isPro, loading: planLoading } = usePlan()
+  const quota = useDiagnosisQuota()
   const [imageUri, setImageUri]   = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [result, setResult]       = useState<DiagnosisResult | null>(null)
@@ -42,6 +44,14 @@ export default function DiagnosisScreen() {
 
   async function pickImage(fromCamera: boolean) {
     if (!isPro) { setShowPaywall(true); return }
+    if (quota.isAtLimit) {
+      Alert.alert(
+        'Limite mensual alcanzado',
+        `Usaste ${quota.used}/${quota.limit} diagnosticos este mes. El contador se reinicia el 1 del proximo mes.`,
+        [{ text: 'Entendido' }]
+      )
+      return
+    }
     const picker = fromCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync
     const res = await picker({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -64,10 +74,19 @@ export default function DiagnosisScreen() {
       const { data, error } = await supabase.functions.invoke('diagnose-plant', {
         body: { image: base64, plantId: id },
       })
+      // El Edge Function devuelve limitReached si se supero el cupo
+      if (data?.limitReached) {
+        track('diagnosis_error', { plant_id: id, error: 'limit_reached' })
+        Alert.alert('Limite alcanzado', data.error ?? 'Limite mensual de diagnosticos alcanzado.', [{ text: 'OK' }])
+        void quota.refetch()
+        return
+      }
       if (error) throw new Error(error.message)
-      const res = data as DiagnosisResult
+      const res = data as DiagnosisResult & { _usage?: { used: number; limit: number } }
       setResult(res)
-      track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length })
+      // Refrescar quota local con el valor que devuelve el servidor
+      void quota.refetch()
+      track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length, usage_after: res._usage?.used })
     } catch (e) {
       track('diagnosis_error', { plant_id: id, error: e instanceof Error ? e.message : 'unknown' })
       Alert.alert('Error en diagnostico', e instanceof Error ? e.message : 'No se pudo conectar al servicio', [{ text: 'OK' }])
@@ -115,12 +134,27 @@ export default function DiagnosisScreen() {
             </View>
           </View>
 
-          {/* Badge */}
+          {/* Badge + quota */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
               <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 }}>BETA</Text>
             </View>
-            <Text style={{ color: '#4A3070', fontSize: 13 }}>Detecta plagas, deficiencias y hongos</Text>
+            <Text style={{ color: '#4A3070', fontSize: 13, flex: 1 }}>Detecta plagas, deficiencias y hongos</Text>
+            {!quota.loading && isPro && (
+              <View style={{
+                paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+                backgroundColor: quota.isAtLimit ? 'rgba(239,68,68,0.1)' : 'rgba(167,139,250,0.1)',
+                borderWidth: 1,
+                borderColor: quota.isAtLimit ? 'rgba(239,68,68,0.25)' : 'rgba(167,139,250,0.2)',
+              }}>
+                <Text style={{
+                  fontSize: 11, fontWeight: '700',
+                  color: quota.isAtLimit ? '#EF4444' : '#A78BFA',
+                }}>
+                  {quota.used}/{quota.limit}
+                </Text>
+              </View>
+            )}
           </View>
         </LinearGradient>
 
