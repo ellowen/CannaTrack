@@ -7,7 +7,10 @@ import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
-import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { format, subDays, startOfDay } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { generatePlantSchedule, startFloraPhase } from '@shared/lib/nutrition-engine'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -46,7 +49,11 @@ export default function OnboardingScreen() {
   const [availableProducts, setAvailableProducts] = useState<string[] | null>(null)
   const [potCount, setPotCount] = useState(1)
   const [potVolume, setPotVolume] = useState(11)
-  const [startDaysAgo, setStartDaysAgo] = useState(0)  // 0 = hoy, 1 = ayer, etc.
+  const [startDate, setStartDate]         = useState<Date>(startOfDay(new Date()))
+  const [showStartPicker, setShowStartPicker] = useState(false)
+  const [floraAlreadyStarted, setFloraAlreadyStarted] = useState(false)
+  const [floraStartDate, setFloraStartDate] = useState<Date>(startOfDay(new Date()))
+  const [showFloraPicker, setShowFloraPicker]   = useState(false)
 
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) {
@@ -64,8 +71,10 @@ export default function OnboardingScreen() {
     if (!user) return
     setLoading(true)
     try {
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - startDaysAgo)
+      // Flora para feminizada/regular mid-cycle
+      const useFloraDate = floraAlreadyStarted && geneticType !== 'autoflower'
+        ? floraStartDate
+        : undefined
 
       const { data: plantRow, error: plantErr } = await supabase
         .from('plants')
@@ -75,6 +84,7 @@ export default function OnboardingScreen() {
           genetics:           genetics.trim(),
           genetic_type:       geneticType,
           start_date:         startDate.toISOString().split('T')[0],
+          flora_start_date:   useFloraDate ? useFloraDate.toISOString().split('T')[0] : null,
           location,
           pot_count:          potCount,
           pot_volume_liters:  potVolume,
@@ -96,6 +106,7 @@ export default function OnboardingScreen() {
         sex:              geneticType === 'regular' ? sex : 'unknown',
         autoFlowerTotalDays: geneticType === 'autoflower' ? parseInt(autoFlowerTotalDays) || 77 : undefined,
         startDate,
+        floraStartDate:   useFloraDate,
         location,
         potCount,
         potVolumeLiters:  potVolume,
@@ -106,7 +117,10 @@ export default function OnboardingScreen() {
 
       const table = tables.find(t => t.id === selectedTableId)
       if (!table) throw new Error('Tabla nutricional no encontrada')
-      const tasks = generatePlantSchedule(plant, table)
+      // Si ya inicio flora, generar cronograma completo con VEGE + FLORA
+      const tasks = useFloraDate
+        ? startFloraPhase(plant, useFloraDate, table)
+        : generatePlantSchedule(plant, table)
 
       if (tasks.length > 0) {
         await supabase.from('scheduled_tasks').insert(
@@ -461,26 +475,93 @@ export default function OnboardingScreen() {
 
                 {/* Inicio del cultivo */}
                 <Text style={[sectionLabel, { marginBottom: 0, marginTop: 4 }]}>Inicio del cultivo</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+
+                {/* Chips rapidos */}
+                <View style={{ flexDirection: 'row', gap: 6 }}>
                   {[
-                    { label: 'Hoy',       days: 0 },
-                    { label: 'Ayer',      days: 1 },
-                    { label: 'Hace 3d',   days: 3 },
-                    { label: 'Hace 1 sem',days: 7 },
-                  ].map(opt => (
-                    <TouchableOpacity key={opt.days} onPress={() => setStartDaysAgo(opt.days)} activeOpacity={0.8} style={{ flex: 1 }}>
-                      {startDaysAgo === opt.days ? (
-                        <LinearGradient colors={['#1A3D1E', '#0F2412']} style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#52CC64' }}>
-                          <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>{opt.label}</Text>
-                        </LinearGradient>
-                      ) : (
-                        <View style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
-                          <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>{opt.label}</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                    { label: 'Hoy',     date: startOfDay(new Date()) },
+                    { label: 'Ayer',    date: subDays(startOfDay(new Date()), 1) },
+                    { label: '3 dias',  date: subDays(startOfDay(new Date()), 3) },
+                    { label: '1 semana',date: subDays(startOfDay(new Date()), 7) },
+                  ].map(opt => {
+                    const active = startDate.toISOString().split('T')[0] === opt.date.toISOString().split('T')[0]
+                    return (
+                      <TouchableOpacity key={opt.label} onPress={() => setStartDate(opt.date)} activeOpacity={0.8} style={{ flex: 1 }}>
+                        {active ? (
+                          <LinearGradient colors={['#1A3D1E', '#0F2412']} style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#52CC64' }}>
+                            <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800' }}>{opt.label}</Text>
+                          </LinearGradient>
+                        ) : (
+                          <View style={{ borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
+                            <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>{opt.label}</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    )
+                  })}
                 </View>
+
+                {/* Fecha exacta */}
+                <TouchableOpacity
+                  onPress={() => setShowStartPicker(true)}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}
+                >
+                  <Text style={{ color: '#6D8C74', fontSize: 13 }}>Fecha exacta</Text>
+                  <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>
+                    {format(startDate, "d 'de' MMMM, yyyy", { locale: es })}
+                  </Text>
+                </TouchableOpacity>
+                {showStartPicker && (
+                  <DateTimePicker
+                    value={startDate}
+                    mode="date"
+                    maximumDate={new Date()}
+                    onChange={(_, date) => { setShowStartPicker(false); if (date) setStartDate(startOfDay(date)) }}
+                  />
+                )}
+
+                {/* Toggle flora ya iniciada (solo para feminizada/regular) */}
+                {geneticType !== 'autoflower' && (
+                  <View style={{ gap: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => setFloraAlreadyStarted(f => !f)}
+                      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: floraAlreadyStarted ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: floraAlreadyStarted ? 'rgba(245,158,11,0.4)' : '#1C2E1E' }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 16 }}>🌸</Text>
+                        <Text style={{ color: floraAlreadyStarted ? '#F59E0B' : '#6D8C74', fontSize: 13, fontWeight: '600' }}>
+                          Ya inicio la floracion
+                        </Text>
+                      </View>
+                      <View style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: floraAlreadyStarted ? '#F59E0B' : '#1C2E1E', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#E4F2E7', transform: [{ translateX: floraAlreadyStarted ? 8 : -8 }] }} />
+                      </View>
+                    </TouchableOpacity>
+
+                    {floraAlreadyStarted && (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => setShowFloraPicker(true)}
+                          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(245,158,11,0.06)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' }}
+                        >
+                          <Text style={{ color: '#A06820', fontSize: 13 }}>Inicio de flora</Text>
+                          <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '700' }}>
+                            {format(floraStartDate, "d 'de' MMMM, yyyy", { locale: es })}
+                          </Text>
+                        </TouchableOpacity>
+                        {showFloraPicker && (
+                          <DateTimePicker
+                            value={floraStartDate}
+                            mode="date"
+                            minimumDate={startDate}
+                            maximumDate={new Date()}
+                            onChange={(_, date) => { setShowFloraPicker(false); if (date) setFloraStartDate(startOfDay(date)) }}
+                          />
+                        )}
+                      </>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
           )}
