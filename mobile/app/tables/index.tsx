@@ -194,6 +194,12 @@ export default function TablesMarketplaceScreen() {
             {freeCount} gratuita{freeCount !== 1 ? 's' : ''} · {proCount} Pro
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => router.push('/tables/compare' as never)}
+          style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.08)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}
+        >
+          <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>Comparar</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
