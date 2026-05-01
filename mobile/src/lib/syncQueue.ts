@@ -21,7 +21,7 @@ interface SyncAction {
   id: string
   type: 'addPlant' | 'updatePlant' | 'completeTask' | 'addXP' | 'uploadPhoto'
   payload: Record<string, unknown>
-  timestamp: number
+  timestamp: Date | number
 }
 
 /**

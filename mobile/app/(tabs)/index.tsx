@@ -60,7 +60,7 @@ export default function HomeScreen() {
   const done    = tasks.filter((t: ScheduledTask) => t.completed)
   const allDone = tasks.length > 0 && pending.length === 0
   const levelInfo = getLevelInfo(profile.xp)
-  const xpToNext  = levelInfo.next ? levelInfo.next.minXP - profile.xp : 0
+  const xpToNext  = levelInfo.next ? levelInfo.next.xpRequired - profile.xp : 0
   const hour      = new Date().getHours()
   const greeting  = hour < 12 ? 'Buenos dias' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
 
@@ -553,17 +553,16 @@ function rowToTask(row: Record<string, unknown>): ScheduledTask {
   return {
     id:             row.id as string,
     plantId:        row.plant_id as string,
-    userId:         row.user_id as string,
     type:           row.type as ScheduledTask['type'],
     scheduledDate:  new Date(row.scheduled_date as string),
     cycle:          row.cycle as 'vege' | 'flora',
     week:           row.week as number,
-    stage:          row.stage as string,
+    stage:          row.stage as never,
     products:       (row.products as ScheduledTask['products']) ?? [],
-    ecMin:          row.ec_min as number | null,
-    ecMax:          row.ec_max as number | null,
-    phMin:          row.ph_min as number | null,
-    phMax:          row.ph_max as number | null,
+    ecMin:          (row.ec_min as number | null) ?? undefined,
+    ecMax:          (row.ec_max as number | null) ?? undefined,
+    phMin:          (row.ph_min as number | null) ?? undefined,
+    phMax:          (row.ph_max as number | null) ?? undefined,
     completed:      row.completed as boolean,
     completedAt:    row.completed_at ? new Date(row.completed_at as string) : undefined,
     completionNotes: row.completion_notes as string | undefined,

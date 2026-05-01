@@ -2,22 +2,26 @@ import { useEffect, useState } from 'react'
 import { AppState, type AppStateStatus } from 'react-native'
 import { supabase } from './supabase'
 
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
+
 let networkListeners: ((isOnline: boolean) => void)[] = []
 let currentOnlineState = true
-let pollInterval: NodeJS.Timeout | null = null
+let pollInterval: ReturnType<typeof setInterval> | null = null
 let networkPollingPaused = false
-let appStateSubscription: any = null
+let appStateSubscription: ReturnType<typeof import('react-native').AppState.addEventListener> | null = null
 
 /**
  * Detecta si el dispositivo tiene conectividad.
- * Usa endpoint de Supabase con validación de certificado HTTPS.
+ * Usa endpoint de Supabase con validacion de certificado HTTPS.
  */
 export async function checkOnline(): Promise<boolean> {
   try {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token ?? ''
     const response = await Promise.race([
-      fetch(`${supabase.supabaseUrl}/rest/v1/`, {
+      fetch(`${SUPABASE_URL}/rest/v1/`, {
         method: 'HEAD',
-        headers: { 'Authorization': 'Bearer ' + (supabase.auth.session()?.access_token || '') }
+        headers: { 'Authorization': 'Bearer ' + token },
       }),
       new Promise<Response>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout')), 2000)

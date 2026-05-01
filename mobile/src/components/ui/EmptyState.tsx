@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { colors, spacing } from '@/constants/theme'
-import Button from './Button'
+import { Button } from './Button'
 
 interface Props {
   emoji?: string
@@ -18,7 +18,7 @@ export default function EmptyState({ emoji = '🌱', title, subtitle, actionLabe
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       {actionLabel && onAction && (
         <View style={{ marginTop: spacing.lg }}>
-          <Button label={actionLabel} onPress={onAction} />
+          <Button onPress={onAction}>{actionLabel}</Button>
         </View>
       )}
     </View>
@@ -28,7 +28,7 @@ export default function EmptyState({ emoji = '🌱', title, subtitle, actionLabe
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
+    paddingVertical: spacing.xl * 2,
     paddingHorizontal: spacing.xl,
   },
   emoji: {

@@ -86,7 +86,7 @@ export default function DiagnosisScreen() {
       setResult(res)
       // Refrescar quota local con el valor que devuelve el servidor
       void quota.refetch()
-      track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length, usage_after: res._usage?.used })
+      track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length, usage_after: res._usage?.used ?? null })
     } catch (e) {
       track('diagnosis_error', { plant_id: id, error: e instanceof Error ? e.message : 'unknown' })
       Alert.alert('Error en diagnostico', e instanceof Error ? e.message : 'No se pudo conectar al servicio', [{ text: 'OK' }])

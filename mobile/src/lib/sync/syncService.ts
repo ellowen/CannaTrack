@@ -89,7 +89,7 @@ export class SyncService {
 
     const plant = data[0]
     const plantStore = usePlantStore.getState()
-    plantStore.updatePlant(action.payload.id, { id: plant.id })
+    plantStore.updatePlant(String(action.payload.id), { id: plant.id })
   }
 
   private async syncUpdatePlant(supabase: SupabaseClient, action: SyncAction): Promise<void> {
@@ -106,7 +106,7 @@ export class SyncService {
     const remote = remoteData || { timestamp: null }
     const resolution = resolveConflict(
       { timestamp: action.timestamp },
-      { timestamp: remote.timestamp ? new Date(remote.timestamp) : null }
+      { timestamp: remote.timestamp ? new Date(remote.timestamp) : undefined }
     )
 
     const dataToUpdate = resolution === 'local' ? updates : {}
@@ -186,7 +186,7 @@ export class SyncService {
       for (const remotePlant of plants) {
         const local = plantStore.getPlantById(remotePlant.id)
         const resolution = resolveConflict(
-          { timestamp: local?.timestamp },
+          { timestamp: undefined },
           { timestamp: new Date(remotePlant.timestamp) }
         )
 

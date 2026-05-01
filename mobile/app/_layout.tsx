@@ -108,7 +108,7 @@ function RootLayout() {
         await saveSessionForBiometric(s)
         void registerForPushNotifications()
         void identifyUser(s.user.id)
-        identifyAnalytics(s.user.id, { email: s.user.email })
+        identifyAnalytics(s.user.id, { email: s.user.email ?? null })
         track('sign_in')
       }
 
@@ -146,7 +146,7 @@ function RootLayout() {
           const mappedTasks = tasks.map((t: Record<string, unknown>) => ({
             id: t.id as string, plantId: t.plant_id as string, type: t.type as never,
             scheduledDate: new Date(t.scheduled_date as string), completed: false,
-            cycle: t.cycle as never, week: t.week as number, stage: t.stage as string,
+            cycle: t.cycle as never, week: t.week as number, stage: t.stage as never,
             products: (t.products as never[]) ?? [],
           }))
           void scheduleAllTaskNotifications(mappedPlants, mappedTasks, 9, 0)

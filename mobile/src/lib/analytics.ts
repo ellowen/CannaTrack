@@ -75,3 +75,6 @@ export type AnalyticsEvent =
   // Configuracion
   | 'settings_opened'
   | 'notification_toggled'
+  // Compartir / rating
+  | 'plant_shared'
+  | 'rating_prompt_shown'

@@ -27,8 +27,8 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       available_products: plant.availableProducts ?? [],
       status: plant.status,
       notes: plant.notes,
-      created_at: plant.createdAt,
-      updated_at: plant.updatedAt,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }])
 
     if (error) throw error
@@ -111,7 +111,7 @@ export async function syncTasksToSupabase(tasks: ScheduledTask[], userId: string
       completed: t.completed,
       completed_at: t.completedAt?.toISOString(),
       completion_notes: t.completionNotes,
-      created_at: t.createdAt?.toISOString() ?? new Date().toISOString(),
+      created_at: new Date().toISOString(),
     }))
 
     const { error } = await supabase.from('scheduled_tasks').insert(tasksToInsert)
