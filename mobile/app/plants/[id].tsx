@@ -19,7 +19,7 @@ import type { NutritionTable } from '@shared/types/plant'
 import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
-import { cancelPlantNotifications } from '@/lib/notifications'
+import { cancelPlantNotifications, scheduleTaskNotificationsForPlant } from '@/lib/notifications'
 import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
@@ -110,10 +110,12 @@ export default function PlantDetailScreen() {
       const { error: updateError } = await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
       if (updateError) throw updateError
 
-      setPlant({ ...plant, floraStartDate })
+      const updatedPlant = { ...plant, floraStartDate }
+      setPlant(updatedPlant)
       setTasks(newTasks)
       if (user) awardXP(user.id, XP_VALUES.START_FLORA)
       track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
+      void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
       setFloraDateModal(false)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al iniciar floracion'
@@ -160,6 +162,11 @@ export default function PlantDetailScreen() {
       void recordDailyActivity(user.id)
     }
     setSheetTask(null)
+    // Rearmar notificaciones de la planta con el task recien completado excluido
+    if (plant) {
+      const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, completed: true } : t)
+      void scheduleTaskNotificationsForPlant(plant, updatedTasks)
+    }
   }
 
   async function handleExport() {

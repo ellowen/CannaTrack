@@ -25,7 +25,7 @@ import { StatusBar } from 'expo-status-bar'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { supabase } from '@/lib/supabase'
 import { saveSessionForBiometric, clearSavedSession } from '@/lib/biometric'
-import { registerForPushNotifications, scheduleDailyReminder } from '@/lib/notifications'
+import { registerForPushNotifications, scheduleDailyReminder, scheduleAllTaskNotifications } from '@/lib/notifications'
 import { useInitSync } from '@/hooks/useInitSync'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
@@ -105,6 +105,28 @@ function RootLayout() {
         .maybeSingle()
       if (prof?.notifications_enabled) {
         void scheduleDailyReminder(9, 0)
+
+        // Re-agendar notificaciones por planta con el horizonte completo (14 dias)
+        const [{ data: plants }, { data: tasks }] = await Promise.all([
+          supabase.from('plants').select('*').eq('user_id', s.user.id).eq('status', 'active'),
+          supabase.from('scheduled_tasks').select('*').eq('user_id', s.user.id).eq('completed', false),
+        ])
+        if (plants && tasks) {
+          const mappedPlants = plants.map((p: Record<string, unknown>) => ({
+            id: p.id as string, name: p.name as string,
+            genetics: p.genetics as string, geneticType: (p.genetic_type as string) as never,
+            sex: (p.sex ?? 'unknown') as never, startDate: new Date(p.start_date as string),
+            location: (p.location ?? 'indoor') as never, potCount: (p.pot_count as number) ?? 1,
+            nutritionTableId: (p.nutrition_table_id as string) ?? '', status: (p.status as string) as never,
+          }))
+          const mappedTasks = tasks.map((t: Record<string, unknown>) => ({
+            id: t.id as string, plantId: t.plant_id as string, type: t.type as never,
+            scheduledDate: new Date(t.scheduled_date as string), completed: false,
+            cycle: t.cycle as never, week: t.week as number, stage: t.stage as string,
+            products: (t.products as never[]) ?? [],
+          }))
+          void scheduleAllTaskNotifications(mappedPlants, mappedTasks, 9, 0)
+        }
       }
 
       const dest = await resolvePostLoginRoute(s.user.id)
