@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -6,6 +6,8 @@ import { BackIcon } from '@/components/icons/AppIcons'
 import { router } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { usePlan } from '@/hooks/usePlan'
+import PaywallModal from '@/components/PaywallModal'
 
 type ProductRow = { name: string; line: string; unit: 'ml' | 'gr'; minDose: string; maxDose: string }
 type WeekRow    = { cycle: 'vege' | 'flora'; week: number; label: string; products: ProductRow[] }
@@ -37,10 +39,17 @@ function weekKey(w: WeekRow) { return `${w.cycle}-${w.week}` }
 
 export default function NewTableScreen() {
   const { user } = useAuth()
+  const { isPro } = usePlan()
   const [tableName, setTableName]     = useState('')
   const [weeks, setWeeks]             = useState<WeekRow[]>([...VEGE_WEEKS, ...FLORA_WEEKS])
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [loading, setLoading]         = useState(false)
+  const [paywallVisible, setPaywallVisible] = useState(false)
+
+  // Redirigir usuarios Free al paywall al abrir la pantalla
+  useEffect(() => {
+    if (!isPro) setPaywallVisible(true)
+  }, [isPro])
 
   function addProduct(wk: WeekRow) {
     setWeeks(prev => prev.map(w =>
@@ -127,6 +136,11 @@ export default function NewTableScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => { setPaywallVisible(false); if (!isPro) router.back() }}
+        feature="custom_tables"
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
