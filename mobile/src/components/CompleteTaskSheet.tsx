@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert, ScrollView } from 'react-native'
 import * as Haptics from 'expo-haptics'
+import { track } from '@/lib/analytics'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutricion',
@@ -185,6 +186,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
   }
 
   function handleSkip() {
+    track('task_completed', { task_type: task!.type, cycle: task!.cycle, week: task!.week, with_notes: false, with_measures: false })
     onComplete(task!.id)
     onClose()
   }
@@ -192,6 +194,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
   function handleConfirm() {
     const xp = hasMeasure ? 25 : 15
     setXpReward({ xp })
+    track('task_completed', { task_type: task!.type, cycle: task!.cycle, week: task!.week, with_notes: !!notes.trim(), with_measures: hasMeasure })
     onComplete(
       task!.id,
       notes.trim() || undefined,
