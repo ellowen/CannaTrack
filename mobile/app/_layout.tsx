@@ -32,6 +32,7 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { useUserStore } from '@/store/userStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -184,6 +185,7 @@ function RootLayout() {
         <Stack.Screen name="achievements" />
       </Stack>
       <StatusBar style="light" />
+      <OfflineBanner />
       {/* Overlay mientras resuelve la sesion inicial - tapa el flash de pantalla */}
       {session === undefined && (
         <View style={{
