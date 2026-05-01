@@ -128,6 +128,8 @@ function RootLayout() {
         <Stack.Screen name="plants/[id]/diagnosis" />
         <Stack.Screen name="plants/[id]/measurements" />
         <Stack.Screen name="plants/[id]/timeline" />
+        <Stack.Screen name="tables/index" />
+        <Stack.Screen name="tables/[id]" />
         <Stack.Screen name="tables/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="achievements" />

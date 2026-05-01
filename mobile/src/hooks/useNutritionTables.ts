@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { REVEGETAR_TABLE } from '@shared/data/revegetar-table'
+import { TOPCROP_TABLE } from '@shared/data/topcrop-table'
 import type { NutritionTable, NutritionLine, NutritionWeek, PlantStage } from '@shared/types/plant'
 
-const FALLBACK_TABLES: NutritionTable[] = [REVEGETAR_TABLE]
+// Tablas hardcodeadas como fallback offline (siempre disponibles sin conexion)
+const FALLBACK_TABLES: NutritionTable[] = [REVEGETAR_TABLE, TOPCROP_TABLE]
 
 export function useNutritionTables() {
   const [tables, setTables] = useState<NutritionTable[]>(FALLBACK_TABLES)

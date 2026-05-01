@@ -10,6 +10,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { scheduleDailyReminder, schedulePlantTaskNotification } from '@/lib/notifications'
 import * as Notifications from 'expo-notifications'
 import { loadTasksFromSupabase, loadPlantsFromSupabase } from '@/lib/sync'
+import { track } from '@/lib/analytics'
 
 export default function SettingsScreen() {
   const { user } = useAuth()
@@ -307,6 +308,25 @@ export default function SettingsScreen() {
               )}
             </LinearGradient>
           </View>
+
+          {/* Tablas nutricionales */}
+          <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden', marginBottom: 16 }}>
+            <TouchableOpacity
+              onPress={() => { track('nutrition_table_viewed', { source: 'settings' }); router.push('/tables/index' as never) }}
+              style={{ padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.08)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 18 }}>📊</Text>
+                </View>
+                <View>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Tablas Nutricionales</Text>
+                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>REVEGETAR, Top Crop y mas</Text>
+                </View>
+              </View>
+              <Text style={{ color: '#3A5C3E', fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+          </LinearGradient>
 
           {/* Legal + About + Sign out */}
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>

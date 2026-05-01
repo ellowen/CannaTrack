@@ -16,7 +16,7 @@ export const TOPCROP_TABLE: NutritionTable = {
   id: 'topcrop-v1',
   name: 'Top Crop — Tabla de Cultivo',
   brandId: 'topcrop',
-  accessTier: 'free',
+  accessTier: 'pro',
   isOfficial: true,
   geneticTypes: ['feminized', 'autoflower', 'regular'],
   lines: [
