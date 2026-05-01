@@ -185,12 +185,14 @@ describe('Autofloreciente', () => {
   })
 
   it('cantidad de tareas correcta para 75 días', () => {
-    // VEGE: 6 semanas × 4 tareas = 24
-    // FLORA F1-F6: 6 semanas × 4 tareas = 24
-    // FLORA F7-F8: 2 semanas × 3 tareas = 6
+    // VEGE rooting x2: 4 tareas c/u = 8
+    // VEGE growth x2 + preflower x2 (con foliar): 5 tareas c/u = 20
+    // FLORA stretch x2 (con foliar): 5 tareas c/u = 10
+    // FLORA bulking x2 + ripening x2: 4 tareas c/u = 16
+    // FLORA flushing x2: 3 tareas c/u = 6
     // Harvest: 1
-    // Total: 55
-    expect(tareas.length).toBe(55)
+    // Total: 61
+    expect(tareas.length).toBe(61)
   })
 
   it('fecha de cosecha = startDate + 75 días', () => {

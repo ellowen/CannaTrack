@@ -16,7 +16,7 @@ export interface SignUpData extends AuthCredentials {
 // Session timeout constants
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000 // 15 minutes
 let lastActivityTime = Date.now()
-let inactivityCheckInterval: NodeJS.Timeout | null = null
+let inactivityCheckInterval: ReturnType<typeof setInterval> | null = null
 
 /**
  * Log authentication event for audit trail

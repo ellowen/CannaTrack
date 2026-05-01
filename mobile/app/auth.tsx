@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Keyb
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { signIn, signUp } from '@/lib/auth'
+import { track } from '@/lib/analytics'
 import { isBiometricAvailable, hasSavedSession, restoreSessionWithBiometric, getBiometricLabel } from '@/lib/biometric'
 
 export default function AuthScreen() {
@@ -36,6 +37,7 @@ export default function AuthScreen() {
         await signIn({ email: email.trim(), password })
       } else {
         await signUp({ email: email.trim(), password, name: name.trim() })
+        track('sign_up')
         Alert.alert(
           'Revisa tu correo',
           'Te enviamos un link de confirmacion. Una vez confirmado, ingresa con tu cuenta.',

@@ -45,6 +45,7 @@ export default function AchievementsScreen() {
 
   useEffect(() => {
     if (authLoading || !user) { setLoading(false); return }
+    const uid = user.id
     async function load() {
       const [
         { data: p },
@@ -54,12 +55,12 @@ export default function AchievementsScreen() {
         { count: measurements },
         { count: photos },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days').eq('id', user.id).maybeSingle(),
-        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'active'),
-        supabase.from('plants').select('id').eq('user_id', user.id).eq('status', 'harvested'),
-        supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('completed', true),
-        supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id).not('photo_url', 'is', null),
+        supabase.from('profiles').select('xp, streak_days').eq('id', uid).maybeSingle(),
+        supabase.from('plants').select('id').eq('user_id', uid).eq('status', 'active'),
+        supabase.from('plants').select('id').eq('user_id', uid).eq('status', 'harvested'),
+        supabase.from('scheduled_tasks').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('completed', true),
+        supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', uid),
+        supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', uid).not('photo_url', 'is', null),
       ])
       setData({
         streak:               p?.streak_days ?? 0,

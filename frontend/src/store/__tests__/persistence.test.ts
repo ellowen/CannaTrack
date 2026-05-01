@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { usePlantStore } from '../plantStore'
 import { useUserStore } from '../userStore'

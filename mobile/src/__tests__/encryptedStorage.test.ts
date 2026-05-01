@@ -9,34 +9,23 @@ function createEncryptedStorage() {
   const encryptedData: Map<string, string> = new Map()
 
   function encrypt(plaintext: string, key: string = 'default-key'): string {
-    // In real implementation, use proper AES encryption
-    // This is a simple XOR-based demo for testing
     const iv = crypto.randomBytes(16).toString('hex')
-    const cipher = Buffer.from(plaintext)
-      .toString('hex')
-      .split('')
-      .map((char, idx) => {
-        const keyChar = key.charCodeAt(idx % key.length)
-        const charCode = parseInt(char, 16)
-        return (charCode ^ keyChar).toString(16)
-      })
-      .join('')
-
-    return `${iv}:${cipher}`
+    const plaintextBytes = Buffer.from(plaintext, 'utf8')
+    const cipherBytes = Buffer.alloc(plaintextBytes.length)
+    for (let i = 0; i < plaintextBytes.length; i++) {
+      cipherBytes[i] = plaintextBytes[i] ^ key.charCodeAt(i % key.length)
+    }
+    return `${iv}:${cipherBytes.toString('hex')}`
   }
 
   function decrypt(encrypted: string, key: string = 'default-key'): string {
-    const [_iv, cipher] = encrypted.split(':')
-    const plaintext = cipher
-      .split('')
-      .map((char, idx) => {
-        const keyChar = key.charCodeAt(idx % key.length)
-        const charCode = parseInt(char, 16)
-        return String.fromCharCode(charCode ^ keyChar)
-      })
-      .join('')
-
-    return plaintext
+    const [_iv, cipherHex] = encrypted.split(':')
+    const cipherBytes = Buffer.from(cipherHex, 'hex')
+    const plaintextBytes = Buffer.alloc(cipherBytes.length)
+    for (let i = 0; i < cipherBytes.length; i++) {
+      plaintextBytes[i] = cipherBytes[i] ^ key.charCodeAt(i % key.length)
+    }
+    return plaintextBytes.toString('utf8')
   }
 
   return {

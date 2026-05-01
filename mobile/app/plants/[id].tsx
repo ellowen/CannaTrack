@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert,
   Modal, KeyboardAvoidingView, Platform,
@@ -19,7 +19,12 @@ import type { NutritionTable } from '@shared/types/plant'
 import { calculatePlantHealth } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import { HarvestSheet } from '@/components/HarvestSheet'
-import { cancelPlantNotifications } from '@/lib/notifications'
+import { cancelPlantNotifications, scheduleTaskNotificationsForPlant } from '@/lib/notifications'
+import { maybeRequestRating } from '@/lib/rating'
+import { sharePlantCard } from '@/lib/share'
+import { exportPlantHistory } from '@/lib/export'
+import { track } from '@/lib/analytics'
+import { usePlan } from '@/hooks/usePlan'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -34,7 +39,11 @@ const TYPE_LABEL: Record<string, string> = {
 export default function PlantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
+  const { isPro } = usePlan()
   const { tables } = useNutritionTables()
+  const [exporting, setExporting] = useState(false)
+  const [sharing,   setSharing]   = useState(false)
+  const shareCardRef = useRef(null)
   const [plant, setPlant]       = useState<Plant | null>(null)
   const [tasks, setTasks]       = useState<ScheduledTask[]>([])
   const [loading, setLoading]   = useState(true)
@@ -105,9 +114,12 @@ export default function PlantDetailScreen() {
       const { error: updateError } = await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
       if (updateError) throw updateError
 
-      setPlant({ ...plant, floraStartDate })
+      const updatedPlant = { ...plant, floraStartDate }
+      setPlant(updatedPlant)
       setTasks(newTasks)
       if (user) awardXP(user.id, XP_VALUES.START_FLORA)
+      track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
+      void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
       setFloraDateModal(false)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al iniciar floracion'
@@ -154,6 +166,66 @@ export default function PlantDetailScreen() {
       void recordDailyActivity(user.id)
     }
     setSheetTask(null)
+    // Rearmar notificaciones de la planta con el task recien completado excluido
+    if (plant) {
+      const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, completed: true } : t)
+      void scheduleTaskNotificationsForPlant(plant, updatedTasks)
+    }
+    // Rating prompt despues de N tareas completadas (fire and forget)
+    void maybeRequestRating()
+  }
+
+  async function handleShare() {
+    if (!plant) return
+    setSharing(true)
+    try {
+      await sharePlantCard(shareCardRef, plant)
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo compartir')
+    } finally {
+      setSharing(false)
+    }
+  }
+
+  async function handleExport() {
+    if (!plant || !user) return
+    if (!isPro) {
+      Alert.alert('Feature Pro', 'La exportacion de historial esta disponible en el plan Pro.', [
+        { text: 'Ver planes', onPress: () => router.push('/(tabs)/profile' as never) },
+        { text: 'Cancelar' },
+      ])
+      return
+    }
+    track('export_started', { plant_id: plant.id })
+    setExporting(true)
+    try {
+      const [{ data: weekLogs }, { data: diagnoses }] = await Promise.all([
+        supabase.from('week_logs').select('log_date, week_label, notes, photo_url').eq('plant_id', plant.id).order('log_date'),
+        supabase.from('diagnosis_logs').select('created_at, health_score, summary, issues').eq('plant_id', plant.id).order('created_at'),
+      ])
+      await exportPlantHistory({
+        plant,
+        tasks,
+        weekLogs: (weekLogs ?? []).map((l: { log_date: string; week_label: string | null; notes: string | null; photo_url: string | null }) => ({
+          date:      l.log_date,
+          weekLabel: l.week_label ?? '',
+          notes:     l.notes ?? '',
+          photoUrl:  l.photo_url,
+        })),
+        diagnoses: (diagnoses ?? []).map((d: { created_at: string; health_score: number; summary: string | null; issues: unknown }) => ({
+          date:        d.created_at.split('T')[0],
+          healthScore: d.health_score,
+          summary:     d.summary ?? '',
+          issues:      Array.isArray(d.issues) ? (d.issues as { name: string }[]).map(i => i.name).join('; ') : '',
+        })),
+      })
+      track('export_completed', { plant_id: plant.id })
+    } catch (e) {
+      track('export_error', { plant_id: plant.id, error: e instanceof Error ? e.message : 'unknown' })
+      Alert.alert('Error al exportar', e instanceof Error ? e.message : 'Intenta de nuevo')
+    } finally {
+      setExporting(false)
+    }
   }
 
   if (loading) return (
@@ -225,6 +297,45 @@ export default function PlantDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      {/* ShareCard — off-screen, capturada por react-native-view-shot */}
+      <View
+        ref={shareCardRef}
+        style={{ position: 'absolute', left: -2000, top: 0, width: 360 }}
+        collapsable={false}
+      >
+        <LinearGradient
+          colors={isFlora ? ['#1A1200', '#0C0800'] : ['#0C1A0E', '#060E07']}
+          style={{ padding: 28, borderRadius: 20 }}
+        >
+          <Text style={{ color: '#6D8C74', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>
+            CANNATRACK
+          </Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900', marginBottom: 4 }}>
+            {plant.name}
+          </Text>
+          <Text style={{ color: '#6D8C74', fontSize: 14, marginBottom: 20 }}>
+            {plant.genetics} · {plant.geneticType === 'autoflower' ? 'Autofloreciente' : plant.geneticType === 'feminized' ? 'Feminizada' : 'Regular'}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 20, marginBottom: 24 }}>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>DIA</Text>
+              <Text style={{ color: phaseAccent, fontSize: 32, fontWeight: '900' }}>{daysSinceStart}</Text>
+            </View>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: healthColor, fontSize: 32, fontWeight: '900' }}>{health}%</Text>
+            </View>
+            <View>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>ETAPA</Text>
+              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+            </View>
+          </View>
+          <Text style={{ color: '#2C3E2E', fontSize: 11, textAlign: 'right' }}>
+            {format(new Date(), 'dd MMM yyyy', { locale: es })} · cannatrack.app
+          </Text>
+        </LinearGradient>
+      </View>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* Header */}
@@ -686,6 +797,37 @@ export default function PlantDetailScreen() {
                   <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
                     <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
                   </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Exportar — Pro */}
+              <TouchableOpacity onPress={handleExport} disabled={exporting} activeOpacity={0.8} style={{ flex: 1, minWidth: '30%' }}>
+                <LinearGradient
+                  colors={['#160F2A', '#0E0820']}
+                  style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', padding: 14, alignItems: 'center' }}
+                >
+                  {exporting
+                    ? <ActivityIndicator color="#A78BFA" size="small" style={{ marginBottom: 6 }} />
+                    : <Text style={{ fontSize: 22, marginBottom: 6 }}>📤</Text>
+                  }
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Exportar</Text>
+                  <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
+                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Compartir */}
+              <TouchableOpacity onPress={handleShare} disabled={sharing} activeOpacity={0.8} style={{ flex: 1, minWidth: '30%' }}>
+                <LinearGradient
+                  colors={['#141E15', '#0C1009']}
+                  style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 14, alignItems: 'center' }}
+                >
+                  {sharing
+                    ? <ActivityIndicator color="#52CC64" size="small" style={{ marginBottom: 6 }} />
+                    : <Text style={{ fontSize: 22, marginBottom: 6 }}>🔗</Text>
+                  }
+                  <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>Compartir</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

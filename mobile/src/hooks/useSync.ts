@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useSyncStore } from '@/store/syncStore'
 import { syncService } from '@/lib/sync/syncService'
-import { isOnline, onOnline } from '@/lib/network'
+import { checkOnline, onOnline } from '@/lib/network'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Hook para sincronización offline-first (mobile).
@@ -11,7 +11,6 @@ import { isOnline, onOnline } from '@/lib/network'
  * - Maneja errores con retry exponencial
  */
 export function useSync() {
-  const supabase = useSupabaseClient()
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSync, setLastSync] = useState<Date | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -26,7 +25,7 @@ export function useSync() {
   } = useSyncStore()
 
   const sync = useCallback(async () => {
-    const online = await isOnline()
+    const online = await checkOnline()
     if (!online) {
       setSyncError('No internet connection')
       return
@@ -61,7 +60,7 @@ export function useSync() {
 
   // Auto-sync cuando dispositivo vuelve online
   useEffect(() => {
-    const cleanup = onOnline(sync)
+    const cleanup = onOnline(() => void sync())
     return cleanup
   }, [sync])
 
