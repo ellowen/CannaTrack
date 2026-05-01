@@ -6,8 +6,9 @@ import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 
 interface Props {
-  visible: boolean
-  onClose: () => void
+  visible:  boolean
+  onClose:  () => void
+  feature?: string  // contexto opcional para analytics
 }
 
 const FEATURES = [
@@ -18,13 +19,13 @@ const FEATURES = [
   { icon: '📤', text: 'Exportar historial (proximamente)' },
 ]
 
-export default function PaywallModal({ visible, onClose }: Props) {
+export default function PaywallModal({ visible, onClose, feature }: Props) {
   const { refetch } = usePlan()
   const [loading, setLoading]     = useState(false)
   const [restoring, setRestoring] = useState(false)
 
   // Track when modal becomes visible
-  if (visible) track('paywall_shown')
+  if (visible) track('paywall_shown', feature ? { feature } : undefined)
 
   async function handlePurchase() {
     track('paywall_purchase_started')

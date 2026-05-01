@@ -3,7 +3,7 @@
  * Feature exclusivo del plan Pro.
  * Genera un CSV con todos los datos de una planta y lo comparte via Share Sheet.
  */
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'

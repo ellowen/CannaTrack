@@ -4,6 +4,7 @@
  * No-op si EXPO_PUBLIC_POSTHOG_KEY no esta configurada.
  */
 import PostHog from 'posthog-react-native'
+import type { PostHogEventProperties } from '@posthog/core'
 
 const API_KEY  = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''
 const API_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
@@ -20,7 +21,7 @@ export function initAnalytics(): void {
   })
 }
 
-export function identifyAnalytics(userId: string, props?: Record<string, unknown>): void {
+export function identifyAnalytics(userId: string, props?: PostHogEventProperties): void {
   ph?.identify(userId, props)
 }
 
@@ -29,7 +30,7 @@ export function resetAnalytics(): void {
 }
 
 /** Captura un evento de producto. No lanza si PostHog no esta init. */
-export function track(event: AnalyticsEvent, props?: Record<string, unknown>): void {
+export function track(event: AnalyticsEvent, props?: PostHogEventProperties): void {
   ph?.capture(event, props)
 }
 
