@@ -31,6 +31,7 @@ import { useInitSync } from '@/hooks/useInitSync'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { useUserStore } from '@/store/userStore'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
@@ -161,6 +162,7 @@ function RootLayout() {
   }, [])
 
   return (
+    <ErrorBoundary>
     <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }}>
@@ -194,6 +196,7 @@ function RootLayout() {
       )}
     </ThemeProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   )
 }
 
