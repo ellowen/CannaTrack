@@ -3,16 +3,24 @@
  * Feature flags y eventos de producto.
  * No-op si EXPO_PUBLIC_POSTHOG_KEY no esta configurada.
  */
-import PostHog from 'posthog-react-native'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let PostHog: any = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  PostHog = require('posthog-react-native').default
+} catch {
+  // Expo Go o entorno sin soporte nativo — analytics no-op
+}
 import type { PostHogEventProperties } from '@posthog/core'
 
 const API_KEY  = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''
 const API_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
 
-let ph: PostHog | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ph: any = null
 
 export function initAnalytics(): void {
-  if (!API_KEY) return
+  if (!API_KEY || !PostHog) return
   ph = new PostHog(API_KEY, {
     host:            API_HOST,
     captureAppLifecycleEvents: true,
