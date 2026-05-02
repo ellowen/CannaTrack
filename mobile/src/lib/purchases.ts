@@ -1,4 +1,17 @@
-import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases'
+// Dynamic import — react-native-purchases no existe en Expo Go
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Purchases: any = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let LOG_LEVEL: any = {}
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pkg = require('react-native-purchases')
+  Purchases = pkg.default
+  LOG_LEVEL = pkg.LOG_LEVEL
+} catch {
+  // Expo Go o web — RevenueCat no disponible, la app funciona sin pagos
+}
+import type { CustomerInfo } from 'react-native-purchases'
 import { Platform } from 'react-native'
 import { supabase } from './supabase'
 
