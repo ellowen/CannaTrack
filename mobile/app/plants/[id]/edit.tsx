@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { format, startOfDay } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
@@ -72,8 +74,14 @@ export default function EditPlantScreen() {
   const [customProducts, setCustomProducts]     = useState<CustomProduct[]>([])
   const [showAddForm, setShowAddForm]           = useState(false)
   const [newProduct, setNewProduct]             = useState<CustomProduct>(EMPTY_NEW)
+  const [showStartPicker, setShowStartPicker]   = useState(false)
+  const [showFloraPicker, setShowFloraPicker]   = useState(false)
 
   const { tables } = useNutritionTables()
+
+  // Convierte 'YYYY-MM-DD' a Date para el picker; fallback a hoy
+  const startDateObj   = startDate   ? startOfDay(new Date(startDate + 'T00:00:00'))   : startOfDay(new Date())
+  const floraDateObj   = floraStartDate ? startOfDay(new Date(floraStartDate + 'T00:00:00')) : startOfDay(new Date())
 
   useEffect(() => {
     async function load() {
@@ -362,16 +370,70 @@ export default function EditPlantScreen() {
 
         {/* Seccion: Ciclo */}
         <Section label="Ciclo de cultivo" icon="📅">
+          {/* Fecha de inicio */}
           <Field label="Fecha de inicio">
-            <TextInput
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#2D4A30"
-              keyboardType="numeric"
-              style={inp}
-            />
+            <TouchableOpacity
+              onPress={() => setShowStartPicker(true)}
+              activeOpacity={0.8}
+              style={[inp, { justifyContent: 'center' }]}
+            >
+              <Text style={{ color: startDate ? '#E4F2E7' : '#2D4A30', fontSize: 15 }}>
+                {startDate ? format(startDateObj, 'dd/MM/yyyy') : 'Seleccionar fecha'}
+              </Text>
+            </TouchableOpacity>
+            {showStartPicker && (
+              <DateTimePicker
+                value={startDateObj}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()}
+                onChange={(_, date) => {
+                  setShowStartPicker(Platform.OS === 'ios')
+                  if (date) setStartDate(format(date, 'yyyy-MM-dd'))
+                }}
+              />
+            )}
           </Field>
+
+          {/* Fecha de inicio de flora (solo feminizada/regular que ya florecio) */}
+          {geneticType !== 'autoflower' && (
+            <Field label="Inicio de floracion (opcional)">
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <TouchableOpacity
+                  onPress={() => setShowFloraPicker(true)}
+                  activeOpacity={0.8}
+                  style={[inp, { flex: 1, justifyContent: 'center' }]}
+                >
+                  <Text style={{ color: floraStartDate ? '#F59E0B' : '#2D4A30', fontSize: 15 }}>
+                    {floraStartDate ? format(floraDateObj, 'dd/MM/yyyy') : 'No iniciada aun'}
+                  </Text>
+                </TouchableOpacity>
+                {floraStartDate && (
+                  <TouchableOpacity
+                    onPress={() => setFloraStartDate(null)}
+                    activeOpacity={0.7}
+                    style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' }}
+                  >
+                    <Text style={{ color: '#EF4444', fontSize: 16 }}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {showFloraPicker && (
+                <DateTimePicker
+                  value={floraDateObj}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  maximumDate={new Date()}
+                  minimumDate={startDate ? startDateObj : undefined}
+                  onChange={(_, date) => {
+                    setShowFloraPicker(Platform.OS === 'ios')
+                    if (date) setFloraStartDate(format(date, 'yyyy-MM-dd'))
+                  }}
+                />
+              )}
+            </Field>
+          )}
+
           <LinearGradient
             colors={['rgba(245,158,11,0.08)', 'rgba(245,158,11,0.03)']}
             style={{ borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)', padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}
