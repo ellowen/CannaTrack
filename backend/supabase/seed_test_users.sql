@@ -232,67 +232,43 @@ INSERT INTO scheduled_tasks (
   id, user_id, plant_id,
   type, scheduled_date, cycle, week, stage,
   products, ec_min, ec_max, ph_min, ph_max,
-  completed, created_at
+  completed
 ) VALUES
 -- Tarea hoy: nutricion para White Widow (flora semana 4)
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'aa000001-0000-0000-0000-000000000001'::uuid,
-  'nutrition',
-  current_date,
-  'flora',
-  4,
-  'F4 - Engorde',
+  'nutrition', current_date, 'flora', 4, 'F4 - Engorde',
   '[{"name":"BIO-BLOOM","line":"BIO","minDose":2,"maxDose":3}]'::jsonb,
-  1.2, 1.4, 6.0, 6.5,
-  false,
-  now()
+  1.2, 1.4, 6.0, 6.5, false
 ),
 -- Tarea hoy: riego para White Widow
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'aa000001-0000-0000-0000-000000000001'::uuid,
-  'irrigation',
-  current_date,
-  'flora',
-  4,
-  'F4 - Engorde',
+  'irrigation', current_date, 'flora', 4, 'F4 - Engorde',
   '[]'::jsonb,
-  1.2, 1.4, 6.0, 6.5,
-  false,
-  now()
+  1.2, 1.4, 6.0, 6.5, false
 ),
 -- Tarea hoy: nutricion para Northern Lights Auto (vege semana 3)
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'aa000002-0000-0000-0000-000000000002'::uuid,
-  'nutrition',
-  current_date,
-  'vege',
-  3,
-  'S3 - Crecimiento',
+  'nutrition', current_date, 'vege', 3, 'S3 - Crecimiento',
   '[{"name":"BIO-GROW","line":"BIO","minDose":1,"maxDose":2}]'::jsonb,
-  0.6, 0.8, 5.5, 6.0,
-  false,
-  now()
+  0.6, 0.8, 5.5, 6.0, false
 ),
 -- Tarea hoy: nutricion para Critical Auto (vege semana 1)
 (
   gen_random_uuid(),
   'bbbbbbbb-0000-0000-0000-000000000002'::uuid,
   'bb000001-0000-0000-0000-000000000003'::uuid,
-  'nutrition',
-  current_date,
-  'vege',
-  1,
-  'S1 - Enraizado',
+  'nutrition', current_date, 'vege', 1, 'S1 - Enraizado',
   '[{"name":"BIO-ROOT","line":"BIO","minDose":1,"maxDose":1}]'::jsonb,
-  0.4, 0.6, 5.5, 6.0,
-  false,
-  now()
+  0.4, 0.6, 5.5, 6.0, false
 );
 
 COMMIT;
