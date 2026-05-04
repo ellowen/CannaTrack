@@ -14,17 +14,18 @@ let appStateSubscription: ReturnType<typeof import('react-native').AppState.addE
  * Detecta si el dispositivo tiene conectividad.
  * Usa endpoint de Supabase con validacion de certificado HTTPS.
  */
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
 export async function checkOnline(): Promise<boolean> {
   try {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token ?? ''
     const response = await Promise.race([
       fetch(`${SUPABASE_URL}/rest/v1/`, {
         method: 'HEAD',
-        headers: { 'Authorization': 'Bearer ' + token },
+        // Usar anon key — no requiere sesion activa, solo verifica conectividad
+        headers: { 'apikey': SUPABASE_ANON_KEY },
       }),
       new Promise<Response>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), 2000)
+        setTimeout(() => reject(new Error('Timeout')), 3000)
       ),
     ])
     return response.ok

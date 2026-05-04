@@ -115,6 +115,7 @@ INSERT INTO profiles (
   id,
   username,
   is_pro,
+  onboarding_completed,
   notifications_enabled,
   notification_time,
   streak_days,
@@ -127,6 +128,7 @@ INSERT INTO profiles (
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'usuario_pro',
   true,   -- PRO: acceso completo
+  true,   -- skip onboarding
   true,
   '09:00:00',
   7,
@@ -139,6 +141,7 @@ INSERT INTO profiles (
   'bbbbbbbb-0000-0000-0000-000000000002'::uuid,
   'usuario_free',
   false,  -- FREE: acceso limitado
+  true,   -- skip onboarding
   true,
   '09:00:00',
   0,
