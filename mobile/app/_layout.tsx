@@ -36,14 +36,16 @@ import { OfflineBanner } from '@/components/OfflineBanner'
 import type { Session } from '@supabase/supabase-js'
 
 async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/(tabs)'> {
-  const [{ data: profile }, { count: plantCount }] = await Promise.all([
+  const [{ data: profile }, { data: plantRows }] = await Promise.all([
     supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
-    supabase.from('plants').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    // select('id').limit(1) es mas confiable que head:true para detectar si hay plantas
+    supabase.from('plants').select('id').eq('user_id', userId).eq('status', 'active').limit(1),
   ])
 
+  const hasPlants = (plantRows?.length ?? 0) > 0
+
   // Si ya tiene plantas, siempre ir a tabs aunque onboarding_completed sea false
-  if (plantCount && plantCount > 0) {
-    // Corregir el flag si estaba mal
+  if (hasPlants) {
     if (!profile?.onboarding_completed) {
       void supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
     }

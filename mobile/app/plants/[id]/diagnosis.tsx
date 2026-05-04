@@ -111,7 +111,7 @@ export default function DiagnosisScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
       <PaywallModal
         visible={showPaywall}
-        onClose={() => { setShowPaywall(false); router.back() }}
+        onClose={() => { setShowPaywall(false); router.canGoBack() ? router.back() : router.replace('/(tabs)') }}
         feature="Diagnostico IA"
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>

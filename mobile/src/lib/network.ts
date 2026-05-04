@@ -17,13 +17,11 @@ let appStateSubscription: ReturnType<typeof import('react-native').AppState.addE
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 export async function checkOnline(): Promise<boolean> {
+  if (!SUPABASE_URL) return true // sin URL configurada, asumir online
   try {
     const response = await Promise.race([
-      fetch(`${SUPABASE_URL}/rest/v1/`, {
-        method: 'HEAD',
-        // Usar anon key — no requiere sesion activa, solo verifica conectividad
-        headers: { 'apikey': SUPABASE_ANON_KEY },
-      }),
+      // /auth/v1/health siempre devuelve 200 sin autenticacion
+      fetch(`${SUPABASE_URL}/auth/v1/health`, { method: 'GET' }),
       new Promise<Response>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout')), 3000)
       ),
