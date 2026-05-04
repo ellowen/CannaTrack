@@ -160,7 +160,7 @@ INSERT INTO plants (
 ) VALUES
 -- Planta 1: Feminizada en floración
 (
-  'plant-pro-01-0000-0000-000000000001'::uuid,
+  'aa000001-0000-0000-0000-000000000001'::uuid,
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'White Widow #1',
   'White Widow',
@@ -179,7 +179,7 @@ INSERT INTO plants (
 ),
 -- Planta 2: Autofloreciente en crecimiento
 (
-  'plant-pro-02-0000-0000-000000000002'::uuid,
+  'aa000002-0000-0000-0000-000000000002'::uuid,
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
   'Northern Lights Auto',
   'Northern Lights Auto',
@@ -208,7 +208,7 @@ INSERT INTO plants (
   created_at, updated_at
 ) VALUES
 (
-  'plant-free-01-000-0000-000000000003'::uuid,
+  'bb000001-0000-0000-0000-000000000003'::uuid,
   'bbbbbbbb-0000-0000-0000-000000000002'::uuid,
   'Critical Auto',
   'Critical Auto',
@@ -238,7 +238,7 @@ INSERT INTO scheduled_tasks (
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
-  'plant-pro-01-0000-0000-000000000001'::uuid,
+  'aa000001-0000-0000-0000-000000000001'::uuid,
   'nutrition',
   current_date,
   'flora',
@@ -253,7 +253,7 @@ INSERT INTO scheduled_tasks (
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
-  'plant-pro-01-0000-0000-000000000001'::uuid,
+  'aa000001-0000-0000-0000-000000000001'::uuid,
   'irrigation',
   current_date,
   'flora',
@@ -268,7 +268,7 @@ INSERT INTO scheduled_tasks (
 (
   gen_random_uuid(),
   'aaaaaaaa-0000-0000-0000-000000000001'::uuid,
-  'plant-pro-02-0000-0000-000000000002'::uuid,
+  'aa000002-0000-0000-0000-000000000002'::uuid,
   'nutrition',
   current_date,
   'vege',
@@ -283,7 +283,7 @@ INSERT INTO scheduled_tasks (
 (
   gen_random_uuid(),
   'bbbbbbbb-0000-0000-0000-000000000002'::uuid,
-  'plant-free-01-000-0000-000000000003'::uuid,
+  'bb000001-0000-0000-0000-000000000003'::uuid,
   'nutrition',
   current_date,
   'vege',
