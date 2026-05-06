@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AppState, type AppStateStatus } from 'react-native'
-import { supabase } from './supabase'
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
+import * as Network from 'expo-network'
 
 let networkListeners: ((isOnline: boolean) => void)[] = []
 let currentOnlineState = true
@@ -14,21 +12,12 @@ let appStateSubscription: ReturnType<typeof import('react-native').AppState.addE
  * Detecta si el dispositivo tiene conectividad.
  * Usa endpoint de Supabase con validacion de certificado HTTPS.
  */
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
 export async function checkOnline(): Promise<boolean> {
-  if (!SUPABASE_URL) return true // sin URL configurada, asumir online
   try {
-    const response = await Promise.race([
-      // /auth/v1/health siempre devuelve 200 sin autenticacion
-      fetch(`${SUPABASE_URL}/auth/v1/health`, { method: 'GET' }),
-      new Promise<Response>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), 3000)
-      ),
-    ])
-    return response.ok
+    const state = await Network.getNetworkStateAsync()
+    return state.isConnected === true && state.isInternetReachable !== false
   } catch {
-    return false
+    return true // si falla la API nativa, asumir online
   }
 }
 
