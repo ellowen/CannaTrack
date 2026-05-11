@@ -10,17 +10,20 @@ import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
+import { usePlantStore } from '@/store/plantStore'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { loadPlantsFromSupabase } from '@/lib/sync'
 import type { Plant } from '@shared/types/plant'
 
 // pending tasks count per plant for today
 type TaskMap = Record<string, number>
-type FilterType = 'todas' | 'activas' | 'flora' | 'cosechadas' | 'descartadas'
+type FilterType = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartadas'
 
 const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: string }[] = [
   { key: 'todas',      label: 'Todas',      color: '#52CC64', emptyIcon: '🌱' },
-  { key: 'activas',    label: 'Vege',       color: '#52CC64', emptyIcon: '🌿' },
+  { key: 'activas',    label: 'Activas',    color: '#52CC64', emptyIcon: '🌿' },
+  { key: 'vege',       label: 'Vege',       color: '#52CC64', emptyIcon: '🌿' },
   { key: 'flora',      label: 'Flora',      color: '#F59E0B', emptyIcon: '🌸' },
   { key: 'cosechadas', label: 'Cosechadas', color: '#A78BFA', emptyIcon: '✂️' },
   { key: 'descartadas',label: 'Descartadas',color: '#EF4444', emptyIcon: '🗑️' },
@@ -29,6 +32,7 @@ const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: strin
 export default function PlantsScreen() {
   const { user } = useAuth()
   const { plants } = usePlants()
+  const setPlants = usePlantStore(s => s.setPlants)
 
   const [historyPlants, setHistoryPlants] = useState<Plant[]>([])
   const [todayTaskMap, setTodayTaskMap] = useState<TaskMap>({})
@@ -59,7 +63,11 @@ export default function PlantsScreen() {
     setTodayTaskMap(taskMap)
   }, [user])
 
-  useFocusEffect(useCallback(() => { load() }, [load]))
+  useFocusEffect(useCallback(() => {
+    load()
+    // Recargar plantas activas del store desde Supabase (aparece nueva planta al volver)
+    if (user) loadPlantsFromSupabase(user.id).then(setPlants).catch(console.error)
+  }, [load, user?.id]))
 
   async function onRefresh() {
     setRefreshing(true)
@@ -72,7 +80,8 @@ export default function PlantsScreen() {
 
   const counts: Record<FilterType, number> = {
     todas:       allPlants.length,
-    activas:     plants.filter(p => !p.floraStartDate).length,
+    activas:     plants.length,
+    vege:        plants.filter(p => !p.floraStartDate).length,
     flora:       plants.filter(p => !!p.floraStartDate).length,
     cosechadas:  historyPlants.filter(p => p.status === 'harvested').length,
     descartadas: historyPlants.filter(p => p.status === 'discarded').length,
@@ -82,7 +91,8 @@ export default function PlantsScreen() {
     const matchSearch = !q || p.name.toLowerCase().includes(q) || p.genetics.toLowerCase().includes(q)
     if (!matchSearch) return false
     switch (activeFilter) {
-      case 'activas':     return p.status === 'active' && !p.floraStartDate
+      case 'activas':     return p.status === 'active'
+      case 'vege':        return p.status === 'active' && !p.floraStartDate
       case 'flora':       return p.status === 'active' && !!p.floraStartDate
       case 'cosechadas':  return p.status === 'harvested'
       case 'descartadas': return p.status === 'discarded'
@@ -178,7 +188,7 @@ export default function PlantsScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {filteredPlants.length === 0 ? (
             <TouchableOpacity
-              onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'flora' ? () => router.push('/plants/new' as never) : undefined}
+              onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'vege' || activeFilter === 'flora' ? () => router.push('/plants/new' as never) : undefined}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -189,13 +199,14 @@ export default function PlantsScreen() {
                   {FILTERS.find(f => f.key === activeFilter)?.emptyIcon ?? '🌱'}
                 </Text>
                 <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 17 }}>
-                  {activeFilter === 'todas' ? 'Sin plantas' :
-                   activeFilter === 'activas' ? 'Sin plantas en vege' :
-                   activeFilter === 'flora' ? 'Sin plantas en flora' :
-                   activeFilter === 'cosechadas' ? 'Sin cosechas aun' :
+                  {activeFilter === 'todas'       ? 'Sin plantas' :
+                   activeFilter === 'activas'     ? 'Sin plantas activas' :
+                   activeFilter === 'vege'        ? 'Sin plantas en vege' :
+                   activeFilter === 'flora'       ? 'Sin plantas en flora' :
+                   activeFilter === 'cosechadas'  ? 'Sin cosechas aun' :
                    'Sin plantas descartadas'}
                 </Text>
-                {(activeFilter === 'todas' || activeFilter === 'activas') && (
+                {(activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'vege') && (
                   <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
                     Toca para crear tu primera planta
                   </Text>
