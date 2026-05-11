@@ -119,9 +119,17 @@ export default function CalendarScreen() {
 
   async function onRefresh() { setRefreshing(true); await load(); setRefreshing(false) }
 
+  // Solo mostrar tareas del ciclo activo de cada planta
+  const activeCycleTasks = tasks.filter(t => {
+    const meta = plantMeta[t.plantId]
+    if (!meta) return true
+    const plantIsFlora = !!meta.floraStartDate
+    return t.cycle === (plantIsFlora ? 'flora' : 'vege')
+  })
+
   // Build per-day task summaries
   const tasksByDate: Record<string, { types: Set<string>; pending: number; done: number; overdue: boolean }> = {}
-  for (const t of tasks) {
+  for (const t of activeCycleTasks) {
     const key = format(t.scheduledDate, 'yyyy-MM-dd')
     if (!tasksByDate[key]) tasksByDate[key] = { types: new Set(), pending: 0, done: 0, overdue: false }
     if (t.completed) {
@@ -144,7 +152,7 @@ export default function CalendarScreen() {
     return '#3B82F6'                        // future
   }
 
-  const selectedTasks = tasks.filter(t => {
+  const selectedTasks = activeCycleTasks.filter(t => {
     const d = new Date(t.scheduledDate); d.setHours(0,0,0,0)
     return d.getTime() === selected.getTime()
   })
@@ -169,7 +177,11 @@ export default function CalendarScreen() {
       const updated = prev.map(t => t.id === taskId ? { ...t, completed: true } : t)
       const dayTasks = updated.filter(t => {
         const d = new Date(t.scheduledDate); d.setHours(0,0,0,0)
-        return d.getTime() === selected.getTime()
+        if (d.getTime() !== selected.getTime()) return false
+        // Respetar ciclo activo de la planta
+        const meta = plantMeta[t.plantId]
+        const plantIsFlora = !!meta?.floraStartDate
+        return t.cycle === (plantIsFlora ? 'flora' : 'vege')
       })
       if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) triggerCelebration()
       return updated
