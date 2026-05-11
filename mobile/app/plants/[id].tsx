@@ -27,6 +27,7 @@ import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { usePlantStore } from '@/store/plantStore'
+import { useTaskStore } from '@/store/taskStore'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -43,7 +44,8 @@ export default function PlantDetailScreen() {
   const { user } = useAuth()
   const { isPro } = usePlan()
   const { tables } = useNutritionTables()
-  const updateStoreP = usePlantStore(s => s.updatePlant)
+  const updateStoreP  = usePlantStore(s => s.updatePlant)
+  const setStoreTasks = useTaskStore(s => s.setTasks)
   const [exporting, setExporting] = useState(false)
   const [sharing,   setSharing]   = useState(false)
   const shareCardRef = useRef(null)
@@ -117,6 +119,9 @@ export default function PlantDetailScreen() {
       const updatedPlant = { ...plant, floraStartDate }
       setPlant(updatedPlant)
       setTasks(newTasks)
+      // Actualizar store global — plantas y tareas reflejan flora inmediatamente
+      updateStoreP(plant.id, { floraStartDate })
+      setStoreTasks(plant.id, newTasks)
       if (user) awardXP(user.id, XP_VALUES.START_FLORA)
       track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
       void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
