@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
@@ -66,7 +66,14 @@ export default function HomeScreen() {
   const hour      = new Date().getHours()
   const greeting  = hour < 12 ? 'Buenos dias' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
 
-  useEffect(() => { if (user) loadData() }, [user])
+  // Recargar datos cada vez que el tab home toma foco (volver de crear planta, settings, etc.)
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return
+      loadData()
+      loadPlantsFromSupabase(user.id).then(setPlants).catch(console.error)
+    }, [user?.id])
+  )
 
   async function loadData() {
     if (!user) return
