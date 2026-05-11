@@ -94,7 +94,9 @@ export default function PlantDetailScreen() {
     try {
       setFloraError(null)
       const floraStartDate = floraDate
-      const newTasks = startFloraPhase(plant, floraStartDate, table)
+      const allTasks = startFloraPhase(plant, floraStartDate, table)
+      // Solo tareas de flora — las de vege ya ocurrieron y no deben reinserarse
+      const newTasks = allTasks.filter(t => t.cycle === 'flora')
 
       // Operacion atomica via RPC — DELETE + INSERT + UPDATE en una sola transaccion
       const { error: rpcError } = await supabase.rpc('start_flora_phase', {
@@ -300,8 +302,10 @@ export default function PlantDetailScreen() {
   const daysToHarvest = estimatedHarvest ? differenceInDays(estimatedHarvest, today) : null
   const harvestChipColor = daysToHarvest != null && daysToHarvest <= 14 ? '#C084FC' : '#6DC278'
 
+  // En flora solo mostrar tareas de flora; en vege solo vege
+  const currentCycle = isFlora ? 'flora' : 'vege'
   const nutritionTask = tasks
-    .filter(t => t.type === 'nutrition')
+    .filter(t => t.type === 'nutrition' && t.cycle === currentCycle)
     .sort((a, b) => {
       const da = Math.abs(differenceInDays(new Date(a.scheduledDate), today))
       const db = Math.abs(differenceInDays(new Date(b.scheduledDate), today))
