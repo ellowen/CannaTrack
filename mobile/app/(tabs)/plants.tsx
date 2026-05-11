@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity,
   Alert, RefreshControl, TextInput,
@@ -6,7 +6,7 @@ import {
 import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
@@ -59,7 +59,7 @@ export default function PlantsScreen() {
     setTodayTaskMap(taskMap)
   }, [user])
 
-  useEffect(() => { load() }, [load])
+  useFocusEffect(load)
 
   async function onRefresh() {
     setRefreshing(true)

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, RefreshControl, PanResponder } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
@@ -107,9 +107,15 @@ export default function CalendarScreen() {
     setLoading(false)
   }
 
+  // Recargar cuando cambia el mes seleccionado
   useEffect(() => {
     if (!authLoading && user) load()
-  }, [displayMonth, user, authLoading])
+  }, [displayMonth])
+
+  // Recargar cuando el tab toma foco (tarea completada en otra pantalla, etc.)
+  useFocusEffect(useCallback(() => {
+    if (!authLoading && user) load()
+  }, [user?.id, authLoading]))
 
   async function onRefresh() { setRefreshing(true); await load(); setRefreshing(false) }
 

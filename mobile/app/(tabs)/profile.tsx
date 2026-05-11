@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useAuth } from '@/hooks/useAuth'
@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   const [achievementData, setAchievementData] = useState<AchievementData | null>(null)
   const [harvestedList, setHarvestedList] = useState<HarvestedPlant[]>([])
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (authLoading) return
     if (!user) { setLoading(false); return }
     const uid = user.id
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
       setLoading(false)
     }
     load()
-  }, [user, authLoading])
+  }, [user?.id, authLoading]))
 
   async function handleSignOut() {
     Alert.alert('Cerrar sesion', '¿Estas seguro?', [
