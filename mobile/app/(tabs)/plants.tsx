@@ -31,7 +31,7 @@ const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: strin
 
 export default function PlantsScreen() {
   const { user } = useAuth()
-  const { plants } = usePlants()
+  const { plants, updatePlant } = usePlants()
   const setPlants = usePlantStore(s => s.setPlants)
 
   const [historyPlants, setHistoryPlants] = useState<Plant[]>([])
@@ -103,7 +103,8 @@ export default function PlantsScreen() {
   async function handleDeletePlant(plantId: string) {
     const { error } = await supabase.from('plants').update({ status: 'discarded' }).eq('id', plantId)
     if (error) { Alert.alert('Error', error.message); return }
-    await load()
+    updatePlant(plantId, { status: 'discarded' }) // actualiza store inmediatamente
+    await load() // recarga historial
   }
 
   return (

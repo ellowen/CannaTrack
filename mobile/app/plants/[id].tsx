@@ -26,6 +26,7 @@ import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 import { enqueueSyncAction } from '@/lib/syncQueue'
+import { usePlantStore } from '@/store/plantStore'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function PlantDetailScreen() {
   const { user } = useAuth()
   const { isPro } = usePlan()
   const { tables } = useNutritionTables()
+  const updateStoreP = usePlantStore(s => s.updatePlant)
   const [exporting, setExporting] = useState(false)
   const [sharing,   setSharing]   = useState(false)
   const shareCardRef = useRef(null)
@@ -132,6 +134,7 @@ export default function PlantDetailScreen() {
       status: 'harvested',
       notes: harvestNote ?? plant.notes ?? null,
     }).eq('id', plant.id)
+    updateStoreP(plant.id, { status: 'harvested' })
     void cancelPlantNotifications(plant.id)
     if (user) void awardXP(user.id, XP_VALUES.HARVEST)
     router.replace('/(tabs)')
@@ -140,6 +143,7 @@ export default function PlantDetailScreen() {
   async function confirmDiscard() {
     if (!plant) return
     await supabase.from('plants').update({ status: 'discarded' }).eq('id', plant.id)
+    updateStoreP(plant.id, { status: 'discarded' })
     void cancelPlantNotifications(plant.id)
     router.replace('/(tabs)')
   }

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
+import { usePlantStore } from '@/store/plantStore'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format, startOfDay } from 'date-fns'
 import { supabase } from '@/lib/supabase'
@@ -51,6 +52,8 @@ const LINE_COLOR: Record<string, { bg: string; text: string }> = {
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
+  const updateStoreP = usePlantStore(s => s.updatePlant)
+  const removePlant  = usePlantStore(s => s.removePlant)
   const [name, setName]                         = useState('')
   const [genetics, setGenetics]                 = useState('')
   const [geneticType, setGeneticType]           = useState<GeneticType>('feminized')
@@ -128,6 +131,7 @@ export default function EditPlantScreen() {
         if (!id || !user) return
         await supabase.from('scheduled_tasks').delete().eq('plant_id', id)
         await supabase.from('plants').delete().eq('id', id).eq('user_id', user.id)
+        removePlant(id) // actualiza store inmediatamente
         router.replace('/(tabs)/plants')
       }},
     ])
@@ -231,6 +235,17 @@ export default function EditPlantScreen() {
         }
       }
 
+      // Actualizar store inmediatamente con los nuevos datos
+      updateStoreP(id, {
+        name:                name.trim(),
+        genetics:            genetics.trim(),
+        geneticType,
+        location,
+        potCount,
+        potVolumeLiters,
+        nutritionTableId:    selectedTableId ?? undefined,
+        notes:               notes.trim() || undefined,
+      })
       router.back()
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
