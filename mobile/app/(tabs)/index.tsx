@@ -6,10 +6,11 @@ import { router } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
+import { usePlantStore } from '@/store/plantStore'
 import { useTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { completeTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, loadPlantsFromSupabase } from '@/lib/sync'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { getLevelInfo } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
@@ -47,6 +48,7 @@ type UpcomingDay = { date: Date; count: number }
 export default function HomeScreen() {
   const { user }   = useAuth()
   const { plants } = usePlants()
+  const setPlants = usePlantStore(s => s.setPlants)
   const { todayTasks: tasks, completeTask } = useTasks()
 
   const [profile, setProfile]           = useState<ProfileData>({ username: '', streak: 0, bestStreak: 0, xp: 0, harvestedCount: 0 })
@@ -104,7 +106,24 @@ export default function HomeScreen() {
     setSheetTask(null)
   }
 
-  async function onRefresh() { setRefreshing(true); await loadData(); setRefreshing(false) }
+  async function onRefresh() {
+    setRefreshing(true)
+    await Promise.all([
+      loadData(),
+      // Recargar plantas del store desde Supabase (pull-to-refresh actualiza plantas nuevas)
+      user ? loadPlantsFromSupabase(user.id).then(setPlants).catch(console.error) : Promise.resolve(),
+    ])
+    setRefreshing(false)
+  }
+
+  async function handleCompleteAll() {
+    if (pending.length === 0) return
+    await Promise.all(
+      pending.map(task =>
+        handleComplete(task.id).catch(console.error)
+      )
+    )
+  }
 
   function openSheet(task: ScheduledTask) {
     const p = plants.find(pl => pl.id === task.plantId)
@@ -307,9 +326,18 @@ export default function HomeScreen() {
 
                   {/* Text */}
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#E8F5EA', fontSize: 24, fontWeight: '900', lineHeight: 26 }}>
-                      Para hacer hoy
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={{ color: '#E8F5EA', fontSize: 24, fontWeight: '900', lineHeight: 26 }}>
+                        Para hacer hoy
+                      </Text>
+                      {pending.length > 1 && (
+                        <TouchableOpacity onPress={handleCompleteAll} activeOpacity={0.8} style={{ borderRadius: 10, overflow: 'hidden' }}>
+                          <LinearGradient colors={['#1A4A20', '#0D2810']} style={{ paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#2A6A30' }}>
+                            <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>✓ Todo</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     <Text style={{ color: '#3D6642', fontSize: 14, marginTop: 4 }}>
                       {done.length > 0
                         ? `${done.length} de ${tasks.length} completada${done.length > 1 ? 's' : ''}`
