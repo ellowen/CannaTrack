@@ -59,7 +59,7 @@ export default function PlantsScreen() {
     setTodayTaskMap(taskMap)
   }, [user])
 
-  useFocusEffect(load)
+  useFocusEffect(useCallback(() => { load() }, [load]))
 
   async function onRefresh() {
     setRefreshing(true)
