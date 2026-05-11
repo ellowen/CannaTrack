@@ -25,6 +25,7 @@ import { sharePlantCard } from '@/lib/share'
 import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -91,28 +92,25 @@ export default function PlantDetailScreen() {
       const floraStartDate = floraDate
       const newTasks = startFloraPhase(plant, floraStartDate, table)
 
-      await supabase.from('scheduled_tasks').delete().eq('plant_id', plant.id)
-      if (newTasks.length > 0) {
-        const { error: insertError } = await supabase.from('scheduled_tasks').insert(
-          newTasks.map(t => ({
-            plant_id:       plant.id,
-            user_id:        user?.id,
-            type:           t.type,
-            scheduled_date: t.scheduledDate.toISOString().split('T')[0],
-            cycle:          t.cycle,
-            week:           t.week,
-            stage:          t.stage,
-            products:       t.products,
-            ec_min:         t.ecMin ?? null,
-            ec_max:         t.ecMax ?? null,
-            ph_min:         t.phMin ?? null,
-            ph_max:         t.phMax ?? null,
-          }))
-        )
-        if (insertError) throw insertError
-      }
-      const { error: updateError } = await supabase.from('plants').update({ flora_start_date: floraStartDate.toISOString().split('T')[0] }).eq('id', plant.id)
-      if (updateError) throw updateError
+      // Operacion atomica via RPC — DELETE + INSERT + UPDATE en una sola transaccion
+      const { error: rpcError } = await supabase.rpc('start_flora_phase', {
+        p_plant_id:         plant.id,
+        p_user_id:          user?.id,
+        p_flora_start_date: floraStartDate.toISOString().split('T')[0],
+        p_tasks: newTasks.map(t => ({
+          type:           t.type,
+          scheduled_date: t.scheduledDate.toISOString().split('T')[0],
+          cycle:          t.cycle,
+          week:           t.week,
+          stage:          t.stage,
+          products:       t.products,
+          ec_min:         t.ecMin ?? null,
+          ec_max:         t.ecMax ?? null,
+          ph_min:         t.phMin ?? null,
+          ph_max:         t.phMax ?? null,
+        })),
+      })
+      if (rpcError) throw rpcError
 
       const updatedPlant = { ...plant, floraStartDate }
       setPlant(updatedPlant)
@@ -147,11 +145,17 @@ export default function PlantDetailScreen() {
   }
 
   async function completeTask(taskId: string, notes?: string, ec?: number, ph?: number) {
-    await supabase
+    // Actualizar estado local primero (offline-first)
+    setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
+
+    // Intentar escritura directa; si falla (offline) encolar para sync posterior (H-03)
+    const { error: completeError } = await supabase
       .from('scheduled_tasks')
       .update({ completed: true, completed_at: new Date().toISOString(), completion_notes: notes ?? null })
       .eq('id', taskId)
-    setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
+    if (completeError) {
+      enqueueSyncAction('completeTask', { taskId, notes })
+    }
     if (user) {
       if (ec != null || ph != null) {
         await supabase.from('measurements').insert({

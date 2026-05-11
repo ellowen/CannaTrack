@@ -139,16 +139,11 @@ export async function processSyncQueue(): Promise<void> {
     return
   }
 
-  // Rate limiting check - prevent hammering API
+  // Rate limiting check - si ya hay un sync en curso o es demasiado pronto, salir
+  // NO se agenda un retry aqui — el proximo trigger natural (online event, etc.) lo reintentara
   const timeSinceLastSync = Date.now() - lastSyncStartTime
   if (isSyncingInProgress || timeSinceLastSync < SYNC_RATE_LIMIT_MS) {
-    const waitTime = Math.max(0, SYNC_RATE_LIMIT_MS - timeSinceLastSync)
-    console.log(`[SyncQueue] Rate limited - retrying in ${waitTime}ms`)
-    setTimeout(() => {
-      processSyncQueue().catch((err) => {
-        console.error('[SyncQueue] Error in rate-limited retry:', err)
-      })
-    }, waitTime)
+    console.log('[SyncQueue] Rate limited o sync en curso - saltando')
     return
   }
 
@@ -166,38 +161,58 @@ export async function processSyncQueue(): Promise<void> {
     // Group actions by type for batch processing
     const actionsByType = groupActionsByType(queue)
 
-    // Process grouped actions in parallel
-    const processingTasks = Object.entries(actionsByType).map(([type, actions]) => {
+    // Rastrear IDs de acciones exitosas para limpiar solo esas del queue (C-01)
+    const succeededIds: string[] = []
+    let hasAnyFailure = false
+
+    // Process grouped actions — errores individuales se capturan por accion, no en bloque
+    for (const [type, actions] of Object.entries(actionsByType)) {
       if (type === 'updatePlant') {
-        return handleUpdatePlantBatch(actions, authData.user.id).catch((error) => {
-          const errorMsg = error instanceof Error ? error.message : String(error)
-          console.error(`[SyncQueue] Error procesando updatePlant batch:`, errorMsg)
-        })
+        for (const action of actions) {
+          try {
+            await handleUpdatePlantBatch([action], authData.user.id)
+            succeededIds.push(action.id)
+          } catch (error) {
+            hasAnyFailure = true
+            console.error(`[SyncQueue] Error updatePlant ${action.id}:`, error)
+          }
+        }
       } else if (type === 'completeTask') {
-        return handleCompleteTaskBatch(actions, authData.user.id).catch((error) => {
-          const errorMsg = error instanceof Error ? error.message : String(error)
-          console.error(`[SyncQueue] Error procesando completeTask batch:`, errorMsg)
-        })
+        for (const action of actions) {
+          try {
+            await handleCompleteTaskBatch([action], authData.user.id)
+            succeededIds.push(action.id)
+          } catch (error) {
+            hasAnyFailure = true
+            console.error(`[SyncQueue] Error completeTask ${action.id}:`, error)
+          }
+        }
       } else {
-        // Process other action types sequentially (less common)
-        return Promise.all(
-          actions.map((action) => processSyncAction(action, authData.user.id).catch((error) => {
-            const errorMsg = error instanceof Error ? error.message : String(error)
-            console.error(`[SyncQueue] Error procesando acción ${action.id}:`, errorMsg)
-          }))
-        )
+        for (const action of actions) {
+          try {
+            await processSyncAction(action, authData.user.id)
+            succeededIds.push(action.id)
+          } catch (error) {
+            hasAnyFailure = true
+            console.error(`[SyncQueue] Error acción ${action.id}:`, error)
+          }
+        }
       }
-    })
+    }
 
-    await Promise.all(processingTasks)
+    // Solo remover del queue las acciones que efectivamente se procesaron (C-01)
+    if (succeededIds.length > 0) {
+      syncStore.removeActionsFromQueue(succeededIds)
+      syncStore.setLastSyncAt(new Date())
+    }
 
-    // Clear queue after processing all actions
-    syncStore.clearQueue()
-    syncStore.setLastSyncAt(new Date())
-    syncStore.clearSyncError()
-    retryAttempts = 0
-
-    console.log('[SyncQueue] Sincronización completada exitosamente')
+    if (!hasAnyFailure) {
+      syncStore.clearSyncError()
+      retryAttempts = 0
+      console.log('[SyncQueue] Sincronización completada exitosamente')
+    } else {
+      throw new Error(`${queue.length - succeededIds.length} accion(es) fallaron`)
+    }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     // Sanitize error for user display

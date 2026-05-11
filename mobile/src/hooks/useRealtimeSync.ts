@@ -4,6 +4,7 @@
  * Se activa solo cuando el usuario esta autenticado.
  */
 import { useEffect, useRef } from 'react'
+// usePlantStore y useTaskStore se usan via .getState() dentro de callbacks (no como hooks)
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { usePlantStore } from '@/store/plantStore'
@@ -57,9 +58,8 @@ export function useRealtimeSync() {
   const { user } = useAuth()
   const channelRef = useRef<RealtimeChannel | null>(null)
 
-  const { plants, addPlant, updatePlant, removePlant } = usePlantStore()
-  const { updateTask } = useTaskStore()
-
+  // No capturar plants/updateTask del hook — se obtienen del store dentro del callback
+  // para evitar closures stale (H-01)
   useEffect(() => {
     if (!user) return
 
@@ -76,6 +76,7 @@ export function useRealtimeSync() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'plants', filter: `user_id=eq.${user.id}` },
         ({ new: row }) => {
+          const { plants, addPlant } = usePlantStore.getState()
           const plant = rowToPlant(row)
           // Solo agregar si no existe ya (evita duplicados de la misma sesion)
           if (!plants.find(p => p.id === plant.id)) {
@@ -87,14 +88,14 @@ export function useRealtimeSync() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'plants', filter: `user_id=eq.${user.id}` },
         ({ new: row }) => {
-          updatePlant(row.id as string, rowToPlant(row))
+          usePlantStore.getState().updatePlant(row.id as string, rowToPlant(row))
         }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'plants', filter: `user_id=eq.${user.id}` },
         ({ old: row }) => {
-          removePlant(row.id as string)
+          usePlantStore.getState().removePlant(row.id as string)
         }
       )
 
@@ -103,15 +104,15 @@ export function useRealtimeSync() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'scheduled_tasks', filter: `user_id=eq.${user.id}` },
         ({ new: row }) => {
-          updateTask(row.id as string, rowToTask(row))
+          useTaskStore.getState().updateTask(row.id as string, rowToTask(row))
         }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'scheduled_tasks', filter: `user_id=eq.${user.id}` },
         ({ old: row }) => {
-          // Si se borra una tarea individual
-          updateTask(row.id as string, { completed: true })
+          // Tarea eliminada del backend (ej: start_flora_phase borra y recrea) — remover del store (M-06)
+          useTaskStore.getState().removeTask(row.id as string)
         }
       )
 

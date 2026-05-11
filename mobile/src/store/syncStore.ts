@@ -18,6 +18,7 @@ interface SyncStore {
   // Acciones
   enqueueSyncAction: (action: Omit<SyncAction, 'id' | 'timestamp'>) => void
   clearQueue: () => void
+  removeActionsFromQueue: (ids: string[]) => void
   setIsSyncing: (v: boolean) => void
   setSyncError: (error: string | null) => void
   setLastSyncAt: (date: Date | null) => void
@@ -49,6 +50,11 @@ export const useSyncStore = create<SyncStore>()(
         })),
 
       clearQueue: () => set({ syncQueue: [] }),
+
+      removeActionsFromQueue: (ids) =>
+        set((s) => ({
+          syncQueue: s.syncQueue.filter((a) => !ids.includes(a.id)),
+        })),
       setIsSyncing: (isSyncing) => set({ isSyncing }),
       setSyncError: (syncError) => set({ syncError }),
       setLastSyncAt: (lastSyncAt) => set({ lastSyncAt }),

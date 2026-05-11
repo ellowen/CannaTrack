@@ -47,7 +47,8 @@ async function resolvePostLoginRoute(userId: string): Promise<'/onboarding' | '/
   // Si ya tiene plantas, siempre ir a tabs aunque onboarding_completed sea false
   if (hasPlants) {
     if (!profile?.onboarding_completed) {
-      void supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
+      supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
+        .then(({ error }) => { if (error) console.warn('[layout] onboarding_completed update:', error.message) })
     }
     return '/(tabs)'
   }

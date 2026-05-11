@@ -7,9 +7,9 @@ import { useTaskStore } from '@/store/taskStore'
  * Resuelve conflictos entre versiones local y remota de una entidad.
  * Ganador: el timestamp más reciente. En caso de empate: local (user intent wins).
  */
-function resolveConflict(local: { timestamp?: Date }, remote: { timestamp?: Date }): 'local' | 'remote' {
-  if (!local.timestamp || !remote.timestamp) return 'local'
-  return local.timestamp.getTime() >= remote.timestamp.getTime() ? 'local' : 'remote'
+function resolveConflict(local: { updatedAt?: Date }, remote: { updatedAt?: Date }): 'local' | 'remote' {
+  if (!local.updatedAt || !remote.updatedAt) return 'local'
+  return local.updatedAt.getTime() >= remote.updatedAt.getTime() ? 'local' : 'remote'
 }
 
 /**
@@ -103,10 +103,10 @@ export class SyncService {
 
     if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 
-    const remote = remoteData || { timestamp: null }
+    const remote = remoteData || { updated_at: null }
     const resolution = resolveConflict(
-      { timestamp: action.timestamp },
-      { timestamp: remote.timestamp ? new Date(remote.timestamp) : undefined }
+      { updatedAt: action.timestamp },
+      { updatedAt: remote.updated_at ? new Date(remote.updated_at) : undefined }
     )
 
     const dataToUpdate = resolution === 'local' ? updates : {}
@@ -116,7 +116,7 @@ export class SyncService {
         .from('plants')
         .update({
           ...dataToUpdate,
-          timestamp: new Date(),
+          updated_at: new Date(),
         })
         .eq('id', id)
 
@@ -177,17 +177,16 @@ export class SyncService {
     const { data: plants, error: plantsError } = await supabase
       .from('plants')
       .select('*')
-      .gt('timestamp', since)
+      .gt('updated_at', since)
 
     if (plantsError) throw plantsError
 
     if (plants && plants.length > 0) {
       const plantStore = usePlantStore.getState()
       for (const remotePlant of plants) {
-        const local = plantStore.getPlantById(remotePlant.id)
         const resolution = resolveConflict(
-          { timestamp: undefined },
-          { timestamp: new Date(remotePlant.timestamp) }
+          { updatedAt: undefined },
+          { updatedAt: remotePlant.updated_at ? new Date(remotePlant.updated_at) : undefined }
         )
 
         if (resolution === 'remote') {
@@ -197,9 +196,9 @@ export class SyncService {
     }
 
     const { data: tasks, error: tasksError } = await supabase
-      .from('tasks')
+      .from('scheduled_tasks')
       .select('*')
-      .gt('timestamp', since)
+      .gt('updated_at', since)
 
     if (tasksError) throw tasksError
 
