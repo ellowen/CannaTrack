@@ -38,7 +38,7 @@ export default function PlantsScreen() {
   const [todayTaskMap, setTodayTaskMap] = useState<TaskMap>({})
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<FilterType>('todas')
+  const [activeFilter, setActiveFilter] = useState<FilterType>('activas')
 
   const load = useCallback(async () => {
     if (!user) return
