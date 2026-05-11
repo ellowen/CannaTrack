@@ -146,18 +146,8 @@ export default function EditPlantScreen() {
       selectedTableId !== origTableId ||
       (geneticType === 'autoflower' && autoFlowerTotalDays !== origAutoFlowerDays)
 
-    if (scheduleChanged && selectedTableId && selectedTableId !== CUSTOM_TABLE_ID) {
-      Alert.alert(
-        'Regenerar calendario',
-        'Cambiaste la fecha de inicio, tipo de genetica o tabla nutricional. ¿Regenerar el calendario de tareas pendientes?',
-        [
-          { text: 'No regenerar', style: 'cancel', onPress: () => doSave(false) },
-          { text: 'Regenerar', onPress: () => doSave(true) },
-        ]
-      )
-    } else {
-      await doSave(false)
-    }
+    // Siempre regenerar si algo del calendario cambio — sin preguntar
+    await doSave(scheduleChanged && !!selectedTableId && selectedTableId !== CUSTOM_TABLE_ID)
   }
 
   async function doSave(regenerate: boolean) {
