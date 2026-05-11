@@ -8,3 +8,4 @@ coverage/
 .supabase/
 frontend/node_modules/
 frontend/dist/
+.claude/worktrees/
