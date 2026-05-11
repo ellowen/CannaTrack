@@ -506,7 +506,7 @@ export default function PlantDetailScreen() {
           )}
 
           {/* Iniciar floracion */}
-          {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
+          {!plant.floraStartDate && (
             <TouchableOpacity onPress={handleStartFlora} activeOpacity={0.85}>
               <LinearGradient
                 colors={['#6D28D9', '#4C1D95']}
