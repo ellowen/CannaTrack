@@ -10,6 +10,9 @@ import {
   type SignUpData,
   type AuthCredentials,
 } from '@/lib/auth'
+import { loadPlantsFromSupabase, loadTasksFromSupabase } from '@/lib/sync'
+import { usePlantStore } from '@/store/plantStore'
+import { useTaskStore } from '@/store/taskStore'
 
 export interface Profile {
   id: string
@@ -42,6 +45,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  async function loadUserData(userId: string) {
+    const [plants, tasks] = await Promise.all([
+      loadPlantsFromSupabase(userId),
+      loadTasksFromSupabase(userId),
+    ])
+    usePlantStore.getState().setPlants(plants)
+    useTaskStore.getState().setAllTasks(tasks)
+  }
+
   // Check auth state on mount
   useEffect(() => {
     async function initAuth() {
@@ -51,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.session.user)
           const loadedProfile = await loadProfile(data.session.user.id)
           setProfile(loadedProfile)
+          await loadUserData(data.session.user.id)
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error)
@@ -70,11 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const loadedProfile = await loadProfile(authUser.id)
           setProfile(loadedProfile)
+          await loadUserData(authUser.id)
         } catch (error) {
           console.error('Failed to load profile:', error)
         }
       } else {
         setProfile(null)
+        usePlantStore.getState().setPlants([])
+        useTaskStore.getState().setAllTasks([])
       }
     })
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { useUserStore } from '@/store/userStore'
+import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
@@ -10,7 +10,7 @@ import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/l
 import { clsx } from 'clsx'
 
 export default function Profile() {
-  const { name, streak, bestStreak, totalXP } = useUserStore()
+  const { name, streak, bestStreak, totalXP, theme, setTheme } = useUserStore()
   const { tasks } = useTaskStore()
   const { plants } = usePlantStore()
   const logs = useWeekLogStore((s) => s.logs)
@@ -206,6 +206,32 @@ export default function Profile() {
                   <p className="text-[11px] text-ink-3 font-medium mt-0.5 leading-tight">{label}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Tema */}
+        <section>
+          <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</h2>
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-1 flex gap-1">
+            {([
+              { value: 'light', label: 'Claro', icon: '☀️' },
+              { value: 'system', label: 'Sistema', icon: '⚙️' },
+              { value: 'dark',  label: 'Oscuro',  icon: '🌙' },
+            ] as { value: ThemePreference; label: string; icon: string }[]).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                className={clsx(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all',
+                  theme === opt.value
+                    ? 'bg-brand-400/15 text-brand-400 border border-brand-400/30'
+                    : 'text-ink-3 hover:text-ink-1'
+                )}
+              >
+                <span>{opt.icon}</span>
+                <span>{opt.label}</span>
+              </button>
             ))}
           </div>
         </section>

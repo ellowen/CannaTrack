@@ -88,6 +88,31 @@ export async function updatePlantStatusInSupabase(plantId: string, status: 'acti
   }
 }
 
+export async function updatePlantInSupabase(plantId: string, changes: Record<string, unknown>): Promise<void> {
+  try {
+    // Convertir camelCase a snake_case para los campos conocidos
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    if ('name' in changes)               row.name = changes.name
+    if ('genetics' in changes)           row.genetics = changes.genetics
+    if ('geneticType' in changes)        row.genetic_type = changes.geneticType
+    if ('status' in changes)             row.status = changes.status
+    if ('floraStartDate' in changes)     row.flora_start_date = changes.floraStartDate instanceof Date
+      ? (changes.floraStartDate as Date).toISOString().split('T')[0]
+      : changes.floraStartDate
+    if ('notes' in changes)              row.notes = changes.notes
+    if ('nutritionTableId' in changes)   row.nutrition_table_id = changes.nutritionTableId
+    if ('potCount' in changes)           row.pot_count = changes.potCount
+    if ('potVolumeLiters' in changes)    row.pot_volume_liters = changes.potVolumeLiters
+    if ('availableProducts' in changes)  row.available_products = changes.availableProducts
+
+    const { error } = await supabase.from('plants').update(row).eq('id', plantId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error actualizando planta:', error)
+    throw error
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────
 // TAREAS
 // ────────────────────────────────────────────────────────────────────

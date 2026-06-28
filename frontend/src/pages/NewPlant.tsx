@@ -3,7 +3,6 @@ import { usePlants } from '@/hooks/usePlants'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
 import { hapticSuccess } from '@/lib/haptics'
-import { syncPlantToSupabase } from '@/lib/sync'
 
 export default function NewPlant() {
   const navigate = useNavigate()
@@ -12,7 +11,7 @@ export default function NewPlant() {
   async function handleSubmit(values: PlantFormValues) {
     hapticSuccess()
     const [year, month, day] = values.startDate.split('-').map(Number)
-    const plant = addPlant({
+    const plant = await addPlant({
       name: values.name,
       genetics: values.genetics,
       geneticType: values.geneticType,
@@ -28,9 +27,6 @@ export default function NewPlant() {
       status: 'active',
       notes: values.notes || undefined,
     })
-
-    // Sincronizar con Supabase (sin bloquear)
-    syncPlantToSupabase(plant).catch((err) => console.error('Error sincronizando planta:', err))
 
     navigate(`/plants/${plant.id}`)
   }
