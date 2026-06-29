@@ -35,6 +35,7 @@ interface AuthContextType {
   isSignedIn: boolean
   signUp: (data: SignUpData) => Promise<void>
   signIn: (credentials: AuthCredentials) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -118,6 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const handleSignInWithGoogle = useCallback(async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+  }, [])
+
   const handleSignOut = useCallback(async () => {
     try {
       await signOut()
@@ -135,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isSignedIn: !!user,
     signUp: handleSignUp,
     signIn: handleSignIn,
+    signInWithGoogle: handleSignInWithGoogle,
     signOut: handleSignOut,
   }
 
