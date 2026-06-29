@@ -128,7 +128,11 @@ export default function PlantDetail() {
         </div>
 
         <div className="relative">
-          <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white mb-2 tracking-wide">
+          <span className={`inline-flex items-center text-[11px] font-black px-3 py-1 rounded-full mb-2 tracking-widest uppercase border ${
+            isFlora
+              ? 'bg-amber-500/30 text-amber-200 border-amber-400/40'
+              : 'bg-brand-400/30 text-green-200 border-green-400/40'
+          }`}>
             {cycleTag}
           </span>
           <h1 className="text-2xl font-black text-white leading-tight">{plant.name}</h1>
@@ -165,6 +169,14 @@ export default function PlantDetail() {
             </span>
           ))}
         </div>
+
+        {/* Notas de la planta */}
+        {plant.notes && (
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 flex gap-3">
+            <span className="text-base shrink-0">📝</span>
+            <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
+          </div>
+        )}
 
         {/* Progress Ring + salud */}
         {cycleProgress && (
@@ -309,7 +321,16 @@ export default function PlantDetail() {
         {/* Vista semanal */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">📅 Esta semana</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Esta semana</p>
+            {currentWeek && (
+              <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${
+                isFlora
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-brand-subtle text-brand-400 border border-brand-border'
+              }`}>
+                {stageEmoji} {cycleTag}
+              </span>
+            )}
           </div>
           <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-2 py-2">
             <WeekView
@@ -342,7 +363,12 @@ export default function PlantDetail() {
         {/* Tareas del día seleccionado */}
         {selectedDayTasks.length > 0 && (
           <section className="space-y-3">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
+              <span className="text-[11px] text-ink-4 font-medium">
+                {selectedDayTasks.length} tarea{selectedDayTasks.length > 1 ? 's' : ''}
+              </span>
+            </div>
 
             {/* Nutrición */}
             {selectedDayTasks.filter((t) => t.type === 'nutrition').map((task) => (
@@ -450,12 +476,125 @@ export default function PlantDetail() {
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={cycleTag} />
 
-        {/* Acciones */}
-        <div className="pt-2 border-t border-app-border">
-          <Button variant="secondary" className="w-full" onClick={() => setHarvestSheetOpen(true)}>
-            ✂️ Finalizar cultivo
-          </Button>
-        </div>
+        {/* Iniciar floracion — visible desde el primer dia de vege */}
+        {!plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (
+          <button
+            onClick={() => setFloraPickerOpen(true)}
+            className="w-full py-4 rounded-2xl font-black text-base text-white tap-highlight-none active:scale-[0.98] transition-all shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '1px solid rgba(245,158,11,0.5)' }}
+          >
+            <span className="flex flex-col items-center gap-0.5">
+              <span className="flex items-center gap-2 text-[15px]">🌸 Iniciar floración</span>
+              <span className="text-xs font-normal text-white/70">Cambia a ciclo 12/12 · recalcula el calendario</span>
+            </span>
+          </button>
+        )}
+
+        {/* Flora date picker — cuando se abre desde el boton standalone (antes de las 6 semanas) */}
+        {floraPickerOpen && !needsFlora && (
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
+            <div className="flex items-start gap-3 mb-1">
+              <span className="text-2xl">🌸</span>
+              <div>
+                <p className="text-sm font-bold text-ink-1 mb-0.5">Iniciar floración</p>
+                <p className="text-sm text-ink-3">Elegí la fecha en que cambiaste el fotoperiodo.</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">
+                Fecha de inicio de floración
+              </label>
+              <input
+                type="date"
+                value={floraDateInput}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setFloraDateInput(e.target.value)}
+                className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-colors shadow-card"
+              />
+              <p className="text-xs text-ink-4 mt-1.5">
+                Podés backdatear si ya cambiaste el fotoperiodo.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFloraPickerOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const [y, m, d] = floraDateInput.split('-').map(Number)
+                  const floraDate = new Date(y, m - 1, d)
+                  startFlora(plant.id, floraDate)
+                  updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                    console.error('Error sincronizando flora:', err)
+                  )
+                  setFloraPickerOpen(false)
+                }}
+                className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+                style={{ background: 'linear-gradient(135deg, #7C3AED, #5B21B6)' }}
+              >
+                🌸 Confirmar floración
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Zona de peligro */}
+        {plant.status === 'active' && (
+          <section className="pt-2 border-t border-app-border">
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">Zona de peligro</p>
+            <div className="flex gap-3">
+              {/* Descartar */}
+              <button
+                onClick={() => {
+                  if (!window.confirm(`¿Descartar "${plant.name}"? Esta accion no se puede deshacer.`)) return
+                  discardPlant(plant.id)
+                  updatePlantStatusInSupabase(plant.id, 'discarded').catch(console.error)
+                  navigate('/')
+                }}
+                className="flex-1 py-3 rounded-2xl border border-red-900/40 bg-red-950/30 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+              >
+                <span className="text-xl">🗑️</span>
+                <span className="text-xs font-bold text-red-400">Descartar</span>
+                <span className="text-[10px] text-red-900">Murio / no sirve</span>
+              </button>
+
+              {/* Cosechar */}
+              {(plant.floraStartDate || plant.geneticType === 'autoflower') && (
+                <button
+                  onClick={() => setHarvestSheetOpen(true)}
+                  className="flex-1 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+                >
+                  <span className="text-xl">🌾</span>
+                  <span className="text-xs font-bold text-amber-400">Cosechar</span>
+                  <span className="text-[10px] text-amber-700">Marcar cosechada</span>
+                </button>
+              )}
+
+              {/* Editar */}
+              <Link
+                to={`/plants/${plant.id}/edit`}
+                className="flex-1 py-3 rounded-2xl border border-app-border bg-app-card flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+              >
+                <span className="text-xl">⚙️</span>
+                <span className="text-xs font-bold text-ink-3">Editar</span>
+                <span className="text-[10px] text-ink-4">Nombre, macetas...</span>
+              </Link>
+            </div>
+
+            {/* Finalizar cultivo sin haber iniciado flora */}
+            {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
+              <button
+                onClick={() => setHarvestSheetOpen(true)}
+                className="mt-3 w-full py-3 rounded-2xl border border-amber-500/20 text-sm font-bold text-amber-400 bg-amber-500/5 tap-highlight-none active:scale-95 transition-all"
+              >
+                ✂️ Finalizar cultivo
+              </button>
+            )}
+          </section>
+        )}
 
         {table && (
           <p className="text-[11px] text-center text-ink-4 pb-2">
