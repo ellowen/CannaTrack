@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/auth'
 import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission } from '@/lib/notifications'
@@ -21,7 +22,7 @@ const themeOptions: { value: ThemePreference; label: string; icon: string }[] = 
 
 export default function Settings() {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
@@ -29,6 +30,19 @@ export default function Settings() {
   const customTables = tables.filter((t) => !t.isOfficial)
   const officialTables = tables.filter((t) => t.isOfficial)
   const [signingOut, setSigningOut] = useState(false)
+  const [usernameInput, setUsernameInput] = useState('')
+  const [usernameSaving, setUsernameSaving] = useState(false)
+  const [usernameSaved, setUsernameSaved] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    void supabase.from('profiles').select('username').eq('id', user.id).maybeSingle()
+      .then(({ data }) => {
+        if (data?.username) setUsernameInput(data.username)
+        else setUsernameInput(name)
+      })
+  }, [user?.id])
 
   function handleDeleteTable(tableId: string, tableName: string) {
     const plantsUsingTable = plants.filter((p) => p.nutritionTableId === tableId && p.status === 'active')
@@ -63,6 +77,21 @@ export default function Settings() {
     }
     const permission = await requestNotificationPermission()
     if (permission === 'granted') setNotificationsEnabled(true)
+  }
+
+  async function handleSaveUsername() {
+    const trimmed = usernameInput.trim()
+    if (!trimmed) { setUsernameError('El nombre no puede estar vacio'); return }
+    if (trimmed.length > 30) { setUsernameError('Maximo 30 caracteres'); return }
+    if (!user) return
+    setUsernameSaving(true)
+    setUsernameError('')
+    const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
+    if (error) { setUsernameError('Error al guardar'); setUsernameSaving(false); return }
+    setName(trimmed)
+    setUsernameSaving(false)
+    setUsernameSaved(true)
+    setTimeout(() => setUsernameSaved(false), 2000)
   }
 
   function handleSave() {
@@ -132,6 +161,37 @@ export default function Settings() {
               ⭐ Actualizar a Pro
             </button>
           )}
+        </div>
+      </section>
+
+      {/* Nombre de usuario */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Nombre de usuario</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={usernameInput}
+              onChange={(e) => { setUsernameInput(e.target.value); setUsernameError('') }}
+              maxLength={30}
+              autoCorrect="off"
+              autoCapitalize="none"
+              placeholder="Tu nombre..."
+              className={fieldClass + ' flex-1'}
+            />
+            <button
+              onClick={handleSaveUsername}
+              disabled={usernameSaving || usernameInput.trim() === ''}
+              className="shrink-0 text-sm font-bold px-4 py-3 rounded-xl transition-all tap-highlight-none active:scale-95 disabled:opacity-40"
+              style={usernameSaved
+                ? { background: 'var(--brand-subtle)', color: 'var(--brand-400)', border: '1px solid var(--brand-border)' }
+                : { background: '#52CC64', color: '#080E09' }
+              }
+            >
+              {usernameSaving ? '...' : usernameSaved ? '✓' : 'Guardar'}
+            </button>
+          </div>
+          {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
         </div>
       </section>
 

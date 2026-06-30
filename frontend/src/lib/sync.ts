@@ -6,6 +6,8 @@
 
 import { supabase } from './auth'
 import type { Plant, ScheduledTask } from '@/types/plant'
+import type { MeasurementLog } from '@/types/measurement'
+import type { WeekLog } from '@/types/weekLog'
 
 // ────────────────────────────────────────────────────────────────────
 // PLANTAS
@@ -202,5 +204,138 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
   } catch (error) {
     console.error('Error completando tarea:', error)
     throw error
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// MEDICIONES
+// ────────────────────────────────────────────────────────────────────
+
+export async function syncMeasurementToSupabase(log: MeasurementLog, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('measurements').insert([{
+      id:          log.id,
+      user_id:     userId,
+      plant_id:    log.plantId,
+      ec:          log.ec,
+      ph:          log.ph,
+      water_temp:  log.tempCelsius ?? null,
+      measured_at: log.logDate instanceof Date ? log.logDate.toISOString() : log.logDate,
+    }])
+    if (error) throw error
+  } catch (error) {
+    console.error('Error sincronizando medicion:', error)
+  }
+}
+
+export async function loadMeasurementsFromSupabase(userId: string): Promise<MeasurementLog[]> {
+  try {
+    const { data, error } = await supabase
+      .from('measurements')
+      .select('*')
+      .eq('user_id', userId)
+      .order('measured_at', { ascending: false })
+    if (error) throw error
+    return data.map((m: any) => ({
+      id:          m.id,
+      plantId:     m.plant_id,
+      logDate:     new Date(m.measured_at),
+      ec:          m.ec,
+      ph:          m.ph,
+      tempCelsius: m.water_temp ?? undefined,
+    })) as MeasurementLog[]
+  } catch (error) {
+    console.error('Error cargando mediciones:', error)
+    return []
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// WEEK LOGS
+// ────────────────────────────────────────────────────────────────────
+
+export async function uploadPhotoToStorage(
+  userId: string,
+  plantId: string,
+  logId: string,
+  dataUrl: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(dataUrl)
+    const blob = await res.blob()
+    const ext = blob.type.includes('png') ? 'png' : 'jpg'
+    const path = `${userId}/${plantId}/${logId}.${ext}`
+    const { error } = await supabase.storage
+      .from('plant-photos')
+      .upload(path, blob, { upsert: true, contentType: blob.type })
+    if (error) throw error
+    const { data } = supabase.storage.from('plant-photos').getPublicUrl(path)
+    return data.publicUrl
+  } catch (error) {
+    console.error('Error subiendo foto:', error)
+    return null
+  }
+}
+
+export async function syncWeekLogToSupabase(log: WeekLog, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('week_logs').upsert([{
+      id:         log.id,
+      user_id:    userId,
+      plant_id:   log.plantId,
+      week_label: log.weekLabel,
+      log_date:   log.logDate instanceof Date
+        ? log.logDate.toISOString().split('T')[0]
+        : log.logDate,
+      notes:      log.notes ?? '',
+      photo_url:  log.photoUrl ?? null,
+    }])
+    if (error) throw error
+  } catch (error) {
+    console.error('Error sincronizando week log:', error)
+  }
+}
+
+export async function updateWeekLogInSupabase(logId: string, changes: { notes?: string; photoUrl?: string | null }): Promise<void> {
+  try {
+    const update: Record<string, unknown> = {}
+    if ('notes' in changes)    update.notes = changes.notes
+    if ('photoUrl' in changes) update.photo_url = changes.photoUrl ?? null
+    const { error } = await supabase.from('week_logs').update(update).eq('id', logId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error actualizando week log:', error)
+  }
+}
+
+export async function deleteWeekLogFromSupabase(logId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('week_logs').delete().eq('id', logId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error eliminando week log:', error)
+  }
+}
+
+export async function loadWeekLogsFromSupabase(userId: string): Promise<WeekLog[]> {
+  try {
+    const { data, error } = await supabase
+      .from('week_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('log_date', { ascending: false })
+    if (error) throw error
+    return data.map((l: any) => ({
+      id:           l.id,
+      plantId:      l.plant_id,
+      weekLabel:    l.week_label,
+      logDate:      new Date(l.log_date),
+      notes:        l.notes ?? '',
+      photoDataUrl: undefined,
+      photoUrl:     l.photo_url ?? undefined,
+    })) as WeekLog[]
+  } catch (error) {
+    console.error('Error cargando week logs:', error)
+    return []
   }
 }

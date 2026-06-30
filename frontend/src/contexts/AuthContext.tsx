@@ -10,9 +10,17 @@ import {
   type SignUpData,
   type AuthCredentials,
 } from '@/lib/auth'
-import { loadPlantsFromSupabase, loadTasksFromSupabase } from '@/lib/sync'
+import {
+  loadPlantsFromSupabase,
+  loadTasksFromSupabase,
+  loadMeasurementsFromSupabase,
+  loadWeekLogsFromSupabase,
+} from '@/lib/sync'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
+import { useUserStore } from '@/store/userStore'
+import { useMeasurementStore } from '@/store/measurementStore'
+import { useWeekLogStore } from '@/store/weekLogStore'
 
 export interface Profile {
   id: string
@@ -46,13 +54,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  async function loadUserData(userId: string) {
-    const [plants, tasks] = await Promise.all([
+  async function loadUserData(userId: string, userEmail?: string, profile?: Profile | null) {
+    const [plants, tasks, measurements, weekLogs] = await Promise.all([
       loadPlantsFromSupabase(userId),
       loadTasksFromSupabase(userId),
+      loadMeasurementsFromSupabase(userId),
+      loadWeekLogsFromSupabase(userId),
     ])
     usePlantStore.getState().setPlants(plants)
     useTaskStore.getState().setAllTasks(tasks)
+    useMeasurementStore.getState().setLogs(measurements)
+    useWeekLogStore.getState().setLogs(weekLogs)
+    if (userEmail || profile?.username) {
+      useUserStore.getState().setUser(userId, userEmail ?? '', profile?.username ?? '')
+    }
   }
 
   // Check auth state on mount
@@ -64,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.session.user)
           const loadedProfile = await loadProfile(data.session.user.id)
           setProfile(loadedProfile)
-          await loadUserData(data.session.user.id)
+          await loadUserData(data.session.user.id, data.session.user.email, loadedProfile)
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error)
@@ -84,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const loadedProfile = await loadProfile(authUser.id)
           setProfile(loadedProfile)
-          await loadUserData(authUser.id)
+          await loadUserData(authUser.id, authUser.email, loadedProfile)
         } catch (error) {
           console.error('Failed to load profile:', error)
         }
@@ -92,6 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null)
         usePlantStore.getState().setPlants([])
         useTaskStore.getState().setAllTasks([])
+        useMeasurementStore.getState().setLogs([])
+        useWeekLogStore.getState().setLogs([])
       }
     })
 

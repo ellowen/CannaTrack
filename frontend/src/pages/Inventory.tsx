@@ -165,7 +165,7 @@ export default function Inventory() {
                 key={plant.id}
                 plant={plant}
                 tasks={allTasks.filter((t) => t.plantId === plant.id)}
-                photos={logs.filter((l) => l.plantId === plant.id && l.photoDataUrl)}
+                photos={logs.filter((l) => l.plantId === plant.id && (l.photoDataUrl || l.photoUrl))}
                 onNavigate={() => navigate(`/plants/${plant.id}`)}
               />
             ))}
@@ -185,9 +185,9 @@ interface PlantInventoryCardProps {
 
 function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventoryCardProps) {
   const completedTasks = tasks.filter((t) => t.completed).length
-  const latestPhoto = photos
+  const latestPhotoEntry = photos
     .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())[0]
-    ?.photoDataUrl
+  const latestPhoto = latestPhotoEntry?.photoDataUrl ?? latestPhotoEntry?.photoUrl
 
   // Calculate cycle info
   const startDate = plant.startDate instanceof Date ? plant.startDate : new Date(plant.startDate)

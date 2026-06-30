@@ -31,7 +31,7 @@ export default function ProgressRing({
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
+        <svg width={size} height={size} className={`-rotate-90${progress >= 1 ? ' ring-glow' : ''}`}>
           {/* Track */}
           <circle
             cx={cx} cy={cx} r={r}

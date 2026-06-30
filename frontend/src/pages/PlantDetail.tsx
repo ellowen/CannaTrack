@@ -532,8 +532,7 @@ export default function PlantDetail() {
                   )
                   setFloraPickerOpen(false)
                 }}
-                className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
-                style={{ background: 'linear-gradient(135deg, #7C3AED, #5B21B6)' }}
+                className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
               >
                 🌸 Confirmar floración
               </button>

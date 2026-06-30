@@ -9,7 +9,7 @@ interface PhotoGalleryProps {
 
 export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const photosOnly = logs.filter((l) => l.photoDataUrl)
+  const photosOnly = logs.filter((l) => l.photoDataUrl || l.photoUrl)
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -62,7 +62,7 @@ export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoG
             {photosOnly.map((photo) => (
               <div key={photo.id} className="relative group">
                 <img
-                  src={photo.photoDataUrl}
+                  src={photo.photoDataUrl ?? photo.photoUrl}
                   alt={`Foto - ${photo.weekLabel}`}
                   className="w-full aspect-square object-cover rounded-xl border border-app-border shadow-card"
                 />

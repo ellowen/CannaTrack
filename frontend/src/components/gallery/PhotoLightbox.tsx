@@ -141,7 +141,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onEdit }:
         {/* Image */}
         <img
           key={current.id}
-          src={current.photoDataUrl}
+          src={current.photoDataUrl ?? current.photoUrl}
           alt={`Semana ${current.weekLabel}`}
           className={clsx(
             'max-w-full max-h-full object-contain select-none',

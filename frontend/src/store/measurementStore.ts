@@ -5,17 +5,21 @@ import { dateReviver } from '@/lib/storage'
 
 interface MeasurementStore {
   logs: MeasurementLog[]
-  addLog: (log: Omit<MeasurementLog, 'id'>) => void
+  addLog: (log: Omit<MeasurementLog, 'id'>) => MeasurementLog
   deleteLog: (id: string) => void
   updateMeasurement: (plantId: string, measurement: any) => void
+  setLogs: (logs: MeasurementLog[]) => void
 }
 
 export const useMeasurementStore = create<MeasurementStore>()(
   persist(
     (set) => ({
       logs: [],
-      addLog: (log) =>
-        set((s) => ({ logs: [{ ...log, id: crypto.randomUUID() }, ...s.logs] })),
+      addLog: (log) => {
+        const newLog: MeasurementLog = { ...log, id: crypto.randomUUID() }
+        set((s) => ({ logs: [newLog, ...s.logs] }))
+        return newLog
+      },
       deleteLog: (id) =>
         set((s) => ({ logs: s.logs.filter((l) => l.id !== id) })),
       updateMeasurement: (plantId, measurement) =>
@@ -25,6 +29,7 @@ export const useMeasurementStore = create<MeasurementStore>()(
             { ...measurement, plantId },
           ],
         })),
+      setLogs: (logs) => set({ logs }),
     }),
     {
       name: 'cannatrack-measurements',

@@ -18,10 +18,10 @@ export default function PlantCard({ plant }: PlantCardProps) {
   const { todayTasks, overdueTasks } = useTasks(plant.id)
   const latestPhoto = useWeekLogStore((s) =>
     s.logs
-      .filter((l) => l.plantId === plant.id && l.photoDataUrl)
+      .filter((l) => l.plantId === plant.id && (l.photoDataUrl || l.photoUrl))
       .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())[0]
-      ?.photoDataUrl
   )
+  const latestPhotoSrc = latestPhoto?.photoDataUrl ?? latestPhoto?.photoUrl
 
   const allTasks = useTaskStore((s) => s.tasks.filter((t) => t.plantId === plant.id))
   const health = calculatePlantHealth(allTasks)
@@ -53,16 +53,16 @@ export default function PlantCard({ plant }: PlantCardProps) {
     >
       {/* Header — foto real si existe, si no gradient temático */}
       <div
-        className="px-5 pt-4 pb-5 relative overflow-hidden"
-        style={latestPhoto
-          ? { backgroundImage: `url(${latestPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        className="px-4 pt-3.5 pb-4 relative overflow-hidden"
+        style={latestPhotoSrc
+          ? { backgroundImage: `url(${latestPhotoSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
           : { background: isFlora ? 'var(--gradient-flora)' : 'var(--gradient-vege)' }
         }
       >
         {/* Overlay: scrim para legibilidad sobre foto, o noise sobre gradient */}
         <div
           className="absolute inset-0"
-          style={latestPhoto
+          style={latestPhotoSrc
             ? { background: 'linear-gradient(160deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)' }
             : { backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")", opacity: 0.08 }
           }
@@ -88,12 +88,18 @@ export default function PlantCard({ plant }: PlantCardProps) {
       </div>
 
       {/* Body */}
-      <div className="px-5 py-4">
+      <div className="px-4 py-3">
         {/* Stage + harvest row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{stageEmoji}</span>
-            <span className="text-sm font-semibold text-ink-2">{stageLabel}</span>
+            <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${
+              isFlora
+                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                : 'bg-brand-subtle text-brand-400 border border-brand-border'
+            }`}>
+              {cycleTag}
+            </span>
+            <span className="text-xs font-medium text-ink-3">{stageLabel}</span>
           </div>
           {daysToHarvest !== null && daysToHarvest > 0 && (
             <div className="text-right">
