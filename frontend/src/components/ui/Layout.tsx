@@ -16,7 +16,7 @@ export default function Layout() {
   const { plants } = usePlantStore()
   const { notificationsEnabled } = useUserStore()
 
-  // Redirigir después del onboarding (flag puesto por Onboarding.tsx)
+  // Redirigir despues del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
     const target = localStorage.getItem('ct-redirect')
     if (target) {
@@ -25,12 +25,12 @@ export default function Layout() {
     }
   }, [])
 
-  // Notificación diaria al abrir la app
+  // Notificacion diaria al abrir la app
   useEffect(() => {
     if (!notificationsEnabled) return
     const pending = [...todayTasks.filter((t) => !t.completed), ...overdueTasks]
     if (pending.length === 0) return
-    const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '—')
+    const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '-')
     notifyPendingTasks(pending.length, plantNames)
   }, [notificationsEnabled])
 
@@ -42,9 +42,9 @@ export default function Layout() {
 
       <InstallBanner />
 
-      <nav className="fixed bottom-0 left-0 right-0 z-20">
+      <nav className="fixed bottom-0 left-0 right-0 z-20" style={{ transform: 'translateZ(0)' }}>
         <div className="max-w-lg mx-auto">
-          <div className="backdrop-blur-xl border-t border-app-border shadow-card-lg" style={{ backgroundColor: 'var(--app-overlay)' }}>
+          <div className="glass-heavy">
             {/* 5 tabs: Inicio | Calendario | Plantas | Diagnose | Perfil */}
             <div className="grid grid-cols-5 safe-bottom">
 
