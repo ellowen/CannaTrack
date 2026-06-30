@@ -163,7 +163,7 @@ export default function PlantDetail() {
             { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? 'Indoor' : 'Outdoor' },
             { icon: '🪴', label: `${plant.potCount} maceta${plant.potCount > 1 ? 's' : ''} · ${potLiters}L` },
           ].map(({ icon, label }) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 bg-app-card border border-app-border px-3 py-1.5 rounded-xl font-medium shadow-card">
+            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 glass px-3 py-1.5 rounded-xl font-medium">
               <span>{icon}</span>
               {label}
             </span>
@@ -172,7 +172,7 @@ export default function PlantDetail() {
 
         {/* Notas de la planta */}
         {plant.notes && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 flex gap-3">
+          <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
             <span className="text-base shrink-0">📝</span>
             <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
           </div>
@@ -180,7 +180,7 @@ export default function PlantDetail() {
 
         {/* Progress Ring + salud */}
         {cycleProgress && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5">
+          <div className="glass-card rounded-2xl p-5">
             <div className="flex items-center gap-5">
               {/* Ring */}
               <ProgressRing
@@ -332,7 +332,7 @@ export default function PlantDetail() {
               </span>
             )}
           </div>
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-2 py-2">
+          <div className="glass-card rounded-2xl px-2 py-2">
             <WeekView
               tasks={tasks}
               weekStart={weekStart}
@@ -438,7 +438,7 @@ export default function PlantDetail() {
 
             {/* Observaciones y otras */}
             {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').length > 0 && (
-              <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
+              <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
                 {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').map((task) => (
                   <TaskItem
                     key={task.id}
@@ -453,7 +453,7 @@ export default function PlantDetail() {
 
         {/* Sin tareas */}
         {selectedDayTasks.length === 0 && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5 text-center">
+          <div className="glass-card rounded-2xl p-5 text-center">
             <p className="text-2xl mb-2">🌤️</p>
             <p className="text-sm text-ink-3">
               {isSelectedToday ? 'Sin tareas para hoy' : 'Sin tareas este día'}
@@ -465,7 +465,7 @@ export default function PlantDetail() {
         {upcoming.length > 0 && (
           <section>
             <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">📅 Próximas tareas</p>
-            <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
+            <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
               {upcoming.map((task) => (
                 <TaskItem key={task.id} task={task} showDate />
               ))}
@@ -492,7 +492,7 @@ export default function PlantDetail() {
 
         {/* Flora date picker — cuando se abre desde el boton standalone (antes de las 6 semanas) */}
         {floraPickerOpen && !needsFlora && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
+          <div className="glass-card rounded-2xl p-4 space-y-3">
             <div className="flex items-start gap-3 mb-1">
               <span className="text-2xl">🌸</span>
               <div>
