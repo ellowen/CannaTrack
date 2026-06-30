@@ -292,6 +292,48 @@
 .page-enter-down  { animation: page-enter-down  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 .page-fade-in     { animation: page-fade-in     0.18s ease-out both; }
 
+/* ── Micro-interacciones ───────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--app-elevated) 25%,
+    var(--app-border)   50%,
+    var(--app-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+.float { animation: float 3s ease-in-out infinite; }
+
+@keyframes task-out {
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+.task-completing {
+  animation: task-out 0.25s cubic-bezier(0.4,0,0.6,1) forwards;
+  overflow: hidden;
+}
+
+@keyframes ring-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--brand-400)); }
+  50%       { filter: drop-shadow(0 0 12px var(--brand-400)); }
+}
+.ring-glow { animation: ring-glow-pulse 2s ease-in-out infinite; }
+
 /* ── Skeleton loaders ──────────────────────────────────── */
 @keyframes shimmer {
   from { background-position: -200% center; }
