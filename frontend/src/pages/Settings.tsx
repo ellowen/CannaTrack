@@ -108,7 +108,7 @@ export default function Settings() {
       {/* Apariencia */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <p className="text-sm font-semibold text-ink-2 mb-3">Tema</p>
           <div className="grid grid-cols-3 gap-2">
             {themeOptions.map((opt) => (
@@ -133,7 +133,7 @@ export default function Settings() {
       {/* Plan */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Tu plan</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-bold text-ink-1">
@@ -167,7 +167,7 @@ export default function Settings() {
       {/* Nombre de usuario */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Nombre de usuario</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -284,7 +284,7 @@ export default function Settings() {
       {/* Notificaciones */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Notificaciones</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 pr-4">
               <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
@@ -331,7 +331,7 @@ export default function Settings() {
       {/* Herramientas */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Herramientas</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-1">Regenerar calendarios</p>

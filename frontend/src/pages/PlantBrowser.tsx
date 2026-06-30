@@ -49,7 +49,7 @@ function ActivePlantCard({ plant, pendingCount }: { plant: Plant; pendingCount: 
   return (
     <Link
       to={`/plants/${plant.id}`}
-      className="block rounded-2xl overflow-hidden border border-app-border shadow-card active:scale-[0.97] transition-all tap-highlight-none"
+      className="block glass-card rounded-2xl overflow-hidden active:scale-[0.97] transition-all tap-highlight-none"
       style={{ background: gradient }}
     >
       {/* Accent bar */}
@@ -104,7 +104,7 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
   return (
     <Link
       to={`/plants/${plant.id}`}
-      className="flex items-center gap-3 bg-app-card border border-app-border rounded-2xl p-4 active:scale-[0.97] transition-all tap-highlight-none"
+      className="flex items-center gap-3 glass-card rounded-2xl p-4 active:scale-[0.97] transition-all tap-highlight-none"
     >
       <div className="w-10 h-10 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-xl shrink-0">
         {isHarvested ? '✂️' : '🗑️'}
@@ -197,7 +197,7 @@ export default function PlantBrowser() {
   return (
     <div className="min-h-screen bg-app-bg">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-app-bg/95 backdrop-blur-sm border-b border-app-border">
+      <div className="sticky top-0 z-30 glass-heavy border-b border-app-border">
         <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black text-ink-1">Mis plantas</h1>
           <Link
@@ -272,7 +272,7 @@ export default function PlantBrowser() {
       <div className="px-4 py-4 pb-24 space-y-3">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
-            <div className="text-5xl mb-4 opacity-40">🌱</div>
+            <div className="text-5xl mb-4 opacity-60 float">🌱</div>
             <h2 className="text-lg font-black text-ink-1 mb-2">
               {search ? 'Sin resultados' : 'Sin plantas'}
             </h2>

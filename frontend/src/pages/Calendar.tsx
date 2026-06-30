@@ -72,7 +72,7 @@ export default function Calendar() {
   if (plants.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-8 text-center">
-        <div className="text-6xl mb-5 select-none">📅</div>
+        <div className="text-6xl mb-5 select-none float">📅</div>
         <h2 className="text-xl font-black text-ink-1 mb-2">Sin calendario aún</h2>
         <p className="text-sm text-ink-3 mb-8 max-w-[260px] leading-relaxed">
           Agregá tu primera planta y generamos el calendario nutricional automáticamente.
