@@ -112,12 +112,8 @@ export default function Home() {
             {greeting}{name ? `, ${name.split(' ')[0]}` : ''}
           </h1>
           {/* Streak badge */}
-          <div className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 shrink-0 ${
-            streak >= 7
-              ? 'bg-amber-500/15 border border-amber-500/30'
-              : streak > 0
-              ? 'bg-app-card border border-app-border'
-              : 'bg-app-card border border-app-border'
+          <div className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 shrink-0 glass-pill ${
+            streak >= 7 ? 'glass-amber' : ''
           }`}>
             <span className={`text-xl ${streak >= 7 ? 'streak-fire' : ''}`}>🔥</span>
             <div className="text-right">
@@ -154,7 +150,7 @@ export default function Home() {
           <h2 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">
             ⚠️ Vencidas · {overdueTasks.length}
           </h2>
-          <div className="bg-app-card rounded-2xl border border-red-200 dark:border-red-900/50 shadow-card overflow-hidden">
+          <div className="glass-card glass-red rounded-2xl overflow-hidden" style={{ borderColor: 'rgba(239,68,68,0.25)' }}>
             {overdueTasks.map((task, i) => (
               <div
                 key={task.id}
@@ -174,7 +170,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => { hapticLight(); setCompletingTask(task) }}
-                  className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                  className="shrink-0 text-xs font-bold text-red-500 glass-pill glass-red px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Hecho
                 </button>
@@ -202,7 +198,7 @@ export default function Home() {
 
           {/* All done */}
           {allDone ? (
-            <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5 text-center">
+            <div className="glass-card glass-brand rounded-2xl p-5 text-center">
               <p className="text-3xl mb-2">🎉</p>
               <p className="text-sm font-bold text-brand-400">¡Todo al día!</p>
               <p className="text-xs text-ink-3 mt-0.5">Buen trabajo por hoy</p>
@@ -211,11 +207,11 @@ export default function Home() {
             /* Vista agrupada por planta */
             <div className="space-y-3">
               {taskGroups.map(({ plant: p, tasks: pts }) => (
-                <div key={p?.id ?? 'unknown'} className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
+                <div key={p?.id ?? 'unknown'} className="glass-card rounded-2xl overflow-hidden">
                   {/* Cabecera de planta — tappable */}
                   <Link
                     to={p ? `/plants/${p.id}` : '#'}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-app-elevated border-b border-app-border tap-highlight-none active:bg-app-card transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-b border-white/10 tap-highlight-none active:bg-white/10 transition-colors"
                   >
                     <span className="text-sm">🌿</span>
                     <span className="text-xs font-bold text-ink-2 truncate">{p?.name ?? '—'}</span>
@@ -239,7 +235,7 @@ export default function Home() {
                       </button>
                       <button
                         onClick={() => { hapticLight(); setCompletingTask(task) }}
-                        className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                        className="shrink-0 text-xs font-bold text-brand-400 glass-pill glass-brand px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                       >
                         Hecho
                       </button>
@@ -250,7 +246,7 @@ export default function Home() {
             </div>
           ) : (
             /* Vista plana — 1 sola planta */
-            <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
+            <div className="glass-card rounded-2xl overflow-hidden">
               {pendingTasks.map((task, i) => (
                 <div key={task.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < pendingTasks.length - 1 ? 'border-b border-app-border' : ''}`}>
                   <button
@@ -265,14 +261,14 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => { hapticLight(); setCompletingTask(task) }}
-                    className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                    className="shrink-0 text-xs font-bold text-brand-400 glass-pill glass-brand px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                   >
                     Hecho
                   </button>
                 </div>
               ))}
               {doneTasks.length > 0 && (
-                <div className="px-4 py-3 flex items-center gap-2 bg-app-elevated border-t border-app-border">
+                <div className="px-4 py-3 flex items-center gap-2 bg-white/5 border-t border-white/10">
                   <span className="text-base">✅</span>
                   <span className="text-xs text-ink-3 font-medium">
                     {doneTasks.length} completada{doneTasks.length > 1 ? 's' : ''}
@@ -294,7 +290,7 @@ export default function Home() {
               label: longestGrowDays > 0 ? 'Días de grow' : harvestedCount === 1 ? 'Cosecha' : 'Cosechas',
               icon: longestGrowDays > 0 ? '📅' : '🏆' },
           ].map(({ value, label, icon }) => (
-            <div key={label} className="bg-app-card rounded-2xl border border-app-border shadow-card p-3 text-center">
+            <div key={label} className="glass-card rounded-2xl p-3 text-center">
               <p className="text-xl mb-0.5">{icon}</p>
               <p className="text-2xl font-black text-ink-1 tabular leading-none">{value}</p>
               <p className="text-[10px] text-ink-3 font-semibold mt-1 leading-tight">{label}</p>
@@ -363,7 +359,7 @@ export default function Home() {
                   <Link
                     key={plant.id}
                     to={`/plants/${plant.id}`}
-                    className="flex items-center gap-3 bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 tap-highlight-none active:scale-[0.987] transition-all"
+                    className="flex items-center gap-3 glass rounded-2xl px-4 py-3 tap-highlight-none active:scale-[0.987] transition-all"
                   >
                     <span className="text-2xl shrink-0">{isHarvested ? '✂️' : '🗑️'}</span>
                     <div className="flex-1 min-w-0">

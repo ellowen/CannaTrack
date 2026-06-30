@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
@@ -16,7 +16,7 @@ export default function Layout() {
   const { plants } = usePlantStore()
   const { notificationsEnabled } = useUserStore()
 
-  // Redirigir después del onboarding (flag puesto por Onboarding.tsx)
+  // Redirigir despues del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
     const target = localStorage.getItem('ct-redirect')
     if (target) {
@@ -25,12 +25,12 @@ export default function Layout() {
     }
   }, [])
 
-  // Notificación diaria al abrir la app
+  // Notificacion diaria al abrir la app
   useEffect(() => {
     if (!notificationsEnabled) return
     const pending = [...todayTasks.filter((t) => !t.completed), ...overdueTasks]
     if (pending.length === 0) return
-    const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '—')
+    const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '-')
     notifyPendingTasks(pending.length, plantNames)
   }, [notificationsEnabled])
 
@@ -42,11 +42,11 @@ export default function Layout() {
 
       <InstallBanner />
 
-      <nav className="fixed bottom-0 left-0 right-0 z-20">
+      <nav className="fixed bottom-0 left-0 right-0 z-20" style={{ transform: 'translateZ(0)' }}>
         <div className="max-w-lg mx-auto">
-          <div className="backdrop-blur-xl border-t border-app-border shadow-card-lg" style={{ backgroundColor: 'var(--app-overlay)' }}>
-            {/* 4 slots: Inicio | Calendario | + | Ajustes */}
-            <div className="grid grid-cols-4 safe-bottom">
+          <div className="glass-heavy">
+            {/* 5 slots: Inicio | Calendario | Plantas | Fotos | Perfil */}
+            <div className="grid grid-cols-5 safe-bottom">
 
               <NavLink to="/" end className="tap-highlight-none">
                 {({ isActive }) => (
@@ -71,19 +71,26 @@ export default function Layout() {
                 )}
               </NavLink>
 
-              {/* Botón + elevado */}
-              <div className="flex flex-col items-center justify-end pb-2">
-                <Link
-                  to="/plants/new"
-                  aria-label="Nueva planta"
-                  className="w-12 h-12 bg-brand-400 text-white rounded-2xl shadow-glow-brand flex items-center justify-center tap-highlight-none active:scale-90 transition-all -translate-y-3"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
-                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                  </svg>
-                </Link>
-                <span className="text-[10px] font-semibold text-ink-4 tracking-wide mt-0.5">Agregar</span>
-              </div>
+              <NavLink to="/plants" className="tap-highlight-none">
+                {({ isActive }) => (
+                  <NavItem active={isActive} label="Plantas">
+                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
+                      <path d="M12 22V12m0 0C12 7 7 4 3 6c0 4 3 8 9 6zm0 0c0-5 5-8 9-6 0 4-3 8-9 6z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </NavItem>
+                )}
+              </NavLink>
+
+              <NavLink to="/diagnose" className="tap-highlight-none">
+                {({ isActive }) => (
+                  <NavItem active={isActive} label="Fotos">
+                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                  </NavItem>
+                )}
+              </NavLink>
 
               <NavLink to="/profile" className="tap-highlight-none">
                 {({ isActive }) => (
