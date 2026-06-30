@@ -216,7 +216,7 @@ export default function Home() {
       {/* VENCIDAS */}
       {plants.length > 0 && overdueTasks.length > 0 && (
         <section className="mb-5">
-          <div className="bg-red-950/60 rounded-2xl border border-red-900/50 overflow-hidden">
+          <div className="glass-card glass-red rounded-2xl overflow-hidden">
             {/* Primera tarea — CTA principal */}
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">

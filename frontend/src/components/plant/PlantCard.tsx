@@ -49,7 +49,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
   return (
     <div
       onClick={() => navigate(`/plants/${plant.id}`)}
-      className="bg-app-card rounded-3xl border border-app-border shadow-card-md overflow-hidden cursor-pointer active:scale-[0.987] transition-all duration-150 tap-highlight-none hover:shadow-card-lg"
+      className="glass-card rounded-3xl overflow-hidden cursor-pointer active:scale-[0.985] transition-all duration-150 tap-highlight-none"
     >
       {/* Header — foto real si existe, si no gradient temático */}
       <div
@@ -166,18 +166,18 @@ export default function PlantCard({ plant }: PlantCardProps) {
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
           {overdueCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-500 border border-red-200 dark:border-red-900/50 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold glass-pill glass-red text-red-500 px-2.5 py-1 rounded-full">
               ⚠️ {overdueCount} vencida{overdueCount > 1 ? 's' : ''}
             </span>
           )}
           {pendingToday > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-subtle text-brand-500 border border-brand-border px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold glass-pill glass-brand text-brand-400 px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
               {pendingToday} tarea{pendingToday > 1 ? 's' : ''} hoy
             </span>
           )}
           {needsFlora && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-flora-bg text-flora-text border border-flora-border px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold glass-pill glass-amber text-flora-text px-2.5 py-1 rounded-full">
               🌸 Iniciar floración
             </span>
           )}
