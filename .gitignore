@@ -9,3 +9,4 @@ coverage/
 frontend/node_modules/
 frontend/dist/
 .claude/worktrees/
+.claude/settings.local.json
