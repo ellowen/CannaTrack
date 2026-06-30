@@ -229,7 +229,7 @@ export default function Diagnose() {
   if (activePlants.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-8 text-center">
-        <div className="text-6xl mb-5">📷</div>
+        <div className="text-6xl mb-5 float">📷</div>
         <h2 className="text-xl font-black text-ink-1 mb-2">Sin plantas activas</h2>
         <p className="text-sm text-ink-3 max-w-xs leading-relaxed">
           Crea una planta para empezar a documentar el crecimiento
@@ -275,7 +275,7 @@ export default function Diagnose() {
         <button
           onClick={() => cameraRef.current?.click()}
           disabled={uploading}
-          className="flex items-center justify-center gap-2 bg-app-card border border-app-border rounded-2xl py-3.5 font-bold text-sm text-ink-2 active:scale-[0.97] transition-all tap-highlight-none disabled:opacity-50"
+          className="flex items-center justify-center gap-2 glass-card rounded-2xl py-3.5 font-bold text-sm text-ink-2 active:scale-[0.97] transition-all tap-highlight-none disabled:opacity-50"
         >
           {uploading ? (
             <div className="w-4 h-4 rounded-full border-2 border-brand-400 border-t-transparent animate-spin" />
@@ -288,7 +288,7 @@ export default function Diagnose() {
         <button
           onClick={() => galleryRef.current?.click()}
           disabled={uploading}
-          className="flex items-center justify-center gap-2 bg-app-card border border-app-border rounded-2xl py-3.5 font-bold text-sm text-ink-2 active:scale-[0.97] transition-all tap-highlight-none disabled:opacity-50"
+          className="flex items-center justify-center gap-2 glass-card rounded-2xl py-3.5 font-bold text-sm text-ink-2 active:scale-[0.97] transition-all tap-highlight-none disabled:opacity-50"
         >
           <span className="text-xl">🖼️</span>
           Galeria
@@ -435,7 +435,7 @@ export default function Diagnose() {
             {diagResult && (
               <div className="space-y-3">
                 {/* Health score */}
-                <div className="bg-app-elevated border border-app-border rounded-2xl p-5 text-center">
+                <div className="glass-card rounded-2xl p-5 text-center">
                   <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Salud de la planta</p>
                   <HealthCircle score={diagResult.healthScore} />
                   <p className="text-xs text-ink-3 mt-3 leading-relaxed max-w-xs mx-auto">
@@ -445,7 +445,7 @@ export default function Diagnose() {
 
                 {/* Issues */}
                 {diagResult.issues.length > 0 && (
-                  <div className="bg-app-elevated border border-app-border rounded-2xl overflow-hidden">
+                  <div className="glass-card rounded-2xl overflow-hidden">
                     <p className="text-xs font-bold text-ink-3 uppercase tracking-widest px-4 py-3 border-b border-app-border">
                       Problemas detectados &middot; {diagResult.issues.length}
                     </p>
@@ -472,7 +472,7 @@ export default function Diagnose() {
 
                 {/* Recommendations */}
                 {diagResult.recommendations.length > 0 && (
-                  <div className="bg-app-elevated border border-app-border rounded-2xl p-4 space-y-2">
+                  <div className="glass-card rounded-2xl p-4 space-y-2">
                     <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">Recomendaciones</p>
                     {diagResult.recommendations.map((rec, i) => (
                       <div key={i} className="flex items-start gap-2">

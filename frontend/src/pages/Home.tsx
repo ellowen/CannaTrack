@@ -13,6 +13,7 @@ import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
 import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -94,7 +95,10 @@ export default function Home() {
 
   function handleResolveAll() {
     hapticSuccess()
-    overdueTasks.forEach((t) => completeTask(t.id))
+    overdueTasks.forEach((t) => {
+      completeTask(t.id)
+      void completeTaskInSupabase(t.id)
+    })
     addXP(15 * overdueTasks.length)
     setResolvedAll(true)
     setTimeout(() => setResolvedAll(false), 2500)
@@ -149,7 +153,10 @@ export default function Home() {
 
   function handleCompleteAll() {
     hapticSuccess()
-    pending.forEach((t) => completeTask(t.id))
+    pending.forEach((t) => {
+      completeTask(t.id)
+      void completeTaskInSupabase(t.id)
+    })
     addXP(10 * pending.length)
   }
 
@@ -683,7 +690,10 @@ export default function Home() {
 
     <CompleteTaskSheet
       task={completingTask}
-      onConfirm={(taskId, notes) => completeTask(taskId, notes)}
+      onConfirm={(taskId, notes) => {
+        completeTask(taskId, notes)
+        void completeTaskInSupabase(taskId, notes)
+      }}
       onClose={() => setCompletingTask(null)}
     />
     </>
