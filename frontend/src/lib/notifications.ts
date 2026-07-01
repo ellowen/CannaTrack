@@ -42,14 +42,30 @@ export function notifyPendingTasks(
   const body = uniquePlants.slice(0, 2).join(', ') +
     (uniquePlants.length > 2 ? ` y ${uniquePlants.length - 2} mas` : '')
 
+  const options: NotificationOptions = {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-180.png',
+    tag: 'daily-tasks',
+  }
+
   try {
-    new Notification(title, {
-      body,
-      icon: '/icon-192.png',
-      tag: 'daily-tasks',
-    })
+    // iOS PWA requiere showNotification via SW — new Notification() no funciona
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg) {
+          reg.showNotification(title, options)
+        } else {
+          new Notification(title, options)
+        }
+      }).catch(() => {
+        try { new Notification(title, options) } catch { /* silencioso */ }
+      })
+    } else {
+      new Notification(title, options)
+    }
   } catch {
-    // Silenciar errores en contextos donde Notification esta bloqueado
+    // silencioso
   }
 }
 
