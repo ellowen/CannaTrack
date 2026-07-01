@@ -10,7 +10,7 @@ import { MonthCalendar, TaskTimeline } from '@/components/calendar'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
 import { hapticLight } from '@/lib/haptics'
-import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {

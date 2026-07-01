@@ -13,7 +13,7 @@ import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
 import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_LABEL: Record<string, string> = {

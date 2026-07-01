@@ -1,6 +1,5 @@
 import { useMeasurementStore } from '@/store/measurementStore'
 import { deleteMeasurementFromSupabase } from '@/lib/sync'
-import type { MeasurementLog } from '@/types/measurement'
 
 export function useMeasurements(plantId: string) {
   const { logs, addLog, deleteLog: storeDeleteLog } = useMeasurementStore()
