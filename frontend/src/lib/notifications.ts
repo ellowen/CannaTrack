@@ -3,7 +3,7 @@ import { supabase } from '@/lib/auth'
 // REEMPLAZAR con la VAPID public key generada por:
 //   cd backend && npx web-push generate-vapid-keys
 // Luego: supabase secrets set VAPID_PUBLIC_KEY=<key> VAPID_PRIVATE_KEY=<key>
-const VAPID_PUBLIC_KEY = 'REPLACE_WITH_VAPID_PUBLIC_KEY'
+const VAPID_PUBLIC_KEY = 'BL1SMs_4uiWUiJKIxyWmqaY4W9gITf8Idhy7uVZ5c8lMMWDudBaQ5NZ0kOTQD5stzrPqb230necYqza0AnJpP0I'
 
 const LAST_NOTIF_KEY = 'cannatrack-last-notif-date'
 
