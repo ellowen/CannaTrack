@@ -23,14 +23,14 @@ import type { ScheduledTask } from '@/types/plant'
 export default function PlantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getPlantById, startFlora, harvestPlant, discardPlant } = usePlants()
+  const { getPlantById, startFlora, harvestPlant, discardPlant, reactivatePlant } = usePlants()
   const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
-  const { tasks, todayTasks, upcomingTasks, overdueTasks } = useTasks(id)
+  const { tasks, todayTasks, upcomingTasks, overdueTasks, uncompleteTask } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -128,7 +128,11 @@ export default function PlantDetail() {
         </div>
 
         <div className="relative">
-          <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white mb-2 tracking-wide">
+          <span className={`inline-flex items-center text-[11px] font-black px-3 py-1 rounded-full mb-2 tracking-widest uppercase border ${
+            isFlora
+              ? 'bg-amber-500/30 text-amber-200 border-amber-400/40'
+              : 'bg-brand-400/30 text-green-200 border-green-400/40'
+          }`}>
             {cycleTag}
           </span>
           <h1 className="text-2xl font-black text-white leading-tight">{plant.name}</h1>
@@ -159,16 +163,24 @@ export default function PlantDetail() {
             { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? 'Indoor' : 'Outdoor' },
             { icon: '🪴', label: `${plant.potCount} maceta${plant.potCount > 1 ? 's' : ''} · ${potLiters}L` },
           ].map(({ icon, label }) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 bg-app-card border border-app-border px-3 py-1.5 rounded-xl font-medium shadow-card">
+            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 glass px-3 py-1.5 rounded-xl font-medium">
               <span>{icon}</span>
               {label}
             </span>
           ))}
         </div>
 
+        {/* Notas de la planta */}
+        {plant.notes && (
+          <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
+            <span className="text-base shrink-0">📝</span>
+            <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
+          </div>
+        )}
+
         {/* Progress Ring + salud */}
         {cycleProgress && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5">
+          <div className="glass-card rounded-2xl p-5">
             <div className="flex items-center gap-5">
               {/* Ring */}
               <ProgressRing
@@ -309,9 +321,18 @@ export default function PlantDetail() {
         {/* Vista semanal */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">📅 Esta semana</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Esta semana</p>
+            {currentWeek && (
+              <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${
+                isFlora
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-brand-subtle text-brand-400 border border-brand-border'
+              }`}>
+                {stageEmoji} {cycleTag}
+              </span>
+            )}
           </div>
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card px-2 py-2">
+          <div className="glass-card rounded-2xl px-2 py-2">
             <WeekView
               tasks={tasks}
               weekStart={weekStart}
@@ -342,7 +363,12 @@ export default function PlantDetail() {
         {/* Tareas del día seleccionado */}
         {selectedDayTasks.length > 0 && (
           <section className="space-y-3">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
+              <span className="text-[11px] text-ink-4 font-medium">
+                {selectedDayTasks.length} tarea{selectedDayTasks.length > 1 ? 's' : ''}
+              </span>
+            </div>
 
             {/* Nutrición */}
             {selectedDayTasks.filter((t) => t.type === 'nutrition').map((task) => (
@@ -358,9 +384,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-brand-400">✅ Completada</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-3 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-elevated border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -380,9 +417,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -402,9 +450,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -412,7 +471,7 @@ export default function PlantDetail() {
 
             {/* Observaciones y otras */}
             {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').length > 0 && (
-              <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
+              <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
                 {selectedDayTasks.filter((t) => t.type !== 'nutrition' && t.type !== 'foliar' && t.type !== 'irrigation').map((task) => (
                   <TaskItem
                     key={task.id}
@@ -427,7 +486,7 @@ export default function PlantDetail() {
 
         {/* Sin tareas */}
         {selectedDayTasks.length === 0 && (
-          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-5 text-center">
+          <div className="glass-card rounded-2xl p-5 text-center">
             <p className="text-2xl mb-2">🌤️</p>
             <p className="text-sm text-ink-3">
               {isSelectedToday ? 'Sin tareas para hoy' : 'Sin tareas este día'}
@@ -439,7 +498,7 @@ export default function PlantDetail() {
         {upcoming.length > 0 && (
           <section>
             <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">📅 Próximas tareas</p>
-            <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border px-2">
+            <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
               {upcoming.map((task) => (
                 <TaskItem key={task.id} task={task} showDate />
               ))}
@@ -450,12 +509,142 @@ export default function PlantDetail() {
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={cycleTag} />
 
-        {/* Acciones */}
-        <div className="pt-2 border-t border-app-border">
-          <Button variant="secondary" className="w-full" onClick={() => setHarvestSheetOpen(true)}>
-            ✂️ Finalizar cultivo
-          </Button>
-        </div>
+        {/* Iniciar floracion — visible desde el primer dia de vege */}
+        {!plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (
+          <button
+            onClick={() => setFloraPickerOpen(true)}
+            className="w-full py-4 rounded-2xl font-black text-base text-white tap-highlight-none active:scale-[0.98] transition-all shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '1px solid rgba(245,158,11,0.5)' }}
+          >
+            <span className="flex flex-col items-center gap-0.5">
+              <span className="flex items-center gap-2 text-[15px]">🌸 Iniciar floración</span>
+              <span className="text-xs font-normal text-white/70">Cambia a ciclo 12/12 · recalcula el calendario</span>
+            </span>
+          </button>
+        )}
+
+        {/* Flora date picker — cuando se abre desde el boton standalone (antes de las 6 semanas) */}
+        {floraPickerOpen && !needsFlora && (
+          <div className="glass-card rounded-2xl p-4 space-y-3">
+            <div className="flex items-start gap-3 mb-1">
+              <span className="text-2xl">🌸</span>
+              <div>
+                <p className="text-sm font-bold text-ink-1 mb-0.5">Iniciar floración</p>
+                <p className="text-sm text-ink-3">Elegí la fecha en que cambiaste el fotoperiodo.</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">
+                Fecha de inicio de floración
+              </label>
+              <input
+                type="date"
+                value={floraDateInput}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setFloraDateInput(e.target.value)}
+                className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-colors shadow-card"
+              />
+              <p className="text-xs text-ink-4 mt-1.5">
+                Podés backdatear si ya cambiaste el fotoperiodo.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFloraPickerOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const [y, m, d] = floraDateInput.split('-').map(Number)
+                  const floraDate = new Date(y, m - 1, d)
+                  startFlora(plant.id, floraDate)
+                  updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                    console.error('Error sincronizando flora:', err)
+                  )
+                  setFloraPickerOpen(false)
+                }}
+                className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+              >
+                🌸 Confirmar floración
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Zona de peligro */}
+        {plant.status === 'active' && (
+          <section className="pt-2 border-t border-app-border">
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">Zona de peligro</p>
+            <div className="flex gap-3">
+              {/* Descartar */}
+              <button
+                onClick={() => {
+                  if (!window.confirm(`¿Descartar "${plant.name}"? Esta accion no se puede deshacer.`)) return
+                  discardPlant(plant.id)
+                  updatePlantStatusInSupabase(plant.id, 'discarded').catch(console.error)
+                  navigate('/')
+                }}
+                className="flex-1 py-3 rounded-2xl border border-red-900/40 bg-red-950/30 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+              >
+                <span className="text-xl">🗑️</span>
+                <span className="text-xs font-bold text-red-400">Descartar</span>
+                <span className="text-[10px] text-red-900">Murio / no sirve</span>
+              </button>
+
+              {/* Cosechar */}
+              {(plant.floraStartDate || plant.geneticType === 'autoflower') && (
+                <button
+                  onClick={() => setHarvestSheetOpen(true)}
+                  className="flex-1 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+                >
+                  <span className="text-xl">🌾</span>
+                  <span className="text-xs font-bold text-amber-400">Cosechar</span>
+                  <span className="text-[10px] text-amber-700">Marcar cosechada</span>
+                </button>
+              )}
+
+              {/* Editar */}
+              <Link
+                to={`/plants/${plant.id}/edit`}
+                className="flex-1 py-3 rounded-2xl border border-app-border bg-app-card flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+              >
+                <span className="text-xl">⚙️</span>
+                <span className="text-xs font-bold text-ink-3">Editar</span>
+                <span className="text-[10px] text-ink-4">Nombre, macetas...</span>
+              </Link>
+            </div>
+
+            {/* Finalizar cultivo sin haber iniciado flora */}
+            {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
+              <button
+                onClick={() => setHarvestSheetOpen(true)}
+                className="mt-3 w-full py-3 rounded-2xl border border-amber-500/20 text-sm font-bold text-amber-400 bg-amber-500/5 tap-highlight-none active:scale-95 transition-all"
+              >
+                ✂️ Finalizar cultivo
+              </button>
+            )}
+          </section>
+        )}
+
+        {/* Reactivar planta cosechada o descartada */}
+        {(plant.status === 'harvested' || plant.status === 'discarded') && (
+          <section className="pt-2 border-t border-app-border">
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">
+              {plant.status === 'harvested' ? '🌾 Cosechada' : '🗑️ Descartada'}
+            </p>
+            <button
+              onClick={() => {
+                if (!window.confirm(`¿Reactivar "${plant.name}"? Volvera al listado de plantas activas.`)) return
+                reactivatePlant(plant.id)
+              }}
+              className="w-full py-3 rounded-2xl border border-brand-border bg-brand-subtle text-brand-400 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
+            >
+              ↩ Reactivar planta
+            </button>
+          </section>
+        )}
 
         {table && (
           <p className="text-[11px] text-center text-ink-4 pb-2">

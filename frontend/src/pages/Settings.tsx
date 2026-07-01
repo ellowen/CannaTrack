@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui'
+import { supabase } from '@/lib/auth'
+import { Button, Toggle } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
@@ -29,6 +30,19 @@ export default function Settings() {
   const customTables = tables.filter((t) => !t.isOfficial)
   const officialTables = tables.filter((t) => t.isOfficial)
   const [signingOut, setSigningOut] = useState(false)
+  const [usernameInput, setUsernameInput] = useState('')
+  const [usernameSaving, setUsernameSaving] = useState(false)
+  const [usernameSaved, setUsernameSaved] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    void supabase.from('profiles').select('username').eq('id', user.id).maybeSingle()
+      .then(({ data }) => {
+        if (data?.username) setUsernameInput(data.username)
+        else setUsernameInput(name)
+      })
+  }, [user?.id])
 
   function handleDeleteTable(tableId: string, tableName: string) {
     const plantsUsingTable = plants.filter((p) => p.nutritionTableId === tableId && p.status === 'active')
@@ -58,15 +72,30 @@ export default function Settings() {
 
   async function handleNotifToggle() {
     if (notificationsEnabled) {
-      if (user) await unsubscribeFromPush(user.id)
       setNotificationsEnabled(false)
+      if (user) void unsubscribeFromPush(user.id)
       return
     }
     const permission = await requestNotificationPermission()
     if (permission === 'granted') {
-      if (user) await subscribeToPush(user.id, reminderHour)
       setNotificationsEnabled(true)
+      if (user) void subscribeToPush(user.id, reminderHour)
     }
+  }
+
+  async function handleSaveUsername() {
+    const trimmed = usernameInput.trim()
+    if (!trimmed) { setUsernameError('El nombre no puede estar vacio'); return }
+    if (trimmed.length > 30) { setUsernameError('Maximo 30 caracteres'); return }
+    if (!user) return
+    setUsernameSaving(true)
+    setUsernameError('')
+    const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
+    if (error) { setUsernameError('Error al guardar'); setUsernameSaving(false); return }
+    setName(trimmed)
+    setUsernameSaving(false)
+    setUsernameSaved(true)
+    setTimeout(() => setUsernameSaved(false), 2000)
   }
 
   function handleSave() {
@@ -83,7 +112,7 @@ export default function Settings() {
       {/* Apariencia */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <p className="text-sm font-semibold text-ink-2 mb-3">Tema</p>
           <div className="grid grid-cols-3 gap-2">
             {themeOptions.map((opt) => (
@@ -108,7 +137,7 @@ export default function Settings() {
       {/* Plan */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Tu plan</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-bold text-ink-1">
@@ -136,6 +165,37 @@ export default function Settings() {
               ⭐ Actualizar a Pro
             </button>
           )}
+        </div>
+      </section>
+
+      {/* Nombre de usuario */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Nombre de usuario</p>
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={usernameInput}
+              onChange={(e) => { setUsernameInput(e.target.value); setUsernameError('') }}
+              maxLength={30}
+              autoCorrect="off"
+              autoCapitalize="none"
+              placeholder="Tu nombre..."
+              className={fieldClass + ' flex-1'}
+            />
+            <button
+              onClick={handleSaveUsername}
+              disabled={usernameSaving || usernameInput.trim() === ''}
+              className="shrink-0 text-sm font-bold px-4 py-3 rounded-xl transition-all tap-highlight-none active:scale-95 disabled:opacity-40"
+              style={usernameSaved
+                ? { background: 'var(--brand-subtle)', color: 'var(--brand-400)', border: '1px solid var(--brand-border)' }
+                : { background: '#52CC64', color: '#080E09' }
+              }
+            >
+              {usernameSaving ? '...' : usernameSaved ? '✓' : 'Guardar'}
+            </button>
+          </div>
+          {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
         </div>
       </section>
 
@@ -228,7 +288,7 @@ export default function Settings() {
       {/* Notificaciones */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Notificaciones</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 pr-4">
               <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
@@ -238,19 +298,11 @@ export default function Settings() {
                   : 'Recibí un aviso cuando abrís la app si tenés tareas pendientes'}
               </p>
             </div>
-            <button
-              onClick={handleNotifToggle}
+            <Toggle
+              enabled={notificationsEnabled}
+              onChange={handleNotifToggle}
               disabled={notifBlocked}
-              className={clsx(
-                'relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
-                notificationsEnabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
-              )}
-            >
-              <span className={clsx(
-                'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
-              )} />
-            </button>
+            />
           </div>
         </div>
       </section>
@@ -275,7 +327,7 @@ export default function Settings() {
       {/* Herramientas */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Herramientas</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4">
+        <div className="glass-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-1">Regenerar calendarios</p>
