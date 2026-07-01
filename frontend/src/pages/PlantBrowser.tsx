@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { differenceInDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { clsx } from 'clsx'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
+import { useUserStore } from '@/store/userStore'
 import type { Plant } from '@/types/plant'
+
+const FREE_PLANT_LIMIT = 1
 
 type Filter = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartadas'
 
@@ -136,6 +139,11 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
 export default function PlantBrowser() {
   const plants      = usePlantStore((s) => s.plants)
   const tasks       = useTaskStore((s) => s.tasks)
+  const plan        = useUserStore((s) => s.plan)
+  const navigate    = useNavigate()
+
+  const activePlants   = plants.filter((p) => p.status === 'active')
+  const atFreeLimit    = plan === 'free' && activePlants.length >= FREE_PLANT_LIMIT
 
   const [filter, setFilter]   = useState<Filter>('activas')
   const [search, setSearch]   = useState('')
@@ -200,14 +208,26 @@ export default function PlantBrowser() {
       <div className="sticky top-0 z-30 glass-heavy border-b border-app-border">
         <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black text-ink-1">Mis plantas</h1>
-          <Link
-            to="/plants/new"
-            className="w-9 h-9 rounded-xl bg-brand-400 flex items-center justify-center text-white shadow-glow-brand active:scale-90 transition-all tap-highlight-none"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
+          {atFreeLimit ? (
+            <button
+              onClick={() => navigate('/plants/new')}
+              className="w-9 h-9 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-ink-3 active:scale-90 transition-all tap-highlight-none relative"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="absolute -top-1 -right-1 text-[10px] leading-none">🔒</span>
+            </button>
+          ) : (
+            <Link
+              to="/plants/new"
+              className="w-9 h-9 rounded-xl bg-brand-400 flex items-center justify-center text-white shadow-glow-brand active:scale-90 transition-all tap-highlight-none"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          )}
         </div>
 
         {/* Search */}
