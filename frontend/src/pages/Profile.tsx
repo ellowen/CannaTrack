@@ -8,6 +8,7 @@ import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
 import { requestNotificationPermission } from '@/lib/notifications'
+import { Toggle } from '@/components/ui'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { clsx } from 'clsx'
@@ -441,19 +442,11 @@ export default function Profile() {
                       : 'Recibis un aviso si tenes tareas pendientes'}
                   </p>
                 </div>
-                <button
-                  onClick={handleNotifToggle}
+                <Toggle
+                  enabled={notificationsEnabled}
+                  onChange={handleNotifToggle}
                   disabled={notifBlocked}
-                  className={clsx(
-                    'relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
-                    notificationsEnabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
-                  )}
-                >
-                  <span className={clsx(
-                    'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                    notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
-                  )} />
-                </button>
+                />
               </div>
 
               {/* Selector de hora — visible solo cuando esta activado */}

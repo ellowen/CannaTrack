@@ -6,7 +6,7 @@ import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/auth'
-import { Button } from '@/components/ui'
+import { Button, Toggle } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
@@ -294,19 +294,11 @@ export default function Settings() {
                   : 'Recibí un aviso cuando abrís la app si tenés tareas pendientes'}
               </p>
             </div>
-            <button
-              onClick={handleNotifToggle}
+            <Toggle
+              enabled={notificationsEnabled}
+              onChange={handleNotifToggle}
               disabled={notifBlocked}
-              className={clsx(
-                'relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
-                notificationsEnabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
-              )}
-            >
-              <span className={clsx(
-                'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
-              )} />
-            </button>
+            />
           </div>
         </div>
       </section>
