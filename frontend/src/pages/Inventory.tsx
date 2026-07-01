@@ -6,24 +6,21 @@ import { useTaskStore } from '@/store/taskStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import Button from '@/components/ui/Button'
 import type { Plant, PlantStatus } from '@/types/plant'
+import { useTranslation } from '@/i18n'
 
 type TabType = 'active' | 'harvested' | 'discarded' | 'all'
 
-const TAB_LABELS: Record<TabType, string> = {
-  active: 'Activas',
-  harvested: 'Cosechadas',
-  discarded: 'Descartadas',
-  all: 'Todas',
-}
-
-const STATUS_BADGES: Record<PlantStatus, { label: string; emoji: string; color: string }> = {
-  active: { label: 'Activa', emoji: '🌱', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100' },
-  harvested: { label: 'Cosechada', emoji: '✂️', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100' },
-  discarded: { label: 'Descartada', emoji: '❌', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100' },
-}
-
 export default function Inventory() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
+
+  const TAB_LABELS: Record<TabType, string> = {
+    active: t('inventory.tab_active'),
+    harvested: t('inventory.tab_harvested'),
+    discarded: t('inventory.tab_discarded'),
+    all: t('inventory.tab_all'),
+  }
+
   const { allPlants } = usePlants()
   const { tasks: allTasks } = useTaskStore()
   const logs = useWeekLogStore((s) => s.logs)
@@ -83,13 +80,13 @@ export default function Inventory() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-app-bg border-b border-app-border">
         <div className="px-5 pt-5 pb-4">
-          <h1 className="text-2xl font-bold text-app-text mb-4">Historial de cultivos</h1>
+          <h1 className="text-2xl font-bold text-app-text mb-4">{t('inventory.title')}</h1>
 
           {/* Search Bar */}
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar planta..."
+              placeholder={t('inventory.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-2.5 pl-10 rounded-lg bg-app-card border border-app-border text-app-text placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -130,15 +127,15 @@ export default function Inventory() {
       <div className="grid grid-cols-3 gap-3 px-5 py-4 border-b border-app-border">
         <div className="text-center">
           <div className="text-xl font-bold text-green-500">{stats.total}</div>
-          <div className="text-xs text-app-text-muted">Total</div>
+          <div className="text-xs text-app-text-muted">{t('inventory.stat_total')}</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-bold text-blue-500">{stats.avgCycleDays}d</div>
-          <div className="text-xs text-app-text-muted">Ciclo prom.</div>
+          <div className="text-xs text-app-text-muted">{t('inventory.stat_avg_cycle')}</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-bold text-amber-500">{stats.successRate}%</div>
-          <div className="text-xs text-app-text-muted">Éxito</div>
+          <div className="text-xs text-app-text-muted">{t('inventory.stat_success')}</div>
         </div>
       </div>
 
@@ -147,14 +144,14 @@ export default function Inventory() {
         {filteredPlants.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-3">🌱</div>
-            <p className="text-app-text-muted mb-4">Sin plantas en esta categoría</p>
+            <p className="text-app-text-muted mb-4">{t('inventory.empty')}</p>
             {searchQuery && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setSearchQuery('')}
               >
-                Limpiar búsqueda
+                {t('inventory.clear_search')}
               </Button>
             )}
           </div>
@@ -184,7 +181,8 @@ interface PlantInventoryCardProps {
 }
 
 function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventoryCardProps) {
-  const completedTasks = tasks.filter((t) => t.completed).length
+  const { t } = useTranslation()
+  const completedTasks = tasks.filter((task) => task.completed).length
   const latestPhotoEntry = photos
     .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())[0]
   const latestPhoto = latestPhotoEntry?.photoDataUrl ?? latestPhotoEntry?.photoUrl
@@ -226,6 +224,11 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
     vegeDays = totalDays
   }
 
+  const STATUS_BADGES: Record<PlantStatus, { label: string; emoji: string; color: string }> = {
+    active: { label: t('plants.status_active'), emoji: '🌱', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100' },
+    harvested: { label: t('plants.status_harvested'), emoji: '✂️', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100' },
+    discarded: { label: t('plants.status_discarded'), emoji: '❌', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100' },
+  }
   const statusBadge = STATUS_BADGES[plant.status]
   const cycleText = endDate || plant.status !== 'active'
     ? `${vegeDays}d vege + ${floraDays}d flora = ${totalDays}d total`
@@ -268,13 +271,13 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
 
         {/* Dates */}
         <div className="text-xs text-app-text-muted mb-3">
-          <div>Inicio: {startDate.toLocaleDateString('es-AR')}</div>
-          {endDate && <div>Fin: {endDate.toLocaleDateString('es-AR')}</div>}
+          <div>{t('inventory.start_label')} {startDate.toLocaleDateString('es-AR')}</div>
+          {endDate && <div>{t('inventory.end_label')} {endDate.toLocaleDateString('es-AR')}</div>}
         </div>
 
         {/* Cycle info */}
         <div className="bg-app-bg rounded-lg p-2.5 mb-3 text-xs text-app-text">
-          <div className="font-medium">Ciclo:</div>
+          <div className="font-medium">{t('inventory.cycle_label')}</div>
           <div className="text-app-text-muted">{cycleText}</div>
         </div>
 
@@ -282,21 +285,21 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
         <div className="grid grid-cols-3 gap-2 text-center mb-3 text-xs">
           <div>
             <div className="font-bold text-green-500">{completedTasks}</div>
-            <div className="text-app-text-muted">📊 Tareas</div>
+            <div className="text-app-text-muted">📊 {t('inventory.tasks_label')}</div>
           </div>
           <div>
             <div className="font-bold text-blue-500">{photos.length}</div>
-            <div className="text-app-text-muted">📸 Fotos</div>
+            <div className="text-app-text-muted">📸 {t('inventory.photos_label')}</div>
           </div>
           <div>
             <div className="font-bold text-purple-500">{tasks.length}</div>
-            <div className="text-app-text-muted">📝 Total</div>
+            <div className="text-app-text-muted">📝 {t('inventory.stat_total')}</div>
           </div>
         </div>
 
         {/* View button */}
         <button className="w-full py-2 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 font-medium text-sm hover:bg-green-500/20 transition-colors">
-          Ver detalles →
+          {t('inventory.view_button')} →
         </button>
       </div>
     </div>

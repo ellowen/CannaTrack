@@ -3,8 +3,10 @@ import { usePlants } from '@/hooks/usePlants'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
 import { Button } from '@/components/ui'
+import { useTranslation } from '@/i18n'
 
 export default function EditPlant() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getPlantById, editPlant } = usePlants()
@@ -16,8 +18,8 @@ export default function EditPlant() {
     return (
       <div className="px-4 pt-16 text-center">
         <p className="text-4xl mb-4">🔍</p>
-        <p className="text-ink-3 mb-6">Planta no encontrada.</p>
-        <Button variant="secondary" onClick={() => navigate('/')}>Volver al inicio</Button>
+        <p className="text-ink-3 mb-6">{t('editPlant.not_found')}</p>
+        <Button variant="secondary" onClick={() => navigate('/')}>{t('editPlant.back_home')}</Button>
       </div>
     )
   }
@@ -75,7 +77,7 @@ export default function EditPlant() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-ink-1 leading-tight">Editar planta</h1>
+          <h1 className="text-xl font-bold text-ink-1 leading-tight">{t('editPlant.title')}</h1>
           <p className="text-xs text-ink-3 mt-0.5 truncate max-w-[220px]">{plant.name}</p>
         </div>
       </div>
@@ -84,14 +86,13 @@ export default function EditPlant() {
       <div className="mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl px-4 py-3 flex items-start gap-3">
         <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
         <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-          Cambiar la fecha de inicio, la tabla nutricional o los productos disponibles
-          regenerará el calendario completo.
+          {t('editPlant.warning')}
         </p>
       </div>
 
       <PlantForm
         initialValues={initialValues}
-        submitLabel="Guardar cambios"
+        submitLabel={t('editPlant.save')}
         onSubmit={handleSubmit}
       />
     </div>

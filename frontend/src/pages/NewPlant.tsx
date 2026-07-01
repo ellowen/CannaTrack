@@ -5,10 +5,12 @@ import { useUserStore } from '@/store/userStore'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
 import { hapticSuccess } from '@/lib/haptics'
+import { useTranslation } from '@/i18n'
 
 const FREE_PLANT_LIMIT = 1
 
 export default function NewPlant() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { addPlant } = usePlants()
   const plan   = useUserStore((s) => s.plan)
@@ -52,17 +54,16 @@ export default function NewPlant() {
               <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <h1 className="text-xl font-bold text-ink-1">Nueva planta</h1>
+          <h1 className="text-xl font-bold text-ink-1">{t('newPlant.title')}</h1>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
           <div className="w-20 h-20 rounded-3xl bg-brand-subtle border border-brand-border flex items-center justify-center text-4xl mb-6 float">
             🔒
           </div>
-          <h2 className="text-xl font-black text-ink-1 mb-2">Limite del plan Free</h2>
+          <h2 className="text-xl font-black text-ink-1 mb-2">{t('newPlant.plan_limit_title')}</h2>
           <p className="text-sm text-ink-3 leading-relaxed max-w-[280px] mb-8">
-            El plan Free permite <span className="font-bold text-ink-2">1 planta activa</span>.
-            Cosecha o descarta la actual para agregar una nueva, o upgrade a Pro para tener plantas ilimitadas.
+            {t('newPlant.plan_limit_desc')}
           </p>
 
           <div className="w-full max-w-[300px] space-y-3">
@@ -70,11 +71,11 @@ export default function NewPlant() {
             <div className="glass-card rounded-2xl p-4 border-brand-border relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-400 to-emerald-400" />
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-black text-ink-1">Plan Pro</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-subtle border border-brand-border text-brand-400">MUY PRONTO</span>
+                <span className="text-sm font-black text-ink-1">{t('newPlant.pro_label')}</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-subtle border border-brand-border text-brand-400">{t('newPlant.coming_soon')}</span>
               </div>
               <ul className="space-y-1.5 text-left mb-4">
-                {['Plantas ilimitadas', 'Todas las tablas nutricionales', 'Diagnostico IA por foto', 'Estadisticas avanzadas'].map((f) => (
+                {[t('newPlant.pro_unlimited_plants'), t('newPlant.pro_all_tables'), t('newPlant.pro_ai_diagnosis'), t('newPlant.pro_advanced_stats')].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-xs text-ink-2">
                     <span className="text-brand-400 font-black">✓</span> {f}
                   </li>
@@ -84,7 +85,7 @@ export default function NewPlant() {
                 disabled
                 className="w-full py-3 rounded-xl bg-brand-400/30 text-brand-400/60 font-bold text-sm cursor-not-allowed"
               >
-                ~USD 5/mes — Proximamente
+                {t('newPlant.pro_pricing')}
               </button>
             </div>
 
@@ -93,7 +94,7 @@ export default function NewPlant() {
               to="/plants"
               className="block w-full py-3 rounded-xl bg-app-elevated border border-app-border text-sm font-semibold text-ink-2 text-center tap-highlight-none active:scale-[0.98] transition-all"
             >
-              Gestionar mi planta activa
+              {t('newPlant.manage_active')}
             </Link>
           </div>
         </div>
@@ -113,8 +114,8 @@ export default function NewPlant() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-ink-1 leading-tight">Nueva planta</h1>
-          <p className="text-xs text-ink-3 mt-0.5">Completa los datos para generar el calendario</p>
+          <h1 className="text-xl font-bold text-ink-1 leading-tight">{t('newPlant.title')}</h1>
+          <p className="text-xs text-ink-3 mt-0.5">{t('newPlant.header_subtitle')}</p>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
-import { useTranslation, i18n, LANGUAGES } from '@/i18n'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
@@ -15,27 +15,22 @@ import { generatePlantSchedule } from '@/lib/nutrition-engine'
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
 
+const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
+  { value: 'system', label: 'Sistema', icon: '⚙️' },
+  { value: 'light',  label: 'Claro',   icon: '☀️' },
+  { value: 'dark',   label: 'Oscuro',  icon: '🌙' },
+]
+
 export default function Settings() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, language, setName, setPotVolume, setTheme, setNotificationsEnabled, setLanguage } = useUserStore()
-
-  const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
-    { value: 'system', label: t('profile.theme_system'), icon: '⚙️' },
-    { value: 'light',  label: t('profile.theme_light'),  icon: '☀️' },
-    { value: 'dark',   label: t('profile.theme_dark'),   icon: '🌙' },
-  ]
-
-  function handleLanguageChange(lang: typeof language) {
-    setLanguage(lang)
-    void i18n.changeLanguage(lang)
-  }
+  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
-  const customTables = tables.filter((t) => !t.isOfficial)
-  const officialTables = tables.filter((t) => t.isOfficial)
+  const customTables = tables.filter((tbl) => !tbl.isOfficial)
+  const officialTables = tables.filter((tbl) => tbl.isOfficial)
   const [signingOut, setSigningOut] = useState(false)
   const [usernameInput, setUsernameInput] = useState('')
   const [usernameSaving, setUsernameSaving] = useState(false)
@@ -69,7 +64,7 @@ export default function Settings() {
   function handleRegenerate() {
     const activePlants = plants.filter((p) => p.status === 'active')
     for (const plant of activePlants) {
-      const table = tables.find((t) => t.id === plant.nutritionTableId)
+      const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
       if (!table) continue
       setTasks(plant.id, generatePlantSchedule(plant, table))
     }
@@ -92,13 +87,13 @@ export default function Settings() {
 
   async function handleSaveUsername() {
     const trimmed = usernameInput.trim()
-    if (!trimmed) { setUsernameError('El nombre no puede estar vacio'); return }
-    if (trimmed.length > 30) { setUsernameError('Maximo 30 caracteres'); return }
+    if (!trimmed) { setUsernameError(t('settings.username_empty_error')); return }
+    if (trimmed.length > 30) { setUsernameError(t('settings.username_max_error')); return }
     if (!user) return
     setUsernameSaving(true)
     setUsernameError('')
     const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
-    if (error) { setUsernameError('Error al guardar'); setUsernameSaving(false); return }
+    if (error) { setUsernameError(t('settings.username_save_error')); setUsernameSaving(false); return }
     setName(trimmed)
     setUsernameSaving(false)
     setUsernameSaved(true)
@@ -120,7 +115,7 @@ export default function Settings() {
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</p>
         <div className="glass-card rounded-2xl p-4">
-          <p className="text-sm font-semibold text-ink-2 mb-3">Tema</p>
+          <p className="text-sm font-semibold text-ink-2 mb-3">{t('settings.tema_label')}</p>
           <div className="grid grid-cols-3 gap-2">
             {themeOptions.map((opt) => (
               <button
@@ -141,43 +136,19 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Idioma */}
-      <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.language')}</p>
-        <div className="glass-card rounded-2xl p-4">
-          <div className="grid grid-cols-2 gap-2">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLanguageChange(lang.code)}
-                className={clsx(
-                  'flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
-                  language === lang.code
-                    ? 'bg-brand-subtle border-brand-border text-brand-500'
-                    : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
-                )}
-              >
-                <span>{lang.flag}</span>
-                {lang.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Plan */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Tu plan</p>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.plan_section')}</p>
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-bold text-ink-1">
-                {plan === 'free' ? '🌱 Plan Free' : '⭐ Plan Pro'}
+                {plan === 'free' ? `🌱 ${t('settings.plan_free_label')}` : `⭐ ${t('settings.plan_pro_label')}`}
               </p>
               <p className="text-xs text-ink-3 mt-0.5">
                 {plan === 'free'
-                  ? '1 planta activa · Tabla REVEGETAR'
-                  : 'Plantas ilimitadas · Todas las tablas'}
+                  ? t('settings.plan_free_desc')
+                  : t('settings.plan_pro_desc')}
               </p>
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
@@ -193,7 +164,7 @@ export default function Settings() {
               onClick={() => alert('Próximamente — Plan Pro disponible en la versión comercial')}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
             >
-              ⭐ Actualizar a Pro
+              ⭐ {t('settings.upgrade_pro')}
             </button>
           )}
         </div>
@@ -211,7 +182,7 @@ export default function Settings() {
               maxLength={30}
               autoCorrect="off"
               autoCapitalize="none"
-              placeholder="Tu nombre..."
+              placeholder={t('settings.username_placeholder')}
               className={fieldClass + ' flex-1'}
             />
             <button
@@ -223,7 +194,7 @@ export default function Settings() {
                 : { background: '#52CC64', color: '#080E09' }
               }
             >
-              {usernameSaving ? '...' : usernameSaved ? '✓' : 'Guardar'}
+              {usernameSaving ? '...' : usernameSaved ? '✓' : t('common.save')}
             </button>
           </div>
           {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
@@ -236,13 +207,13 @@ export default function Settings() {
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
-              Nombre 👤
+              {t('settings.name_field')} 👤
             </label>
             <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} className={fieldClass} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
-              Volumen de maceta por defecto 🪴
+              {t('settings.pot_volume_field')} 🪴
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -254,7 +225,7 @@ export default function Settings() {
             </div>
           </div>
           <Button className="w-full" onClick={handleSave} variant={saved ? 'secondary' : 'primary'}>
-            {saved ? '✓ Guardado' : 'Guardar cambios'}
+            {saved ? `✓ ${t('settings.profile_saved')}` : t('settings.save_profile')}
           </Button>
         </div>
       </section>
@@ -267,40 +238,40 @@ export default function Settings() {
             to="/nutrition/new?returnTo=/settings"
             className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
           >
-            + Nueva
+            {t('settings.new_table')}
           </Link>
         </div>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border overflow-hidden">
-          {officialTables.map((t) => (
-            <div key={t.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          {officialTables.map((tbl) => (
+            <div key={tbl.id} className="px-4 py-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink-1 truncate">{t.name}</p>
+                <p className="text-sm font-semibold text-ink-1 truncate">{tbl.name}</p>
                 <p className="text-[11px] text-ink-4 mt-0.5">
-                  Oficial · {t.vegeWeeks.length} sem vege · {t.floraWeeks.length} sem flora
+                  {t('settings.table_official')} · {tbl.vegeWeeks.length} {t('settings.table_vege')} · {tbl.floraWeeks.length} {t('settings.table_flora')}
                 </p>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-subtle text-brand-500 border border-brand-border shrink-0">
-                OFICIAL
+                {t('settings.table_official_badge')}
               </span>
             </div>
           ))}
-          {customTables.map((t) => (
-            <div key={t.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          {customTables.map((tbl) => (
+            <div key={tbl.id} className="px-4 py-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink-1 truncate">{t.name}</p>
+                <p className="text-sm font-semibold text-ink-1 truncate">{tbl.name}</p>
                 <p className="text-[11px] text-ink-4 mt-0.5">
-                  Custom · {t.vegeWeeks.length} sem vege · {t.floraWeeks.length} sem flora
+                  {t('settings.table_custom')} · {tbl.vegeWeeks.length} {t('settings.table_vege')} · {tbl.floraWeeks.length} {t('settings.table_flora')}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Link
-                  to={`/nutrition/new?edit=${t.id}&returnTo=/settings`}
+                  to={`/nutrition/new?edit=${tbl.id}&returnTo=/settings`}
                   className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-app-border text-ink-2 tap-highlight-none active:scale-95"
                 >
-                  Editar
+                  {t('common.edit')}
                 </Link>
                 <button
-                  onClick={() => handleDeleteTable(t.id, t.name)}
+                  onClick={() => handleDeleteTable(tbl.id, tbl.name)}
                   className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 tap-highlight-none active:scale-95"
                 >
                   ×
@@ -325,8 +296,8 @@ export default function Settings() {
               <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
               <p className="text-xs text-ink-3 mt-0.5">
                 {notifBlocked
-                  ? 'Bloqueado en el navegador — habilitalo en Configuración del sistema'
-                  : 'Recibí un aviso cuando abrís la app si tenés tareas pendientes'}
+                  ? t('settings.notif_blocked')
+                  : t('settings.notif_desc')}
               </p>
             </div>
             <Toggle
@@ -340,10 +311,10 @@ export default function Settings() {
 
       {/* Acerca de */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Acerca de</p>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.about_section')}</p>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
           {[
-            ['🏷️ Versión', '0.1.0 — MVP'],
+            [`🏷️ ${t('settings.version_label')}`, t('settings.version_value')],
             ['🌿 Tabla nutricional', 'REVEGETAR v1'],
             ['💾 Datos', 'Almacenados localmente'],
           ].map(([label, value]) => (
@@ -357,13 +328,13 @@ export default function Settings() {
 
       {/* Herramientas */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Herramientas</p>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.tools_section')}</p>
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink-1">Regenerar calendarios</p>
+              <p className="text-sm font-semibold text-ink-1">{t('settings.regen_title')}</p>
               <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
-                Recalcula todas las tareas de tus plantas activas. Útil si actualizaste la app.
+                {t('settings.regen_desc_full')}
               </p>
             </div>
             <button
@@ -376,7 +347,7 @@ export default function Settings() {
                   : 'bg-app-elevated text-ink-2 border border-app-border-strong'
               )}
             >
-              {regenDone ? '✓ Listo' : '↻ Regenerar'}
+              {regenDone ? '✓ Listo' : `↻ ${t('settings.regen_btn')}`}
             </button>
           </div>
         </div>
@@ -390,7 +361,7 @@ export default function Settings() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-1">Cerrar sesión</p>
               <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
-                Desconectate de tu cuenta en este dispositivo.
+                {t('settings.sign_out_desc')}
               </p>
             </div>
             <button
@@ -400,7 +371,7 @@ export default function Settings() {
                   await signOut()
                   navigate('/login', { replace: true })
                 } catch (error) {
-                  alert('Error al cerrar sesión')
+                  alert(t('settings.sign_out_error'))
                   setSigningOut(false)
                 }
               }}
@@ -413,21 +384,21 @@ export default function Settings() {
 
           <div className="flex items-start justify-between gap-4 pt-3 border-t border-app-border">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink-1">Borrar todos los datos</p>
+              <p className="text-sm font-semibold text-ink-1">{t('settings.delete_all_title')}</p>
               <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
-                Elimina plantas, tareas, fotos y mediciones. No se puede deshacer.
+                {t('settings.delete_all_desc')}
               </p>
             </div>
             <button
               onClick={() => {
-                if (!confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')) return
+                if (!confirm(`¿${t('settings.delete_all_title')}? ${t('settings.delete_all_confirm')}`)) return
                 const keys = ['cannatrack-plants', 'cannatrack-tasks', 'cannatrack-weeklogs', 'cannatrack-measurements']
                 keys.forEach((k) => localStorage.removeItem(k))
                 window.location.reload()
               }}
               className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
             >
-              Borrar todo
+              {t('settings.delete_all_btn')}
             </button>
           </div>
         </div>

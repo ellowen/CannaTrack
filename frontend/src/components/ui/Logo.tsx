@@ -1,4 +1,5 @@
 /** Marca de CannaTrack — hoja geometrica con arco de tracking. */
+import { useTranslation } from '@/i18n'
 
 interface LogoMarkProps {
   size?: number
@@ -66,6 +67,7 @@ interface LogoFullProps {
 }
 
 export function LogoFull({ iconSize = 48, dark = true, showTagline = false, className = '' }: LogoFullProps) {
+  const { t } = useTranslation()
   const textColor = dark ? '#FFFFFF' : '#0A1A0D'
   const taglineColor = dark ? 'rgba(255,255,255,0.45)' : 'rgba(10,26,13,0.45)'
 
@@ -97,7 +99,7 @@ export function LogoFull({ iconSize = 48, dark = true, showTagline = false, clas
               marginTop: 3,
             }}
           >
-            Seguimiento de cultivos
+            {t('common.app_tagline')}
           </div>
         )}
       </div>
