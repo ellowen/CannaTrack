@@ -29,7 +29,6 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
  * Retorna true si la suscripcion se creo correctamente.
  */
 export async function subscribeToPush(userId: string, reminderHour: number): Promise<boolean> {
-  if (VAPID_PUBLIC_KEY === 'REPLACE_WITH_VAPID_PUBLIC_KEY') return false
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false
   try {
     const reg = await navigator.serviceWorker.ready
