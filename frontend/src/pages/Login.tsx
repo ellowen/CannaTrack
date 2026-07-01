@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { LogoFull } from '@/components/ui'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -34,10 +35,9 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🌿</div>
-          <h1 className="text-3xl font-bold text-green-100 mb-1">CannaTrack</h1>
-          <p className="text-neutral-500">Ingresa a tu cuenta</p>
+        <div className="flex flex-col items-center mb-8">
+          <LogoFull iconSize={72} dark showTagline className="mb-4" />
+          <p className="text-sm text-neutral-500">Ingresa a tu cuenta</p>
         </div>
 
         {/* Error */}

@@ -1,4 +1,5 @@
 export { default as Button } from './Button'
+export { LogoMark, LogoFull } from './Logo'
 export { default as Toggle } from './Toggle'
 export { default as Card } from './Card'
 export { default as Badge } from './Badge'

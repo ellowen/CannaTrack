@@ -13,6 +13,7 @@ import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
 import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { LogoMark } from '@/components/ui'
 import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
@@ -190,6 +191,15 @@ export default function Home() {
 
       {/* Header */}
       <div className="mb-5">
+        {/* Brand bar */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <LogoMark size={30} />
+            <span className="text-sm font-light text-ink-2 tracking-tight">
+              Canna<span className="font-black text-brand-400">Track</span>
+            </span>
+          </div>
+        </div>
         <p className="text-[10px] text-ink-4 uppercase tracking-widest mb-1 first-letter:capitalize">{dateLabel}</p>
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black text-ink-1 leading-tight">
