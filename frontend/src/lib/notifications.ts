@@ -8,14 +8,30 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 /**
- * Muestra una notificación de tareas pendientes si:
- * - El permiso está concedido
- * - Hay tareas pendientes hoy
- * - No se mostró ya una notificación hoy
+ * Devuelve true si la hora actual esta dentro de la ventana del recordatorio.
+ * La ventana es de 1 hora a partir de reminderHour (ej: 9 = entre 9:00 y 9:59).
  */
-export function notifyPendingTasks(pendingCount: number, plantNames: string[]): void {
+export function isWithinReminderWindow(reminderHour: number): boolean {
+  return new Date().getHours() === reminderHour
+}
+
+/**
+ * Muestra una notificacion de tareas pendientes si:
+ * - El permiso esta concedido
+ * - Hay tareas pendientes hoy
+ * - La hora actual esta en la ventana del recordatorio configurado
+ * - No se mostro ya una notificacion hoy
+ */
+export function notifyPendingTasks(
+  pendingCount: number,
+  plantNames: string[],
+  reminderHour?: number,
+): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
   if (pendingCount === 0) return
+
+  // Si se pasa una hora, solo notificar en esa ventana
+  if (reminderHour !== undefined && !isWithinReminderWindow(reminderHour)) return
 
   const today = new Date().toDateString()
   if (localStorage.getItem(LAST_NOTIF_KEY) === today) return
@@ -24,16 +40,16 @@ export function notifyPendingTasks(pendingCount: number, plantNames: string[]): 
   const title = `🌿 ${pendingCount} tarea${pendingCount > 1 ? 's' : ''} pendiente${pendingCount > 1 ? 's' : ''} hoy`
   const uniquePlants = [...new Set(plantNames)]
   const body = uniquePlants.slice(0, 2).join(', ') +
-    (uniquePlants.length > 2 ? ` y ${uniquePlants.length - 2} más` : '')
+    (uniquePlants.length > 2 ? ` y ${uniquePlants.length - 2} mas` : '')
 
   try {
     new Notification(title, {
       body,
-      icon: '/icon.svg',
+      icon: '/icon-192.png',
       tag: 'daily-tasks',
     })
   } catch {
-    // Silenciar errores en contextos donde Notification está bloqueado
+    // Silenciar errores en contextos donde Notification esta bloqueado
   }
 }
 

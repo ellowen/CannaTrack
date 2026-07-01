@@ -14,7 +14,7 @@ export default function Layout() {
   const { todayTasks, overdueTasks } = useTasks()
   const pendingCount = todayTasks.filter((t) => !t.completed).length + overdueTasks.length
   const { plants } = usePlantStore()
-  const { notificationsEnabled } = useUserStore()
+  const { notificationsEnabled, reminderHour } = useUserStore()
 
   // Redirigir despues del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function Layout() {
     const pending = [...todayTasks.filter((t) => !t.completed), ...overdueTasks]
     if (pending.length === 0) return
     const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '-')
-    notifyPendingTasks(pending.length, plantNames)
+    notifyPendingTasks(pending.length, plantNames, reminderHour)
   }, [notificationsEnabled])
 
   return (

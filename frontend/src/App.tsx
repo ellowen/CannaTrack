@@ -27,6 +27,7 @@ function applyTheme(preference: ThemePreference) {
 export default function App() {
   const theme = useUserStore((s) => s.theme)
   const notificationsEnabled = useUserStore((s) => s.notificationsEnabled)
+  const reminderHour = useUserStore((s) => s.reminderHour)
   const onboarded = useUserStore((s) => s.onboarded)
   const storedName = useUserStore((s) => s.name)
   const setOnboarded = useUserStore((s) => s.setOnboarded)
@@ -67,7 +68,7 @@ export default function App() {
       .map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '')
       .filter(Boolean)
 
-    notifyPendingTasks(pending.length, plantNames)
+    notifyPendingTasks(pending.length, plantNames, reminderHour)
   }, [notificationsEnabled, tasks, plants])
 
   // Sincronización offline-first: procesar queue cuando vuelve conexión

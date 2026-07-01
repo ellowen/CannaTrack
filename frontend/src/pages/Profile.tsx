@@ -7,14 +7,22 @@ import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
+import { requestNotificationPermission } from '@/lib/notifications'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { clsx } from 'clsx'
 
+const REMINDER_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+function fmtHour(h: number) {
+  const suffix = h < 12 ? 'AM' : 'PM'
+  const display = h % 12 === 0 ? 12 : h % 12
+  return `${display}${suffix}`
+}
+
 type Tab = 'stats' | 'logros' | 'cuenta'
 
 export default function Profile() {
-  const { name, streak, bestStreak, totalXP, theme, setTheme } = useUserStore()
+  const { name, streak, bestStreak, totalXP, theme, setTheme, notificationsEnabled, reminderHour, setNotificationsEnabled, setReminderHour } = useUserStore()
   const { tasks } = useTaskStore()
   const { plants } = usePlantStore()
   const logs = useWeekLogStore((s) => s.logs)
@@ -36,6 +44,16 @@ export default function Profile() {
     completedToday: number
   } | null>(null)
   const [loading, setLoading] = useState(false)
+  const notifBlocked = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied'
+
+  async function handleNotifToggle() {
+    if (notificationsEnabled) {
+      setNotificationsEnabled(false)
+      return
+    }
+    const perm = await requestNotificationPermission()
+    if (perm === 'granted') setNotificationsEnabled(true)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -400,6 +418,71 @@ export default function Profile() {
       {/* ─── TAB: CUENTA ─── */}
       {activeTab === 'cuenta' && (
         <div className="px-4 space-y-4 mt-4 pb-4">
+
+          {/* Recordatorio */}
+          <section>
+            <h2 className="text-[10px] font-bold text-ink-4 uppercase tracking-widest mb-2.5">Recordatorio</h2>
+            <div className="glass-card rounded-2xl p-4 space-y-4">
+              {/* Toggle */}
+              <div className="flex items-center gap-3">
+                <div className={clsx(
+                  'w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors',
+                  notificationsEnabled ? 'bg-brand-subtle' : 'bg-app-elevated'
+                )}>
+                  🔔
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
+                  <p className="text-xs text-ink-3 mt-0.5 leading-snug">
+                    {notifBlocked
+                      ? 'Bloqueado — habilitalo en Ajustes del sistema'
+                      : notificationsEnabled
+                      ? `Aviso a las ${fmtHour(reminderHour)} cuando abris la app`
+                      : 'Recibis un aviso si tenes tareas pendientes'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleNotifToggle}
+                  disabled={notifBlocked}
+                  className={clsx(
+                    'relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
+                    notificationsEnabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
+                  )}
+                >
+                  <span className={clsx(
+                    'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                    notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                  )} />
+                </button>
+              </div>
+
+              {/* Selector de hora — visible solo cuando esta activado */}
+              {notificationsEnabled && !notifBlocked && (
+                <div className="border-t border-app-border pt-4">
+                  <p className="text-xs font-bold text-ink-3 mb-3">Hora del aviso</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                    {REMINDER_HOURS.map((h) => (
+                      <button
+                        key={h}
+                        onClick={() => setReminderHour(h)}
+                        className={clsx(
+                          'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all tap-highlight-none active:scale-90',
+                          reminderHour === h
+                            ? 'bg-brand-400 text-white shadow-glow-brand'
+                            : 'bg-app-elevated border border-app-border text-ink-3'
+                        )}
+                      >
+                        {fmtHour(h)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-ink-4 mt-2.5 leading-relaxed">
+                    El aviso se muestra cuando abris la app cerca de esa hora y tenes tareas pendientes.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
 
           <section>
             <h2 className="text-[10px] font-bold text-ink-4 uppercase tracking-widest mb-2.5">Apariencia</h2>
