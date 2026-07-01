@@ -7,8 +7,10 @@ import { useTasks } from '@/hooks/useTasks'
 import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
 import { useUserStore } from '@/store/userStore'
+import { useTranslation } from '@/i18n'
 
 export default function Layout() {
+  const { t } = useTranslation()
   const { animClass, locationKey } = usePageTransition()
   const navigate = useNavigate()
   const { todayTasks, overdueTasks } = useTasks()
@@ -49,7 +51,7 @@ export default function Layout() {
 
               <NavLink to="/" end className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Inicio" badge={pendingCount}>
+                  <NavItem active={isActive} label={t('nav.home')} badge={pendingCount}>
                     {/* House with door */}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -61,7 +63,7 @@ export default function Layout() {
 
               <NavLink to="/calendar" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Calendario">
+                  <NavItem active={isActive} label={t('nav.calendar')}>
                     {/* Calendar with day dots */}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -78,7 +80,7 @@ export default function Layout() {
 
               <NavLink to="/plants" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Plantas">
+                  <NavItem active={isActive} label={t('nav.plants')}>
                     {/* Leaf — fan shape with stem */}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
@@ -90,7 +92,7 @@ export default function Layout() {
 
               <NavLink to="/diagnose" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Fotos">
+                  <NavItem active={isActive} label={t('nav.photos')}>
                     {/* Camera */}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3L14.5 4z"/>
@@ -102,7 +104,7 @@ export default function Layout() {
 
               <NavLink to="/profile" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Perfil">
+                  <NavItem active={isActive} label={t('nav.profile')}>
                     {/* Person */}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <circle cx="12" cy="7" r="4"/>

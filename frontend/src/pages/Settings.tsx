@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
+import { useTranslation, i18n, LANGUAGES } from '@/i18n'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
@@ -14,16 +15,22 @@ import { generatePlantSchedule } from '@/lib/nutrition-engine'
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
 
-const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
-  { value: 'system', label: 'Sistema', icon: '⚙️' },
-  { value: 'light',  label: 'Claro',   icon: '☀️' },
-  { value: 'dark',   label: 'Oscuro',  icon: '🌙' },
-]
-
 export default function Settings() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { user, signOut } = useAuth()
-  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
+  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, language, setName, setPotVolume, setTheme, setNotificationsEnabled, setLanguage } = useUserStore()
+
+  const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
+    { value: 'system', label: t('profile.theme_system'), icon: '⚙️' },
+    { value: 'light',  label: t('profile.theme_light'),  icon: '☀️' },
+    { value: 'dark',   label: t('profile.theme_dark'),   icon: '🌙' },
+  ]
+
+  function handleLanguageChange(lang: typeof language) {
+    setLanguage(lang)
+    void i18n.changeLanguage(lang)
+  }
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
@@ -128,6 +135,30 @@ export default function Settings() {
               >
                 <span className="text-xl">{opt.icon}</span>
                 {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Idioma */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.language')}</p>
+        <div className="glass-card rounded-2xl p-4">
+          <div className="grid grid-cols-2 gap-2">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={clsx(
+                  'flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
+                  language === lang.code
+                    ? 'bg-brand-subtle border-brand-border text-brand-500'
+                    : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
+                )}
+              >
+                <span>{lang.flag}</span>
+                {lang.label}
               </button>
             ))}
           </div>
