@@ -207,6 +207,27 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
   }
 }
 
+export async function uncompleteTaskInSupabase(taskId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('scheduled_tasks')
+      .update({ completed: false, completed_at: null, completion_notes: null })
+      .eq('id', taskId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error deshaciendo tarea:', error)
+  }
+}
+
+export async function deleteMeasurementFromSupabase(measurementId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('measurements').delete().eq('id', measurementId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error eliminando medicion:', error)
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────
 // MEDICIONES
 // ────────────────────────────────────────────────────────────────────

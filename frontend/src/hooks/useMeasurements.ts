@@ -1,22 +1,18 @@
 import { useMeasurementStore } from '@/store/measurementStore'
-import { enqueueSyncAction } from '@/lib/syncQueue'
+import { deleteMeasurementFromSupabase } from '@/lib/sync'
 import type { MeasurementLog } from '@/types/measurement'
 
 export function useMeasurements(plantId: string) {
-  const { logs, addLog, deleteLog } = useMeasurementStore()
+  const { logs, addLog, deleteLog: storeDeleteLog } = useMeasurementStore()
 
   const plantLogs = logs
     .filter((l) => l.plantId === plantId)
     .sort((a, b) => b.logDate.getTime() - a.logDate.getTime())
 
-  function addLogWithSync(measurement: MeasurementLog): void {
-    addLog(measurement)
-    enqueueSyncAction('addXP', {
-      userId: plantId, // Nota: esto debería ser el userId real, pero aquí va plantId como placeholder
-      amount: measurement.ec ? 10 : 5, // XP variable según tipo de medición
-      reason: `Medición registrada para planta ${plantId}`,
-    })
+  function deleteLogWithSync(id: string): void {
+    storeDeleteLog(id)
+    void deleteMeasurementFromSupabase(id)
   }
 
-  return { logs: plantLogs, addLog: addLogWithSync, deleteLog }
+  return { logs: plantLogs, addLog, deleteLog: deleteLogWithSync }
 }

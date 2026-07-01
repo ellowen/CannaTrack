@@ -23,14 +23,14 @@ import type { ScheduledTask } from '@/types/plant'
 export default function PlantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getPlantById, startFlora, harvestPlant, discardPlant } = usePlants()
+  const { getPlantById, startFlora, harvestPlant, discardPlant, reactivatePlant } = usePlants()
   const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
-  const { tasks, todayTasks, upcomingTasks, overdueTasks } = useTasks(id)
+  const { tasks, todayTasks, upcomingTasks, overdueTasks, uncompleteTask } = useTasks(id)
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -384,9 +384,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-brand-400">✅ Completada</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-3 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-elevated border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -406,9 +417,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -428,9 +450,20 @@ export default function PlantDetail() {
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
                     <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
-                    {task.completionNotes && (
-                      <span className="text-xs text-ink-4 italic truncate max-w-[180px]">"{task.completionNotes}"</span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.completionNotes && (
+                        <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
+                      )}
+                      <button
+                        onClick={() => uncompleteTask(task.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                          <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                        </svg>
+                        Deshacer
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -592,6 +625,24 @@ export default function PlantDetail() {
                 ✂️ Finalizar cultivo
               </button>
             )}
+          </section>
+        )}
+
+        {/* Reactivar planta cosechada o descartada */}
+        {(plant.status === 'harvested' || plant.status === 'discarded') && (
+          <section className="pt-2 border-t border-app-border">
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">
+              {plant.status === 'harvested' ? '🌾 Cosechada' : '🗑️ Descartada'}
+            </p>
+            <button
+              onClick={() => {
+                if (!window.confirm(`¿Reactivar "${plant.name}"? Volvera al listado de plantas activas.`)) return
+                reactivatePlant(plant.id)
+              }}
+              className="w-full py-3 rounded-2xl border border-brand-border bg-brand-subtle text-brand-400 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
+            >
+              ↩ Reactivar planta
+            </button>
           </section>
         )}
 

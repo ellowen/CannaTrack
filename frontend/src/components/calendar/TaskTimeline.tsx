@@ -24,9 +24,10 @@ interface TaskTimelineProps {
   tasks: ScheduledTask[]
   getPlantName: (id: string) => string
   onComplete?: (id: string) => void
+  onUncomplete?: (id: string) => void
 }
 
-export default function TaskTimeline({ tasks, getPlantName, onComplete }: TaskTimelineProps) {
+export default function TaskTimeline({ tasks, getPlantName, onComplete, onUncomplete }: TaskTimelineProps) {
   if (tasks.length === 0) return null
 
   const pending   = tasks.filter((t) => !t.completed)
@@ -134,8 +135,19 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete }: TaskTi
                       </button>
                     </div>
                   ) : isDone ? (
-                    <div className="flex justify-end mt-2.5">
+                    <div className="flex justify-end mt-2.5 gap-2">
                       <span className="text-[11px] font-semibold text-brand-400">Completado</span>
+                      {onUncomplete && (
+                        <button
+                          onClick={() => onUncomplete(task.id)}
+                          className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-elevated border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
+                            <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
+                          </svg>
+                          Deshacer
+                        </button>
+                      )}
                     </div>
                   ) : null}
                 </div>

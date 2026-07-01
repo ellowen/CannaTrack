@@ -10,7 +10,7 @@ import { MonthCalendar, TaskTimeline } from '@/components/calendar'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
 import { hapticLight } from '@/lib/haptics'
-import { completeTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -37,7 +37,7 @@ export default function Calendar() {
   const [animDir, setAnimDir]   = useState<'left' | 'right' | null>(null)
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
 
-  const { tasks } = useTasks()
+  const { tasks, uncompleteTask } = useTasks()
   const { completeTask } = useTaskStore()
   const { plants } = usePlants()
 
@@ -200,6 +200,10 @@ export default function Calendar() {
           onComplete={(id) => {
             hapticLight()
             setCompletingTask(selectedTasks.find((t) => t.id === id) ?? null)
+          }}
+          onUncomplete={(id) => {
+            hapticLight()
+            uncompleteTask(id)
           }}
         />
       </div>
