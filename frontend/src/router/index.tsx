@@ -15,8 +15,13 @@ import Diagnose from '@/pages/Diagnose'
 import Inventory from '@/pages/Inventory'
 import Login from '@/pages/Login'
 import SignUp from '@/pages/SignUp'
+import Landing from '@/pages/Landing'
 
 export const router = createBrowserRouter([
+  {
+    path: '/landing',
+    element: <Landing />,
+  },
   {
     path: '/login',
     element: <Login />,
