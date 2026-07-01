@@ -7,7 +7,7 @@ import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
-import { requestNotificationPermission } from '@/lib/notifications'
+import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, updatePushReminderHour } from '@/lib/notifications'
 import { Toggle } from '@/components/ui'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
@@ -50,10 +50,19 @@ export default function Profile() {
   async function handleNotifToggle() {
     if (notificationsEnabled) {
       setNotificationsEnabled(false)
+      if (user) void unsubscribeFromPush(user.id)
       return
     }
     const perm = await requestNotificationPermission()
-    if (perm === 'granted') setNotificationsEnabled(true)
+    if (perm === 'granted') {
+      setNotificationsEnabled(true)
+      if (user) void subscribeToPush(user.id, reminderHour)
+    }
+  }
+
+  function handleReminderHourChange(h: number) {
+    setReminderHour(h)
+    if (user) void updatePushReminderHour(user.id, h)
   }
 
   useEffect(() => {
@@ -457,7 +466,7 @@ export default function Profile() {
                     {REMINDER_HOURS.map((h) => (
                       <button
                         key={h}
-                        onClick={() => setReminderHour(h)}
+                        onClick={() => handleReminderHourChange(h)}
                         className={clsx(
                           'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all tap-highlight-none active:scale-90',
                           reminderHour === h
