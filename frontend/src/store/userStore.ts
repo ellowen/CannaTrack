@@ -14,6 +14,7 @@ interface UserStore {
   potVolumeLiters: number
   theme: ThemePreference
   notificationsEnabled: boolean
+  reminderHour: number
   onboarded: boolean
 
   // Gamificación
@@ -30,6 +31,7 @@ interface UserStore {
   setPotVolume: (liters: number) => void
   setTheme: (theme: ThemePreference) => void
   setNotificationsEnabled: (v: boolean) => void
+  setReminderHour: (hour: number) => void
   setOnboarded: (v: boolean) => void
   updatePreferences: (prefs: Partial<{ notificationsEnabled: boolean; onboarded: boolean }>) => void
   addXP: (base: number) => { xpGained: number; streakBonus: number; newStreak: number }
@@ -49,6 +51,7 @@ export const useUserStore = create<UserStore>()(
       potVolumeLiters: 11,
       theme: 'system',
       notificationsEnabled: false,
+      reminderHour: 9,
       onboarded: false,
       streak: 0,
       bestStreak: 0,
@@ -62,6 +65,7 @@ export const useUserStore = create<UserStore>()(
       setPotVolume: (potVolumeLiters) => set({ potVolumeLiters }),
       setTheme: (theme) => set({ theme }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
+      setReminderHour: (reminderHour) => set({ reminderHour }),
       setOnboarded: (onboarded) => set({ onboarded }),
       updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
 

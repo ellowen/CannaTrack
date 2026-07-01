@@ -8,9 +8,17 @@ import { useWeekLogStore } from '@/store/weekLogStore'
 import { useMeasurementStore } from '@/store/measurementStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
 import { clsx } from 'clsx'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  requestNotificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  updateReminderHour,
+} from '@/lib/notifications'
 
 export default function Profile() {
-  const { name, streak, bestStreak, totalXP, theme, setTheme } = useUserStore()
+  const { name, streak, bestStreak, totalXP, theme, notificationsEnabled, reminderHour, setTheme, setNotificationsEnabled, setReminderHour } = useUserStore()
+  const { user } = useAuth()
   const { tasks } = useTaskStore()
   const { plants } = usePlantStore()
   const logs = useWeekLogStore((s) => s.logs)
@@ -36,6 +44,28 @@ export default function Profile() {
   }
 
   const { unlocked, locked } = getAchievements(achievementData)
+
+  const notifBlocked = 'Notification' in window && Notification.permission === 'denied'
+
+  async function handleNotifToggle() {
+    if (notificationsEnabled) {
+      if (user) await unsubscribeFromPush(user.id)
+      setNotificationsEnabled(false)
+      return
+    }
+    const permission = await requestNotificationPermission()
+    if (permission === 'granted') {
+      if (user) await subscribeToPush(user.id, reminderHour)
+      setNotificationsEnabled(true)
+    }
+  }
+
+  async function handleReminderHourChange(hour: number) {
+    setReminderHour(hour)
+    if (user && notificationsEnabled) {
+      await updateReminderHour(user.id, hour)
+    }
+  }
 
   const totalTasks = tasks.filter((t) => {
     const d = new Date(t.scheduledDate)
@@ -233,6 +263,52 @@ export default function Profile() {
                 <span>{opt.label}</span>
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* Notificaciones */}
+        <section>
+          <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Notificaciones</h2>
+          <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0 pr-4">
+                <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
+                <p className="text-xs text-ink-3 mt-0.5">
+                  {notifBlocked
+                    ? 'Bloqueado en el navegador — habilitalo en Configuracion del sistema'
+                    : 'Recibis un aviso aunque la app este cerrada'}
+                </p>
+              </div>
+              <button
+                onClick={handleNotifToggle}
+                disabled={notifBlocked}
+                className={clsx(
+                  'relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
+                  notificationsEnabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
+                )}
+              >
+                <span className={clsx(
+                  'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                  notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                )} />
+              </button>
+            </div>
+            {notificationsEnabled && (
+              <div>
+                <p className="text-xs font-semibold text-ink-2 mb-2">Hora del recordatorio</p>
+                <select
+                  value={reminderHour}
+                  onChange={(e) => handleReminderHourChange(Number(e.target.value))}
+                  className="w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border transition-colors shadow-card"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {String(i).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </section>
 

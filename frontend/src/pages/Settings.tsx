@@ -7,7 +7,7 @@ import { useNutritionStore } from '@/store/nutritionStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
-import { requestNotificationPermission } from '@/lib/notifications'
+import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
 
 const fieldClass =
@@ -21,8 +21,8 @@ const themeOptions: { value: ThemePreference; label: string; icon: string }[] = 
 
 export default function Settings() {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
-  const { name, plan, potVolumeLiters, theme, notificationsEnabled, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
+  const { user, signOut } = useAuth()
+  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
@@ -58,11 +58,15 @@ export default function Settings() {
 
   async function handleNotifToggle() {
     if (notificationsEnabled) {
+      if (user) await unsubscribeFromPush(user.id)
       setNotificationsEnabled(false)
       return
     }
     const permission = await requestNotificationPermission()
-    if (permission === 'granted') setNotificationsEnabled(true)
+    if (permission === 'granted') {
+      if (user) await subscribeToPush(user.id, reminderHour)
+      setNotificationsEnabled(true)
+    }
   }
 
   function handleSave() {
