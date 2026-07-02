@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/i18n'
+import { useUserStore } from '@/store/userStore'
+import type { Language } from '@/i18n'
 
 // ─── Colores de la landing (siempre dark) ────────────────────────────────────
 const C = {
@@ -185,6 +187,8 @@ function PhoneMockup() {
 
 export default function Landing() {
   const { t } = useTranslation()
+  const language = useUserStore(s => s.language)
+  const setLanguage = useUserStore(s => s.setLanguage)
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [email, setEmail] = useState('')
@@ -326,7 +330,14 @@ export default function Landing() {
             {NAV_LINKS.map(l => <a key={l.href} href={l.href} className="lp-link">{l.label}</a>)}
           </nav>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Language switcher — siempre visible */}
+            <button
+              onClick={() => setLanguage((language === 'es' ? 'en' : 'es') as Language)}
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: C.ink2, fontSize: '12px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer', letterSpacing: '0.05em' }}
+            >
+              {language === 'es' ? 'EN' : 'ES'}
+            </button>
             <Link to="/login" style={{ color: C.ink2, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }} className="hidden md:block">
               {t('landing.nav_login')}
             </Link>
@@ -347,17 +358,18 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Menu mobile — compacto */}
         {menuOpen && (
-          <div style={{ background: 'rgba(5,14,7,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '16px 24px 24px' }}>
+          <div style={{ background: 'rgba(5,14,7,0.97)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 20px 12px' }}>
             {NAV_LINKS.map(l => (
               <a key={l.href} href={l.href} className="lp-link"
-                style={{ display: 'block', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ display: 'block', padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '13px' }}
                 onClick={() => setMenuOpen(false)}>{l.label}</a>
             ))}
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <Link to="/login" style={{ color: C.ink2, fontSize: '14px', textDecoration: 'none' }}>{t('landing.nav_login')}</Link>
-              <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, padding: '12px', borderRadius: '12px', textDecoration: 'none', textAlign: 'center' }}>
-                {t('landing.hero_cta')}
+            <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <Link to="/login" style={{ color: C.ink2, fontSize: '13px', textDecoration: 'none', flex: 1 }}>{t('landing.nav_login')}</Link>
+              <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '13px', padding: '9px 16px', borderRadius: '10px', textDecoration: 'none' }}>
+                {t('landing.nav_cta')}
               </Link>
             </div>
           </div>
