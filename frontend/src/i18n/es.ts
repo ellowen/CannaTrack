@@ -224,7 +224,7 @@ const es = {
   },
 
   login: {
-    title:        'CannaTrack',
+    title:        'CultiTrack',
     subtitle:     'Ingresa a tu cuenta',
     email:        'Email',
     password:     'Contrasena',
@@ -250,7 +250,7 @@ const es = {
   notifications: {
     tasks_pending_one:   '1 tarea pendiente hoy',
     tasks_pending_other: '{{count}} tareas pendientes hoy',
-    tasks_body:          'Abri CannaTrack para ver el detalle',
+    tasks_body:          'Abri CultiTrack para ver el detalle',
   },
 
   plantDetail: {
@@ -300,7 +300,7 @@ const es = {
   },
 
   onboarding: {
-    welcome:              'Bienvenido a CannaTrack',
+    welcome:              'Bienvenido a CultiTrack',
     feature_calendar:     'Calendario nutricional automatico',
     feature_reminders:    'Recordatorios de riego y nutricion',
     feature_ec:           'Registro de EC y pH con tendencias',
@@ -435,7 +435,7 @@ const es = {
     badge:             'MVP GRATUITO — DISPONIBLE AHORA',
     hero_h1_line1:     'Del brote a la cosecha,',
     hero_h1_line2:     'sin saltarte ningun paso.',
-    hero_sub:          'Registra tu planta, elegi tu tabla de nutrientes y CannaTrack genera el calendario completo automaticamente.',
+    hero_sub:          'Registra tu planta, elegi tu tabla de nutrientes y CultiTrack genera el calendario completo automaticamente.',
     hero_sub_bold:     'Cada tarea, cada dia, en tu bolsillo.',
     hero_cta:          'Empezar gratis →',
     hero_see_how:      'Ver como funciona',
@@ -460,7 +460,7 @@ const es = {
     p4_q:              '"En que semana empezo el estiramiento?"',
     p4_a:              'No tenes fotos sistematicas. La proxima cosecha vas a repetir los mismos errores porque no hay historial.',
     problem_transition:'Hay una forma mejor.',
-    problem_solution:  'CannaTrack lo resuelve con un sistema automatico.',
+    problem_solution:  'CultiTrack lo resuelve con un sistema automatico.',
 
     how_section:       'Como funciona',
     how_h2:            'De cero a calendario completo en 30 segundos',
@@ -468,7 +468,7 @@ const es = {
     step1_title:       'Registras tu planta',
     step1_desc:        'Nombre, genetica (feminizada, auto o regular), tu tabla de nutrientes preferida y la fecha de inicio. 30 segundos.',
     step2_title:       'Recibes el calendario completo',
-    step2_desc:        'CannaTrack genera mas de 60 tareas automaticamente — semana a semana, con productos, dosis, EC y pH para cada dia.',
+    step2_desc:        'CultiTrack genera mas de 60 tareas automaticamente — semana a semana, con productos, dosis, EC y pH para cada dia.',
     step3_title:       'Completas las tareas del dia',
     step3_desc:        'Abris la app, ves que toca hoy y lo marcas como hecho. Riego, nutricion, foliar, observacion: todo organizado.',
     step4_title:       'Cosechas con confianza',
@@ -492,8 +492,8 @@ const es = {
 
     b2b_badge:         'Para marcas de nutrientes',
     b2b_h2:            'Ponele tu tabla a disposicion de miles de cultivadores',
-    b2b_desc:          'CannaTrack integra tablas nutricionales de marcas oficiales. Tus usuarios reciben el protocolo exacto de tus productos, semana a semana, directo en el calendario de su cultivo.',
-    b2b_f1:            'Tu tabla disponible para todos los usuarios de CannaTrack',
+    b2b_desc:          'CultiTrack integra tablas nutricionales de marcas oficiales. Tus usuarios reciben el protocolo exacto de tus productos, semana a semana, directo en el calendario de su cultivo.',
+    b2b_f1:            'Tu tabla disponible para todos los usuarios de CultiTrack',
     b2b_f2:            'Engagement continuo con tus productos durante el ciclo completo',
     b2b_f3:            'Metricas de uso reales: que semanas, que productos, que dosis',
     b2b_f4:            'Badge "Oficial" en tu tabla dentro de la app',
@@ -546,17 +546,17 @@ const es = {
     faq1_q:            'Necesito crear una cuenta para empezar?',
     faq1_a:            'No. Podes empezar gratis sin cuenta y los datos se guardan en tu dispositivo. La cuenta es opcional y sirve para sincronizar entre dispositivos y hacer backup en la nube.',
     faq2_q:            'Funciona sin conexion a internet?',
-    faq2_a:            'Si. CannaTrack es offline-first: todos tus datos viven en el dispositivo y funcionan sin internet. Cuando recuperas conexion, se sincronizan automaticamente con la nube.',
+    faq2_a:            'Si. CultiTrack es offline-first: todos tus datos viven en el dispositivo y funcionan sin internet. Cuando recuperas conexion, se sincronizan automaticamente con la nube.',
     faq3_q:            'Es compatible con mi tabla de nutrientes?',
     faq3_a:            'La tabla REVEGETAR esta incluida en el plan Free. El plan Pro incluye TopCrop y pronto mas marcas. Tambien podes crear tu propia tabla personalizada con tus productos favoritos.',
     faq4_q:            'Puedo tener mas de una planta al mismo tiempo?',
     faq4_a:            'El plan Free permite 1 planta activa (mas el historial de plantas cosechadas o descartadas). El plan Pro da plantas ilimitadas.',
     faq5_q:            'Como funciona el calendario automatico?',
-    faq5_a:            'Registras la planta con su genetica (feminizada, auto o regular) y la tabla de nutrientes que usas. CannaTrack calcula automaticamente las semanas de vege y flora, genera todas las tareas con productos, dosis, EC y pH exactos para cada dia.',
+    faq5_a:            'Registras la planta con su genetica (feminizada, auto o regular) y la tabla de nutrientes que usas. CultiTrack calcula automaticamente las semanas de vege y flora, genera todas las tareas con productos, dosis, EC y pH exactos para cada dia.',
     faq6_q:            'Que pasa cuando cosecho la planta?',
     faq6_a:            'La marcas como cosechada y pasa a tu historial con el ciclo completo, fotos, mediciones y notas. Podes consultar ese historial cuando quieras para replicar o mejorar resultados.',
     faq7_q:            'Esta disponible como app movil?',
-    faq7_a:            'CannaTrack es una PWA (Progressive Web App). Podes instalarla desde el navegador como si fuera una app nativa — funciona en iOS y Android. Una version nativa de React Native esta en el roadmap.',
+    faq7_a:            'CultiTrack es una PWA (Progressive Web App). Podes instalarla desde el navegador como si fuera una app nativa — funciona en iOS y Android. Una version nativa de React Native esta en el roadmap.',
     faq8_q:            'Cuando sale el diagnostico por IA?',
     faq8_a:            'El diagnostico IA por foto (analisis de deficiencias, plagas y enfermedades con Claude AI) esta en desarrollo. Si te registras hoy, tenes acceso asegurado cuando salga.',
 
@@ -575,7 +575,7 @@ const es = {
     footer_login:      'Iniciar sesion',
     footer_contact:    'Contacto',
     footer_b2b:        'Marcas / B2B',
-    footer_copy:       '2024 CannaTrack. Todos los derechos reservados.',
+    footer_copy:       '2024 CultiTrack. Todos los derechos reservados.',
     footer_privacy:    'Privacidad',
     footer_terms:      'Terminos',
     footer_age:        'Solo para mayores de 18 anos',

@@ -1,4 +1,4 @@
-/** Marca de CannaTrack — hoja geometrica con arco de tracking. */
+/** Marca de CultiTrack — hoja geometrica con arco de tracking. */
 import { useTranslation } from '@/i18n'
 
 interface LogoMarkProps {
@@ -85,7 +85,7 @@ export function LogoFull({ iconSize = 48, dark = true, showTagline = false, clas
             fontFamily: 'Inter, -apple-system, sans-serif',
           }}
         >
-          Canna
+          Culti
           <span style={{ fontWeight: 800, color: '#3DCC63' }}>Track</span>
         </div>
         {showTagline && (

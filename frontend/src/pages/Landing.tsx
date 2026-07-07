@@ -266,11 +266,11 @@ export default function Landing() {
 
   const TESTIMONIALS = [
     { name: 'Martin R.', location: 'Buenos Aires', avatar: 'M', stars: 5,
-      text: 'Llevo 3 cosechas exitosas consecutivas desde que uso CannaTrack. Antes siempre se me cruzaban los dias con los nutrientes o me olvidaba el riego. Ahora abro la app y ya se exactamente que toca hacer.' },
+      text: 'Llevo 3 cosechas exitosas consecutivas desde que uso CultiTrack. Antes siempre se me cruzaban los dias con los nutrientes o me olvidaba el riego. Ahora abro la app y ya se exactamente que toca hacer.' },
     { name: 'Sofia L.', location: 'Cordoba', avatar: 'S', stars: 5,
       text: 'Lo instale y en 2 minutos tenia el calendario armado para mi White Widow con tabla REVEGETAR. Nunca mas calcule a mano. La seccion de fotos por semana me encanta para ver la evolucion.' },
     { name: 'Diego M.', location: 'Mendoza', avatar: 'D', stars: 5,
-      text: 'Tengo 3 plantas en distintos estadios y CannaTrack me dice que toca hacer en cada una cada dia. Antes vivia confundido. Ahora el proceso es limpio y sistematico. Mis plantas nunca estuvieron mejor.' },
+      text: 'Tengo 3 plantas en distintos estadios y CultiTrack me dice que toca hacer en cada una cada dia. Antes vivia confundido. Ahora el proceso es limpio y sistematico. Mis plantas nunca estuvieron mejor.' },
   ]
 
   const FAQS = [
@@ -322,7 +322,7 @@ export default function Landing() {
           <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <LogoMark size={32} />
             <span style={{ fontWeight: 800, fontSize: '17px', color: C.white, letterSpacing: '-0.3px' }}>
-              Canna<span style={{ color: C.green }}>Track</span>
+              Culti<span style={{ color: C.green }}>Track</span>
             </span>
           </a>
 
@@ -528,7 +528,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="mailto:hola@cannatrack.app?subject=Quiero listar mi tabla en CannaTrack"
+              <a href="mailto:hola@cannatrack.app?subject=Quiero listar mi tabla en CultiTrack"
                 style={{ display: 'inline-block', background: 'rgba(96,165,250,0.12)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
                 {t('landing.b2b_cta')}
               </a>
@@ -700,7 +700,7 @@ export default function Landing() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                 <LogoMark size={32} />
-                <span style={{ fontWeight: 800, fontSize: '17px', color: C.white, letterSpacing: '-0.3px' }}>Canna<span style={{ color: C.green }}>Track</span></span>
+                <span style={{ fontWeight: 800, fontSize: '17px', color: C.white, letterSpacing: '-0.3px' }}>Culti<span style={{ color: C.green }}>Track</span></span>
               </div>
               <p style={{ color: C.ink3, fontSize: '13px', maxWidth: '220px', lineHeight: 1.6, margin: 0 }}>{t('landing.footer_tagline')}</p>
             </div>
