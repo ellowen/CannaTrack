@@ -234,12 +234,16 @@ export default function Settings() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Tablas nutricionales</p>
-          <Link
-            to="/nutrition/new?returnTo=/settings"
-            className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
-          >
-            {t('settings.new_table')}
-          </Link>
+          {plan === 'pro' ? (
+            <Link
+              to="/nutrition/new?returnTo=/settings"
+              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+            >
+              {t('settings.new_table')}
+            </Link>
+          ) : (
+            <span className="text-xs text-ink-4 flex items-center gap-1">🔒 Pro</span>
+          )}
         </div>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border overflow-hidden">
           {officialTables.map((tbl) => (

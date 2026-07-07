@@ -29,6 +29,7 @@ export default function NewPlant() {
       sex: values.sex,
       startDate: new Date(year, month - 1, day),
       location: values.location,
+      growMedium: values.growMedium,
       potCount: values.potCount,
       potVolumeLiters: values.potVolumeLiters,
       nutritionTableId: values.nutritionTableId,

@@ -4,6 +4,7 @@ import { differenceInDays } from 'date-fns'
 import { usePlants } from '@/hooks/usePlants'
 import { useTaskStore } from '@/store/taskStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
+import { useUserStore } from '@/store/userStore'
 import Button from '@/components/ui/Button'
 import type { Plant, PlantStatus } from '@/types/plant'
 import { useTranslation } from '@/i18n'
@@ -24,6 +25,7 @@ export default function Inventory() {
   const { allPlants } = usePlants()
   const { tasks: allTasks } = useTaskStore()
   const logs = useWeekLogStore((s) => s.logs)
+  const plan = useUserStore((s) => s.plan)
 
   const [activeTab, setActiveTab] = useState<TabType>('active')
   const [searchQuery, setSearchQuery] = useState('')
@@ -77,6 +79,16 @@ export default function Inventory() {
 
   return (
     <div className="min-h-screen bg-app-bg pb-20">
+      {plan === 'free' && (
+        <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <span className="text-xl shrink-0">⭐</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-amber-400">Plan Pro</p>
+            <p className="text-xs text-ink-3 mt-0.5">Accede a estadisticas avanzadas, exportacion y historial completo con el plan Pro.</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="sticky top-0 z-10 bg-app-bg border-b border-app-border">
         <div className="px-5 pt-5 pb-4">

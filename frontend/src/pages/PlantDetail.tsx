@@ -172,6 +172,37 @@ export default function PlantDetail() {
           ))}
         </div>
 
+        {/* Badges: fotoperiodo (indoor) + sustrato */}
+        {(plant.location === 'indoor' || (plant.growMedium && plant.growMedium !== 'soil')) && (
+          <div className="flex flex-wrap gap-2">
+            {plant.location === 'indoor' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
+                {isFlora ? '🌙 12/12' : '☀️ 18/6'}
+              </span>
+            )}
+            {plant.growMedium === 'coco' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 glass px-3 py-1.5 rounded-xl">
+                🥥 Coco
+              </span>
+            )}
+            {plant.growMedium === 'hydro' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 glass px-3 py-1.5 rounded-xl">
+                💧 Hidro
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Callout hidroponia */}
+        {plant.growMedium === 'hydro' && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl px-4 py-3 flex gap-3 items-start">
+            <span className="text-base shrink-0">💧</span>
+            <p className="text-xs text-blue-300 leading-relaxed">
+              Monitoreá EC y pH diariamente. Cambiá el reservorio cada 7-10 dias.
+            </p>
+          </div>
+        )}
+
         {/* Notas de la planta */}
         {plant.notes && (
           <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
