@@ -26,6 +26,7 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       flora_start_date: plant.floraStartDate,
       auto_flower_total_days: plant.autoFlowerTotalDays,
       location: plant.location,
+      grow_medium: plant.growMedium ?? 'soil',
       pot_count: plant.potCount,
       pot_volume_liters: plant.potVolumeLiters,
       nutrition_table_id: plant.nutritionTableId,
@@ -61,6 +62,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[]> {
       floraStartDate: p.flora_start_date ? new Date(p.flora_start_date) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
       location: p.location,
+      growMedium: p.grow_medium ?? 'soil',
       potCount: p.pot_count,
       potVolumeLiters: p.pot_volume_liters,
       nutritionTableId: p.nutrition_table_id,
@@ -103,6 +105,7 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
       : changes.floraStartDate
     if ('notes' in changes)              row.notes = changes.notes
     if ('nutritionTableId' in changes)   row.nutrition_table_id = changes.nutritionTableId
+    if ('growMedium' in changes)         row.grow_medium = changes.growMedium
     if ('potCount' in changes)           row.pot_count = changes.potCount
     if ('potVolumeLiters' in changes)    row.pot_volume_liters = changes.potVolumeLiters
     if ('availableProducts' in changes)  row.available_products = changes.availableProducts
