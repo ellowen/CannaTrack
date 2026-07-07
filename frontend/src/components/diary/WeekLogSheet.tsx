@@ -103,7 +103,7 @@ export default function WeekLogSheet({
               >
                 {weekLabel}
               </span>
-              <p className="text-xs text-ink-3 mt-1 capitalize">{today}</p>
+              <p className="text-xs text-ink-3 mt-1 first-letter:capitalize">{today}</p>
             </div>
             <button
               onClick={onClose}

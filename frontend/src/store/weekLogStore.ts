@@ -8,6 +8,7 @@ interface WeekLogStore {
   addLog: (log: Omit<WeekLog, 'id'>) => WeekLog
   updateLog: (id: string, changes: Partial<Pick<WeekLog, 'notes' | 'photoDataUrl' | 'photoUrl'>>) => void
   deleteLog: (id: string) => void
+  setLogs: (logs: WeekLog[]) => void
 }
 
 export const useWeekLogStore = create<WeekLogStore>()(
@@ -15,9 +16,9 @@ export const useWeekLogStore = create<WeekLogStore>()(
     (set) => ({
       logs: [],
       addLog: (log) => {
-        const created: WeekLog = { ...log, id: crypto.randomUUID() }
-        set((s) => ({ logs: [...s.logs, created] }))
-        return created
+        const newLog: WeekLog = { ...log, id: crypto.randomUUID() }
+        set((s) => ({ logs: [...s.logs, newLog] }))
+        return newLog
       },
       updateLog: (id, changes) =>
         set((s) => ({
@@ -25,9 +26,10 @@ export const useWeekLogStore = create<WeekLogStore>()(
         })),
       deleteLog: (id) =>
         set((s) => ({ logs: s.logs.filter((l) => l.id !== id) })),
+      setLogs: (logs) => set({ logs }),
     }),
     {
-      name: 'cultitrack-weeklogs',
+      name: 'cannatrack-weeklogs',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

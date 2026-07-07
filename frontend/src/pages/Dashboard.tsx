@@ -5,7 +5,6 @@ import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
 import { useInitSync } from '@/hooks/useInitSync'
 import { useUserStore } from '@/store/userStore'
-import { useTaskStore } from '@/store/taskStore'
 import { PlantCard } from '@/components/plant'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
@@ -15,21 +14,37 @@ import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
 import type { ScheduledTask } from '@/types/plant'
 
-// Task type utilities
-const taskTypeIcon: Record<string, string> = {
-  nutrition: '🍃',
-  irrigation: '💧',
-  observation: '🔍',
-  foliar: '🌫️',
-  harvest: '✂️',
-}
-
 const taskTypeLabel: Record<string, string> = {
   nutrition: 'Nutrición',
   irrigation: 'Riego',
   observation: 'Observación',
   foliar: 'Foliar',
   harvest: 'Cosecha',
+}
+
+const taskTypeBg: Record<string, string> = {
+  nutrition:   'linear-gradient(135deg,#22C55E,#15803D)',
+  irrigation:  'linear-gradient(135deg,#60A5FA,#1D4ED8)',
+  observation: 'linear-gradient(135deg,#FCD34D,#B45309)',
+  foliar:      'linear-gradient(135deg,#C084FC,#7E22CE)',
+  harvest:     'linear-gradient(135deg,#F87171,#B91C1C)',
+}
+
+function TaskIcon({ type }: { type: string }) {
+  const bg = taskTypeBg[type] ?? 'linear-gradient(135deg,#52CC64,#1B6D28)'
+  const p = { viewBox: '0 0 24 24', fill: 'none', stroke: 'white', strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className: 'w-[18px] h-[18px]' }
+  const icon = {
+    nutrition:   <svg {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
+    irrigation:  <svg {...p}><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+    observation: <svg {...p}><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>,
+    foliar:      <svg {...p}><path d="M12 22V12"/><path d="M12 12c0-5 4-8 8-8 0 4-3 8-8 8z"/><path d="M12 12c0-5-4-8-8-8 0 4 3 8 8 8z"/><path d="M5 20c2-2 4.5-3 7-3"/></svg>,
+    harvest:     <svg {...p}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+  }[type] ?? <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+  return (
+    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: bg }}>
+      {icon}
+    </div>
+  )
 }
 
 // interface TaskAction {
@@ -58,8 +73,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { name, streak, totalXP, addXP } = useUserStore()
   const { plants, allPlants } = usePlants()
-  const { todayTasks } = useTasks()
-  const { completeTask } = useTaskStore()
+  const { todayTasks, completeTask } = useTasks()
 
   const [historialOpen, setHistorialOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -250,7 +264,7 @@ export default function Dashboard() {
                       className="flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <span className="text-xl">{taskTypeIcon[task.type]}</span>
+                        <TaskIcon type={task.type} />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-ink-1">
                             {taskTypeLabel[task.type]}

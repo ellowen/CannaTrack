@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogoFull } from '@/components/ui'
 
@@ -36,7 +36,9 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
-          <LogoFull iconSize={72} dark showTagline className="mb-4" />
+          <Link to="/landing">
+            <LogoFull iconSize={72} dark showTagline className="mb-4" />
+          </Link>
           <p className="text-sm text-neutral-500">Ingresa a tu cuenta</p>
         </div>
 

@@ -6,24 +6,25 @@ interface ToggleProps {
   disabled?: boolean
 }
 
-export default function Toggle({ enabled, onChange, disabled = false }: ToggleProps) {
+export default function Toggle({ enabled, onChange, disabled }: ToggleProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={enabled}
-      disabled={disabled}
       onClick={onChange}
+      disabled={disabled}
       className={clsx(
-        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors tap-highlight-none',
-        disabled ? 'opacity-40 pointer-events-none' : 'active:scale-95',
-        enabled ? 'bg-brand-400' : 'bg-app-border'
+        'relative shrink-0 w-[52px] h-[30px] rounded-full transition-colors duration-200',
+        'tap-highlight-none disabled:opacity-40 disabled:pointer-events-none',
+        enabled ? 'bg-brand-400' : 'bg-app-elevated border border-app-border-strong'
       )}
     >
       <span
         className={clsx(
-          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-          enabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+          'absolute top-[3px] left-[3px] w-6 h-6 bg-white rounded-full shadow-md',
+          'transition-transform duration-200 ease-in-out',
+          enabled ? 'translate-x-[22px]' : 'translate-x-0'
         )}
       />
     </button>

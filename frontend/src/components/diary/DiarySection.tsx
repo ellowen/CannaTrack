@@ -1,5 +1,12 @@
 import { useState } from 'react'
 import { useWeekLog } from '@/hooks/useWeekLog'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  syncWeekLogToSupabase,
+  updateWeekLogInSupabase,
+  deleteWeekLogFromSupabase,
+  uploadPhotoToStorage,
+} from '@/lib/sync'
 import type { WeekLog } from '@/types/weekLog'
 import WeekLogCard from './WeekLogCard'
 import WeekLogSheet from './WeekLogSheet'
@@ -12,13 +19,14 @@ interface DiarySectionProps {
 
 export default function DiarySection({ plantId, currentWeekLabel }: DiarySectionProps) {
   const { logs, addLog, updateLog, deleteLog } = useWeekLog(plantId)
+  const { user } = useAuth()
   const [sheetOpen, setSheetOpen]         = useState(false)
   const [editing, setEditing]             = useState<WeekLog | undefined>(undefined)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
-  // Solo entradas con foto, en orden cronológico ascendente
+  // Solo entradas con foto (local o remota), en orden cronológico ascendente
   const photosOnly = [...logs]
-    .filter((l) => l.photoDataUrl)
+    .filter((l) => l.photoDataUrl || l.photoUrl)
     .sort((a, b) => a.logDate.getTime() - b.logDate.getTime())
 
   function openNew() {
@@ -32,7 +40,7 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
   }
 
   function handleCardClick(log: WeekLog) {
-    if (log.photoDataUrl) {
+    if (log.photoDataUrl || log.photoUrl) {
       // Abrir lightbox en la foto correspondiente
       const idx = photosOnly.findIndex((p) => p.id === log.id)
       if (idx !== -1) { setLightboxIndex(idx); return }
@@ -43,30 +51,68 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
 
   function handleSave(data: { notes: string; photoDataUrl?: string }) {
     if (editing) {
-      updateLog(editing.id, data)
+      updateLog(editing.id, { notes: data.notes, photoDataUrl: data.photoDataUrl })
+      if (user) {
+        void (async () => {
+          let photoUrl: string | undefined
+          if (data.photoDataUrl && data.photoDataUrl !== editing.photoDataUrl) {
+            photoUrl = await uploadPhotoToStorage(user.id, plantId, editing.id, data.photoDataUrl) ?? undefined
+            if (photoUrl) updateLog(editing.id, { photoUrl })
+          }
+          void updateWeekLogInSupabase(editing.id, {
+            notes: data.notes,
+            photoUrl: photoUrl ?? editing.photoUrl,
+          })
+        })()
+      }
     } else {
-      addLog({
+      const newLog = addLog({
         plantId,
         weekLabel: currentWeekLabel,
         logDate: new Date(),
         notes: data.notes,
         photoDataUrl: data.photoDataUrl,
       })
+      if (user) {
+        void (async () => {
+          let logToSync = newLog
+          if (data.photoDataUrl) {
+            const photoUrl = await uploadPhotoToStorage(user.id, plantId, newLog.id, data.photoDataUrl) ?? undefined
+            if (photoUrl) {
+              updateLog(newLog.id, { photoUrl })
+              logToSync = { ...newLog, photoUrl }
+            }
+          }
+          void syncWeekLogToSupabase(logToSync, user.id)
+        })()
+      }
     }
   }
 
   function handleAddPhoto(photoDataUrl: string, logDate?: Date) {
-    addLog({
+    const newLog = addLog({
       plantId,
       weekLabel: currentWeekLabel,
       logDate: logDate || new Date(),
       notes: '',
       photoDataUrl,
     })
+    if (user) {
+      void (async () => {
+        const photoUrl = await uploadPhotoToStorage(user.id, plantId, newLog.id, photoDataUrl) ?? undefined
+        let logToSync = newLog
+        if (photoUrl) {
+          updateLog(newLog.id, { photoUrl })
+          logToSync = { ...newLog, photoUrl }
+        }
+        void syncWeekLogToSupabase(logToSync, user.id)
+      })()
+    }
   }
 
   function handleDeletePhoto(logId: string) {
     deleteLog(logId)
+    void deleteWeekLogFromSupabase(logId)
   }
 
   return (
@@ -122,7 +168,7 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
         weekLabel={editing ? editing.weekLabel : currentWeekLabel}
         existing={editing}
         onSave={handleSave}
-        onDelete={editing ? () => deleteLog(editing.id) : undefined}
+        onDelete={editing ? () => { deleteLog(editing.id); void deleteWeekLogFromSupabase(editing.id) } : undefined}
         onClose={() => setSheetOpen(false)}
       />
 

@@ -7,7 +7,7 @@ import { useTaskStore } from '@/store/taskStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
-import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, updateReminderHour } from '@/lib/notifications'
+import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, updatePushReminderHour } from '@/lib/notifications'
 import { Toggle } from '@/components/ui'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
@@ -62,7 +62,7 @@ export default function Profile() {
 
   function handleReminderHourChange(h: number) {
     setReminderHour(h)
-    if (user) void updateReminderHour(user.id, h)
+    if (user) void updatePushReminderHour(user.id, h)
   }
 
   useEffect(() => {

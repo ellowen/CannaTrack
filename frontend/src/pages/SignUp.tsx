@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const PASSWORD_MIN_LENGTH = 8
@@ -68,8 +68,8 @@ export default function SignUp() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🌿</div>
-          <h1 className="text-3xl font-bold text-green-100 mb-1">CultiTrack</h1>
+          <Link to="/landing" className="inline-block mb-3 text-5xl">🌿</Link>
+          <h1 className="text-3xl font-bold text-green-100 mb-1">CannaTrack</h1>
           <p className="text-neutral-500">Crea tu cuenta gratis</p>
         </div>
 

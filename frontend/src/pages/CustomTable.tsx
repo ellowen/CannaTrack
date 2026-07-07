@@ -5,6 +5,7 @@ import { useNutritionStore } from '@/store/nutritionStore'
 import { Button } from '@/components/ui'
 import { hapticSuccess } from '@/lib/haptics'
 import { STAGE_LABELS } from '@/types/plant'
+import { useTranslation } from '@/i18n'
 import type {
   NutritionTable,
   NutritionLine,
@@ -113,6 +114,7 @@ function cloneWeek(w: NutritionWeek): WeekDraft {
 // ─── Página ─────────────────────────────────────────────────────────────────
 
 export default function CustomTable() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const editId = params.get('edit')
@@ -214,19 +216,19 @@ export default function CustomTable() {
 
   // ─── Validación + guardar ────────────────────────────────────────────────
   function handleSave() {
-    if (!name.trim()) return setError('Ponele un nombre a la tabla')
-    if (geneticTypes.length === 0) return setError('Elegí al menos una genética soportada')
-    if (lines.length === 0) return setError('Definí al menos una línea de producto')
-    if (lines.some((l) => !l.id.trim() || !l.name.trim())) return setError('Todas las líneas necesitan id y nombre')
-    if (new Set(lines.map((l) => l.id)).size !== lines.length) return setError('Los IDs de línea deben ser únicos')
-    if (vegeWeeks.length === 0 && floraWeeks.length === 0) return setError('Agregá al menos una semana')
+    if (!name.trim()) return setError(t('customTable.val_missing_name'))
+    if (geneticTypes.length === 0) return setError(t('customTable.val_no_genetics'))
+    if (lines.length === 0) return setError(t('customTable.val_no_lines'))
+    if (lines.some((l) => !l.id.trim() || !l.name.trim())) return setError(t('customTable.val_line_incomplete'))
+    if (new Set(lines.map((l) => l.id)).size !== lines.length) return setError(t('customTable.val_duplicate_ids'))
+    if (vegeWeeks.length === 0 && floraWeeks.length === 0) return setError(t('customTable.val_no_weeks'))
 
     // Validar productos: si una semana tiene productos, que no tengan nombre vacío ni referencien una línea inexistente
     for (const w of [...vegeWeeks, ...floraWeeks]) {
       for (const p of w.products) {
         if (!p.name.trim()) return setError(`Hay un producto sin nombre en ${w.cycle === 'vege' ? 'V' : 'F'}${w.week}`)
         if (!lineIds.includes(p.line)) return setError(`El producto "${p.name}" referencia una línea que no existe`)
-        if (p.minDose < 0 || p.maxDose < 0) return setError('Las dosis no pueden ser negativas')
+        if (p.minDose < 0 || p.maxDose < 0) return setError(t('customTable.val_negative_dose'))
         if (p.minDose > p.maxDose) return setError(`Dosis mínima > máxima en "${p.name}"`)
       }
       if (w.ecMin > w.ecMax) return setError(`EC mínimo > máximo en ${w.cycle === 'vege' ? 'V' : 'F'}${w.week}`)
@@ -281,7 +283,7 @@ export default function CustomTable() {
 
   function handleDelete() {
     if (!editing) return
-    if (!confirm(`¿Eliminar la tabla "${editing.name}"? Esta acción no se puede deshacer.`)) return
+    if (!confirm(`¿Eliminar la tabla "${editing.name}"? ${t('customTable.delete_confirm')}`)) return
     removeTable(editing.id)
     navigate(returnTo)
   }
@@ -300,10 +302,10 @@ export default function CustomTable() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-ink-1 leading-tight">
-            {isEditing ? 'Editar tabla' : 'Nueva tabla nutricional'}
+            {isEditing ? t('customTable.edit_title') : t('customTable.create_title')}
           </h1>
           <p className="text-xs text-ink-3 mt-0.5">
-            {isEditing ? 'Ajustá semanas, productos o dosis' : 'Armá tu propia tabla con productos y dosis'}
+            {isEditing ? t('customTable.edit_subtitle') : t('customTable.create_subtitle')}
           </p>
         </div>
       </div>
@@ -311,21 +313,21 @@ export default function CustomTable() {
       {/* Nombre + notas */}
       <section className="space-y-3">
         <div>
-          <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-1.5">Nombre</label>
+          <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-1.5">{t('customTable.name_label')}</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej: Mi tabla casera"
+            placeholder={t('customTable.name_placeholder')}
             className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-border"
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-1.5">Notas (opcional)</label>
+          <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-1.5">{t('customTable.notes_label')}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            placeholder="Descripción, fuente, ajustes propios..."
+            placeholder={t('customTable.notes_placeholder')}
             className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-border"
           />
         </div>
@@ -333,11 +335,11 @@ export default function CustomTable() {
 
       {/* Genéticas */}
       <section>
-        <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">Genéticas soportadas</label>
+        <label className="block text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">{t('customTable.genetics_label')}</label>
         <div className="flex flex-wrap gap-2">
           {(['feminized', 'autoflower', 'regular'] as GeneticType[]).map((g) => {
             const checked = geneticTypes.includes(g)
-            const label = g === 'feminized' ? 'Feminizada' : g === 'autoflower' ? 'Autofloreciente' : 'Regular'
+            const label = g === 'feminized' ? t('customTable.genetic_feminized') : g === 'autoflower' ? t('customTable.genetic_autoflower') : t('customTable.genetic_regular')
             return (
               <button
                 key={g}
@@ -360,7 +362,7 @@ export default function CustomTable() {
       {/* Clonar (solo si no estamos editando) */}
       {!isEditing && tables.length > 0 && (
         <section className="bg-app-elevated rounded-2xl border border-app-border p-3.5">
-          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">Atajo: clonar una existente</p>
+          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">{t('customTable.clone_shortcut')}</p>
           <div className="flex flex-wrap gap-2">
             {tables.map((t) => (
               <button
@@ -379,13 +381,13 @@ export default function CustomTable() {
       {/* Líneas */}
       <section>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-bold text-ink-3 uppercase tracking-widest">Líneas de producto</label>
+          <label className="text-xs font-bold text-ink-3 uppercase tracking-widest">{t('customTable.lines_label')}</label>
           <button
             type="button"
             onClick={addLine}
             className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
           >
-            + Agregar
+            {t('customTable.add_line')}
           </button>
         </div>
         <div className="space-y-2">
@@ -394,13 +396,13 @@ export default function CustomTable() {
               <input
                 value={l.id}
                 onChange={(e) => updateLine(idx, { id: e.target.value.toUpperCase().slice(0, 8) })}
-                placeholder="ID"
+                placeholder={t('customTable.line_id_placeholder')}
                 className="w-20 rounded-lg border border-app-border bg-app-card text-ink-1 px-2 py-1.5 text-xs font-bold uppercase tabular focus:outline-none focus:ring-1 focus:ring-brand-border"
               />
               <input
                 value={l.name}
                 onChange={(e) => updateLine(idx, { name: e.target.value })}
-                placeholder="Nombre"
+                placeholder={t('customTable.line_name_placeholder')}
                 className="flex-1 min-w-0 rounded-lg border border-app-border bg-app-card text-ink-1 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-border"
               />
               <select
@@ -420,7 +422,7 @@ export default function CustomTable() {
                   type="button"
                   onClick={() => removeLine(idx)}
                   className="w-7 h-7 rounded-lg border border-app-border text-ink-4 flex items-center justify-center tap-highlight-none active:scale-95"
-                  aria-label="Eliminar línea"
+                  aria-label={t('customTable.delete_line')}
                 >
                   ×
                 </button>
@@ -432,7 +434,7 @@ export default function CustomTable() {
 
       {/* Ciclo vegetativo */}
       <WeekList
-        title="Ciclo vegetativo"
+        title={t('customTable.vege_cycle')}
         cycle="vege"
         weeks={vegeWeeks}
         lines={lines}
@@ -448,7 +450,7 @@ export default function CustomTable() {
 
       {/* Ciclo floración */}
       <WeekList
-        title="Ciclo floración"
+        title={t('customTable.flora_cycle')}
         cycle="flora"
         weeks={floraWeeks}
         lines={lines}
@@ -472,11 +474,11 @@ export default function CustomTable() {
       <div className="sticky bottom-4 flex gap-2">
         {isEditing && (
           <Button variant="danger" onClick={handleDelete} className="px-4">
-            Eliminar
+            {t('customTable.delete_button')}
           </Button>
         )}
         <Button variant="primary" onClick={handleSave} className="flex-1">
-          {isEditing ? 'Guardar cambios' : 'Crear tabla'}
+          {isEditing ? t('customTable.save_changes') : t('customTable.create_button')}
         </Button>
       </div>
     </div>
@@ -505,6 +507,7 @@ function WeekList({
   openWeek, setOpenWeek,
   onAdd, onRemove, onUpdate, onAddProduct, onUpdateProduct, onRemoveProduct,
 }: WeekListProps) {
+  const { t } = useTranslation()
   const prefix = cycle === 'vege' ? 'V' : 'F'
 
   return (
@@ -516,12 +519,12 @@ function WeekList({
           onClick={onAdd}
           className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
         >
-          + Agregar semana
+          {t('customTable.add_week')}
         </button>
       </div>
       <div className="space-y-2">
         {weeks.length === 0 && (
-          <p className="text-xs text-ink-4 italic">Sin semanas. Agregá al menos una si esta tabla aplica a este ciclo.</p>
+          <p className="text-xs text-ink-4 italic">{t('customTable.no_weeks')}</p>
         )}
         {weeks.map((w, idx) => {
           const key = `${cycle}-${idx}`
@@ -555,7 +558,7 @@ function WeekList({
                   {/* Stage + semana */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">Semana N°</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.week_number')}</p>
                       <input
                         type="number" min={0}
                         value={w.week}
@@ -564,7 +567,7 @@ function WeekList({
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">Etapa</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.stage_label')}</p>
                       <select
                         value={w.stage}
                         onChange={(e) => onUpdate(idx, { stage: e.target.value as PlantStage })}
@@ -579,7 +582,7 @@ function WeekList({
                   {/* Day start/end */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">Día inicio</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.day_start')}</p>
                       <input
                         type="number" min={0}
                         value={w.dayStart}
@@ -588,7 +591,7 @@ function WeekList({
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">Día fin</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.day_end')}</p>
                       <input
                         type="number" min={1}
                         value={w.dayEnd}
@@ -600,7 +603,7 @@ function WeekList({
                   {/* EC/pH */}
                   <div className="grid grid-cols-4 gap-2">
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">EC min</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.ec_min')}</p>
                       <input
                         type="number" step="0.1" min={0}
                         value={w.ecMin}
@@ -609,7 +612,7 @@ function WeekList({
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">EC max</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.ec_max')}</p>
                       <input
                         type="number" step="0.1" min={0}
                         value={w.ecMax}
@@ -618,7 +621,7 @@ function WeekList({
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">pH min</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.ph_min')}</p>
                       <input
                         type="number" step="0.1" min={0} max={14}
                         value={w.phMin}
@@ -627,7 +630,7 @@ function WeekList({
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">pH max</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase mb-1">{t('customTable.ph_max')}</p>
                       <input
                         type="number" step="0.1" min={0} max={14}
                         value={w.phMax}
@@ -640,25 +643,25 @@ function WeekList({
                   {/* Productos */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[10px] font-bold text-ink-4 uppercase">Productos</p>
+                      <p className="text-[10px] font-bold text-ink-4 uppercase">{t('customTable.products_label')}</p>
                       <button
                         type="button"
                         onClick={() => onAddProduct(idx)}
                         className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
                       >
-                        + Agregar
+                        {t('customTable.add_product')}
                       </button>
                     </div>
                     <div className="space-y-1.5">
                       {w.products.length === 0 && (
-                        <p className="text-xs text-ink-4 italic">Sin productos — semana de agua / limpieza.</p>
+                        <p className="text-xs text-ink-4 italic">{t('customTable.no_products')}</p>
                       )}
                       {w.products.map((p, pIdx) => (
                         <div key={pIdx} className="flex items-center gap-1.5 bg-app-elevated rounded-lg border border-app-border p-1.5">
                           <input
                             value={p.name}
                             onChange={(e) => onUpdateProduct(idx, pIdx, { name: e.target.value })}
-                            placeholder="Nombre"
+                            placeholder={t('customTable.product_name')}
                             className="flex-1 min-w-0 rounded border border-app-border bg-app-card text-ink-1 px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-border"
                           />
                           <select
@@ -695,7 +698,7 @@ function WeekList({
                             type="button"
                             onClick={() => onRemoveProduct(idx, pIdx)}
                             className="w-6 h-6 rounded border border-app-border text-ink-4 flex items-center justify-center text-sm tap-highlight-none active:scale-95"
-                            aria-label="Eliminar producto"
+                            aria-label={t('customTable.delete_product')}
                           >
                             ×
                           </button>
@@ -709,7 +712,7 @@ function WeekList({
                     onClick={() => onRemove(idx)}
                     className="w-full py-2 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold tap-highlight-none active:scale-95"
                   >
-                    Eliminar semana
+                    {t('customTable.delete_week')}
                   </button>
                 </div>
               )}

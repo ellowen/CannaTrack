@@ -7,14 +7,16 @@ import { useTasks } from '@/hooks/useTasks'
 import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
 import { useUserStore } from '@/store/userStore'
+import { useTranslation } from '@/i18n'
 
 export default function Layout() {
+  const { t } = useTranslation()
   const { animClass, locationKey } = usePageTransition()
   const navigate = useNavigate()
   const { todayTasks, overdueTasks } = useTasks()
   const pendingCount = todayTasks.filter((t) => !t.completed).length + overdueTasks.length
   const { plants } = usePlantStore()
-  const { notificationsEnabled } = useUserStore()
+  const { notificationsEnabled, reminderHour } = useUserStore()
 
   // Redirigir despues del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Layout() {
     const pending = [...todayTasks.filter((t) => !t.completed), ...overdueTasks]
     if (pending.length === 0) return
     const plantNames = pending.map((t) => plants.find((p) => p.id === t.plantId)?.name ?? '-')
-    notifyPendingTasks(pending.length, plantNames)
+    notifyPendingTasks(pending.length, plantNames, reminderHour)
   }, [notificationsEnabled])
 
   return (
@@ -45,14 +47,15 @@ export default function Layout() {
       <nav className="fixed bottom-0 left-0 right-0 z-20" style={{ transform: 'translateZ(0)' }}>
         <div className="max-w-lg mx-auto">
           <div className="glass-heavy">
-            {/* 5 tabs: Inicio | Calendario | Plantas | Diagnose | Perfil */}
             <div className="grid grid-cols-5 safe-bottom">
 
               <NavLink to="/" end className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Inicio" badge={pendingCount}>
-                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
-                      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" />
+                  <NavItem active={isActive} label={t('nav.home')} badge={pendingCount}>
+                    {/* House with door */}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                      <path d="M9 22V12h6v10"/>
                     </svg>
                   </NavItem>
                 )}
@@ -60,12 +63,16 @@ export default function Layout() {
 
               <NavLink to="/calendar" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Calendario">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} className="w-6 h-6">
-                      <rect x={3} y={4} width={18} height={18} rx={2} />
-                      <line x1={16} y1={2} x2={16} y2={6} strokeLinecap="round" />
-                      <line x1={8} y1={2} x2={8} y2={6} strokeLinecap="round" />
-                      <line x1={3} y1={10} x2={21} y2={10} />
+                  <NavItem active={isActive} label={t('nav.calendar')}>
+                    {/* Calendar with day dots */}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                      <circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/>
+                      <circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/>
+                      <circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>
                     </svg>
                   </NavItem>
                 )}
@@ -73,9 +80,11 @@ export default function Layout() {
 
               <NavLink to="/plants" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Plantas">
-                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
-                      <path d="M12 2c1 0 2 1 2 2v4c0 1-1 2-2 2s-2-1-2-2V4c0-1 1-2 2-2zm0 10c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4z" strokeLinecap="round" strokeLinejoin="round" />
+                  <NavItem active={isActive} label={t('nav.plants')}>
+                    {/* Leaf — fan shape with stem */}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+                      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
                     </svg>
                   </NavItem>
                 )}
@@ -83,10 +92,11 @@ export default function Layout() {
 
               <NavLink to="/diagnose" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Diagnose">
-                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="13" r="4" />
+                  <NavItem active={isActive} label={t('nav.photos')}>
+                    {/* Camera */}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3L14.5 4z"/>
+                      <circle cx="12" cy="13" r="3"/>
                     </svg>
                   </NavItem>
                 )}
@@ -94,10 +104,11 @@ export default function Layout() {
 
               <NavLink to="/profile" className="tap-highlight-none">
                 {({ isActive }) => (
-                  <NavItem active={isActive} label="Perfil">
-                    <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} stroke={isActive ? 'none' : 'currentColor'} strokeWidth={1.75} className="w-6 h-6">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx={12} cy={7} r={4} />
+                  <NavItem active={isActive} label={t('nav.profile')}>
+                    {/* Person */}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <circle cx="12" cy="7" r="4"/>
+                      <path d="M4 21v-1a8 8 0 0116 0v1"/>
                     </svg>
                   </NavItem>
                 )}
@@ -120,24 +131,26 @@ function NavItem({ label, icon, active, badge, children }: {
 }) {
   return (
     <div className={clsx(
-      'flex flex-col items-center pt-2.5 pb-2 gap-1 transition-colors duration-150',
+      'flex flex-col items-center pt-1.5 pb-2 gap-0.5 transition-colors duration-150',
       active ? 'text-brand-400' : 'text-ink-4'
     )}>
-      <div className="relative">
+      <div className={clsx(
+        'relative p-1.5 rounded-2xl transition-all duration-200',
+        active ? 'bg-brand-400/[0.12]' : ''
+      )}>
         {children ?? icon}
         {badge != null && badge > 0 && (
-          <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center px-0.5 leading-none">
+          <span className="absolute top-0 right-0 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center px-0.5 leading-none">
             {badge > 9 ? '9+' : badge}
           </span>
         )}
       </div>
       <span className={clsx(
-        'text-[10px] font-semibold tracking-wide',
-        active ? 'text-brand-400' : 'text-ink-4'
+        'text-[10px] tracking-wide transition-all duration-150',
+        active ? 'font-bold text-brand-400' : 'font-medium text-ink-4'
       )}>
         {label}
       </span>
-      {active && <span className="w-1 h-1 rounded-full bg-brand-400" />}
     </div>
   )
 }

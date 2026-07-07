@@ -1,27 +1,20 @@
 import { supabase } from '@/lib/auth'
 
-const LAST_NOTIF_KEY = 'cultitrack-last-notif-date'
+// REEMPLAZAR con la VAPID public key generada por:
+//   cd backend && npx web-push generate-vapid-keys
+// Luego: supabase secrets set VAPID_PUBLIC_KEY=<key> VAPID_PRIVATE_KEY=<key>
+const VAPID_PUBLIC_KEY = 'BL1SMs_4uiWUiJKIxyWmqaY4W9gITf8Idhy7uVZ5c8lMMWDudBaQ5NZ0kOTQD5stzrPqb230necYqza0AnJpP0I'
 
-/**
- * VAPID public key para Web Push.
- * REEMPLAZAR con la clave publica generada por:
- *   cd backend && npx web-push generate-vapid-keys
- * La clave privada va en Supabase secrets (NO en git):
- *   supabase secrets set VAPID_PRIVATE_KEY=<private-key>
- *   supabase secrets set VAPID_PUBLIC_KEY=<public-key>
- *   supabase secrets set VAPID_EMAIL=mailto:lucazrubio@gmail.com
- */
-export const VAPID_PUBLIC_KEY = 'REPLACE_WITH_VAPID_PUBLIC_KEY'
+const LAST_NOTIF_KEY = 'cannatrack-last-notif-date'
 
-/** Convierte una clave VAPID base64url a ArrayBuffer (requerido por pushManager.subscribe). */
+/** Convierte una VAPID public key base64url a Uint8Array para PushManager. */
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
   const rawData = atob(base64)
-  const buf = new ArrayBuffer(rawData.length)
-  const view = new Uint8Array(buf)
-  for (let i = 0; i < rawData.length; i++) view[i] = rawData.charCodeAt(i)
-  return buf
+  const buf = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i++) buf[i] = rawData.charCodeAt(i)
+  return buf.buffer
 }
 
 /** Solicita permiso de notificaciones al usuario. */
@@ -32,74 +25,97 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 /**
- * Suscribe al usuario a Web Push y guarda la suscripcion en Supabase.
- * Requiere que el SW este registrado y que el permiso este concedido.
+ * Suscribe al usuario a Web Push via VAPID y guarda la suscripcion en Supabase.
+ * Retorna true si la suscripcion se creo correctamente.
  */
-export async function subscribeToPush(userId: string, reminderHour: number): Promise<void> {
-  if (!('PushManager' in window)) return
-
-  const registration = await navigator.serviceWorker.ready
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-  })
-
-  const json = subscription.toJSON()
-  const endpoint = json.endpoint!
-  const p256dh = json.keys?.p256dh ?? ''
-  const auth = json.keys?.auth ?? ''
-
-  await supabase.from('push_subscriptions').upsert(
-    { user_id: userId, endpoint, p256dh, auth, reminder_hour: reminderHour },
-    { onConflict: 'user_id,endpoint' }
-  )
+export async function subscribeToPush(userId: string, reminderHour: number): Promise<boolean> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    })
+    const json = sub.toJSON() as {
+      endpoint: string
+      keys: { p256dh: string; auth: string }
+    }
+    const { error } = await supabase.from('push_subscriptions').upsert(
+      {
+        user_id: userId,
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+        reminder_hour: reminderHour,
+      },
+      { onConflict: 'user_id,endpoint' }
+    )
+    return !error
+  } catch {
+    return false
+  }
 }
 
 /**
- * Cancela la suscripcion Web Push y la elimina de Supabase.
+ * Cancela la suscripcion Web Push del usuario y la elimina de Supabase.
  */
 export async function unsubscribeFromPush(userId: string): Promise<void> {
-  if (!('PushManager' in window)) return
-
-  const registration = await navigator.serviceWorker.ready
-  const subscription = await registration.pushManager.getSubscription()
-  if (!subscription) return
-
-  const endpoint = subscription.endpoint
-  await subscription.unsubscribe()
-  await supabase
-    .from('push_subscriptions')
-    .delete()
-    .eq('user_id', userId)
-    .eq('endpoint', endpoint)
+  if (!('serviceWorker' in navigator)) return
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return
+    const endpoint = sub.endpoint
+    await sub.unsubscribe()
+    await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('user_id', userId)
+      .eq('endpoint', endpoint)
+  } catch {
+    // silencioso — no critico
+  }
 }
 
 /**
- * Actualiza la hora de recordatorio para todas las suscripciones activas del usuario.
+ * Actualiza la hora del recordatorio en Supabase para la suscripcion activa.
  */
-export async function updateReminderHour(userId: string, reminderHour: number): Promise<void> {
-  if (!('PushManager' in window)) return
-
-  const registration = await navigator.serviceWorker.ready
-  const subscription = await registration.pushManager.getSubscription()
-  if (!subscription) return
-
-  await supabase
-    .from('push_subscriptions')
-    .update({ reminder_hour: reminderHour })
-    .eq('user_id', userId)
-    .eq('endpoint', subscription.endpoint)
+export async function updatePushReminderHour(userId: string, hour: number): Promise<void> {
+  if (!('serviceWorker' in navigator)) return
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return
+    await supabase
+      .from('push_subscriptions')
+      .update({ reminder_hour: hour })
+      .eq('user_id', userId)
+      .eq('endpoint', sub.endpoint)
+  } catch {
+    // silencioso
+  }
 }
 
 /**
- * Muestra una notificacion de tareas pendientes si:
- * - El permiso esta concedido
- * - Hay tareas pendientes hoy
- * - No se mostro ya una notificacion hoy
+ * Devuelve true si la hora actual esta dentro de la ventana del recordatorio.
  */
-export function notifyPendingTasks(pendingCount: number, plantNames: string[]): void {
+export function isWithinReminderWindow(reminderHour: number): boolean {
+  return new Date().getHours() === reminderHour
+}
+
+/**
+ * Muestra una notificacion de tareas pendientes si el permiso esta concedido,
+ * hay tareas pendientes hoy, y la hora esta en la ventana configurada.
+ */
+export function notifyPendingTasks(
+  pendingCount: number,
+  plantNames: string[],
+  reminderHour?: number,
+): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
   if (pendingCount === 0) return
+
+  if (reminderHour !== undefined && !isWithinReminderWindow(reminderHour)) return
 
   const today = new Date().toDateString()
   if (localStorage.getItem(LAST_NOTIF_KEY) === today) return
@@ -110,14 +126,30 @@ export function notifyPendingTasks(pendingCount: number, plantNames: string[]): 
   const body = uniquePlants.slice(0, 2).join(', ') +
     (uniquePlants.length > 2 ? ` y ${uniquePlants.length - 2} mas` : '')
 
+  const options: NotificationOptions = {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-180.png',
+    tag: 'daily-tasks',
+  }
+
   try {
-    new Notification(title, {
-      body,
-      icon: '/icon.svg',
-      tag: 'daily-tasks',
-    })
+    // iOS PWA requiere showNotification via SW — new Notification() no funciona
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg) {
+          reg.showNotification(title, options)
+        } else {
+          new Notification(title, options)
+        }
+      }).catch(() => {
+        try { new Notification(title, options) } catch { /* silencioso */ }
+      })
+    } else {
+      new Notification(title, options)
+    }
   } catch {
-    // Silenciar errores en contextos donde Notification esta bloqueado
+    // silencioso
   }
 }
 

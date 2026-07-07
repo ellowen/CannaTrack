@@ -234,16 +234,12 @@ export default function Settings() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Tablas nutricionales</p>
-          {plan === 'pro' ? (
-            <Link
-              to="/nutrition/new?returnTo=/settings"
-              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
-            >
-              {t('settings.new_table')}
-            </Link>
-          ) : (
-            <span className="text-xs text-ink-4 flex items-center gap-1">🔒 Pro</span>
-          )}
+          <Link
+            to="/nutrition/new?returnTo=/settings"
+            className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+          >
+            {t('settings.new_table')}
+          </Link>
         </div>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border overflow-hidden">
           {officialTables.map((tbl) => (
@@ -396,7 +392,7 @@ export default function Settings() {
             <button
               onClick={() => {
                 if (!confirm(`¿${t('settings.delete_all_title')}? ${t('settings.delete_all_confirm')}`)) return
-                const keys = ['cultitrack-plants', 'cultitrack-tasks', 'cultitrack-weeklogs', 'cultitrack-measurements', 'cultitrack-nutrition', 'cultitrack-user', 'cultitrack-sync']
+                const keys = ['cannatrack-plants', 'cannatrack-tasks', 'cannatrack-weeklogs', 'cannatrack-measurements']
                 keys.forEach((k) => localStorage.removeItem(k))
                 window.location.reload()
               }}

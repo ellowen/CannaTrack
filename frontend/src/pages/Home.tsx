@@ -198,7 +198,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <LogoMark size={30} />
             <span className="text-sm font-light text-ink-2 tracking-tight">
-              Culti<span className="font-black text-brand-400">Track</span>
+              Canna<span className="font-black text-brand-400">Track</span>
             </span>
           </div>
         </div>

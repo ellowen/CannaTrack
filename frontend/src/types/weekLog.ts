@@ -4,6 +4,6 @@ export interface WeekLog {
   weekLabel: string
   logDate: Date
   notes: string
-  photoDataUrl?: string   // imagen embebida en base64 (offline)
-  photoUrl?: string       // URL remota en Supabase Storage (tras sync)
+  photoDataUrl?: string  // base64 local (offline)
+  photoUrl?: string      // URL publica en Supabase Storage
 }

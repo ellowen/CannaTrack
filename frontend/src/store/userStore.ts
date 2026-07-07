@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { AccessTier } from '@/types/plant'
 import { computeStreak, getLevelInfo, XP } from '@/lib/gamification'
 import { dateReviver } from '@/lib/storage'
+import type { Language } from '@/i18n'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
@@ -15,6 +16,7 @@ interface UserStore {
   theme: ThemePreference
   notificationsEnabled: boolean
   reminderHour: number
+  language: Language
   onboarded: boolean
 
   // Gamificación
@@ -32,6 +34,7 @@ interface UserStore {
   setTheme: (theme: ThemePreference) => void
   setNotificationsEnabled: (v: boolean) => void
   setReminderHour: (hour: number) => void
+  setLanguage: (lang: Language) => void
   setOnboarded: (v: boolean) => void
   updatePreferences: (prefs: Partial<{ notificationsEnabled: boolean; onboarded: boolean }>) => void
   addXP: (base: number) => { xpGained: number; streakBonus: number; newStreak: number }
@@ -52,6 +55,7 @@ export const useUserStore = create<UserStore>()(
       theme: 'system',
       notificationsEnabled: false,
       reminderHour: 9,
+      language: 'es' as Language,
       onboarded: false,
       streak: 0,
       bestStreak: 0,
@@ -66,6 +70,7 @@ export const useUserStore = create<UserStore>()(
       setTheme: (theme) => set({ theme }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setReminderHour: (reminderHour) => set({ reminderHour }),
+      setLanguage: (language) => set({ language }),
       setOnboarded: (onboarded) => set({ onboarded }),
       updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
 
@@ -98,7 +103,7 @@ export const useUserStore = create<UserStore>()(
       },
     }),
     {
-      name: 'cultitrack-user',
+      name: 'cannatrack-user',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

@@ -16,10 +16,10 @@ export default function WeekLogCard({ log, onClick }: WeekLogCardProps) {
       className="rounded-2xl border border-app-border overflow-hidden cursor-pointer active:scale-[0.987] transition-all duration-150 tap-highlight-none shadow-card hover:shadow-card-md"
     >
       {/* Photo / placeholder */}
-      {log.photoDataUrl ? (
+      {(log.photoDataUrl || log.photoUrl) ? (
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
-            src={log.photoDataUrl}
+            src={log.photoDataUrl ?? log.photoUrl}
             alt={`Semana ${log.weekLabel}`}
             className="w-full h-full object-cover"
           />
@@ -64,7 +64,7 @@ export default function WeekLogCard({ log, onClick }: WeekLogCardProps) {
         ) : (
           <p className="text-xs text-ink-4 italic">Sin notas</p>
         )}
-        {log.photoDataUrl && (
+        {(log.photoDataUrl || log.photoUrl) && (
           <p className="text-[11px] text-ink-4 mt-1">
             {format(log.logDate, "EEEE d 'de' MMMM", { locale: es })}
           </p>
