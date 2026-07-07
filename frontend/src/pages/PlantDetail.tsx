@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { format, differenceInDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -21,6 +22,7 @@ import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
 
 export default function PlantDetail() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getPlantById, startFlora, harvestPlant, discardPlant, reactivatePlant } = usePlants()
@@ -42,7 +44,7 @@ export default function PlantDetail() {
       <div className="px-4 pt-16 text-center">
         <p className="text-4xl mb-4">🔍</p>
         <p className="text-ink-3 mb-6">Planta no encontrada.</p>
-        <Button variant="secondary" onClick={() => navigate('/')}>Volver al inicio</Button>
+        <Button variant="secondary" onClick={() => navigate('/')}>{t('plantDetail.back_home')}</Button>
       </div>
     )
   }
@@ -123,7 +125,7 @@ export default function PlantDetail() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
               <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Editar
+            {t('common.edit')}
           </Link>
         </div>
 
@@ -142,13 +144,13 @@ export default function PlantDetail() {
           {daysToHarvest !== null && daysToHarvest > 0 && (
             <div className="mt-4 inline-flex items-baseline gap-1 bg-white/15 rounded-2xl px-4 py-2">
               <span className="text-3xl font-black text-white">{daysToHarvest}</span>
-              <span className="text-sm text-white/80">días para cosecha 🌸</span>
+              <span className="text-sm text-white/80">{t('plantDetail.days_to_harvest')} 🌸</span>
             </div>
           )}
           {daysToHarvest !== null && daysToHarvest <= 0 && (
             <div className="mt-4 inline-flex items-center gap-2 bg-white/15 rounded-2xl px-4 py-2">
               <span className="text-xl">✂️</span>
-              <span className="text-sm font-bold text-white">Lista para cosechar</span>
+              <span className="text-sm font-bold text-white">{t('plantDetail.ready_harvest')}</span>
             </div>
           )}
         </div>
@@ -160,8 +162,8 @@ export default function PlantDetail() {
         <div className="flex flex-wrap gap-2">
           {[
             { icon: '📅', label: format(plant.startDate, "d MMM yyyy", { locale: es }) },
-            { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? 'Indoor' : 'Outdoor' },
-            { icon: '🪴', label: `${plant.potCount} maceta${plant.potCount > 1 ? 's' : ''} · ${potLiters}L` },
+            { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor') },
+            { icon: '🪴', label: `${plant.potCount} ${plant.potCount > 1 ? t('plantDetail.pots_plural') : t('plantDetail.pots')} · ${potLiters}L` },
           ].map(({ icon, label }) => (
             <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 glass px-3 py-1.5 rounded-xl font-medium">
               <span>{icon}</span>
@@ -169,6 +171,37 @@ export default function PlantDetail() {
             </span>
           ))}
         </div>
+
+        {/* Badges: fotoperiodo (indoor) + sustrato */}
+        {(plant.location === 'indoor' || (plant.growMedium && plant.growMedium !== 'soil')) && (
+          <div className="flex flex-wrap gap-2">
+            {plant.location === 'indoor' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
+                {isFlora ? '🌙 12/12' : '☀️ 18/6'}
+              </span>
+            )}
+            {plant.growMedium === 'coco' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 glass px-3 py-1.5 rounded-xl">
+                🥥 Coco
+              </span>
+            )}
+            {plant.growMedium === 'hydro' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 glass px-3 py-1.5 rounded-xl">
+                💧 Hidro
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Callout hidroponia */}
+        {plant.growMedium === 'hydro' && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl px-4 py-3 flex gap-3 items-start">
+            <span className="text-base shrink-0">💧</span>
+            <p className="text-xs text-blue-300 leading-relaxed">
+              Monitoreá EC y pH diariamente. Cambiá el reservorio cada 7-10 dias.
+            </p>
+          </div>
+        )}
 
         {/* Notas de la planta */}
         {plant.notes && (
@@ -243,7 +276,7 @@ export default function PlantDetail() {
             <div className="flex items-start gap-3 mb-4">
               <span className="text-3xl">🌸</span>
               <div>
-                <p className="text-sm font-bold text-flora-text mb-0.5">¡Vegetativo completado!</p>
+                <p className="text-sm font-bold text-flora-text mb-0.5">{t('plantDetail.vege_complete')}</p>
                 <p className="text-sm text-ink-3">
                   {floraPickerOpen
                     ? 'Elegí la fecha en que cambiaste el fotoperiodo.'
@@ -266,7 +299,7 @@ export default function PlantDetail() {
                     className="w-full rounded-xl border border-flora-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-flora-border transition-colors shadow-card"
                   />
                   <p className="text-xs text-ink-4 mt-1.5">
-                    Podés backdatear si ya cambiaste el fotoperiodo.
+                    {t('plantDetail.flora_backdate_hint')}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -274,7 +307,7 @@ export default function PlantDetail() {
                     onClick={() => setFloraPickerOpen(false)}
                     className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-card tap-highlight-none active:scale-95 transition-all"
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={() => {
@@ -305,13 +338,13 @@ export default function PlantDetail() {
                   }}
                   className="flex-1 py-3 rounded-xl border border-flora-border text-flora-text font-bold text-sm tap-highlight-none active:scale-95 transition-all bg-app-card"
                 >
-                  Hoy
+                  {t('plantDetail.today_button')}
                 </button>
                 <button
                   onClick={() => setFloraPickerOpen(true)}
                   className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
                 >
-                  🌸 Elegir fecha
+                  🌸 {t('plantDetail.choose_date')}
                 </button>
               </div>
             )}
@@ -321,7 +354,7 @@ export default function PlantDetail() {
         {/* Vista semanal */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Esta semana</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{t('plantDetail.this_week')}</p>
             {currentWeek && (
               <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${
                 isFlora
@@ -366,7 +399,7 @@ export default function PlantDetail() {
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">{selectedDayLabel}</p>
               <span className="text-[11px] text-ink-4 font-medium">
-                {selectedDayTasks.length} tarea{selectedDayTasks.length > 1 ? 's' : ''}
+                {selectedDayTasks.length} {selectedDayTasks.length > 1 ? t('plantDetail.task_count_plural') : t('plantDetail.task_count')}
               </span>
             </div>
 
@@ -379,11 +412,11 @@ export default function PlantDetail() {
                     onClick={() => setCompletingTask(task)}
                     className="mt-2 w-full py-3 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
                   >
-                    ✓ Marcar como completada
+                    ✓ {t('plantDetail.mark_complete')}
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-brand-400">✅ Completada</span>
+                    <span className="text-sm font-semibold text-brand-400">✅ {t('plantDetail.task_completed')}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {task.completionNotes && (
                         <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
@@ -412,7 +445,7 @@ export default function PlantDetail() {
                     onClick={() => setCompletingTask(task)}
                     className="mt-2 w-full py-3 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
                   >
-                    💧 Riego completado
+                    💧 {t('plantDetail.irrigation_done')}
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
@@ -445,7 +478,7 @@ export default function PlantDetail() {
                     onClick={() => setCompletingTask(task)}
                     className="mt-2 w-full py-3 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
                   >
-                    🌫️ Foliar completado
+                    🌫️ {t('plantDetail.foliar_done')}
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
@@ -489,7 +522,7 @@ export default function PlantDetail() {
           <div className="glass-card rounded-2xl p-5 text-center">
             <p className="text-2xl mb-2">🌤️</p>
             <p className="text-sm text-ink-3">
-              {isSelectedToday ? 'Sin tareas para hoy' : 'Sin tareas este día'}
+              {isSelectedToday ? t('plantDetail.no_tasks_today') : t('plantDetail.no_tasks_day')}
             </p>
           </div>
         )}
@@ -517,8 +550,8 @@ export default function PlantDetail() {
             style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '1px solid rgba(245,158,11,0.5)' }}
           >
             <span className="flex flex-col items-center gap-0.5">
-              <span className="flex items-center gap-2 text-[15px]">🌸 Iniciar floración</span>
-              <span className="text-xs font-normal text-white/70">Cambia a ciclo 12/12 · recalcula el calendario</span>
+              <span className="flex items-center gap-2 text-[15px]">🌸 {t('plantDetail.start_flora_btn')}</span>
+              <span className="text-xs font-normal text-white/70">{t('plantDetail.start_flora_hint')}</span>
             </span>
           </button>
         )}
@@ -545,7 +578,7 @@ export default function PlantDetail() {
                 className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-colors shadow-card"
               />
               <p className="text-xs text-ink-4 mt-1.5">
-                Podés backdatear si ya cambiaste el fotoperiodo.
+                {t('plantDetail.flora_backdate_hint')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -553,7 +586,7 @@ export default function PlantDetail() {
                 onClick={() => setFloraPickerOpen(false)}
                 className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -581,7 +614,7 @@ export default function PlantDetail() {
               {/* Descartar */}
               <button
                 onClick={() => {
-                  if (!window.confirm(`¿Descartar "${plant.name}"? Esta accion no se puede deshacer.`)) return
+                  if (!window.confirm(`¿Descartar "${plant.name}"? ${t('plantDetail.discard_confirm')}`)) return
                   discardPlant(plant.id)
                   updatePlantStatusInSupabase(plant.id, 'discarded').catch(console.error)
                   navigate('/')
@@ -589,8 +622,8 @@ export default function PlantDetail() {
                 className="flex-1 py-3 rounded-2xl border border-red-900/40 bg-red-950/30 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
               >
                 <span className="text-xl">🗑️</span>
-                <span className="text-xs font-bold text-red-400">Descartar</span>
-                <span className="text-[10px] text-red-900">Murio / no sirve</span>
+                <span className="text-xs font-bold text-red-400">{t('plants.discard')}</span>
+                <span className="text-[10px] text-red-900">{t('plantDetail.discard_hint')}</span>
               </button>
 
               {/* Cosechar */}
@@ -600,8 +633,8 @@ export default function PlantDetail() {
                   className="flex-1 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
                 >
                   <span className="text-xl">🌾</span>
-                  <span className="text-xs font-bold text-amber-400">Cosechar</span>
-                  <span className="text-[10px] text-amber-700">Marcar cosechada</span>
+                  <span className="text-xs font-bold text-amber-400">{t('plants.harvest')}</span>
+                  <span className="text-[10px] text-amber-700">{t('plantDetail.harvest_hint')}</span>
                 </button>
               )}
 
@@ -611,8 +644,8 @@ export default function PlantDetail() {
                 className="flex-1 py-3 rounded-2xl border border-app-border bg-app-card flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
               >
                 <span className="text-xl">⚙️</span>
-                <span className="text-xs font-bold text-ink-3">Editar</span>
-                <span className="text-[10px] text-ink-4">Nombre, macetas...</span>
+                <span className="text-xs font-bold text-ink-3">{t('common.edit')}</span>
+                <span className="text-[10px] text-ink-4">{t('plantDetail.edit_hint')}</span>
               </Link>
             </div>
 
@@ -632,16 +665,16 @@ export default function PlantDetail() {
         {(plant.status === 'harvested' || plant.status === 'discarded') && (
           <section className="pt-2 border-t border-app-border">
             <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">
-              {plant.status === 'harvested' ? '🌾 Cosechada' : '🗑️ Descartada'}
+              {plant.status === 'harvested' ? `🌾 ${t('plantDetail.harvested_status')}` : `🗑️ ${t('plantDetail.discarded_status')}`}
             </p>
             <button
               onClick={() => {
-                if (!window.confirm(`¿Reactivar "${plant.name}"? Volvera al listado de plantas activas.`)) return
+                if (!window.confirm(`¿Reactivar "${plant.name}"? ${t('plantDetail.reactivate_confirm')}`)) return
                 reactivatePlant(plant.id)
               }}
               className="w-full py-3 rounded-2xl border border-brand-border bg-brand-subtle text-brand-400 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
             >
-              ↩ Reactivar planta
+              ↩ {t('plants.reactivate')}
             </button>
           </section>
         )}

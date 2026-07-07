@@ -108,7 +108,7 @@ export function PlantGalleryExample({ plantId }: PlantGalleryExampleProps) {
  *
  * 6. PERSISTENCIA
  *    - Todas las fotos viven en WeekLogStore
- *    - Storage: localStorage ("cannatrack-weeklogs")
+ *    - Storage: localStorage ("cultitrack-weeklogs")
  *    - Format: JSON con dateReviver para Date objects
  *    - Future: migrar a Supabase Storage
  */

@@ -32,7 +32,7 @@ export default function Onboarding() {
             🌿
           </div>
           <h1 className="text-3xl font-black text-ink-1 mb-3 leading-tight">
-            Bienvenido a<br />CannaTrack
+            Bienvenido a<br />CultiTrack
           </h1>
           <p className="text-sm text-ink-3 leading-relaxed mb-10 max-w-[280px] mx-auto">
             Tu asistente para llevar el cultivo al día — riegos, nutrientes,

@@ -2,7 +2,7 @@ import type { NutritionTable } from '../types/plant'
 
 /**
  * Tabla nutricional Top Crop.
- * Adaptada de la tabla oficial topcropfert.com al modelo CannaTrack
+ * Adaptada de la tabla oficial topcropfert.com al modelo CultiTrack
  * (vege variable + flora 8 semanas). Los rangos EC/pH son estimativos
  * y siguen las recomendaciones generales; Top Crop no los especifica
  * en la tabla pública.

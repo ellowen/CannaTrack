@@ -27,7 +27,7 @@ export const useMeasurementStore = create<MeasurementStore>()(
         })),
     }),
     {
-      name: 'cannatrack-measurements',
+      name: 'cultitrack-measurements',
       storage: {
         getItem: (key) => {
           const raw = localStorage.getItem(key)

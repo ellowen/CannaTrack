@@ -111,7 +111,7 @@ export default function MyComponent() {
 ## Storage
 
 Actual: localStorage con `WeekLogStore` (zustand + persist)
-- Clave: `cannatrack-weeklogs`
+- Clave: `cultitrack-weeklogs`
 - Formato: JSON con dateReviver
 
 Futuro: Supabase Storage

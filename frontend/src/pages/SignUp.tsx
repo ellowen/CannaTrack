@@ -69,7 +69,7 @@ export default function SignUp() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🌿</div>
-          <h1 className="text-3xl font-bold text-green-100 mb-1">CannaTrack</h1>
+          <h1 className="text-3xl font-bold text-green-100 mb-1">CultiTrack</h1>
           <p className="text-neutral-500">Crea tu cuenta gratis</p>
         </div>
 

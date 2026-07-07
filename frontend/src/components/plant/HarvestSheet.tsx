@@ -67,7 +67,7 @@ export default function HarvestSheet({
         onTouchEnd={onTouchEnd}
       >
         <div
-          className="bg-app-card rounded-t-3xl border-t border-app-border shadow-card-lg px-5 pt-4"
+          className="bg-app-card rounded-t-3xl border-t border-app-border shadow-card-lg px-5 pt-4 overflow-y-auto max-h-[90vh]"
           style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px) + 1rem)' }}
         >
           {/* Handle */}

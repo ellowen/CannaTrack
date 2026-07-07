@@ -7,6 +7,7 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
 import type { Plant } from '@/types/plant'
+import { useTranslation } from '@/i18n'
 
 const FREE_PLANT_LIMIT = 1
 
@@ -22,22 +23,22 @@ function currentWeek(plant: Plant): { label: string; num: number } {
   return { label: `V${num}`, num }
 }
 
-function harvestEstimate(plant: Plant): string | null {
+function harvestEstimate(plant: Plant, t: (key: string) => string): string | null {
   if (!plant.floraStartDate) return null
   const endDate = new Date(plant.floraStartDate)
   endDate.setDate(endDate.getDate() + 56) // 8 semanas flora
   const daysLeft = differenceInDays(endDate, new Date())
-  if (daysLeft <= 0) return 'Lista para cosechar'
+  if (daysLeft <= 0) return t('plants.harvest_ready')
   if (daysLeft === 1) return '1 dia para cosecha'
   return `${daysLeft} dias para cosecha`
 }
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
-function ActivePlantCard({ plant, pendingCount }: { plant: Plant; pendingCount: number }) {
+function ActivePlantCard({ plant, pendingCount, t }: { plant: Plant; pendingCount: number; t: (key: string) => string }) {
   const isFlora  = !!plant.floraStartDate
   const { label } = currentWeek(plant)
-  const harvest  = harvestEstimate(plant)
+  const harvest  = harvestEstimate(plant, t)
 
   const gradient = isFlora
     ? 'var(--gradient-flora-card)'
@@ -87,7 +88,7 @@ function ActivePlantCard({ plant, pendingCount }: { plant: Plant; pendingCount: 
             <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-full px-2.5 py-1">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
               <span className="text-[11px] font-black text-red-400">
-                {pendingCount} tarea{pendingCount !== 1 ? 's' : ''}
+                {pendingCount} {pendingCount === 1 ? t('plants.task') : t('plants.tasks')}
               </span>
             </div>
           )}
@@ -97,7 +98,7 @@ function ActivePlantCard({ plant, pendingCount }: { plant: Plant; pendingCount: 
   )
 }
 
-function HistoryPlantCard({ plant }: { plant: Plant }) {
+function HistoryPlantCard({ plant, t }: { plant: Plant; t: (key: string) => string }) {
   const isHarvested = plant.status === 'harvested'
   const endDate = plant.floraStartDate
     ? format(new Date(plant.floraStartDate.getTime() + 56 * 24 * 60 * 60 * 1000), 'd MMM yyyy', { locale: es })
@@ -115,7 +116,7 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
       <div className="min-w-0 flex-1">
         <h3 className="font-bold text-sm text-ink-1 truncate">{plant.name}</h3>
         <p className="text-xs text-ink-3 truncate">{plant.genetics}</p>
-        <p className="text-[11px] text-ink-4 mt-0.5">Inicio: {startStr}</p>
+        <p className="text-[11px] text-ink-4 mt-0.5">{t('plants.start_label')} {startStr}</p>
       </div>
       <div className="shrink-0 text-right">
         <span className={clsx(
@@ -124,7 +125,7 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
             ? 'bg-green-500/10 border-green-500/20 text-green-400'
             : 'bg-red-500/10 border-red-500/20 text-red-400'
         )}>
-          {isHarvested ? 'Cosechada' : 'Descartada'}
+          {isHarvested ? t('plants.status_harvested') : t('plants.status_discarded')}
         </span>
         {endDate && (
           <p className="text-[10px] text-ink-4 mt-1">{endDate}</p>
@@ -137,6 +138,7 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
 // ─── Pagina ───────────────────────────────────────────────────────────────────
 
 export default function PlantBrowser() {
+  const { t } = useTranslation()
   const plants      = usePlantStore((s) => s.plants)
   const tasks       = useTaskStore((s) => s.tasks)
   const plan        = useUserStore((s) => s.plan)
@@ -192,12 +194,12 @@ export default function PlantBrowser() {
   }, [plants, filter, search])
 
   const PILLS: { key: Filter; label: string }[] = [
-    { key: 'todas',       label: 'Todas' },
-    { key: 'activas',     label: 'Activas' },
-    { key: 'vege',        label: 'Vege' },
-    { key: 'flora',       label: 'Flora' },
-    { key: 'cosechadas',  label: 'Cosechadas' },
-    { key: 'descartadas', label: 'Descartadas' },
+    { key: 'todas',       label: t('plants.filter_all') },
+    { key: 'activas',     label: t('plants.title') },
+    { key: 'vege',        label: t('plants.filter_vege') },
+    { key: 'flora',       label: t('plants.filter_flora') },
+    { key: 'cosechadas',  label: t('plants.status_harvested') },
+    { key: 'descartadas', label: t('plants.status_discarded') },
   ]
 
   const activeFilter = ['activas', 'vege', 'flora'].includes(filter)
@@ -207,7 +209,7 @@ export default function PlantBrowser() {
       {/* Header */}
       <div className="sticky top-0 z-30 glass-heavy border-b border-app-border">
         <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-black text-ink-1">Mis plantas</h1>
+          <h1 className="text-2xl font-black text-ink-1">{t('plants.title')}</h1>
           {atFreeLimit ? (
             <button
               onClick={() => navigate('/plants/new')}
@@ -241,7 +243,7 @@ export default function PlantBrowser() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o genetica..."
+              placeholder={t('plants.search_placeholder')}
               className="flex-1 bg-transparent text-sm text-ink-1 placeholder-ink-4 outline-none min-w-0"
             />
             {search && (
@@ -294,13 +296,13 @@ export default function PlantBrowser() {
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
             <div className="text-5xl mb-4 opacity-60 float">🌱</div>
             <h2 className="text-lg font-black text-ink-1 mb-2">
-              {search ? 'Sin resultados' : 'Sin plantas'}
+              {search ? t('plants.no_results') : t('plants.no_plants')}
             </h2>
             <p className="text-sm text-ink-3 mb-6 max-w-xs leading-relaxed">
               {search
                 ? `No se encontraron plantas para "${search}"`
                 : filter === 'activas' || filter === 'todas'
-                  ? 'Crea tu primera planta para empezar el seguimiento'
+                  ? t('plants.no_plants_instruction')
                   : `No hay plantas ${filter === 'cosechadas' ? 'cosechadas' : filter === 'descartadas' ? 'descartadas' : `en ${filter}`} todavia`
               }
             </p>
@@ -309,7 +311,7 @@ export default function PlantBrowser() {
                 to="/plants/new"
                 className="px-6 py-3 rounded-2xl bg-brand-400 text-white font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
               >
-                Agregar primera planta
+                {t('plants.add_first_plant')}
               </Link>
             )}
           </div>
@@ -320,13 +322,14 @@ export default function PlantBrowser() {
                 key={plant.id}
                 plant={plant}
                 pendingCount={pendingByPlant[plant.id] ?? 0}
+                t={t}
               />
             ))}
           </div>
         ) : (
           <div className="space-y-2">
             {filtered.map(plant => (
-              <HistoryPlantCard key={plant.id} plant={plant} />
+              <HistoryPlantCard key={plant.id} plant={plant} t={t} />
             ))}
           </div>
         )}

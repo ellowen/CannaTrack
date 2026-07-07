@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/auth'
 
-const LAST_NOTIF_KEY = 'cannatrack-last-notif-date'
+const LAST_NOTIF_KEY = 'cultitrack-last-notif-date'
 
 /**
  * VAPID public key para Web Push.

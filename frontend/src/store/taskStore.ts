@@ -13,6 +13,7 @@ interface TaskStore {
   // Acciones
   addTask: (task: ScheduledTask) => void
   completeTask: (id: string, notes?: string) => void
+  uncompleteTask: (id: string) => void
   updateTask: (id: string, changes: Partial<ScheduledTask>) => void
   removeTask: (id: string) => void
   setTasks: (plantId: string, tasks: ScheduledTask[]) => void
@@ -53,6 +54,14 @@ export const useTaskStore = create<TaskStore>()(
                   completedAt: new Date(),
                   completionNotes: notes,
                 }
+              : t
+          ),
+        })),
+      uncompleteTask: (id) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === id
+              ? { ...t, completed: false, completedAt: undefined, completionNotes: undefined }
               : t
           ),
         })),
@@ -102,7 +111,7 @@ export const useTaskStore = create<TaskStore>()(
       getPendingCount: () => get().tasks.filter((t) => !t.completed).length,
     }),
     {
-      name: 'cannatrack-tasks',
+      name: 'cultitrack-tasks',
       partialize: (state) => ({ tasks: state.tasks }),
       storage: {
         getItem: (name) => {

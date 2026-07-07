@@ -30,6 +30,7 @@ export default function EditPlant() {
     sex:                 plant.sex,
     startDate:           plant.startDate.toISOString().slice(0, 10),
     location:            plant.location,
+    growMedium:          plant.growMedium ?? 'soil',
     potCount:            plant.potCount,
     potVolumeLiters:     plant.potVolumeLiters ?? 11,
     nutritionTableId:    plant.nutritionTableId,
@@ -52,6 +53,7 @@ export default function EditPlant() {
       startDate:           new Date(year, month - 1, day),
       floraStartDate:      savedFloraStart,   // preservar fecha de flora
       location:            values.location,
+      growMedium:          values.growMedium,
       potCount:            values.potCount,
       potVolumeLiters:     values.potVolumeLiters,
       nutritionTableId:    values.nutritionTableId,

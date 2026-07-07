@@ -141,9 +141,9 @@ describe('SyncService', () => {
       }
 
       const serialized = JSON.stringify(action)
-      localStorage.setItem('cannatrack-sync-test', serialized)
+      localStorage.setItem('cultitrack-sync-test', serialized)
 
-      const retrieved = JSON.parse(localStorage.getItem('cannatrack-sync-test') || '{}')
+      const retrieved = JSON.parse(localStorage.getItem('cultitrack-sync-test') || '{}')
       expect(retrieved.id).toBe('123-456')
     })
 

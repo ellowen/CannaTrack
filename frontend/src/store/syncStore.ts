@@ -58,7 +58,7 @@ export const useSyncStore = create<SyncStore>()(
       getLastSyncTime: () => get().lastSyncAt,
     }),
     {
-      name: 'cannatrack-sync',
+      name: 'cultitrack-sync',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

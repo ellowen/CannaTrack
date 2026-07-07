@@ -1,4 +1,4 @@
-/** CannaTrack Service Worker — offline + push notifications */
+/** CultiTrack Service Worker — offline + push notifications */
 
 const SHELL_CACHE  = 'ct-shell-v2'
 const STATIC_CACHE = 'ct-static-v2'
@@ -76,7 +76,7 @@ self.addEventListener('fetch', (e) => {
 // ── Push notifications ────────────────────────────────────────────────────────
 self.addEventListener('push', (e) => {
   const data  = e.data?.json() ?? {}
-  const title = data.title ?? 'CannaTrack'
+  const title = data.title ?? 'CultiTrack'
   const body  = data.body  ?? 'Tenés tareas pendientes para hoy'
   e.waitUntil(
     self.registration.showNotification(title, {

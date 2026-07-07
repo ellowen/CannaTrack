@@ -102,6 +102,7 @@ export interface Plant {
   endDate?: Date
   autoFlowerTotalDays?: number   // default 75
   location: 'indoor' | 'outdoor'
+  growMedium?: 'soil' | 'coco' | 'hydro'
   potCount: number
   potVolumeLiters?: number
   nutritionTableId: string

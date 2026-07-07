@@ -5,8 +5,8 @@ import { dateReviver } from '@/lib/storage'
 
 interface WeekLogStore {
   logs: WeekLog[]
-  addLog: (log: Omit<WeekLog, 'id'>) => void
-  updateLog: (id: string, changes: Partial<Pick<WeekLog, 'notes' | 'photoDataUrl'>>) => void
+  addLog: (log: Omit<WeekLog, 'id'>) => WeekLog
+  updateLog: (id: string, changes: Partial<Pick<WeekLog, 'notes' | 'photoDataUrl' | 'photoUrl'>>) => void
   deleteLog: (id: string) => void
 }
 
@@ -14,10 +14,11 @@ export const useWeekLogStore = create<WeekLogStore>()(
   persist(
     (set) => ({
       logs: [],
-      addLog: (log) =>
-        set((s) => ({
-          logs: [...s.logs, { ...log, id: crypto.randomUUID() }],
-        })),
+      addLog: (log) => {
+        const created: WeekLog = { ...log, id: crypto.randomUUID() }
+        set((s) => ({ logs: [...s.logs, created] }))
+        return created
+      },
       updateLog: (id, changes) =>
         set((s) => ({
           logs: s.logs.map((l) => (l.id === id ? { ...l, ...changes } : l)),
@@ -26,7 +27,7 @@ export const useWeekLogStore = create<WeekLogStore>()(
         set((s) => ({ logs: s.logs.filter((l) => l.id !== id) })),
     }),
     {
-      name: 'cannatrack-weeklogs',
+      name: 'cultitrack-weeklogs',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

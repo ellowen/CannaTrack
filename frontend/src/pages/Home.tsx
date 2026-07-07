@@ -15,6 +15,7 @@ import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils
 import { useAuth } from '@/contexts/AuthContext'
 import { LogoMark } from '@/components/ui'
 import { completeTaskInSupabase } from '@/lib/sync'
+import { useTranslation } from '@/i18n'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -70,6 +71,7 @@ function TaskIconSVG({ type, className }: { type: string; className: string }) {
 
 export default function Home() {
   useInitSync()
+  const { t } = useTranslation()
 
   const navigate  = useNavigate()
   const { name, streak, totalXP, addXP } = useUserStore()
@@ -196,7 +198,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <LogoMark size={30} />
             <span className="text-sm font-light text-ink-2 tracking-tight">
-              Canna<span className="font-black text-brand-400">Track</span>
+              Culti<span className="font-black text-brand-400">Track</span>
             </span>
           </div>
         </div>
@@ -212,7 +214,7 @@ export default function Home() {
             <span className={`text-base ${streak >= 7 ? 'streak-fire' : ''}`}>🔥</span>
             <div className="text-right">
               <p className={`text-sm font-black tabular leading-none ${streak >= 7 ? 'text-amber-500' : 'text-ink-1'}`}>{streak}</p>
-              <p className="text-[8px] font-bold text-ink-4 leading-none mt-0.5">{streak === 1 ? 'DIA' : 'DIAS'}</p>
+              <p className="text-[8px] font-bold text-ink-4 leading-none mt-0.5">{streak === 1 ? t('home.streak_day') : t('home.streak_days')}</p>
             </div>
           </div>
         </div>
@@ -277,7 +279,7 @@ export default function Home() {
                   <span className="text-sm text-red-300/80 flex-1 text-left font-medium truncate">
                     {TYPE_LABEL[task.type]} — {p?.name ?? '—'}
                   </span>
-                  <span className="text-xs text-red-500/60 shrink-0">Marcar hecho</span>
+                  <span className="text-xs text-red-500/60 shrink-0">{t('home.mark_done')}</span>
                 </button>
               )
             })}
@@ -287,7 +289,7 @@ export default function Home() {
                 className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-red-900/30 bg-black/10 tap-highlight-none"
               >
                 <span className="text-xs font-bold text-red-500/70">
-                  {overdueExpanded ? 'Ver menos' : `Ver ${overdueTasks.length - 4} mas`}
+                  {overdueExpanded ? t('home.view_less') : `Ver ${overdueTasks.length - 4} mas`}
                 </span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
                   className={`w-3 h-3 text-red-500/70 transition-transform ${overdueExpanded ? 'rotate-180' : ''}`}>
@@ -313,9 +315,9 @@ export default function Home() {
         /* Sin plantas */
         <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
           <div className="text-7xl mb-4 select-none float">🌱</div>
-          <h2 className="text-xl font-black text-ink-1 mb-2">Tu grow empieza aca</h2>
+          <h2 className="text-xl font-black text-ink-1 mb-2">{t('home.empty_title')}</h2>
           <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
-            Registra tu primera planta en 30 segundos y generamos el calendario automaticamente
+            {t('home.empty_desc')}
           </p>
           <Link
             to="/plants/new"
@@ -324,7 +326,7 @@ export default function Home() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
-            Agregar primera planta
+            {t('home.add_first_plant')}
           </Link>
         </div>
       ) : todayTasks.length === 0 && overdueTasks.length > 0 ? (
@@ -336,8 +338,8 @@ export default function Home() {
           <div className="mb-3">
             <ProgressRing progress={1} size={64} strokeWidth={5} color="var(--brand-400)" centerEmoji="🌿" />
           </div>
-          <p className="text-base font-black text-brand-400">Dia libre!</p>
-          <p className="text-xs text-ink-3 mt-1">Sin tareas programadas hoy</p>
+          <p className="text-base font-black text-brand-400">{t('home.free_day_title')}</p>
+          <p className="text-xs text-ink-3 mt-1">{t('home.free_day_subtitle')}</p>
         </div>
       ) : allDone ? (
         /* Todo al dia */
@@ -352,7 +354,7 @@ export default function Home() {
               sublabel="listas"
             />
           </div>
-          <p className="text-base font-black text-brand-400">Todo al dia!</p>
+          <p className="text-base font-black text-brand-400">{t('home.all_done_title')}</p>
           <p className="text-sm text-ink-3 mt-1">
             {done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''} hoy
           </p>
@@ -377,13 +379,13 @@ export default function Home() {
               {/* Texto + boton */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="text-base font-black text-ink-1 leading-tight">Para hacer hoy</p>
+                  <p className="text-base font-black text-ink-1 leading-tight">{t('home.pending_title')}</p>
                   {pending.length > 1 && (
                     <button
                       onClick={() => { hapticSuccess(); void handleCompleteAll() }}
                       className="shrink-0 text-xs font-black text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                     >
-                      ✓ Todo
+                      ✓ {t('home.complete_all')}
                     </button>
                   )}
                 </div>
@@ -519,7 +521,7 @@ export default function Home() {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
                         <path d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4 4 4 4"/>
                       </svg>
-                      Deshacer
+                      {t('tasks.undo')}
                     </button>
                   </div>
                 ))}
@@ -542,12 +544,12 @@ export default function Home() {
               strokeWidth={5}
               color="#F59E0B"
               label={String(nearestHarvest.days)}
-              sublabel={nearestHarvest.days === 1 ? 'dia' : 'dias'}
+              sublabel={nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">Proxima cosecha</p>
+              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{t('home.next_harvest')}</p>
               <p className="text-xl font-black text-amber-300 leading-tight">
-                {nearestHarvest.days} {nearestHarvest.days === 1 ? 'dia' : 'dias'}
+                {nearestHarvest.days} {nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
               </p>
               <p className="text-sm text-amber-500/70 truncate mt-0.5">{nearestHarvest.plant.name}</p>
               {nearestHarvest.progress && (
@@ -570,9 +572,9 @@ export default function Home() {
       {plants.length > 0 && (
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">Mis plantas</h2>
+            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">{t('home.my_plants')}</h2>
             <Link to="/plants" className="text-xs font-bold text-ink-3 tap-highlight-none">
-              Ver todas →
+              {t('home.view_all')} →
             </Link>
           </div>
 
@@ -620,7 +622,7 @@ export default function Home() {
               className="shrink-0 rounded-2xl border border-dashed border-app-border p-3.5 min-w-[100px] min-h-[110px] flex flex-col items-center justify-center tap-highlight-none active:scale-[0.97] transition-all"
             >
               <span className="text-3xl font-thin text-ink-4">+</span>
-              <span className="text-xs font-bold text-ink-4 mt-1">Nueva</span>
+              <span className="text-xs font-bold text-ink-4 mt-1">{t('home.new_plant')}</span>
             </Link>
           </div>
         </section>
@@ -677,7 +679,7 @@ export default function Home() {
             className="w-full flex items-center justify-between mb-3 tap-highlight-none"
           >
             <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">
-              Historial · {archivedPlants.length}
+              {t('home.history')} · {archivedPlants.length}
             </h2>
             <svg
               viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
@@ -708,7 +710,7 @@ export default function Home() {
                           ? 'bg-vege-bg text-vege-text border-vege-border'
                           : 'bg-app-elevated text-ink-4 border-app-border'
                       }`}>
-                        {isHarvested ? 'Cosechada' : 'Descartada'}
+                        {isHarvested ? t('plants.status_harvested') : t('plants.status_discarded')}
                       </span>
                       <p className="text-[11px] text-ink-4 mt-1">
                         {growDays}d · {format(plant.startDate, "d MMM yyyy", { locale: es })}

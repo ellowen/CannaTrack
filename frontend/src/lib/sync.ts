@@ -6,6 +6,7 @@
 
 import { supabase } from './auth'
 import type { Plant, ScheduledTask } from '@/types/plant'
+import type { WeekLog } from '@/types/weekLog'
 
 // ────────────────────────────────────────────────────────────────────
 // PLANTAS
@@ -201,6 +202,52 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
     if (error) throw error
   } catch (error) {
     console.error('Error completando tarea:', error)
+    throw error
+  }
+}
+
+export async function uncompleteTaskInSupabase(taskId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('scheduled_tasks')
+      .update({
+        completed: false,
+        completed_at: null,
+        completion_notes: null,
+      })
+      .eq('id', taskId)
+
+    if (error) throw error
+  } catch (error) {
+    console.error('Error revirtiendo tarea:', error)
+    throw error
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// DIARIO SEMANAL (fotos + notas)
+// ────────────────────────────────────────────────────────────────────
+
+export async function syncWeekLogToSupabase(log: WeekLog, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('week_logs').upsert(
+      {
+        id: log.id,
+        user_id: userId,
+        plant_id: log.plantId,
+        week_label: log.weekLabel,
+        log_date: log.logDate instanceof Date
+          ? log.logDate.toISOString().split('T')[0]
+          : log.logDate,
+        notes: log.notes,
+        photo_url: log.photoUrl ?? null,
+      },
+      { onConflict: 'id' }
+    )
+
+    if (error) throw error
+  } catch (error) {
+    console.error('Error sincronizando diario:', error)
     throw error
   }
 }

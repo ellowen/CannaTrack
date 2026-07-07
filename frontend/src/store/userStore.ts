@@ -98,7 +98,7 @@ export const useUserStore = create<UserStore>()(
       },
     }),
     {
-      name: 'cannatrack-user',
+      name: 'cultitrack-user',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

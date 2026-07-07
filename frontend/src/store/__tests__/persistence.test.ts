@@ -30,7 +30,7 @@ describe('Store Persistence', () => {
     }
 
     usePlantStore.setState({ plants: [plant] })
-    const stored = localStorage.getItem('cannatrack-plants')
+    const stored = localStorage.getItem('cultitrack-plants')
     expect(stored).toBeDefined()
     expect(stored).toContain('"name":"Test Plant"')
   })
@@ -46,7 +46,7 @@ describe('Store Persistence', () => {
       bestStreak: 10,
     })
 
-    const stored = localStorage.getItem('cannatrack-user')
+    const stored = localStorage.getItem('cultitrack-user')
     expect(stored).toBeDefined()
     expect(stored).toContain('"totalXP":250')
     expect(stored).toContain('"streak":5')
@@ -66,7 +66,7 @@ describe('Store Persistence', () => {
     }
 
     useTaskStore.setState({ tasks: [task] })
-    const stored = localStorage.getItem('cannatrack-tasks')
+    const stored = localStorage.getItem('cultitrack-tasks')
     expect(stored).toBeDefined()
     expect(stored).toContain('2026-04-24')
   })
@@ -83,7 +83,7 @@ describe('Store Persistence', () => {
       ],
     })
 
-    const stored = localStorage.getItem('cannatrack-sync')
+    const stored = localStorage.getItem('cultitrack-sync')
     expect(stored).toBeDefined()
     expect(stored).toContain('"type":"addPlant"')
   })

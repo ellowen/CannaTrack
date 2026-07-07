@@ -39,6 +39,7 @@ export interface PlantFormValues {
   sex: PlantSex
   startDate: string
   location: 'indoor' | 'outdoor'
+  growMedium: 'soil' | 'coco' | 'hydro'
   potCount: number
   potVolumeLiters: number
   nutritionTableId: string
@@ -168,6 +169,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     sex: 'unknown',
     startDate: today,
     location: 'indoor',
+    growMedium: 'soil',
     potCount: 1,
     potVolumeLiters: potVolumeLiters,
     nutritionTableId: availableTables[0]?.id ?? '',
@@ -455,6 +457,16 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             value={values.location}
             onChange={(v) => set('location', v)}
             renderLabel={(v) => (v === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor')}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Sustrato</label>
+          <ToggleGroup
+            options={['soil', 'coco', 'hydro'] as const}
+            value={values.growMedium}
+            onChange={(v) => set('growMedium', v)}
+            renderLabel={(v) => ({ soil: '🌱 Tierra', coco: '🥥 Coco', hydro: '💧 Hidro' }[v])}
           />
         </div>
 

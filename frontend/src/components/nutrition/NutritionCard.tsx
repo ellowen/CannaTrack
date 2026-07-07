@@ -3,6 +3,7 @@ import { clsx } from 'clsx'
 import type { ScheduledTask, NutritionTable } from '@/types/plant'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
+import { useUserStore } from '@/store/userStore'
 
 interface NutritionCardProps {
   task: ScheduledTask
@@ -19,6 +20,10 @@ function fmt(n: number): string {
 export default function NutritionCard({ task, potVolumeLiters, potCount = 1, table }: NutritionCardProps) {
   const defaultLiters = potVolumeLiters * potCount
   const [liters, setLiters] = useState(defaultLiters)
+  const plan = useUserStore((s) => s.plan)
+  const allProducts = task.products
+  const visibleProducts = plan === 'free' ? allProducts.slice(0, 1) : allProducts
+  const hiddenCount = allProducts.length - visibleProducts.length
 
   const weekLabel = task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`
   const isFlora   = task.cycle === 'flora'
@@ -102,9 +107,9 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1, tab
 
       {/* ── Lista de productos ─────────────────────────────── */}
       <div className="px-4 py-3.5">
-        {task.products.length > 0 ? (
+        {allProducts.length > 0 ? (
           <ul className="space-y-3">
-            {task.products.map((product) => {
+            {visibleProducts.map((product) => {
               const total    = product.maxDose * liters
               const totalMin = product.minDose * liters
               const isFixed  = product.minDose === product.maxDose
@@ -131,6 +136,12 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1, tab
                 </li>
               )
             })}
+            {hiddenCount > 0 && (
+              <li className="flex items-center gap-2 pt-1">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-ink-4 bg-app-elevated border-app-border">🔒</span>
+                <span className="text-xs text-ink-4">+{hiddenCount} producto{hiddenCount > 1 ? 's' : ''} (Plan Pro)</span>
+              </li>
+            )}
           </ul>
         ) : (
           <p className="text-sm text-ink-3 py-1 flex items-center gap-2">
@@ -141,7 +152,7 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1, tab
       </div>
 
       {/* ── Footer ─────────────────────────────────────────── */}
-      {task.products.length > 0 && (
+      {allProducts.length > 0 && (
         <div className="px-4 pb-3.5 flex items-center justify-between">
           <p className="text-[11px] text-ink-4">
             {liters !== defaultLiters

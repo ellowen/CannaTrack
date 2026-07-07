@@ -81,7 +81,7 @@ export const useNutritionStore = create<NutritionStore>()(
       },
     }),
     {
-      name: 'cannatrack-nutrition',
+      name: 'cultitrack-nutrition',
       partialize: (state) => ({
         customTables: state.customTables,
         selectedTableId: state.selectedTableId,

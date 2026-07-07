@@ -1,6 +1,6 @@
 # Sync Layer — Offline-First Synchronization
 
-CannaTrack implementa un sistema de sincronización bidireccional offline-first que mantiene los datos consistentes entre cliente y servidor Supabase, incluso cuando el dispositivo está offline.
+CultiTrack implementa un sistema de sincronización bidireccional offline-first que mantiene los datos consistentes entre cliente y servidor Supabase, incluso cuando el dispositivo está offline.
 
 ## Arquitectura
 
@@ -228,7 +228,7 @@ import { SyncStatus } from '@/components/sync/SyncStatus'
 export function Header() {
   return (
     <header>
-      <h1>CannaTrack</h1>
+      <h1>CultiTrack</h1>
       <SyncStatus /> {/* muestra pending count, último sync, errores */}
     </header>
   )

@@ -36,7 +36,7 @@ Documentación visual del flujo de sincronización offline-first.
         │   ┌──────────────────────────┐
         │   │  PERSIST TO STORAGE      │
         │   │  localStorage/AsyncStore │
-        │   │  cannatrack-sync         │
+        │   │  cultitrack-sync         │
         │   └──────────────────────────┘
         │                       │
         ↓                       ↓
@@ -217,7 +217,7 @@ Documentación visual del flujo de sincronización offline-first.
 │  │ localStorage OR  │  │
 │  │ AsyncStorage     │  │
 │  │ (encrypted)      │  │
-│  │ Key: cannatrack- │  │
+│  │ Key: cultitrack- │  │
 │  │      sync        │  │
 │  └──────────────────┘  │
 │           ↑            │

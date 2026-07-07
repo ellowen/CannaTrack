@@ -61,6 +61,11 @@ export function usePlants() {
     void updatePlantStatusInSupabase(id, 'harvested')
   }
 
+  async function reactivatePlant(id: string) {
+    updatePlant(id, { status: 'active', endDate: undefined })
+    void updatePlantStatusInSupabase(id, 'active')
+  }
+
   async function startFlora(id: string, floraStartDate: Date) {
     const plant = plants.find((p) => p.id === id)
     if (!plant) return
@@ -144,6 +149,7 @@ export function usePlants() {
     removePlant,
     discardPlant,
     harvestPlant,
+    reactivatePlant,
     startFlora,
     getPlantById,
   }

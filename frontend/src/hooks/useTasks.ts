@@ -1,11 +1,11 @@
 import { useTaskStore } from '@/store/taskStore'
 import { usePlants } from './usePlants'
 import { getTasksForDate, getUpcomingTasks, getOverdueTasks } from '@/lib/nutrition-utils'
-import { completeTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 export function useTasks(plantId?: string) {
-  const { tasks, completeTask, resetTasksForPlant } = useTaskStore()
+  const { tasks, completeTask, uncompleteTask, resetTasksForPlant } = useTaskStore()
   const { plants } = usePlants()
 
   const today = new Date()
@@ -39,12 +39,18 @@ export function useTasks(plantId?: string) {
     void completeTaskInSupabase(id, notes)
   }
 
+  function uncompleteTaskWithSync(id: string): void {
+    uncompleteTask(id)
+    void uncompleteTaskInSupabase(id)
+  }
+
   return {
     tasks: activeCycleTasks,
     todayTasks,
     upcomingTasks,
     overdueTasks,
     completeTask: completeTaskWithSync,
+    uncompleteTask: uncompleteTaskWithSync,
     resetTasksForPlant,
     getTasksForPlant,
   }

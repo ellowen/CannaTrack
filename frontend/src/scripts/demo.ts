@@ -54,7 +54,7 @@ function imprimirTarea(t: ScheduledTask, potVolLitros: number): void {
 
 const hoy = new Date()
 
-console.log('\n🌿 CannaTrack — Demo del motor nutricional')
+console.log('\n🌿 CultiTrack — Demo del motor nutricional')
 console.log('==========================================')
 
 // ── Planta 1: Feminizada con floración programada ─────────────────────────────
