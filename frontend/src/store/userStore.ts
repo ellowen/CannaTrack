@@ -4,6 +4,7 @@ import type { AccessTier } from '@/types/plant'
 import { computeStreak, getLevelInfo, XP } from '@/lib/gamification'
 import { dateReviver } from '@/lib/storage'
 import type { Language } from '@/i18n'
+import { i18n } from '@/i18n'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
@@ -70,7 +71,10 @@ export const useUserStore = create<UserStore>()(
       setTheme: (theme) => set({ theme }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setReminderHour: (reminderHour) => set({ reminderHour }),
-      setLanguage: (language) => set({ language }),
+      setLanguage: (language) => {
+        set({ language })
+        void i18n.changeLanguage(language)
+      },
       setOnboarded: (onboarded) => set({ onboarded }),
       updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
 
