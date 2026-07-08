@@ -148,6 +148,7 @@ export async function syncTasksToSupabase(tasks: ScheduledTask[]): Promise<void>
       completed: t.completed,
       completed_at: t.completedAt?.toISOString(),
       completion_notes: t.completionNotes,
+      xp_awarded: t.xpAwarded ?? false,
     }))
 
     const { error } = await supabase.from('scheduled_tasks').insert(tasksToInsert)
@@ -184,6 +185,7 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
       completed: t.completed,
       completedAt: t.completed_at ? new Date(t.completed_at) : undefined,
       completionNotes: t.completion_notes,
+      xpAwarded: t.xp_awarded ?? false,
       createdAt: new Date(t.created_at),
     })) as ScheduledTask[]
   } catch (error) {
@@ -200,6 +202,7 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
         completed: true,
         completed_at: new Date().toISOString(),
         completion_notes: notes,
+        xp_awarded: true,
       })
       .eq('id', taskId)
 
