@@ -53,6 +53,7 @@ export const useTaskStore = create<TaskStore>()(
                   completed: true,
                   completedAt: new Date(),
                   completionNotes: notes,
+                  xpAwarded: true,
                 }
               : t
           ),

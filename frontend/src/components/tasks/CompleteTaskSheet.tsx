@@ -81,23 +81,34 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
     if (e.target === e.currentTarget) onClose()
   }
 
-  function handleConfirm(skipAll = false) {
+  function handleConfirm() {
     if (!task) return
     hapticSuccess()
 
-    if (!skipAll && hasMeasure) {
+    if (hasMeasure) {
       const log = addMeasurement({ plantId: task.plantId, logDate: new Date(), ec: ecNum, ph: phNum })
       if (userId) void syncMeasurementToSupabase(log, userId)
     }
 
-    const baseXP = !skipAll && hasMeasure ? XP.COMPLETE_WITH_MEASUREMENT : XP.COMPLETE_TASK
-    const reward = addXP(baseXP)
-    setXpReward(reward)
+    onConfirm(task.id, notes.trim() || undefined)
 
-    onConfirm(task.id, skipAll ? undefined : (notes.trim() || undefined))
+    // Solo otorgar XP la primera vez que esta tarea se completa — evita
+    // farmear XP/racha completando y deshaciendo la misma tarea repetidas veces.
+    if (!task.xpAwarded) {
+      const baseXP = hasMeasure ? XP.COMPLETE_WITH_MEASUREMENT : XP.COMPLETE_TASK
+      const reward = addXP(baseXP)
+      setXpReward(reward)
+      // Resetear xpReward antes de cerrar para evitar el flash en la proxima apertura
+      setTimeout(() => { setXpReward(null); onClose() }, 1400)
+    } else {
+      onClose()
+    }
+  }
 
-    // Resetear xpReward antes de cerrar para evitar el flash en la proxima apertura
-    setTimeout(() => { setXpReward(null); onClose() }, 1400)
+  /** "Saltar" no marca la tarea como completada ni otorga XP — es un cierre sin accion. */
+  function handleSkip() {
+    hapticLight()
+    onClose()
   }
 
   if (!isOpen) return null
@@ -294,13 +305,13 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
           <div className="px-5 pt-3 pb-5 border-t border-app-border">
             <div className="flex gap-3">
               <button
-                onClick={() => { hapticLight(); handleConfirm(true) }}
+                onClick={handleSkip}
                 className="flex-1 py-3.5 rounded-2xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
               >
                 Saltar
               </button>
               <button
-                onClick={() => handleConfirm(false)}
+                onClick={handleConfirm}
                 className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
               >
                 {hasMeasure ? 'Guardar EC/pH ✓' : notes.trim() ? 'Guardar nota ✓' : 'Confirmar ✓'}

@@ -128,4 +128,5 @@ export interface ScheduledTask {
   completed: boolean
   completedAt?: Date
   completionNotes?: string
+  xpAwarded?: boolean   // true si esta tarea ya otorgo XP alguna vez (evita re-farmear con deshacer)
 }

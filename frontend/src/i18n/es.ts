@@ -186,6 +186,7 @@ const es = {
     delete_data:    'Borrar todos los datos locales',
     delete_confirm: 'Esto borra tus plantas, tareas e historial del dispositivo. Los datos en Supabase no se borran. Continuar?',
     tema_label:          'Tema',
+    language_label:      'Idioma',
     plan_section:        'Tu plan',
     plan_free_label:     'Plan Free',
     plan_pro_label:      'Plan Pro',

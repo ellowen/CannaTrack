@@ -188,6 +188,7 @@ const en: Translations = {
     delete_data:    'Delete all local data',
     delete_confirm: 'This deletes your plants, tasks and history from this device. Supabase data is not affected. Continue?',
     tema_label:          'Theme',
+    language_label:      'Language',
     plan_section:        'Your plan',
     plan_free_label:     'Free Plan',
     plan_pro_label:      'Pro Plan',

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
+import { LANGUAGES } from '@/i18n'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
@@ -25,7 +26,7 @@ export default function Settings() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { name, plan, potVolumeLiters, theme, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setNotificationsEnabled } = useUserStore()
+  const { name, plan, potVolumeLiters, theme, language, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setLanguage, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
@@ -130,6 +131,30 @@ export default function Settings() {
               >
                 <span className="text-xl">{opt.icon}</span>
                 {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Idioma */}
+      <section>
+        <div className="glass-card rounded-2xl p-4">
+          <p className="text-sm font-semibold text-ink-2 mb-3">{t('settings.language_label')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => setLanguage(lang.code)}
+                className={clsx(
+                  'flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
+                  language === lang.code
+                    ? 'bg-brand-subtle border-brand-border text-brand-500'
+                    : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
+                )}
+              >
+                <span className="text-lg">{lang.flag}</span>
+                {lang.label}
               </button>
             ))}
           </div>
