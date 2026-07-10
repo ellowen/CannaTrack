@@ -11,6 +11,9 @@ import { syncWeekLogToSupabase } from '@/lib/sync'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+/** Diagnostico por IA deshabilitado por ahora — cambiar a true para reactivar la seccion. */
+const AI_DIAGNOSIS_ENABLED: boolean = false
+
 interface DiagnosisIssue {
   name:        string
   severity:    'alta' | 'media' | 'baja'
@@ -345,7 +348,8 @@ export default function Diagnose() {
         </div>
       )}
 
-      {/* AI Diagnosis section */}
+      {/* AI Diagnosis section — oculto mientras AI_DIAGNOSIS_ENABLED sea false */}
+      {AI_DIAGNOSIS_ENABLED && (
       <div className="space-y-3 pt-1">
         <button
           onClick={() => setShowDiagnosis(v => !v)}
@@ -508,6 +512,7 @@ export default function Diagnose() {
           </div>
         )}
       </div>
+      )}
     </div>
 
     {/* Lightbox */}
