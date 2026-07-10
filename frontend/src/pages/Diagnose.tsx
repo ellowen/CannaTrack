@@ -270,7 +270,16 @@ export default function Diagnose() {
         ))}
       </div>
 
-      {/* Upload row */}
+      {/* Upload row — solo Pro */}
+      {!isPro ? (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex items-center gap-3">
+          <span className="text-xl shrink-0">🔒</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-amber-400">Fotos del cultivo — Plan Pro</p>
+            <p className="text-xs text-ink-3 mt-0.5">Actualizate a Pro para subir fotos desde la camara o galeria.</p>
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => cameraRef.current?.click()}
@@ -297,6 +306,7 @@ export default function Diagnose() {
         <input ref={cameraRef}  type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
         <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
       </div>
+      )}
 
       {/* Photo grid */}
       {plantPhotos.length === 0 ? (

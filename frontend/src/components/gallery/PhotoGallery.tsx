@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useUserStore } from '@/store/userStore'
 import type { WeekLog } from '@/types/weekLog'
 
 interface PhotoGalleryProps {
@@ -9,6 +10,7 @@ interface PhotoGalleryProps {
 
 export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const plan = useUserStore((s) => s.plan)
   const photosOnly = logs.filter((l) => l.photoDataUrl || l.photoUrl)
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -31,17 +33,25 @@ export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoG
 
   return (
     <div className="space-y-3">
-      {/* Upload button */}
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        className="w-full rounded-2xl border-2 border-dashed border-app-border p-6 text-center tap-highlight-none active:scale-[0.98] transition-all hover:border-brand-border group"
-      >
-        <p className="text-3xl mb-2">📷</p>
-        <p className="text-sm font-semibold text-ink-3 group-hover:text-ink-2 transition-colors">
-          Agregar foto
-        </p>
-        <p className="text-xs text-ink-4 mt-1">Foto semanal de tu cultivo</p>
-      </button>
+      {/* Upload button — solo Pro */}
+      {plan === 'pro' ? (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full rounded-2xl border-2 border-dashed border-app-border p-6 text-center tap-highlight-none active:scale-[0.98] transition-all hover:border-brand-border group"
+        >
+          <p className="text-3xl mb-2">📷</p>
+          <p className="text-sm font-semibold text-ink-3 group-hover:text-ink-2 transition-colors">
+            Agregar foto
+          </p>
+          <p className="text-xs text-ink-4 mt-1">Foto semanal de tu cultivo</p>
+        </button>
+      ) : (
+        <div className="w-full rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 text-center">
+          <p className="text-3xl mb-2">🔒</p>
+          <p className="text-sm font-bold text-amber-400">Fotos del cultivo — Plan Pro</p>
+          <p className="text-xs text-ink-3 mt-1">Actualizate a Pro para subir fotos semanales de tus plantas</p>
+        </div>
+      )}
 
       {/* Hidden file input */}
       <input
