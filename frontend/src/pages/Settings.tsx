@@ -12,6 +12,7 @@ import { Button, Toggle } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
+import { replaceTasksForPlantInSupabase } from '@/lib/sync'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -67,7 +68,10 @@ export default function Settings() {
     for (const plant of activePlants) {
       const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
       if (!table) continue
-      setTasks(plant.id, generatePlantSchedule(plant, table))
+      const regenerated = generatePlantSchedule(plant, table)
+      setTasks(plant.id, regenerated)
+      // Persistir en la DB (borra las viejas de la planta y sube las nuevas)
+      void replaceTasksForPlantInSupabase(plant.id, regenerated)
     }
     setRegenDone(true)
     setTimeout(() => setRegenDone(false), 3000)

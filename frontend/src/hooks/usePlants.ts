@@ -6,6 +6,7 @@ import { supabase } from '@/lib/auth'
 import {
   syncPlantToSupabase,
   syncTasksToSupabase,
+  replaceTasksForPlantInSupabase,
   updatePlantInSupabase,
   updatePlantStatusInSupabase,
 } from '@/lib/sync'
@@ -134,7 +135,8 @@ export function usePlants() {
         : table
       const tasks = generatePlantSchedule(updated, effective)
       setTasks(id, tasks)
-      void syncTasksToSupabase(tasks)
+      // Reemplazo atomico: si solo insertaramos, las tareas viejas quedan en la DB
+      void replaceTasksForPlantInSupabase(id, tasks)
     }
 
     void updatePlantInSupabase(id, data as Record<string, unknown>)

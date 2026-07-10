@@ -159,6 +159,26 @@ export async function syncTasksToSupabase(tasks: ScheduledTask[]): Promise<void>
   }
 }
 
+/**
+ * Reemplaza el calendario de una planta en Supabase: borra las tareas
+ * viejas y sube las regeneradas. Sin esto, regenerar tareas (editar
+ * planta, boton Regenerar) deja las tareas anteriores huerfanas en la
+ * DB y reaparecen duplicadas al recargar desde la nube.
+ */
+export async function replaceTasksForPlantInSupabase(plantId: string, tasks: ScheduledTask[]): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('scheduled_tasks')
+      .delete()
+      .eq('plant_id', plantId)
+    if (error) throw error
+    await syncTasksToSupabase(tasks)
+  } catch (error) {
+    console.error('Error reemplazando tareas:', error)
+    throw error
+  }
+}
+
 export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTask[]> {
   try {
     const { data, error } = await supabase
