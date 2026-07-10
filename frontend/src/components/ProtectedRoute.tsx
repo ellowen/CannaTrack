@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUserStore } from '@/store/userStore'
+import Onboarding from '@/pages/Onboarding'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -7,6 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth()
+  const onboarded = useUserStore((s) => s.onboarded)
   const location = useLocation()
 
   if (isLoading) {
@@ -21,8 +24,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/landing" state={{ from: location }} replace />
+    // Raiz -> landing (marketing). Links profundos -> login (usuario que ya tiene cuenta).
+    const target = location.pathname === '/' ? '/landing' : '/login'
+    return <Navigate to={target} state={{ from: location }} replace />
   }
+
+  // Usuario logueado que todavia no paso por el wizard de bienvenida
+  if (!onboarded) return <Onboarding />
 
   return <>{children}</>
 }

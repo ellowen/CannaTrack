@@ -9,7 +9,6 @@ import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
 import { processSyncQueue } from '@/lib/syncQueue'
 import { onOnline, onOffline, isOnline } from '@/lib/network'
-import Onboarding from '@/pages/Onboarding'
 
 function applyTheme(preference: ThemePreference) {
   const root = document.documentElement
@@ -97,8 +96,8 @@ export default function App() {
     }
   }, [])
 
-  if (!onboarded) return <Onboarding />
-
+  // El onboarding se muestra dentro de ProtectedRoute (solo usuarios logueados):
+  // las rutas publicas (landing, login, signup) nunca deben quedar tapadas por el wizard.
   return (
     <ErrorBoundary>
       <AuthProvider>
