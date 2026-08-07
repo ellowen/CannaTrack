@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seedApp, blockSupabase, gotoApp } from './helpers/seed'
+import { seedApp, blockSupabase, gotoApp, getXpAwardedCalls } from './helpers/seed'
 
 test.beforeEach(async ({ context }) => {
   await blockSupabase(context)
@@ -64,14 +64,22 @@ test.describe('Tareas: completar, XP y deshacer', () => {
     await page.getByRole('button', { name: /Confirmar/i }).click()
     await expect(page.getByText(/\+\d+ XP/)).toBeVisible()
 
+    // La RPC que otorga XP real en la DB (handle_task_completion) debe
+    // haberse llamado exactamente una vez -- no alcanza con el overlay
+    // visual, que es un sistema de XP client-only separado (ver auditoria).
+    await expect.poll(() => getXpAwardedCalls(context).length).toBe(1)
+
     // Esperar que cierre el overlay y deshacer
     await expect(page.getByText(/\+\d+ XP/)).not.toBeVisible({ timeout: 5_000 })
     await page.getByRole('button', { name: /Deshacer/i }).first().click()
 
-    // Re-completar: NO debe volver a mostrar XP (exploit cerrado)
+    // Re-completar: NO debe volver a mostrar XP ni volver a llamar la RPC
+    // (exploit de farmear XP completando/deshaciendo cerrado)
     await page.getByRole('button', { name: /Marcar como completada/i }).first().click()
     await page.getByRole('button', { name: /Confirmar/i }).click()
     await expect(page.getByText(/\+\d+ XP/)).not.toBeVisible()
+    await page.waitForTimeout(300)
+    expect(getXpAwardedCalls(context).length).toBe(1)
   })
 
   test('Saltar cierra el sheet sin completar la tarea', async ({ page, context }) => {

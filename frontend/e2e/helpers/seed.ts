@@ -70,6 +70,8 @@ interface MockState {
   tasks: Record<string, unknown>[]
   /** Si es true, /auth/v1/token responde 401 (simula sesion invalida/expirada sin refresh posible). */
   authShouldFail: boolean
+  /** task_id de cada llamada a la RPC handle_task_completion (otorgado XP), para asserts. */
+  xpAwardedCalls: string[]
 }
 
 type ContextWithMockState = BrowserContext & { __mockState?: MockState }
@@ -84,7 +86,7 @@ type ContextWithMockState = BrowserContext & { __mockState?: MockState }
  *   storage: no hay tests que dependan de datos precargados ahi).
  */
 export async function blockSupabase(context: BrowserContext): Promise<void> {
-  const state: MockState = { profile: defaultProfile(), plants: [], tasks: [], authShouldFail: false }
+  const state: MockState = { profile: defaultProfile(), plants: [], tasks: [], authShouldFail: false, xpAwardedCalls: [] }
   ;(context as ContextWithMockState).__mockState = state
 
   await context.route(`**/${SUPABASE_REF}.supabase.co/**`, (route) => {
@@ -150,10 +152,48 @@ export async function blockSupabase(context: BrowserContext): Promise<void> {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.plants) })
     }
     if (url.includes('/rest/v1/scheduled_tasks')) {
+      const method = route.request().method()
+      const idMatch = url.match(/[?&]id=eq\.([^&]+)/)
+      if (method === 'PATCH' && idMatch) {
+        const id = decodeURIComponent(idMatch[1])
+        const patch = route.request().postDataJSON() as Record<string, unknown>
+        state.tasks = state.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t))
+        const task = state.tasks.find((t) => t.id === id)
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(task ?? null) })
+      }
+      // .single() (usado por completeTaskInSupabase antes de la RPC de XP)
+      // pide un objeto, no un array — PostgREST real devuelve 406/objeto
+      // segun el Accept header; acá alcanza con detectar el filtro id=eq.
+      if (idMatch) {
+        const id = decodeURIComponent(idMatch[1])
+        const task = state.tasks.find((t) => t.id === id)
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(task ?? null) })
+      }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.tasks) })
+    }
+    if (url.includes('/rest/v1/rpc/handle_task_completion')) {
+      const body = route.request().postDataJSON() as { task_id_param: string; user_id_param: string }
+      const task = state.tasks.find((t) => t.id === body.task_id_param)
+      if (task) {
+        task.completed = true
+        task.completed_at = new Date().toISOString()
+      }
+      state.xpAwardedCalls.push(body.task_id_param)
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ xp_gained: 15, new_streak: 1 }),
+      })
     }
     return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"e2e: red bloqueada"}' })
   })
+}
+
+/** task_id de cada llamada real a la RPC handle_task_completion (otorgamiento de XP). */
+export function getXpAwardedCalls(context: BrowserContext): string[] {
+  const state = (context as ContextWithMockState).__mockState
+  if (!state) throw new Error('getXpAwardedCalls: llamar blockSupabase(context) primero')
+  return state.xpAwardedCalls
 }
 
 /** Simula una sesion invalida/expirada sin posibilidad de refresh (401 + refresh fallido). */

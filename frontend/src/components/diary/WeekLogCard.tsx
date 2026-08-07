@@ -22,6 +22,7 @@ export default function WeekLogCard({ log, onClick }: WeekLogCardProps) {
             src={log.photoDataUrl ?? log.photoUrl}
             alt={`Semana ${log.weekLabel}`}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />

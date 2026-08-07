@@ -75,6 +75,7 @@ export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoG
                   src={photo.photoDataUrl ?? photo.photoUrl}
                   alt={`Foto - ${photo.weekLabel}`}
                   className="w-full aspect-square object-cover rounded-xl border border-app-border shadow-card"
+                  loading="lazy"
                 />
                 <button
                   onClick={() => onDeletePhoto(photo.id)}

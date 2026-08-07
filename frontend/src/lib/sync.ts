@@ -216,6 +216,24 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
 
 export async function completeTaskInSupabase(taskId: string, notes?: string): Promise<void> {
   try {
+    // handle_task_completion() otorga XP real en la DB (log_xp/update_streak)
+    // y marca completed=true — pero solo la primera vez que la tarea se
+    // completa, para no farmear XP completando/deshaciendo la misma tarea.
+    const { data: existing, error: fetchError } = await supabase
+      .from('scheduled_tasks')
+      .select('xp_awarded, user_id')
+      .eq('id', taskId)
+      .single()
+    if (fetchError) throw fetchError
+
+    if (!existing.xp_awarded) {
+      const { error: rpcError } = await supabase.rpc('handle_task_completion', {
+        task_id_param: taskId,
+        user_id_param: existing.user_id,
+      })
+      if (rpcError) throw rpcError
+    }
+
     const { error } = await supabase
       .from('scheduled_tasks')
       .update({
