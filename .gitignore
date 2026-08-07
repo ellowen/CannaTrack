@@ -15,3 +15,6 @@ backend/supabase/.temp/
 supabase/.temp/
 # Scripts de prueba locales con credenciales
 frontend/test-cannatrack.mjs
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

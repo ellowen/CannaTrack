@@ -29,7 +29,7 @@ export const useWeekLogStore = create<WeekLogStore>()(
       setLogs: (logs) => set({ logs }),
     }),
     {
-      name: 'cannatrack-weeklogs',
+      name: 'cultitrack-weeklogs',
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)

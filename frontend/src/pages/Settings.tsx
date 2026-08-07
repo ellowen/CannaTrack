@@ -425,7 +425,7 @@ export default function Settings() {
             <button
               onClick={() => {
                 if (!confirm(`¿${t('settings.delete_all_title')}? ${t('settings.delete_all_confirm')}`)) return
-                const keys = ['cannatrack-plants', 'cannatrack-tasks', 'cannatrack-weeklogs', 'cannatrack-measurements']
+                const keys = ['cultitrack-plants', 'cultitrack-tasks', 'cultitrack-weeklogs', 'cultitrack-measurements']
                 keys.forEach((k) => localStorage.removeItem(k))
                 window.location.reload()
               }}

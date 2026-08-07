@@ -66,7 +66,7 @@ function mkTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask {
 // ────────────────────────────────────────────────────────────────────
 // PARTE A — RLS: anonimo no lee ni escribe
 // ────────────────────────────────────────────────────────────────────
-describe('RLS: cliente anonimo bloqueado', () => {
+describe('RLS: cliente anonimo bloqueado', { timeout: 20_000 }, () => {
   it('no puede insertar plantas', async () => {
     const { error } = await supabase.from('plants').insert([{
       id: crypto.randomUUID(),

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/auth'
 // Luego: supabase secrets set VAPID_PUBLIC_KEY=<key> VAPID_PRIVATE_KEY=<key>
 const VAPID_PUBLIC_KEY = 'BL1SMs_4uiWUiJKIxyWmqaY4W9gITf8Idhy7uVZ5c8lMMWDudBaQ5NZ0kOTQD5stzrPqb230necYqza0AnJpP0I'
 
-const LAST_NOTIF_KEY = 'cannatrack-last-notif-date'
+const LAST_NOTIF_KEY = 'cultitrack-last-notif-date'
 
 /** Convierte una VAPID public key base64url a Uint8Array para PushManager. */
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {

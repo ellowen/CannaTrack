@@ -134,12 +134,12 @@ export default function Login() {
         {/* Sign Up Link */}
         <p className="text-center text-neutral-500 text-sm mt-5">
           No tenes cuenta?{' '}
-          <button
-            onClick={() => navigate('/signup')}
+          <Link
+            to="/signup"
             className="text-green-600 hover:text-green-500 font-medium"
           >
             Registrate
-          </button>
+          </Link>
         </p>
       </div>
     </div>

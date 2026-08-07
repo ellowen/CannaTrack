@@ -1,3 +1,5 @@
+// PRIMERO: migrar claves legacy antes de que los stores rehidraten
+import './lib/storage-migration'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'

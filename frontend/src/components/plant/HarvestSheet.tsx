@@ -81,7 +81,7 @@ export default function HarvestSheet({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-app-elevated flex items-center justify-center text-ink-4 tap-highlight-none active:scale-90 transition-all"
+              aria-label="Cerrar" className="w-8 h-8 rounded-xl bg-app-elevated flex items-center justify-center text-ink-4 tap-highlight-none active:scale-90 transition-all"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                 <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />

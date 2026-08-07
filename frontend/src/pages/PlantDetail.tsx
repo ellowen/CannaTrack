@@ -112,6 +112,7 @@ export default function PlantDetail() {
         <div className="relative flex items-center justify-between mb-5">
           <button
             onClick={() => navigate(-1)}
+            aria-label="Volver"
             className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white tap-highlight-none active:scale-95 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">

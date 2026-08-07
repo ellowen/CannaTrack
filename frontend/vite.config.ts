@@ -13,5 +13,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Los specs de e2e/ son de Playwright, no de vitest
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
 })
