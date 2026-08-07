@@ -1,21 +1,27 @@
+import { lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import Layout from '@/components/ui/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Home from '@/pages/Home'
-import Dashboard from '@/pages/Dashboard'
-import NewPlant from '@/pages/NewPlant'
-import PlantDetail from '@/pages/PlantDetail'
-import EditPlant from '@/pages/EditPlant'
-import Calendar from '@/pages/Calendar'
-import Settings from '@/pages/Settings'
-import Profile from '@/pages/Profile'
-import CustomTable from '@/pages/CustomTable'
-import PlantBrowser from '@/pages/PlantBrowser'
-import Diagnose from '@/pages/Diagnose'
-import Inventory from '@/pages/Inventory'
 import Login from '@/pages/Login'
 import SignUp from '@/pages/SignUp'
 import Landing from '@/pages/Landing'
+
+// Code splitting: solo el camino critico (landing/login/signup/home) va en
+// el bundle principal. El resto de la app se carga bajo demanda — Layout
+// envuelve el <Outlet/> en un <Suspense>, asi que estas rutas muestran el
+// PageLoader mientras baja su chunk la primera vez que se visitan.
+const Dashboard    = lazy(() => import('@/pages/Dashboard'))
+const NewPlant     = lazy(() => import('@/pages/NewPlant'))
+const PlantDetail  = lazy(() => import('@/pages/PlantDetail'))
+const EditPlant    = lazy(() => import('@/pages/EditPlant'))
+const Calendar     = lazy(() => import('@/pages/Calendar'))
+const Settings     = lazy(() => import('@/pages/Settings'))
+const Profile      = lazy(() => import('@/pages/Profile'))
+const CustomTable  = lazy(() => import('@/pages/CustomTable'))
+const PlantBrowser = lazy(() => import('@/pages/PlantBrowser'))
+const Diagnose     = lazy(() => import('@/pages/Diagnose'))
+const Inventory    = lazy(() => import('@/pages/Inventory'))
 
 export const router = createBrowserRouter([
   {

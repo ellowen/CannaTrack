@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
+import { PageLoader } from '../LoadingSpinner'
 import { useTasks } from '@/hooks/useTasks'
 import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
@@ -47,7 +48,9 @@ export default function Layout() {
         ) : (
           <>
             <TrialBanner />
-            <Outlet />
+            <Suspense fallback={<PageLoader />}>
+              <Outlet />
+            </Suspense>
           </>
         )}
       </main>

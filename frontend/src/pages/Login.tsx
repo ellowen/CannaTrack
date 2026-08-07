@@ -14,7 +14,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const from = (location.state as any)?.from?.pathname || '/'
+  // Defensa contra open redirect: solo aceptar un pathname interno que
+  // empiece con "/" simple (nunca "//" o "/\" — un browser puede
+  // interpretarlos como protocol-relative y saltar a un dominio externo).
+  const rawFrom = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
+  const from = rawFrom && rawFrom.startsWith('/') && !rawFrom.startsWith('//') && !rawFrom.startsWith('/\\')
+    ? rawFrom
+    : '/'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
