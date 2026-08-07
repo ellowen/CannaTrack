@@ -584,6 +584,20 @@ const en: Translations = {
     footer_terms:      'Terms',
     footer_age:        'For adults 18+ only',
   },
+  subscription: {
+    trial_days_left:      '{{days}} days left in your free trial',
+    trial_last_day:       'Last day of your free trial',
+    expired_title:        'Your free trial has ended',
+    expired_desc:         'Subscribe to keep access to your plants, calendar and full grow history.',
+    pro_plan_title:       'Pro plan',
+    pro_feature_unlimited: 'Unlimited plants',
+    pro_feature_tables:    'All nutrition tables',
+    pro_feature_photos:    'Photos and grow diary',
+    pro_feature_history:   'Full inventory and history',
+    subscribe_cta:         'Subscribe',
+    payment_soon:          'Online payment coming very soon',
+    sign_out:              'Sign out',
+  },
 }
 
 export default en

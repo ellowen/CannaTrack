@@ -581,6 +581,20 @@ const es = {
     footer_terms:      'Terminos',
     footer_age:        'Solo para mayores de 18 anos',
   },
+  subscription: {
+    trial_days_left:      'Te quedan {{days}} dias de prueba gratis',
+    trial_last_day:       'Ultimo dia de prueba gratis',
+    expired_title:        'Tu prueba gratuita termino',
+    expired_desc:         'Suscribite para seguir accediendo a tus plantas, calendario y todo tu historial de cultivo.',
+    pro_plan_title:       'Plan Pro',
+    pro_feature_unlimited: 'Plantas ilimitadas',
+    pro_feature_tables:    'Todas las tablas nutricionales',
+    pro_feature_photos:    'Fotos y diario de cultivo',
+    pro_feature_history:   'Historial e inventario completo',
+    subscribe_cta:         'Suscribirme',
+    payment_soon:          'Pago online disponible muy pronto',
+    sign_out:              'Cerrar sesion',
+  },
 } as const
 
 export default es

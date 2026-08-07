@@ -8,6 +8,8 @@ import { usePlantStore } from '@/store/plantStore'
 import { notifyPendingTasks } from '@/lib/notifications'
 import { useUserStore } from '@/store/userStore'
 import { useTranslation } from '@/i18n'
+import { useSubscription } from '@/hooks/useSubscription'
+import { TrialBanner, TrialExpired } from '@/components/subscription/TrialGate'
 
 export default function Layout() {
   const { t } = useTranslation()
@@ -17,6 +19,7 @@ export default function Layout() {
   const pendingCount = todayTasks.filter((t) => !t.completed).length + overdueTasks.length
   const { plants } = usePlantStore()
   const { notificationsEnabled, reminderHour } = useUserStore()
+  const { isBlocked } = useSubscription()
 
   // Redirigir despues del onboarding (flag puesto por Onboarding.tsx)
   useEffect(() => {
@@ -39,7 +42,14 @@ export default function Layout() {
   return (
     <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col">
       <main key={locationKey} className={clsx('flex-1 pb-24 max-w-lg mx-auto w-full', animClass)}>
-        <Outlet />
+        {isBlocked ? (
+          <TrialExpired />
+        ) : (
+          <>
+            <TrialBanner />
+            <Outlet />
+          </>
+        )}
       </main>
 
       <InstallBanner />

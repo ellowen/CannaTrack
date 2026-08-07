@@ -27,16 +27,8 @@ export default function App() {
   const theme = useUserStore((s) => s.theme)
   const notificationsEnabled = useUserStore((s) => s.notificationsEnabled)
   const reminderHour = useUserStore((s) => s.reminderHour)
-  const onboarded = useUserStore((s) => s.onboarded)
-  const storedName = useUserStore((s) => s.name)
-  const setOnboarded = useUserStore((s) => s.setOnboarded)
   const tasks = useTaskStore((s) => s.tasks)
   const plants = usePlantStore((s) => s.plants)
-
-  // Migración síncrona: usuarios que ya tenían nombre guardado antes del campo onboarded
-  if (!onboarded && storedName && storedName !== '') {
-    setOnboarded(true)
-  }
 
   // Aplicar tema
   useEffect(() => {

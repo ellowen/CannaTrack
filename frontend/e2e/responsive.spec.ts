@@ -26,8 +26,8 @@ test('login: sin scroll horizontal, inputs y boton al alcance', async ({ page })
   expect(await hasHorizontalScroll(page)).toBe(false)
 })
 
-test('home: sin scroll horizontal y nav inferior visible', async ({ page }) => {
-  await seedApp(page, { plants: [{ name: 'Gelato' }], tasksToday: true })
+test('home: sin scroll horizontal y nav inferior visible', async ({ page, context }) => {
+  await seedApp(page, context, { plants: [{ name: 'Gelato' }], tasksToday: true })
   await gotoApp(page, '/')
   await expect(page.getByText(/Tester/)).toBeVisible()
   expect(await hasHorizontalScroll(page)).toBe(false)
@@ -35,15 +35,15 @@ test('home: sin scroll horizontal y nav inferior visible', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Perfil/i })).toBeVisible()
 })
 
-test('detalle de planta: sin scroll horizontal', async ({ page }) => {
-  await seedApp(page, { plants: [{ id: 'p1', growMedium: 'hydro' }], tasksToday: true })
+test('detalle de planta: sin scroll horizontal', async ({ page, context }) => {
+  await seedApp(page, context, { plants: [{ id: 'p1', growMedium: 'hydro' }], tasksToday: true })
   await gotoApp(page, '/plants/p1')
   await expect(page.getByText('Hidro')).toBeVisible()
   expect(await hasHorizontalScroll(page)).toBe(false)
 })
 
-test('harvest sheet: el boton confirmar queda dentro del viewport', async ({ page }) => {
-  await seedApp(page, { plants: [{ id: 'p1' }] })
+test('harvest sheet: el boton confirmar queda dentro del viewport', async ({ page, context }) => {
+  await seedApp(page, context, { plants: [{ id: 'p1' }] })
   await gotoApp(page, '/plants/p1')
   await page.getByRole('button', { name: /Finalizar cultivo/i }).click()
   const confirm = page.getByRole('button', { name: /Confirmar cosecha/i })
@@ -57,8 +57,8 @@ test('harvest sheet: el boton confirmar queda dentro del viewport', async ({ pag
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height + 1)
 })
 
-test('settings: sin scroll horizontal, controles usables', async ({ page }) => {
-  await seedApp(page)
+test('settings: sin scroll horizontal, controles usables', async ({ page, context }) => {
+  await seedApp(page, context)
   await gotoApp(page, '/settings')
   await expect(page.getByText('Idioma')).toBeVisible()
   expect(await hasHorizontalScroll(page)).toBe(false)

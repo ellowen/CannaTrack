@@ -13,6 +13,7 @@ import { clsx } from 'clsx'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
 import { replaceTasksForPlantInSupabase } from '@/lib/sync'
+import { useSubscription } from '@/hooks/useSubscription'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -33,6 +34,7 @@ export default function Settings() {
   const { tables, removeTable } = useNutritionStore()
   const customTables = tables.filter((tbl) => !tbl.isOfficial)
   const officialTables = tables.filter((tbl) => tbl.isOfficial)
+  const subscription = useSubscription()
   const [signingOut, setSigningOut] = useState(false)
   const [usernameInput, setUsernameInput] = useState('')
   const [usernameSaving, setUsernameSaving] = useState(false)
@@ -179,6 +181,13 @@ export default function Settings() {
                   ? t('settings.plan_free_desc')
                   : t('settings.plan_pro_desc')}
               </p>
+              {subscription.state === 'trialing' && (
+                <p className="text-xs text-amber-500 font-semibold mt-1">
+                  {subscription.trialDaysLeft === 1
+                    ? t('subscription.trial_last_day')
+                    : t('subscription.trial_days_left', { days: subscription.trialDaysLeft })}
+                </p>
+              )}
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
               plan === 'pro'
@@ -189,12 +198,12 @@ export default function Settings() {
             </span>
           </div>
           {plan === 'free' && (
-            <button
-              onClick={() => alert('Próximamente — Plan Pro disponible en la versión comercial')}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+            <a
+              href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
+              className="block text-center w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
             >
               ⭐ {t('settings.upgrade_pro')}
-            </button>
+            </a>
           )}
         </div>
       </section>

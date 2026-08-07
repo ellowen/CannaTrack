@@ -5,8 +5,13 @@ import type { Page, BrowserContext } from '@playwright/test'
  * inyectado en localStorage ANTES de que cargue la app, y red de Supabase
  * bloqueada para que los tests no dependan de (ni ensucien) produccion.
  *
- * Las claves de localStorage replican el shape de zustand/persist
- * ({ state, version }) y los nombres exactos de cada store.
+ * IMPORTANTE: AuthContext, al iniciar, llama a loadPlantsFromSupabase /
+ * loadTasksFromSupabase y hace setPlants(...)/setAllTasks(...) con lo que
+ * el "servidor" responda — pisando lo que haya en localStorage. Por eso
+ * blockSupabase mockea tambien /rest/v1/plants y /rest/v1/scheduled_tasks
+ * con las MISMAS filas (en forma de fila de DB) que seedApp siembra en
+ * localStorage (en forma de estado de store). Si solo se mockeara el auth,
+ * el "servidor" devolveria implicitamente [] y borraria el seed local.
  */
 
 const SUPABASE_REF = 'wpvvfroutebiwckrenmq'
@@ -30,6 +35,12 @@ export interface SeedOptions {
   tasksToday?: boolean
 }
 
+export interface MockProfileOptions {
+  is_pro?: boolean
+  /** ISO string. Por defecto, 30 dias adelante (trial recien empezado). */
+  trial_ends_at?: string
+}
+
 const MOCK_USER = {
   id: 'e2e-user-0001',
   aud: 'authenticated',
@@ -40,13 +51,40 @@ const MOCK_USER = {
   created_at: '2026-01-01T00:00:00Z',
 }
 
+function defaultProfile(): Record<string, unknown> {
+  return {
+    id: MOCK_USER.id,
+    username: 'Tester',
+    is_pro: false,
+    trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    streak_days: 0,
+    xp: 0,
+    theme: 'system',
+    notifications_enabled: true,
+  }
+}
+
+interface MockState {
+  profile: Record<string, unknown>
+  plants: Record<string, unknown>[]
+  tasks: Record<string, unknown>[]
+}
+
+type ContextWithMockState = BrowserContext & { __mockState?: MockState }
+
 /**
  * Bloquea toda la red de Supabase: los tests no tocan produccion.
- * El endpoint de refresh de token responde una sesion valida — sin esto,
- * el SDK entra en un loop de reintentos con backoff y la app queda varios
- * segundos en "Cargando...".
+ * - /auth/v1/token responde una sesion valida (sin esto el SDK entra en
+ *   backoff de reintentos y la app queda varios segundos en "Cargando...")
+ * - /rest/v1/profiles, /plants y /scheduled_tasks responden datos mock,
+ *   mutables via setMockProfile / seedApp durante el test.
+ * - cualquier otro request a Supabase devuelve 503 (measurements, week_logs,
+ *   storage: no hay tests que dependan de datos precargados ahi).
  */
 export async function blockSupabase(context: BrowserContext): Promise<void> {
+  const state: MockState = { profile: defaultProfile(), plants: [], tasks: [] }
+  ;(context as ContextWithMockState).__mockState = state
+
   await context.route(`**/${SUPABASE_REF}.supabase.co/**`, (route) => {
     const url = route.request().url()
     if (url.includes('/auth/v1/token')) {
@@ -66,8 +104,24 @@ export async function blockSupabase(context: BrowserContext): Promise<void> {
     if (url.includes('/auth/v1/user')) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) })
     }
+    if (url.includes('/rest/v1/profiles')) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.profile) })
+    }
+    if (url.includes('/rest/v1/plants')) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.plants) })
+    }
+    if (url.includes('/rest/v1/scheduled_tasks')) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.tasks) })
+    }
     return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"e2e: red bloqueada"}' })
   })
+}
+
+/** Ajusta el profile mock (is_pro / trial_ends_at) para el resto del test. Llamar despues de blockSupabase. */
+export function setMockProfile(context: BrowserContext, opts: MockProfileOptions): void {
+  const state = (context as ContextWithMockState).__mockState
+  if (!state) throw new Error('setMockProfile: llamar blockSupabase(context) primero')
+  state.profile = { ...defaultProfile(), ...opts }
 }
 
 /** Navega dentro de la app autenticada y espera a que termine la carga de auth. */
@@ -79,8 +133,13 @@ export async function gotoApp(page: Page, path: string): Promise<void> {
   }
 }
 
-/** Inyecta sesion + stores en localStorage antes de cargar la app. */
-export async function seedApp(page: Page, opts: SeedOptions = {}): Promise<void> {
+/**
+ * Inyecta sesion + stores en localStorage antes de cargar la app, y
+ * sincroniza el mock REST (plants/scheduled_tasks) con los mismos datos
+ * para que AuthContext no los pise al montar. Requiere blockSupabase(context)
+ * ya llamado en el mismo test/beforeEach.
+ */
+export async function seedApp(page: Page, context: BrowserContext, opts: SeedOptions = {}): Promise<void> {
   const {
     plan = 'free',
     language = 'es',
@@ -143,21 +202,73 @@ export async function seedApp(page: Page, opts: SeedOptions = {}): Promise<void>
       ])
     : []
 
+  // Sincronizar el mock REST con lo mismo que se siembra en localStorage
+  // (en forma de fila de DB), asi AuthContext no las pisa con [].
+  const state = (context as ContextWithMockState).__mockState
+  if (!state) throw new Error('seedApp: llamar blockSupabase(context) primero')
+  // AuthContext usa profile.is_pro como fuente de verdad del plan (pisa el
+  // localStorage al cargar) — mantenerlo consistente con el `plan` pedido,
+  // salvo que el test ya haya fijado is_pro explicitamente via setMockProfile
+  // (p.ej. para probar plan!==is_pro a proposito, como en subscription.spec.ts).
+  if (opts.plan !== undefined) {
+    state.profile = { ...state.profile, is_pro: plan === 'pro' }
+  }
+  // AuthContext tambien llama setUser(..., profile.username), que repuebla
+  // userStore.name. Si el test simula un usuario sin onboarding (name=''
+  // a proposito, ver mas abajo), el profile mock no puede traer un username
+  // no vacio o revierte el name y dispara la migracion legacy de App.tsx.
+  if (!onboarded) {
+    state.profile = { ...state.profile, username: null }
+  }
+  state.plants = plantRows.map((p) => ({
+    id: p.id,
+    user_id: MOCK_USER.id,
+    name: p.name,
+    genetics: p.genetics,
+    genetic_type: p.geneticType,
+    sex: p.sex,
+    start_date: p.startDate,
+    flora_start_date: (p as { floraStartDate?: string }).floraStartDate ?? null,
+    auto_flower_total_days: 75,
+    location: p.location,
+    grow_medium: p.growMedium,
+    pot_count: p.potCount,
+    pot_volume_liters: p.potVolumeLiters,
+    nutrition_table_id: p.nutritionTableId,
+    available_products: [],
+    status: p.status,
+    notes: null,
+    created_at: new Date(now).toISOString(),
+    updated_at: new Date(now).toISOString(),
+  }))
+  state.tasks = taskRows.map((t) => ({
+    id: t.id,
+    plant_id: t.plantId,
+    user_id: MOCK_USER.id,
+    type: t.type,
+    scheduled_date: t.scheduledDate,
+    cycle: t.cycle,
+    week: t.week,
+    stage: t.stage,
+    products: t.products,
+    ec_min: (t as { ecMin?: number }).ecMin ?? null,
+    ec_max: (t as { ecMax?: number }).ecMax ?? null,
+    ph_min: t.phMin,
+    ph_max: t.phMax,
+    completed: t.completed,
+    completed_at: null,
+    completion_notes: null,
+    xp_awarded: false,
+    created_at: new Date(now).toISOString(),
+  }))
+
   const session = {
     access_token: 'e2e-mock-token',
     refresh_token: 'e2e-mock-refresh',
     token_type: 'bearer',
     expires_in: 3600,
     expires_at: Math.floor(now / 1000) + 365 * 24 * 3600,
-    user: {
-      id: 'e2e-user-0001',
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: 'e2e@cultitrack.test',
-      app_metadata: { provider: 'email' },
-      user_metadata: {},
-      created_at: '2026-01-01T00:00:00Z',
-    },
+    user: MOCK_USER,
   }
 
   const userState = {

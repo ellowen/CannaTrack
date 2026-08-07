@@ -25,14 +25,14 @@ test.describe('Accesibilidad basica', () => {
     await expect(page.locator('input[type="password"]')).toHaveValue('Password123!')
   })
 
-  test('el toggle de notificaciones expone role=switch', async ({ page }) => {
-    await seedApp(page)
+  test('el toggle de notificaciones expone role=switch', async ({ page, context }) => {
+    await seedApp(page, context)
     await gotoApp(page, '/settings')
     await expect(page.getByRole('switch').first()).toBeVisible()
   })
 
-  test('los botones principales tienen nombre accesible', async ({ page }) => {
-    await seedApp(page, { plants: [{ id: 'p1' }], tasksToday: true })
+  test('los botones principales tienen nombre accesible', async ({ page, context }) => {
+    await seedApp(page, context, { plants: [{ id: 'p1' }], tasksToday: true })
     await gotoApp(page, '/plants/p1')
     // Ningun boton visible deberia quedar sin texto ni aria-label.
     // Se listan los ofensores para que el fallo diga QUE boton falta nombrar.

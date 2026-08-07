@@ -18,15 +18,15 @@ test.describe('Proteccion de rutas', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('con sesion, / muestra la app (Home) y no la landing', async ({ page }) => {
-    await seedApp(page)
-    await page.goto('/')
+  test('con sesion, / muestra la app (Home) y no la landing', async ({ page, context }) => {
+    await seedApp(page, context)
+    await gotoApp(page, '/')
     await expect(page.getByText(/Tester/)).toBeVisible()
     await expect(page.getByText('Del brote a la cosecha')).not.toBeVisible()
   })
 
-  test('usuario logueado sin onboarding ve el wizard una sola vez', async ({ page }) => {
-    await seedApp(page, { onboarded: false })
+  test('usuario logueado sin onboarding ve el wizard una sola vez', async ({ page, context }) => {
+    await seedApp(page, context, { onboarded: false })
     await gotoApp(page, '/')
     await expect(page.getByText(/Bienvenido a/i).first()).toBeVisible({ timeout: 15_000 })
   })

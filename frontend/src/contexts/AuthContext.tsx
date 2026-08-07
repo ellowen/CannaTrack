@@ -28,6 +28,8 @@ export interface Profile {
   push_token: string | null
   notification_time: string
   is_pro: boolean
+  /** Fin del periodo de prueba (modelo comercial). Puede faltar hasta aplicar la migracion. */
+  trial_ends_at?: string
   streak_days: number
   xp: number
   theme: 'system' | 'light' | 'dark'
@@ -67,6 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useWeekLogStore.getState().setLogs(weekLogs)
     if (userEmail || profile?.username) {
       useUserStore.getState().setUser(userId, userEmail ?? '', profile?.username ?? '')
+    }
+    // La DB es la fuente de verdad del plan: is_pro -> pro. Sin profile
+    // (offline) no tocamos el plan local para no degradar por error.
+    if (profile) {
+      useUserStore.getState().setPlan(profile.is_pro ? 'pro' : 'free')
     }
   }
 
