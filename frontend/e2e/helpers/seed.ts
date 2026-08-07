@@ -316,3 +316,24 @@ export async function seedAnonymous(page: Page): Promise<void> {
 export async function hasHorizontalScroll(page: Page): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)
 }
+
+/**
+ * Lista los botones/links/switches visibles mas chicos que `min` px en
+ * cualquier dimension. Umbral practico de 38px (Apple recomienda 44,
+ * Material 48) para no marcar falsos positivos en pills bien diseñados.
+ */
+export async function getSmallTouchTargets(page: Page, min = 38): Promise<{ text: string; w: number; h: number }[]> {
+  return page.evaluate((minPx) => {
+    const out: { text: string; w: number; h: number }[] = []
+    document.querySelectorAll('button, a, [role="button"], [role="switch"]').forEach((el) => {
+      const style = getComputedStyle(el)
+      if (style.display === 'none' || style.visibility === 'hidden') return
+      const r = el.getBoundingClientRect()
+      if (r.width === 0 && r.height === 0) return
+      if (r.width < minPx || r.height < minPx) {
+        out.push({ text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 40), w: Math.round(r.width), h: Math.round(r.height) })
+      }
+    })
+    return out
+  }, min)
+}

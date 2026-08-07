@@ -119,7 +119,8 @@ export default function Calendar() {
               )}
               <button
                 onClick={() => navigate(-1)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-app-elevated border border-app-border text-ink-2 tap-highlight-none active:scale-90 transition-all"
+                aria-label="Mes anterior"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-app-elevated border border-app-border text-ink-2 tap-highlight-none active:scale-90 transition-all"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                   <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -127,7 +128,8 @@ export default function Calendar() {
               </button>
               <button
                 onClick={() => navigate(1)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-app-elevated border border-app-border text-ink-2 tap-highlight-none active:scale-90 transition-all"
+                aria-label="Mes siguiente"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-app-elevated border border-app-border text-ink-2 tap-highlight-none active:scale-90 transition-all"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                   <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />

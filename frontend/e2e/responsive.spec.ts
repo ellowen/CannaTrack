@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seedApp, seedAnonymous, blockSupabase, hasHorizontalScroll, gotoApp } from './helpers/seed'
+import { seedApp, seedAnonymous, blockSupabase, hasHorizontalScroll, gotoApp, getSmallTouchTargets } from './helpers/seed'
 
 /**
  * Corre en TODOS los proyectos (desktop + iPhone SE/15/Pro Max, Pixel, Galaxy).
@@ -62,4 +62,37 @@ test('settings: sin scroll horizontal, controles usables', async ({ page, contex
   await gotoApp(page, '/settings')
   await expect(page.getByText('Idioma')).toBeVisible()
   expect(await hasHorizontalScroll(page)).toBe(false)
+})
+
+/**
+ * Regresion: touch targets que estaban por debajo de 38px y se agrandaron
+ * durante el QA mobile (nombre de planta en tarjeta de tarea del dia,
+ * "Ver todas", flechas de mes en Calendario, icono de Ajustes en Perfil).
+ */
+test('home: touch targets criticos con tamaño usable', async ({ page, context }) => {
+  await seedApp(page, context, { plants: [{ id: 'p1', name: 'Gelato' }], tasksToday: true })
+  await gotoApp(page, '/')
+  const small = await getSmallTouchTargets(page)
+  const offenders = small.filter((t) => /Gelato|Ver todas/.test(t.text))
+  expect(offenders, JSON.stringify(offenders)).toEqual([])
+})
+
+test('calendario: flechas de mes con tamaño usable y nombre accesible', async ({ page, context }) => {
+  await seedApp(page, context, { plants: [{ id: 'p1' }], tasksToday: true })
+  await gotoApp(page, '/calendar')
+  await expect(page.getByRole('button', { name: 'Mes anterior' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Mes siguiente' })).toBeVisible()
+  const small = await getSmallTouchTargets(page)
+  const offenders = small.filter((t) => /Mes anterior|Mes siguiente/.test(t.text))
+  expect(offenders, JSON.stringify(offenders)).toEqual([])
+})
+
+test('perfil: icono de ajustes con tamaño usable y nombre accesible', async ({ page, context }) => {
+  await seedApp(page, context)
+  await gotoApp(page, '/profile')
+  const settingsIcon = page.getByRole('link', { name: 'Ajustes', exact: true })
+  await expect(settingsIcon).toBeVisible()
+  const box = await settingsIcon.boundingBox()
+  expect(box!.width).toBeGreaterThanOrEqual(38)
+  expect(box!.height).toBeGreaterThanOrEqual(38)
 })

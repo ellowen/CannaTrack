@@ -149,7 +149,7 @@ export default function MeasurementSheet({
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => setShowTemp(true)} className="text-xs text-ink-4 hover:text-ink-2 transition-colors tap-highlight-none">
+              <button type="button" onClick={() => setShowTemp(true)} className="text-xs text-ink-4 hover:text-ink-2 transition-colors tap-highlight-none min-h-[40px] flex items-center">
                 + Agregar temperatura del agua
               </button>
             )}

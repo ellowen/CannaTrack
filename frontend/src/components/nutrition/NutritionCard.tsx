@@ -76,7 +76,7 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1, tab
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => adjustLiters(-potVolumeLiters)}
-              className="w-7 h-7 rounded-lg border border-app-border bg-app-card text-ink-2 flex items-center justify-center font-bold text-sm tap-highlight-none active:scale-90 transition-all"
+              className="w-10 h-10 rounded-lg border border-app-border bg-app-card text-ink-2 flex items-center justify-center font-bold text-sm tap-highlight-none active:scale-90 transition-all"
             >
               −
             </button>
@@ -92,7 +92,7 @@ export default function NutritionCard({ task, potVolumeLiters, potCount = 1, tab
             </div>
             <button
               onClick={() => adjustLiters(potVolumeLiters)}
-              className="w-7 h-7 rounded-lg border border-app-border bg-app-card text-ink-2 flex items-center justify-center font-bold text-sm tap-highlight-none active:scale-90 transition-all"
+              className="w-10 h-10 rounded-lg border border-app-border bg-app-card text-ink-2 flex items-center justify-center font-bold text-sm tap-highlight-none active:scale-90 transition-all"
             >
               +
             </button>

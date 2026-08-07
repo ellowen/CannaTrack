@@ -275,7 +275,7 @@ export default function Settings() {
           {plan === 'pro' ? (
             <Link
               to="/nutrition/new?returnTo=/settings"
-              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95 min-h-[40px] flex items-center px-1 -mx-1"
             >
               {t('settings.new_table')}
             </Link>

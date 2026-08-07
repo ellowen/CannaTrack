@@ -431,7 +431,7 @@ export default function Home() {
                       <div className="flex items-center justify-between gap-3 mb-1.5">
                         <button
                           onClick={() => { hapticLight(); navigate(`/plants/${task.plantId}`) }}
-                          className="flex-1 text-left tap-highlight-none min-w-0"
+                          className="flex-1 flex items-center text-left tap-highlight-none min-w-0 min-h-[40px] -my-2 py-2"
                         >
                           <p className="text-base font-black text-ink-1 leading-tight truncate">
                             {plant?.name ?? '—'}
@@ -573,7 +573,7 @@ export default function Home() {
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">{t('home.my_plants')}</h2>
-            <Link to="/plants" className="text-xs font-bold text-ink-3 tap-highlight-none">
+            <Link to="/plants" className="text-xs font-bold text-ink-3 tap-highlight-none py-2.5 -my-2.5 px-1 -mx-1 inline-flex items-center min-h-[40px]">
               {t('home.view_all')} →
             </Link>
           </div>

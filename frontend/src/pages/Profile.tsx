@@ -172,7 +172,8 @@ export default function Profile() {
           </div>
           <Link
             to="/settings"
-            className="shrink-0 w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center tap-highlight-none active:scale-95 transition-all"
+            aria-label="Ajustes"
+            className="shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center tap-highlight-none active:scale-95 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 text-white/60">
               <circle cx={12} cy={12} r={3} />
