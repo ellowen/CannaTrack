@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
 import { hapticSuccess } from '@/lib/haptics'
 
@@ -57,7 +58,9 @@ export default function MeasurementSheet({
     onClose()
   }
 
-  return (
+  // Portal a document.body: ver comentario equivalente en HarvestSheet.tsx —
+  // sin esto, botones cerca del borde inferior quedan detras del <nav>.
+  return createPortal(
     <>
       <div
         className={`fixed inset-0 z-30 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -165,6 +168,7 @@ export default function MeasurementSheet({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }

@@ -90,6 +90,10 @@ export function onAuthStateChange(
   callback: (user: User | null) => void
 ) {
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    // INITIAL_SESSION duplica la carga que ya hace initAuth() (getSession())
+    // al montar — sin este filtro, cada carga inicial dispara loadUserData()
+    // dos veces en paralelo (una desde initAuth, otra desde este listener).
+    if (_event === 'INITIAL_SESSION') return
     callback(session?.user || null)
   })
 

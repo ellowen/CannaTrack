@@ -616,8 +616,8 @@ export default function PlantDetail() {
               <button
                 onClick={() => {
                   if (!window.confirm(`¿Descartar "${plant.name}"? ${t('plantDetail.discard_confirm')}`)) return
+                  // discardPlant() ya sincroniza con Supabase internamente
                   discardPlant(plant.id)
-                  updatePlantStatusInSupabase(plant.id, 'discarded').catch(console.error)
                   navigate('/')
                 }}
                 className="flex-1 py-3 rounded-2xl border border-red-900/40 bg-red-950/30 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
@@ -705,19 +705,13 @@ export default function PlantDetail() {
         <HarvestSheet
           plant={plant}
           onConfirmHarvest={() => {
+            // harvestPlant() ya sincroniza con Supabase internamente
             harvestPlant(plant.id)
-            // Sincronizar cosecha (sin bloquear)
-            updatePlantStatusInSupabase(plant.id, 'harvested').catch((err) =>
-              console.error('Error sincronizando cosecha:', err)
-            )
             navigate('/')
           }}
           onConfirmDiscard={() => {
+            // discardPlant() ya sincroniza con Supabase internamente
             discardPlant(plant.id)
-            // Sincronizar descarte (sin bloquear)
-            updatePlantStatusInSupabase(plant.id, 'discarded').catch((err) =>
-              console.error('Error sincronizando descarte:', err)
-            )
             navigate('/')
           }}
           onClose={() => setHarvestSheetOpen(false)}

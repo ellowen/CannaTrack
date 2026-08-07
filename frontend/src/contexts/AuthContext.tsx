@@ -51,6 +51,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/**
+ * Detecta si un error de carga de datos es en realidad un JWT invalido o
+ * vencido (token corrupto, revocado, o de una sesion vieja incompatible)
+ * — a diferencia de un error transitorio de red, que no debe forzar logout.
+ * Firma observada: PostgREST "PGRST301" o un AuthApiError 401/403 con
+ * codigos como "bad_jwt".
+ */
+function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const e = error as { code?: string; status?: number; message?: string }
+  if (e.code === 'PGRST301') return true
+  if (e.status === 401 || e.status === 403) return true
+  if (typeof e.code === 'string' && /jwt|bad_jwt/i.test(e.code)) return true
+  return false
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -90,6 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error)
+        // getSession() es local y no valida el JWT contra el servidor — si
+        // el token quedo invalido/vencido/revocado, la primera llamada real
+        // (loadProfile) lo detecta aca. Sin esto, el usuario queda "logueado"
+        // con datos locales viejos, sin aviso de que su sesion ya no es valida.
+        if (isAuthError(error)) {
+          setUser(null)
+          setProfile(null)
+          void signOut().catch(() => {})
+        }
       } finally {
         setIsLoading(false)
       }
@@ -109,6 +134,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await loadUserData(authUser.id, authUser.email, loadedProfile)
         } catch (error) {
           console.error('Failed to load profile:', error)
+          if (isAuthError(error)) {
+            setUser(null)
+            setProfile(null)
+            void signOut().catch(() => {})
+          }
         }
       } else {
         setProfile(null)

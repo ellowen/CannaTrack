@@ -68,6 +68,8 @@ interface MockState {
   profile: Record<string, unknown>
   plants: Record<string, unknown>[]
   tasks: Record<string, unknown>[]
+  /** Si es true, /auth/v1/token responde 401 (simula sesion invalida/expirada sin refresh posible). */
+  authShouldFail: boolean
 }
 
 type ContextWithMockState = BrowserContext & { __mockState?: MockState }
@@ -82,12 +84,22 @@ type ContextWithMockState = BrowserContext & { __mockState?: MockState }
  *   storage: no hay tests que dependan de datos precargados ahi).
  */
 export async function blockSupabase(context: BrowserContext): Promise<void> {
-  const state: MockState = { profile: defaultProfile(), plants: [], tasks: [] }
+  const state: MockState = { profile: defaultProfile(), plants: [], tasks: [], authShouldFail: false }
   ;(context as ContextWithMockState).__mockState = state
 
   await context.route(`**/${SUPABASE_REF}.supabase.co/**`, (route) => {
     const url = route.request().url()
+    if (url.includes('/auth/v1/logout')) {
+      return route.fulfill({ status: 204, body: '' })
+    }
     if (url.includes('/auth/v1/token')) {
+      if (state.authShouldFail) {
+        return route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'invalid_grant', error_description: 'Refresh Token Not Found' }),
+        })
+      }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -102,12 +114,39 @@ export async function blockSupabase(context: BrowserContext): Promise<void> {
       })
     }
     if (url.includes('/auth/v1/user')) {
+      if (state.authShouldFail) {
+        return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"invalid token"}' })
+      }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) })
     }
     if (url.includes('/rest/v1/profiles')) {
+      if (state.authShouldFail) {
+        // Forma real observada contra Supabase con un JWT invalido/vencido.
+        return route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'PGRST301', details: null, hint: null, message: 'Expected 3 parts in JWT; got 1' }),
+        })
+      }
+      const method = route.request().method()
+      if (method === 'PATCH') {
+        const patch = route.request().postDataJSON() as Record<string, unknown>
+        state.profile = { ...state.profile, ...patch }
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.profile) })
+      }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.profile) })
     }
     if (url.includes('/rest/v1/plants')) {
+      const method = route.request().method()
+      if (method === 'PATCH') {
+        const idMatch = url.match(/[?&]id=eq\.([^&]+)/)
+        const patch = route.request().postDataJSON() as Record<string, unknown>
+        if (idMatch) {
+          const id = decodeURIComponent(idMatch[1])
+          state.plants = state.plants.map((p) => (p.id === id ? { ...p, ...patch } : p))
+        }
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.plants) })
+      }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.plants) })
     }
     if (url.includes('/rest/v1/scheduled_tasks')) {
@@ -115,6 +154,13 @@ export async function blockSupabase(context: BrowserContext): Promise<void> {
     }
     return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"e2e: red bloqueada"}' })
   })
+}
+
+/** Simula una sesion invalida/expirada sin posibilidad de refresh (401 + refresh fallido). */
+export function simulateAuthFailure(context: BrowserContext): void {
+  const state = (context as ContextWithMockState).__mockState
+  if (!state) throw new Error('simulateAuthFailure: llamar blockSupabase(context) primero')
+  state.authShouldFail = true
 }
 
 /** Ajusta el profile mock (is_pro / trial_ends_at) para el resto del test. Llamar despues de blockSupabase. */

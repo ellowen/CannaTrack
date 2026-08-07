@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { WeekLog } from '@/types/weekLog'
@@ -70,7 +71,9 @@ export default function WeekLogSheet({
   const isFlora = weekLabel.startsWith('FLORA')
   const today = format(new Date(), "EEEE d 'de' MMMM", { locale: es })
 
-  return (
+  // Portal a document.body: ver comentario equivalente en HarvestSheet.tsx —
+  // sin esto, botones cerca del borde inferior quedan detras del <nav>.
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -211,6 +214,7 @@ export default function WeekLogSheet({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }

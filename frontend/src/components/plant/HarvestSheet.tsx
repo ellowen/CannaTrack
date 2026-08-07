@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useTaskStore } from '@/store/taskStore'
@@ -53,7 +54,13 @@ export default function HarvestSheet({
     onClose()
   }
 
-  return (
+  // Portal a document.body: la animacion de transicion de pagina en Layout
+  // (animClass en <main>) queda con un CSS animation "both" indefinidamente
+  // aplicado, lo que atrapa a los descendientes fixed en un stacking context
+  // propio (spec CSS) que siempre pierde contra el z-20 de <nav> — sin el
+  // portal, los botones cerca del borde inferior del sheet quedan detras del
+  // nav y no reciben clicks/taps.
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-end justify-center" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] lightbox-in" />
@@ -159,6 +166,7 @@ export default function HarvestSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

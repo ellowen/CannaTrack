@@ -183,3 +183,84 @@ test.describe('Crear planta (formulario completo)', () => {
     await expect(page.getByText('18/6')).toBeVisible()
   })
 })
+
+test.describe('CRUD completo de plantas (update / lifecycle)', () => {
+  test('editar planta: cambiar nombre y sustrato persiste en el detalle', async ({ page, context }) => {
+    await seedApp(page, context, { plants: [{ id: 'p1', name: 'Nombre Original', growMedium: 'soil' }] })
+    await gotoApp(page, '/plants/p1')
+    await page.getByRole('link', { name: 'Editar' }).first().click()
+    await expect(page).toHaveURL(/\/plants\/p1\/edit/)
+
+    // Paso 1: cambiar el nombre (el campo viene pre-cargado)
+    await page.getByPlaceholder(/White Widow #1/).fill('Nombre Editado E2E')
+    await page.getByRole('button', { name: /Continuar/i }).click()
+
+    // Paso 2: cambiar sustrato a hidro
+    await page.getByRole('button', { name: /Hidro/i }).first().click()
+    await page.getByRole('button', { name: /Continuar/i }).click()
+
+    // Paso 3: guardar
+    await page.getByRole('button', { name: /Guardar cambios/i }).click()
+
+    // Verificar que persistio en el detalle
+    await expect(page.getByText('Nombre Editado E2E')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Hidro')).toBeVisible()
+    await expect(page.getByText('Nombre Original')).not.toBeVisible()
+  })
+
+  test('cosechar planta: confirma y la saca de la lista de plantas activas', async ({ page, context }) => {
+    // floraStartDate seteado para que el boton "Cosechar" (no "Finalizar cultivo") este disponible
+    await seedApp(page, context, { plants: [{ id: 'p1', name: 'Para Cosechar', daysAgo: 70, floraDaysAgo: 20 }] })
+    await gotoApp(page, '/plants/p1')
+    // Boton "Zona de peligro": icono + label + hint son 3 spans dentro del
+    // mismo <button>, el nombre accesible concatena los 3 (no es "Cosechar"
+    // exacto) — por eso el match es sin anclar, igual que el de Descartar.
+    await page.getByRole('button', { name: /Cosechar/i }).click()
+    await page.getByRole('button', { name: /Confirmar cosecha/i }).click()
+    // El flujo navega a Home
+    await expect(page).toHaveURL(/\/$/, { timeout: 10_000 })
+    // La planta ya no aparece en la lista de activas de Home
+    await expect(page.getByText('Para Cosechar')).not.toBeVisible()
+  })
+
+  test('descartar planta: confirma el dialogo nativo y la saca de la lista', async ({ page, context }) => {
+    await seedApp(page, context, { plants: [{ id: 'p1', name: 'Para Descartar' }] })
+    await gotoApp(page, '/plants/p1')
+    page.once('dialog', (dialog) => dialog.accept())
+    await page.getByRole('button', { name: /Descartar/i }).click()
+    await expect(page).toHaveURL(/\/$/, { timeout: 10_000 })
+    await expect(page.getByText('Para Descartar')).not.toBeVisible()
+  })
+})
+
+test.describe('Perfil local (sin backend)', () => {
+  test('guardar nombre y volumen de maceta en Settings persiste tras recargar', async ({ page, context }) => {
+    await seedApp(page, context)
+    await gotoApp(page, '/settings')
+
+    const nameField = page.locator('input[type="text"]').last()
+    await nameField.fill('Cultivador E2E')
+    const volumeField = page.locator('input[type="number"]').first()
+    await volumeField.fill('19')
+    await page.getByRole('button', { name: /Guardar cambios/i }).last().click()
+
+    // La escritura debe quedar en el store persistido (localStorage) de
+    // inmediato. Nota: no se navega de nuevo con gotoApp() aca a proposito
+    // — el addInitScript de seedApp() se re-ejecuta en CADA navegacion de
+    // esta misma page (comportamiento de Playwright, no del browser real) y
+    // volveria a sembrar el volumen de maceta original, dando un falso
+    // negativo para un dato que es local-only (no sincroniza con el backend).
+    await expect(page.locator('input[type="number"]').first()).toHaveValue('19')
+    const persisted = await page.evaluate(() => {
+      const raw = localStorage.getItem('cultitrack-user')
+      return raw ? JSON.parse(raw).state : null
+    })
+    expect(persisted?.name).toBe('Cultivador E2E')
+    expect(persisted?.potVolumeLiters).toBe(19)
+
+    // El nombre si sincroniza con el backend (profiles.username) — confirmar
+    // que sobrevive a una navegacion real, no solo que quedo en localStorage.
+    await gotoApp(page, '/settings')
+    await expect(page.locator('input[type="text"]').last()).toHaveValue('Cultivador E2E')
+  })
+})

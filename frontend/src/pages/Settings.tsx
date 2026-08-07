@@ -107,9 +107,15 @@ export default function Settings() {
     setTimeout(() => setUsernameSaved(false), 2000)
   }
 
-  function handleSave() {
-    setName(nameInput.trim() || 'Cultivador')
+  async function handleSave() {
+    const trimmedName = nameInput.trim() || 'Cultivador'
+    setName(trimmedName)
     setPotVolume(Number(volumeInput) || 11)
+    // Sin esto, el nombre guardado aca se pierde en el proximo reload: al
+    // reautenticar, AuthContext pisa userStore.name con profiles.username
+    // del servidor (ver AuthContext.loadUserData -> setUser). El builder de
+    // supabase-js es "lazy" (thenable): sin await, el fetch nunca se dispara.
+    if (user) await supabase.from('profiles').update({ username: trimmedName }).eq('id', user.id)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

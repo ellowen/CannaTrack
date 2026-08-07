@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seedAnonymous, seedApp, blockSupabase, gotoApp } from './helpers/seed'
+import { seedAnonymous, seedApp, blockSupabase, gotoApp, simulateAuthFailure } from './helpers/seed'
 
 test.describe('Proteccion de rutas', () => {
   test.beforeEach(async ({ context }) => {
@@ -32,6 +32,45 @@ test.describe('Proteccion de rutas', () => {
   })
 })
 
+test.describe('Sesion: logout y expiracion', () => {
+  test.beforeEach(async ({ context }) => {
+    await blockSupabase(context)
+  })
+
+  test('logout real desde Settings limpia la sesion y redirige a /login', async ({ page, context }) => {
+    await seedApp(page, context, { plants: [{ id: 'p1' }] })
+    await gotoApp(page, '/settings')
+    await page.getByRole('button', { name: /Cerrar sesión/i }).click()
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+    // La sesion no debe seguir en localStorage tras el logout
+    const hasSession = await page.evaluate(() =>
+      Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+    )
+    expect(hasSession).toBe(false)
+    // Nota: no se verifica un goto() posterior a una ruta protegida — el
+    // addInitScript que siembra la sesion (seedApp) se re-ejecuta en CADA
+    // navegacion de esta misma page por diseño de Playwright, lo que
+    // re-inyectaria una sesion valida y invalidaria la prueba.
+  })
+
+  test('JWT invalido/revocado: la app cierra la sesion y redirige a login (no queda "logueada" con datos viejos)', async ({ page, context }) => {
+    // getSession() de supabase-js es local: no valida expires_at contra la
+    // red. La app recien se entera de que el token es invalido cuando pega
+    // el primer request real (loadProfile -> /rest/v1/profiles), que aca
+    // responde 401 PGRST301 (forma real observada contra Supabase con un
+    // JWT roto). Sin el fix, la app se quedaba mostrando datos locales
+    // viejos indefinidamente, sin avisar que la sesion ya no es valida.
+    await seedApp(page, context, { plants: [{ id: 'p1' }] })
+    simulateAuthFailure(context)
+    // Un link profundo (no la raiz) fuerza /login cuando no hay usuario —
+    // en / se muestra la landing para anonimos, comportamiento correcto
+    // ya validado en 'Proteccion de rutas' arriba.
+    await page.goto('/plants/p1')
+    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 })
+    await expect(page.locator('input[type="email"]')).toBeVisible()
+  })
+})
+
 test.describe('Pantalla de login', () => {
   test.beforeEach(async ({ page, context }) => {
     await blockSupabase(context)
@@ -46,11 +85,17 @@ test.describe('Pantalla de login', () => {
     await expect(page.getByRole('link', { name: /Registrate/i })).toBeVisible()
   })
 
-  test('con el backend caido muestra error, no crashea', async ({ page }) => {
+  test('con el backend caido muestra error, no crashea', async ({ page, context }) => {
+    // blockSupabase por defecto simula un login EXITOSO (para no romper el
+    // resto de la suite) — para simular el backend caido de verdad en este
+    // test puntual hay que forzar la falla explicitamente.
+    simulateAuthFailure(context)
     await page.locator('input[type="email"]').fill('alguien@test.com')
     await page.locator('input[type="password"]').fill('Password123!')
     await page.getByRole('button', { name: /Ingresar/i }).click()
-    // Supabase esta bloqueado (503): la app debe mostrar un error y seguir viva
+    // Debe quedarse en /login, mostrar el banner de error real de la
+    // pantalla y seguir viva (nada de pantalla en blanco ni redireccion)
+    await expect(page.locator('.bg-red-900\\/20')).toBeVisible()
     await expect(page.locator('input[type="email"]')).toBeVisible()
     expect(new URL(page.url()).pathname).toBe('/login')
   })

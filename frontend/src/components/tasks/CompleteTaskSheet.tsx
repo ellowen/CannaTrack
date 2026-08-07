@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
 import { hapticSuccess, hapticLight } from '@/lib/haptics'
@@ -137,7 +138,9 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   const ec_st = ecStatus()
   const ph_st = phStatus()
 
-  return (
+  // Portal a document.body: ver comentario equivalente en HarvestSheet.tsx —
+  // sin esto, botones cerca del borde inferior quedan detras del <nav>.
+  return createPortal(
     <div
       className="fixed inset-0 z-40 flex items-end justify-center"
       style={{ paddingBottom: 'max(5rem, env(safe-area-inset-bottom, 0px) + 4rem)' }}
@@ -321,6 +324,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
