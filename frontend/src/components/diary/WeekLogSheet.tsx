@@ -6,7 +6,8 @@ import type { WeekLog } from '@/types/weekLog'
 import { resizeImageFile } from '@/lib/image-utils'
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
 import { hapticSuccess } from '@/lib/haptics'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 
 interface WeekLogSheetProps {
   isOpen: boolean
@@ -30,7 +31,7 @@ export default function WeekLogSheet({
   const [photo, setPhoto] = useState<string | undefined>(undefined)
   const [loadingPhoto, setLoadingPhoto] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const plan = useUserStore((s) => s.plan)
+  const { plan } = useSubscription()
   const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeToDismiss({ onDismiss: onClose })
 
   // Sync form state when sheet opens
@@ -124,7 +125,7 @@ export default function WeekLogSheet({
             {/* Photo picker */}
             <div>
               <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">Foto de la semana</p>
-              {plan !== 'pro' ? (
+              {!hasProAccess(plan) ? (
                 <div className="w-full rounded-2xl border border-amber-500/20 bg-amber-500/10 aspect-[4/3] flex flex-col items-center justify-center gap-2 text-center px-4">
                   <span className="text-3xl">🔒</span>
                   <p className="text-sm font-bold text-amber-400">Fotos — Plan Pro</p>

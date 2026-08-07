@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import { format } from 'date-fns'
+import { es as esLocale, enUS } from 'date-fns/locale'
 import { useUserStore, type ThemePreference } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
 import { LANGUAGES } from '@/i18n'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
@@ -28,7 +31,7 @@ export default function Settings() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { name, plan, potVolumeLiters, theme, language, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setLanguage, setNotificationsEnabled } = useUserStore()
+  const { name, potVolumeLiters, theme, language, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setLanguage, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
@@ -180,35 +183,56 @@ export default function Settings() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-bold text-ink-1">
-                {plan === 'free' ? `🌱 ${t('settings.plan_free_label')}` : `⭐ ${t('settings.plan_pro_label')}`}
+                {subscription.plan === 'free' && `🌱 ${t('settings.plan_free_label')}`}
+                {subscription.plan === 'trial' && `⏳ ${t('settings.plan_trial_label')}`}
+                {subscription.plan === 'pro' && `⭐ ${t('settings.plan_pro_label')}`}
               </p>
               <p className="text-xs text-ink-3 mt-0.5">
-                {plan === 'free'
-                  ? t('settings.plan_free_desc')
-                  : t('settings.plan_pro_desc')}
+                {subscription.plan === 'free' && t('settings.plan_free_desc')}
+                {subscription.plan === 'trial' && t('settings.plan_trial_desc')}
+                {subscription.plan === 'pro' && t('settings.plan_pro_desc')}
               </p>
-              {subscription.state === 'trialing' && (
-                <p className="text-xs text-amber-500 font-semibold mt-1">
-                  {subscription.trialDaysLeft === 1
-                    ? t('subscription.trial_last_day')
-                    : t('subscription.trial_days_left', { days: subscription.trialDaysLeft })}
-                </p>
+              {subscription.plan === 'trial' && subscription.trialEndsAt && (
+                <>
+                  <p className="text-xs text-amber-500 font-semibold mt-1">
+                    {subscription.trialDaysLeft === 1
+                      ? t('subscription.trial_last_day')
+                      : t('subscription.trial_days_left', { days: subscription.trialDaysLeft })}
+                  </p>
+                  <p className="text-[11px] text-ink-4 mt-0.5">
+                    {t('settings.trial_ends_on', {
+                      date: format(subscription.trialEndsAt, 'd MMM yyyy', { locale: language === 'en' ? enUS : esLocale }),
+                    })}
+                  </p>
+                </>
               )}
             </div>
-            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
-              plan === 'pro'
+            <span className={`text-xs font-bold px-3 py-1 rounded-full border shrink-0 ${
+              subscription.plan === 'pro'
                 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-app-elevated text-ink-3 border-app-border'
+                : subscription.plan === 'trial'
+                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                  : 'bg-app-elevated text-ink-3 border-app-border'
             }`}>
-              {plan === 'free' ? 'FREE' : 'PRO ⭐'}
+              {subscription.plan === 'free' && 'FREE'}
+              {subscription.plan === 'trial' && 'TRIAL'}
+              {subscription.plan === 'pro' && 'PRO ⭐'}
             </span>
           </div>
-          {plan === 'free' && (
+          {!hasProAccess(subscription.plan) && (
             <a
               href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
               className="block text-center w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
             >
               ⭐ {t('settings.upgrade_pro')}
+            </a>
+          )}
+          {subscription.plan === 'trial' && (
+            <a
+              href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
+              className="block text-center w-full py-3 rounded-xl border border-amber-500/30 text-amber-500 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all mt-2"
+            >
+              {t('subscription.subscribe_cta')}
             </a>
           )}
         </div>
@@ -278,7 +302,7 @@ export default function Settings() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Tablas nutricionales</p>
-          {plan === 'pro' ? (
+          {hasProAccess(subscription.plan) ? (
             <Link
               to="/nutrition/new?returnTo=/settings"
               className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95 min-h-[40px] flex items-center px-1 -mx-1"

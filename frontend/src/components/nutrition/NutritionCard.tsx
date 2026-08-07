@@ -3,7 +3,8 @@ import { clsx } from 'clsx'
 import type { ScheduledTask, NutritionTable } from '@/types/plant'
 import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 
 interface NutritionCardProps {
   task: ScheduledTask
@@ -20,9 +21,9 @@ function fmt(n: number): string {
 export default function NutritionCard({ task, potVolumeLiters, potCount = 1, table }: NutritionCardProps) {
   const defaultLiters = potVolumeLiters * potCount
   const [liters, setLiters] = useState(defaultLiters)
-  const plan = useUserStore((s) => s.plan)
+  const { plan } = useSubscription()
   const allProducts = task.products
-  const visibleProducts = plan === 'free' ? allProducts.slice(0, 1) : allProducts
+  const visibleProducts = hasProAccess(plan) ? allProducts : allProducts.slice(0, 1)
   const hiddenCount = allProducts.length - visibleProducts.length
 
   const weekLabel = task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`

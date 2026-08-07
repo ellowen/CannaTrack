@@ -212,12 +212,14 @@ export default function Calendar() {
 
       <CompleteTaskSheet
         task={completingTask}
-        onConfirm={(taskId, notes) => {
+        onConfirm={async (taskId, notes) => {
           completeTask(taskId, notes)
-          // Sincronizar con Supabase (sin bloquear)
-          completeTaskInSupabase(taskId, notes).catch((err) =>
+          try {
+            return await completeTaskInSupabase(taskId, notes)
+          } catch (err) {
             console.error('Error sincronizando tarea completada:', err)
-          )
+            return null
+          }
         }}
         onClose={() => setCompletingTask(null)}
       />

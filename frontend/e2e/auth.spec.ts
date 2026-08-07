@@ -132,19 +132,63 @@ test.describe('Pantalla de signup', () => {
   })
 })
 
-// ── Flujo real de auth (opcional): requiere credenciales en el entorno ──
+// ── Flujo real de auth: usuario de testing dedicado contra Supabase real ──
+// Requiere E2E_TEST_EMAIL / E2E_TEST_PASSWORD en el entorno. Ver
+// e2e/README.md para como se creo la cuenta y como correr esto localmente
+// o en CI. Sin blockSupabase: estos tests SI hablan con el backend real,
+// nunca con el mock.
 const EMAIL = process.env.E2E_TEST_EMAIL
 const PASSWORD = process.env.E2E_TEST_PASSWORD
 
-test.describe('Login real contra Supabase', () => {
-  test.skip(!EMAIL || !PASSWORD, 'Definir E2E_TEST_EMAIL y E2E_TEST_PASSWORD para correr')
+test.describe('Flujo real contra Supabase (usuario de testing dedicado)', () => {
+  test.skip(!EMAIL || !PASSWORD, 'Definir E2E_TEST_EMAIL y E2E_TEST_PASSWORD para correr — ver e2e/README.md')
 
-  test('login y logout completos', async ({ page }) => {
-    // Sin blockSupabase: este test SI habla con el backend real
+  test('login -> profile/trial reales -> acceso Pro -> navegacion -> logout -> login -> persistencia', async ({ page }) => {
+    // 1) Login real
     await page.goto('/login')
     await page.locator('input[type="email"]').fill(EMAIL!)
     await page.locator('input[type="password"]').fill(PASSWORD!)
     await page.getByRole('button', { name: /Ingresar/i }).click()
-    await expect(page).toHaveURL(/\/$|\/dashboard/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/\/$/, { timeout: 15_000 })
+    await expect(page.getByText('Del brote a la cosecha')).not.toBeVisible()
+
+    // "onboarded" es un flag 100% local (por navegador, no por cuenta) —
+    // un browser context nuevo de Playwright siempre lo ve por primera vez,
+    // igual que un usuario real en un dispositivo nuevo.
+    const welcomeHeading = page.getByText(/Bienvenido a/i).first()
+    if (await welcomeHeading.isVisible().catch(() => false)) {
+      await page.getByRole('button', { name: /Empezar/i }).click()
+      await page.getByRole('button', { name: /Saltar por ahora/i }).click()
+      await page.getByRole('button', { name: /Crear primera planta/i }).click()
+      await expect(page).toHaveURL(/\/plants\/new/, { timeout: 10_000 })
+    }
+
+    // 2) Profile + trial reales: Settings debe mostrar el badge TRIAL con
+    // dias restantes reales (no depende de ningun mock local).
+    await page.goto('/settings')
+    await expect(page.getByText('TRIAL', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText(/dias de prueba gratis/i)).toBeVisible()
+
+    // 3) Acceso Pro real durante el trial: sin limite de 1 planta.
+    await page.goto('/plants/new')
+    await expect(page.getByText(/Limite del plan Free/i)).not.toBeVisible()
+
+    // 4) Navegacion basica sigue funcionando
+    await page.goto('/')
+    await page.getByRole('link', { name: /^Calendario$/i }).click()
+    await expect(page).toHaveURL(/\/calendar/)
+
+    // 5) Logout real
+    await page.goto('/settings')
+    await page.getByRole('button', { name: /Cerrar sesión/i }).click()
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+
+    // 6) Login de nuevo — el profile/trial deben persistir (no se recrean)
+    await page.locator('input[type="email"]').fill(EMAIL!)
+    await page.locator('input[type="password"]').fill(PASSWORD!)
+    await page.getByRole('button', { name: /Ingresar/i }).click()
+    await expect(page).toHaveURL(/\/$/, { timeout: 15_000 })
+    await page.goto('/settings')
+    await expect(page.getByText('TRIAL', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 })

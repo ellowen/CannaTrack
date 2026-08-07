@@ -4,6 +4,8 @@ import { es } from 'date-fns/locale'
 import clsx from 'clsx'
 import { supabase } from '@/lib/auth'
 import { useUserStore } from '@/store/userStore'
+import { useSubscription } from '@/hooks/useSubscription'
+import { hasProAccess } from '@/lib/plan'
 import { usePlants } from '@/hooks/usePlants'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { resizeImageFile } from '@/lib/image-utils'
@@ -87,11 +89,12 @@ function HealthCircle({ score }: { score: number }) {
 // ─── Pagina ───────────────────────────────────────────────────────────────────
 
 export default function Diagnose() {
-  const { plan, userId } = useUserStore()
+  const { userId } = useUserStore()
+  const { plan } = useSubscription()
   const { plants }       = usePlants()
   const { logs, addLog } = useWeekLogStore()
 
-  const isPro         = plan === 'pro'
+  const isPro         = hasProAccess(plan)
   const limit         = isPro ? PRO_LIMIT : FREE_LIMIT
   const activePlants  = plants.filter(p => p.status === 'active')
 

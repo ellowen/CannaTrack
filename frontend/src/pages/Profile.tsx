@@ -30,12 +30,6 @@ export default function Profile() {
 
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('stats')
-  const [dbProfile, setDbProfile] = useState<{
-    xp: number
-    streak: number
-    bestStreak: number
-    username: string
-  } | null>(null)
   const [dbStats, setDbStats] = useState<{
     totalTasksCompleted: number
     measurements: number
@@ -72,7 +66,6 @@ export default function Profile() {
       const today0 = new Date()
       today0.setHours(0, 0, 0, 0)
       const [
-        { data: p },
         { data: activePlantRows },
         { data: harvestedPlantRows },
         { data: tasksToday },
@@ -80,7 +73,6 @@ export default function Profile() {
         { count: measurementsCount },
         { count: photosCount },
       ] = await Promise.all([
-        supabase.from('profiles').select('xp, streak_days, username').eq('id', user!.id).maybeSingle(),
         supabase.from('plants').select('id').eq('user_id', user!.id).eq('status', 'active'),
         supabase.from('plants').select('id').eq('user_id', user!.id).eq('status', 'harvested'),
         supabase.from('scheduled_tasks').select('id').eq('user_id', user!.id).eq('completed', true)
@@ -89,14 +81,6 @@ export default function Profile() {
         supabase.from('measurements').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
         supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', user!.id).not('photo_url', 'is', null),
       ])
-      if (p) {
-        setDbProfile({
-          xp: p.xp ?? 0,
-          streak: p.streak_days ?? 0,
-          bestStreak: 0,
-          username: p.username ?? user!.email?.split('@')[0] ?? 'Cultivador',
-        })
-      }
       setDbStats({
         totalTasksCompleted: totalTasks ?? 0,
         measurements: measurementsCount ?? 0,
@@ -110,10 +94,13 @@ export default function Profile() {
     load()
   }, [user?.id])
 
-  const displayXP          = dbProfile?.xp ?? totalXP
-  const displayStreak      = dbProfile?.streak ?? streak
-  const displayBestStreak  = dbProfile?.bestStreak ?? bestStreak
-  const displayName        = dbProfile?.username ?? name ?? 'Cultivador'
+  // xp/streak vienen de userStore, sincronizado con profiles.xp/streak_days
+  // (fuente de verdad real) en cada carga/refresh/login via AuthContext —
+  // sin fetch propio duplicado aca.
+  const displayXP          = totalXP
+  const displayStreak      = streak
+  const displayBestStreak  = bestStreak
+  const displayName        = name || 'Cultivador'
   const levelInfo          = getLevelInfo(displayXP)
 
   const totalTasksCompleted  = dbStats?.totalTasksCompleted ?? tasks.filter((t) => t.completed).length

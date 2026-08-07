@@ -5,7 +5,8 @@ import { es } from 'date-fns/locale'
 import { clsx } from 'clsx'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 import type { Plant } from '@/types/plant'
 import { useTranslation } from '@/i18n'
 
@@ -141,11 +142,11 @@ export default function PlantBrowser() {
   const { t } = useTranslation()
   const plants      = usePlantStore((s) => s.plants)
   const tasks       = useTaskStore((s) => s.tasks)
-  const plan        = useUserStore((s) => s.plan)
+  const { plan }    = useSubscription()
   const navigate    = useNavigate()
 
   const activePlants   = plants.filter((p) => p.status === 'active')
-  const atFreeLimit    = plan === 'free' && activePlants.length >= FREE_PLANT_LIMIT
+  const atFreeLimit    = !hasProAccess(plan) && activePlants.length >= FREE_PLANT_LIMIT
 
   const [filter, setFilter]   = useState<Filter>('activas')
   const [search, setSearch]   = useState('')

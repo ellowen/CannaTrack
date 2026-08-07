@@ -95,10 +95,22 @@ describe('Store Persistence', () => {
     expect(level.current.level).toBe(3) // Plántula a 300 XP
   })
 
-  it('should return streak bonus XP', () => {
-    useUserStore.setState({ streak: 7 })
+  it('should sync xp/streak from the real profile (Supabase es la fuente de verdad)', () => {
+    useUserStore.setState({ totalXP: 0, streak: 0, bestStreak: 0 })
+    useUserStore.getState().syncGamificationFromProfile(350, 7)
     const state = useUserStore.getState()
-    expect(state.getStreakBonusXP()).toBe(200)
+    expect(state.totalXP).toBe(350)
+    expect(state.streak).toBe(7)
+    expect(state.bestStreak).toBe(7)
+  })
+
+  it('should apply a real task reward without exceeding the awarded amount', () => {
+    useUserStore.setState({ totalXP: 100, streak: 3, bestStreak: 5 })
+    useUserStore.getState().applyTaskReward(25, 4)
+    const state = useUserStore.getState()
+    expect(state.totalXP).toBe(125)
+    expect(state.streak).toBe(4)
+    expect(state.bestStreak).toBe(5) // no baja el record aunque la racha actual sea menor
   })
 
   it('should filter active plants', () => {

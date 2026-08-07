@@ -6,45 +6,167 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Nombres reales de los secrets del repo (SUPABASE_URL / SUPABASE_ANON_KEY,
+  # SIN prefijo VITE_) mapeados a las env vars que Vite/la app esperan
+  # (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). El mismatch de nombres acá
+  # era la causa raiz de que las 5 corridas anteriores de CI fallaran en el
+  # paso de Vitest: `secrets.VITE_SUPABASE_URL` no existe, GitHub Actions lo
+  # resuelve como string vacio, y lib/auth.ts tira "Missing Supabase
+  # environment variables" al importarse (rompe TODOS los tests, no solo
+  # los que hablan con Supabase real).
+  VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  # Usuario de testing dedicado para el flujo real de signup/login E2E
+  # (ver frontend/e2e/auth.spec.ts, describe "Login real contra Supabase").
+  # Documentado en frontend/e2e/README.md.
+  E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+  E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
 jobs:
-  build-and-test:
+  build:
+    name: TypeScript + Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: package-lock.json
-
       - name: Instalar dependencias (workspace)
         working-directory: .
         run: npm ci
-
-      - name: Typecheck + build
+      - name: TypeScript
+        run: npm run type-check
+      - name: Build de produccion
         run: npm run build
 
-      - name: Tests unitarios/integracion (vitest)
+  unit:
+    name: Unit + Integration (Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependencias (workspace)
+        working-directory: .
+        run: npm ci
+      - name: Vitest
         run: npm test
 
-      - name: Instalar browsers de Playwright
-        run: npx playwright install --with-deps chromium webkit
-
-      - name: Tests E2E (Playwright)
-        run: npx playwright test
-
-      - name: Subir reporte de Playwright si fallo
+  e2e-chromium-desktop:
+    name: E2E — Chromium Desktop
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependencias (workspace)
+        working-directory: .
+        run: npm ci
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Tests E2E — desktop (toda la suite)
+        run: npx playwright test --project=desktop
+      - name: Subir reporte si fallo
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-chromium-desktop
           path: frontend/playwright-report/
           retention-days: 7
+
+  e2e-chromium-mobile:
+    name: E2E — Chromium Mobile (Pixel 7 / Galaxy S9+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependencias (workspace)
+        working-directory: .
+        run: npm ci
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Tests E2E — mobile Chromium (responsive.spec.ts)
+        run: npx playwright test --project=pixel-7 --project=galaxy-s9
+      - name: Subir reporte si fallo
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-chromium-mobile
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  e2e-webkit-mobile:
+    name: E2E — WebKit Mobile (iPhone SE / 15 / 15 Pro Max)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependencias (workspace)
+        working-directory: .
+        run: npm ci
+      - name: Instalar WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Tests E2E — mobile WebKit (responsive.spec.ts)
+        run: npx playwright test --project=iphone-se --project=iphone-15 --project=iphone-15-pro-max
+      - name: Subir reporte si fallo
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-webkit-mobile
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  release-gate:
+    name: Release Gate
+    runs-on: ubuntu-latest
+    needs: [build, unit, e2e-chromium-desktop, e2e-chromium-mobile, e2e-webkit-mobile]
+    if: always()
+    steps:
+      - name: Verificar que todas las etapas pasaron
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "Release gate: FAIL — al menos una etapa no paso."
+            exit 1
+          fi
+          echo "Release gate: PASS — build, unit, y las 3 matrices de E2E pasaron."

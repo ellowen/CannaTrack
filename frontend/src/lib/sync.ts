@@ -214,7 +214,19 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
   }
 }
 
-export async function completeTaskInSupabase(taskId: string, notes?: string): Promise<void> {
+export interface TaskCompletionReward {
+  /** null cuando la tarea ya habia otorgado XP antes (deshacer/rehacer) — sin premio nuevo. */
+  xpGained: number | null
+  newStreak: number | null
+}
+
+/**
+ * Completa la tarea y devuelve el premio REAL otorgado por la DB
+ * (handle_task_completion -> log_xp/update_streak), no un calculo local.
+ * Supabase es la fuente de verdad del XP/racha — el caller debe usar este
+ * valor para actualizar la UI/cache local, nunca inventar un numero propio.
+ */
+export async function completeTaskInSupabase(taskId: string, notes?: string): Promise<TaskCompletionReward> {
   try {
     // handle_task_completion() otorga XP real en la DB (log_xp/update_streak)
     // y marca completed=true — pero solo la primera vez que la tarea se
@@ -226,12 +238,14 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
       .single()
     if (fetchError) throw fetchError
 
+    let reward: TaskCompletionReward = { xpGained: null, newStreak: null }
     if (!existing.xp_awarded) {
-      const { error: rpcError } = await supabase.rpc('handle_task_completion', {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('handle_task_completion', {
         task_id_param: taskId,
         user_id_param: existing.user_id,
       })
       if (rpcError) throw rpcError
+      reward = { xpGained: rpcData?.xp_gained ?? 0, newStreak: rpcData?.new_streak ?? null }
     }
 
     const { error } = await supabase
@@ -245,6 +259,7 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
       .eq('id', taskId)
 
     if (error) throw error
+    return reward
   } catch (error) {
     console.error('Error completando tarea:', error)
     throw error

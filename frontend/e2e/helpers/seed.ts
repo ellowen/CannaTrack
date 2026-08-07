@@ -292,12 +292,26 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
   // (en forma de fila de DB), asi AuthContext no las pisa con [].
   const state = (context as ContextWithMockState).__mockState
   if (!state) throw new Error('seedApp: llamar blockSupabase(context) primero')
-  // AuthContext usa profile.is_pro como fuente de verdad del plan (pisa el
-  // localStorage al cargar) — mantenerlo consistente con el `plan` pedido,
-  // salvo que el test ya haya fijado is_pro explicitamente via setMockProfile
+  // El plan efectivo (free/trial/pro) se resuelve en el frontend a partir
+  // de is_pro + trial_ends_at (ver src/lib/plan.ts) — NO alcanza con tocar
+  // is_pro solo. defaultProfile() trae trial_ends_at a 30 dias (trial
+  // vigente) por defecto, asi que pedir `plan: 'free'` sin tambien limpiar
+  // el trial seguiria dando acceso Pro-equivalente. Salvo que el test ya
+  // haya fijado is_pro/trial_ends_at explicitamente via setMockProfile
   // (p.ej. para probar plan!==is_pro a proposito, como en subscription.spec.ts).
+  //
+  // 'free' de test = usuario SIN trial nunca (trial_ends_at null), no un
+  // trial vencido -- eso es un escenario DISTINTO (bloqueo duro, ver
+  // subscription.spec.ts "trial vencido"). Con trial_ends_at ausente,
+  // useSubscription() da isBlocked:false (estado 'unknown') pero
+  // resolvePlanTier() igual da 'free' -- exactamente lo que estas pruebas
+  // de gates necesitan: limites Free visibles, sin la pantalla de bloqueo.
   if (opts.plan !== undefined) {
-    state.profile = { ...state.profile, is_pro: plan === 'pro' }
+    state.profile = {
+      ...state.profile,
+      is_pro: plan === 'pro',
+      trial_ends_at: plan === 'pro' ? state.profile.trial_ends_at : null,
+    }
   }
   // AuthContext tambien llama setUser(..., profile.username), que repuebla
   // userStore.name. Si el test simula un usuario sin onboarding (name=''

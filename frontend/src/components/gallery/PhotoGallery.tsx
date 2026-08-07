@@ -1,5 +1,6 @@
 import { useRef } from 'react'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 import type { WeekLog } from '@/types/weekLog'
 
 interface PhotoGalleryProps {
@@ -10,7 +11,7 @@ interface PhotoGalleryProps {
 
 export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const plan = useUserStore((s) => s.plan)
+  const { plan } = useSubscription()
   const photosOnly = logs.filter((l) => l.photoDataUrl || l.photoUrl)
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -34,7 +35,7 @@ export default function PhotoGallery({ logs, onAddPhoto, onDeletePhoto }: PhotoG
   return (
     <div className="space-y-3">
       {/* Upload button — solo Pro */}
-      {plan === 'pro' ? (
+      {hasProAccess(plan) ? (
         <button
           onClick={() => fileInputRef.current?.click()}
           className="w-full rounded-2xl border-2 border-dashed border-app-border p-6 text-center tap-highlight-none active:scale-[0.98] transition-all hover:border-brand-border group"

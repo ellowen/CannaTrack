@@ -690,12 +690,14 @@ export default function PlantDetail() {
       {/* Sheet de completado con nota */}
       <CompleteTaskSheet
         task={completingTask}
-        onConfirm={(taskId, notes) => {
+        onConfirm={async (taskId, notes) => {
           storeCompleteTask(taskId, notes)
-          // Sincronizar con Supabase (sin bloquear)
-          completeTaskInSupabase(taskId, notes).catch((err) =>
+          try {
+            return await completeTaskInSupabase(taskId, notes)
+          } catch (err) {
             console.error('Error sincronizando tarea completada:', err)
-          )
+            return null
+          }
         }}
         onClose={() => setCompletingTask(null)}
       />

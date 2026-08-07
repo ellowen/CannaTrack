@@ -86,10 +86,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userEmail || profile?.username) {
       useUserStore.getState().setUser(userId, userEmail ?? '', profile?.username ?? '')
     }
-    // La DB es la fuente de verdad del plan: is_pro -> pro. Sin profile
-    // (offline) no tocamos el plan local para no degradar por error.
+    // El plan (free/trial/pro) NO se duplica en userStore -- useSubscription()
+    // (via @/lib/plan resolvePlanTier) es la unica fuente, derivada en vivo
+    // de AuthContext.profile. Ver auditoria: tener el plan en dos lugares
+    // (Zustand + profile) permitia que quedaran desincronizados.
+    //
+    // XP/racha: Supabase (profiles.xp / profiles.streak_days) es la fuente
+    // de verdad — se sincroniza el cache local en cada carga/refresh/login
+    // para que nunca quede desalineado entre dispositivos o pestañas.
     if (profile) {
-      useUserStore.getState().setPlan(profile.is_pro ? 'pro' : 'free')
+      useUserStore.getState().syncGamificationFromProfile(profile.xp, profile.streak_days)
     }
   }
 

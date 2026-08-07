@@ -12,6 +12,7 @@ import { CompleteTaskSheet } from '@/components/tasks'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
+import { completeTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 const taskTypeLabel: Record<string, string> = {
@@ -71,7 +72,7 @@ export default function Dashboard() {
   useInitSync() // Cargar datos de Supabase al iniciar
 
   const navigate = useNavigate()
-  const { name, streak, totalXP, addXP } = useUserStore()
+  const { name, streak, totalXP, applyTaskReward } = useUserStore()
   const { plants, allPlants } = usePlants()
   const { todayTasks, completeTask } = useTasks()
 
@@ -122,12 +123,18 @@ export default function Dashboard() {
     setCompletingTask(task)
   }
 
-  const handleTaskConfirm = (notes?: string) => {
-    if (completingTask) {
-      completeTask(completingTask.id, notes)
-      // Award XP
-      addXP(15) // COMPLETE_TASK base
+  const handleTaskConfirm = async (notes?: string) => {
+    if (!completingTask) return null
+    completeTask(completingTask.id, notes)
+    try {
+      const reward = await completeTaskInSupabase(completingTask.id, notes)
+      if (reward.xpGained != null) applyTaskReward(reward.xpGained, reward.newStreak)
       setCompletingTask(null)
+      return reward
+    } catch (err) {
+      console.error('Error sincronizando tarea completada:', err)
+      setCompletingTask(null)
+      return null
     }
   }
 
@@ -422,9 +429,7 @@ export default function Dashboard() {
       {completingTask && (
         <CompleteTaskSheet
           task={completingTask}
-          onConfirm={(_, notes) => {
-            handleTaskConfirm(notes)
-          }}
+          onConfirm={(_, notes) => handleTaskConfirm(notes)}
           onClose={() => setCompletingTask(null)}
         />
       )}

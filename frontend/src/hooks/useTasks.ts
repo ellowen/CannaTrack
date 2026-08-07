@@ -1,10 +1,16 @@
 import { useTaskStore } from '@/store/taskStore'
 import { usePlants } from './usePlants'
 import { getTasksForDate, getUpcomingTasks, getOverdueTasks } from '@/lib/nutrition-utils'
-import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import type { ScheduledTask } from '@/types/plant'
 
 export function useTasks(plantId?: string) {
+  // completeTask/uncompleteTask son SOLO locales (store) — el caller es
+  // responsable de sincronizar con Supabase via completeTaskInSupabase()
+  // el mismo patron que ya usan PlantDetail.tsx y Calendar.tsx. Antes esta
+  // funcion TAMBIEN llamaba a completeTaskInSupabase internamente, y
+  // Home.tsx la llamaba a traves de este hook Y otra vez directo — dos
+  // llamadas en paralelo sin esperar una a la otra podian otorgar XP dos
+  // veces por la misma tarea (race condition, ver auditoria).
   const { tasks, completeTask, uncompleteTask, resetTasksForPlant } = useTaskStore()
   const { plants } = usePlants()
 
@@ -34,23 +40,13 @@ export function useTasks(plantId?: string) {
     return activeCycleTasks.filter((t) => t.plantId === pId)
   }
 
-  function completeTaskWithSync(id: string, notes?: string): void {
-    completeTask(id, notes)
-    void completeTaskInSupabase(id, notes)
-  }
-
-  function uncompleteTaskWithSync(id: string): void {
-    uncompleteTask(id)
-    void uncompleteTaskInSupabase(id)
-  }
-
   return {
     tasks: activeCycleTasks,
     todayTasks,
     upcomingTasks,
     overdueTasks,
-    completeTask: completeTaskWithSync,
-    uncompleteTask: uncompleteTaskWithSync,
+    completeTask,
+    uncompleteTask,
     resetTasksForPlant,
     getTasksForPlant,
   }

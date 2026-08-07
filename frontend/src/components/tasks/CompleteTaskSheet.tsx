@@ -8,9 +8,9 @@ import { useMeasurementStore } from '@/store/measurementStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useUserStore } from '@/store/userStore'
 import { syncMeasurementToSupabase } from '@/lib/sync'
+import type { TaskCompletionReward } from '@/lib/sync'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
-import { XP } from '@/lib/gamification'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutrición',
@@ -39,7 +39,8 @@ function fmt(n: number) {
 
 interface CompleteTaskSheetProps {
   task: ScheduledTask | null
-  onConfirm: (taskId: string, notes?: string) => void
+  /** Debe devolver el premio REAL que otorgo Supabase (o null si ya se habia otorgado antes). */
+  onConfirm: (taskId: string, notes?: string) => Promise<TaskCompletionReward | null>
   onClose: () => void
 }
 
@@ -48,10 +49,11 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   const [ec, setEc]               = useState('')
   const [ph, setPh]               = useState('')
   const [recipeOpen, setRecipeOpen] = useState(false)
-  const [xpReward, setXpReward]   = useState<{ xpGained: number; streakBonus: number; newStreak: number } | null>(null)
+  const [xpReward, setXpReward]   = useState<{ xpGained: number; newStreak: number | null } | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const textareaRef               = useRef<HTMLTextAreaElement>(null)
   const addMeasurement            = useMeasurementStore((s) => s.addLog)
-  const addXP                     = useUserStore((s) => s.addXP)
+  const applyTaskReward           = useUserStore((s) => s.applyTaskReward)
   const userId                    = useUserStore((s) => s.userId)
   const plants                    = usePlantStore((s) => s.plants)
   const nutritionTables           = useNutritionStore((s) => s.tables)
@@ -82,26 +84,28 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
     if (e.target === e.currentTarget) onClose()
   }
 
-  function handleConfirm() {
-    if (!task) return
+  async function handleConfirm() {
+    if (!task || confirming) return
     hapticSuccess()
+    setConfirming(true)
 
     if (hasMeasure) {
       const log = addMeasurement({ plantId: task.plantId, logDate: new Date(), ec: ecNum, ph: phNum })
       if (userId) void syncMeasurementToSupabase(log, userId)
     }
 
-    onConfirm(task.id, notes.trim() || undefined)
+    // El premio (si hay) lo devuelve Supabase — nunca se calcula localmente.
+    // handle_task_completion() ya evita otorgar XP dos veces por la misma
+    // tarea (deshacer/rehacer), asi que no hace falta duplicar esa logica aca.
+    const reward = await onConfirm(task.id, notes.trim() || undefined).catch(() => null)
 
-    // Solo otorgar XP la primera vez que esta tarea se completa — evita
-    // farmear XP/racha completando y deshaciendo la misma tarea repetidas veces.
-    if (!task.xpAwarded) {
-      const baseXP = hasMeasure ? XP.COMPLETE_WITH_MEASUREMENT : XP.COMPLETE_TASK
-      const reward = addXP(baseXP)
-      setXpReward(reward)
+    if (reward && reward.xpGained != null) {
+      applyTaskReward(reward.xpGained, reward.newStreak)
+      setXpReward({ xpGained: reward.xpGained, newStreak: reward.newStreak })
       // Resetear xpReward antes de cerrar para evitar el flash en la proxima apertura
-      setTimeout(() => { setXpReward(null); onClose() }, 1400)
+      setTimeout(() => { setXpReward(null); setConfirming(false); onClose() }, 1400)
     } else {
+      setConfirming(false)
       onClose()
     }
   }
@@ -172,17 +176,19 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
                   +{xpReward.xpGained} XP
                 </span>
               </div>
-              {xpReward.streakBonus > 0 && (
+              {(xpReward.newStreak === 7 || xpReward.newStreak === 30) && (
                 <p className="text-sm font-bold text-amber-500 mt-2">
-                  🔥 Bonus de racha +{xpReward.streakBonus} XP
+                  🔥 ¡Racha de {xpReward.newStreak} dias!
                 </p>
               )}
-              <div className="flex items-center gap-1.5 mt-3 bg-app-elevated rounded-full px-4 py-2">
-                <span className="text-lg">🔥</span>
-                <span className="text-sm font-bold text-ink-1">
-                  {xpReward.newStreak} {xpReward.newStreak === 1 ? 'día' : 'días'} seguidos
-                </span>
-              </div>
+              {xpReward.newStreak != null && (
+                <div className="flex items-center gap-1.5 mt-3 bg-app-elevated rounded-full px-4 py-2">
+                  <span className="text-lg">🔥</span>
+                  <span className="text-sm font-bold text-ink-1">
+                    {xpReward.newStreak} {xpReward.newStreak === 1 ? 'día' : 'días'} seguidos
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

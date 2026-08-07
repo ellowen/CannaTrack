@@ -4,7 +4,8 @@ import { differenceInDays } from 'date-fns'
 import { usePlants } from '@/hooks/usePlants'
 import { useTaskStore } from '@/store/taskStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 import Button from '@/components/ui/Button'
 import type { Plant, PlantStatus } from '@/types/plant'
 import { useTranslation } from '@/i18n'
@@ -25,7 +26,7 @@ export default function Inventory() {
   const { allPlants } = usePlants()
   const { tasks: allTasks } = useTaskStore()
   const logs = useWeekLogStore((s) => s.logs)
-  const plan = useUserStore((s) => s.plan)
+  const { plan } = useSubscription()
 
   const [activeTab, setActiveTab] = useState<TabType>('active')
   const [searchQuery, setSearchQuery] = useState('')
@@ -79,7 +80,7 @@ export default function Inventory() {
 
   return (
     <div className="min-h-screen bg-app-bg pb-20">
-      {plan === 'free' && (
+      {!hasProAccess(plan) && (
         <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
           <span className="text-xl shrink-0">⭐</span>
           <div className="flex-1 min-w-0">

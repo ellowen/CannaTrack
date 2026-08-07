@@ -1,7 +1,8 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { usePlants } from '@/hooks/usePlants'
 import { usePlantStore } from '@/store/plantStore'
-import { useUserStore } from '@/store/userStore'
+import { hasProAccess } from '@/lib/plan'
+import { useSubscription } from '@/hooks/useSubscription'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
 import { hapticSuccess } from '@/lib/haptics'
@@ -13,11 +14,11 @@ export default function NewPlant() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { addPlant } = usePlants()
-  const plan   = useUserStore((s) => s.plan)
+  const { plan } = useSubscription()
   const plants = usePlantStore((s) => s.plants)
 
   const activePlants = plants.filter((p) => p.status === 'active')
-  const atFreeLimit  = plan === 'free' && activePlants.length >= FREE_PLANT_LIMIT
+  const atFreeLimit  = !hasProAccess(plan) && activePlants.length >= FREE_PLANT_LIMIT
 
   async function handleSubmit(values: PlantFormValues) {
     hapticSuccess()

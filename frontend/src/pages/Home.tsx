@@ -74,7 +74,7 @@ export default function Home() {
   const { t } = useTranslation()
 
   const navigate  = useNavigate()
-  const { name, streak, totalXP, addXP } = useUserStore()
+  const { name, streak, totalXP, applyTaskReward } = useUserStore()
   const levelInfo = getLevelInfo(totalXP)
   const { isLoading } = useAuth()
   const { plants, allPlants } = usePlants()
@@ -97,15 +97,20 @@ export default function Home() {
     }, 240)
   }
 
-  function handleResolveAll() {
+  async function handleResolveAll() {
     hapticSuccess()
-    overdueTasks.forEach((t) => {
-      completeTask(t.id)
-      void completeTaskInSupabase(t.id)
-    })
-    addXP(15 * overdueTasks.length)
+    const ids = overdueTasks.map((t) => t.id)
+    ids.forEach((id) => completeTask(id))
     setResolvedAll(true)
     setTimeout(() => setResolvedAll(false), 2500)
+    // Una sola llamada de sync por tarea (antes se llamaba dos veces en
+    // paralelo — via este handler y via completeTask — pudiendo otorgar
+    // XP duplicado por la misma tarea). El premio que se aplica al cache
+    // local es el que devuelve Supabase, no un calculo propio.
+    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => null)))
+    const xpGained = rewards.reduce((sum, r) => sum + (r?.xpGained ?? 0), 0)
+    const newStreak = rewards.reduce<number | null>((max, r) => (r?.newStreak != null ? Math.max(max ?? 0, r.newStreak) : max), null)
+    if (xpGained > 0) applyTaskReward(xpGained, newStreak)
   }
 
   const handleRefresh = useCallback(() => { hapticSuccess(); setRefreshKey((k) => k + 1) }, [])
@@ -155,13 +160,14 @@ export default function Home() {
     return plants.find((p) => p.id === plantId)
   }
 
-  function handleCompleteAll() {
+  async function handleCompleteAll() {
     hapticSuccess()
-    pending.forEach((t) => {
-      completeTask(t.id)
-      void completeTaskInSupabase(t.id)
-    })
-    addXP(10 * pending.length)
+    const ids = pending.map((t) => t.id)
+    ids.forEach((id) => completeTask(id))
+    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => null)))
+    const xpGained = rewards.reduce((sum, r) => sum + (r?.xpGained ?? 0), 0)
+    const newStreak = rewards.reduce<number | null>((max, r) => (r?.newStreak != null ? Math.max(max ?? 0, r.newStreak) : max), null)
+    if (xpGained > 0) applyTaskReward(xpGained, newStreak)
   }
 
   return (
@@ -727,9 +733,14 @@ export default function Home() {
 
     <CompleteTaskSheet
       task={completingTask}
-      onConfirm={(taskId, notes) => {
+      onConfirm={async (taskId, notes) => {
         completeTask(taskId, notes)
-        void completeTaskInSupabase(taskId, notes)
+        try {
+          return await completeTaskInSupabase(taskId, notes)
+        } catch (err) {
+          console.error('Error sincronizando tarea completada:', err)
+          return null
+        }
       }}
       onClose={() => setCompletingTask(null)}
     />
