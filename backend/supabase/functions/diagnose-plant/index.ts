@@ -81,14 +81,18 @@ serve(async (req) => {
     // ── Rate limiting ──────────────────────────────────────────────
     const month = new Date().toISOString().slice(0, 7)  // '2026-04'
 
-    // Verificar plan del usuario
+    // Verificar plan del usuario -- MISMO criterio que frontend/src/lib/plan.ts
+    // (resolvePlanTier/hasProAccess): trial vigente = acceso equivalente a Pro.
+    // Antes esto solo miraba is_pro, asi que un usuario en trial activo caia
+    // al limite Free (5/mes) en vez del limite Pro (30/mes) que le corresponde.
     const { data: profile } = await adminClient
       .from('profiles')
-      .select('is_pro')
+      .select('is_pro, trial_ends_at')
       .eq('id', user.id)
       .single()
 
-    const isPro = profile?.is_pro ?? false
+    const trialActive = !!profile?.trial_ends_at && new Date(profile.trial_ends_at).getTime() > Date.now()
+    const isPro = (profile?.is_pro ?? false) || trialActive
     const limit = isPro ? LIMITS.pro : LIMITS.free
 
     // Upsert del contador mensual
