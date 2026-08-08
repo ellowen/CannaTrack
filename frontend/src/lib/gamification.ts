@@ -48,16 +48,23 @@ export function getLevelInfo(totalXP: number): LevelInfo {
 /**
  * Calcula el porcentaje de salud (0–100) basado en tareas
  * completadas vs vencidas en los últimos 14 días.
+ *
+ * Las tareas de HOY no cuentan como "vencidas" todavía -- el usuario
+ * tiene el resto del dia para completarlas. Sin este corte, una planta
+ * recien creada con tareas de hoy sin completar mostraba "Salud: 0%"
+ * (rojo) antes de que el usuario tuviera siquiera la chance de actuar.
  */
 export function calculatePlantHealth(tasks: ScheduledTask[]): number {
   const now = new Date()
   const cutoff = new Date(now)
   cutoff.setDate(cutoff.getDate() - 14)
   cutoff.setHours(0, 0, 0, 0)
+  const todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
 
   const recent = tasks.filter((t) => {
     const d = new Date(t.scheduledDate)
-    return d >= cutoff && d <= now
+    return d >= cutoff && d < todayStart
   })
 
   if (recent.length === 0) return 100

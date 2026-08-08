@@ -144,3 +144,26 @@ export async function updateProfile(userId: string, updates: Record<string, any>
   if (error) throw error
   return data
 }
+
+/**
+ * Traduce errores de Supabase Auth (en ingles, a veces internos como
+ * "Refresh Token Not Found") a mensajes en español que un usuario puede
+ * entender y accionar. Sin esto, cualquier error se mostraba tal cual
+ * vino del SDK -- confuso incluso cuando el usuario hizo todo bien
+ * (ej. "Refresh Token Not Found" al intentar un login normal).
+ */
+export function humanizeAuthError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const msg = raw.toLowerCase()
+
+  if (msg.includes('invalid login credentials')) return 'Email o contraseña incorrectos.'
+  if (msg.includes('refresh token') || msg.includes('invalid refresh')) return 'Tu sesión expiró. Volvé a ingresar tus datos.'
+  if (msg.includes('email not confirmed')) return 'Confirmá tu email antes de ingresar — revisá tu bandeja de entrada.'
+  if (msg.includes('user already registered') || msg.includes('already been registered')) return 'Ya existe una cuenta con ese email. Intentá ingresar en vez de registrarte.'
+  if (msg.includes('password should be at least') || msg.includes('password is too short')) return 'La contraseña es demasiado corta.'
+  if (msg.includes('rate limit') || msg.includes('too many requests')) return 'Demasiados intentos. Esperá un momento y volvé a intentar.'
+  if (msg.includes('network') || msg.includes('fetch failed') || msg.includes('failed to fetch')) return 'No pudimos conectar. Revisá tu conexión a internet e intentá de nuevo.'
+  if (msg.includes('email address') && msg.includes('invalid')) return 'Ese email no parece válido.'
+
+  return 'No pudimos completar la acción. Intentá de nuevo en un momento.'
+}

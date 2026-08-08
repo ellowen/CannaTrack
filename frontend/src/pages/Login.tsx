@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { humanizeAuthError } from '@/lib/auth'
 import { LogoFull } from '@/components/ui'
 
 export default function Login() {
@@ -31,7 +32,7 @@ export default function Login() {
       await signIn({ email: email.trim(), password })
       navigate(from, { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
+      setError(humanizeAuthError(err))
     } finally {
       setLoading(false)
     }

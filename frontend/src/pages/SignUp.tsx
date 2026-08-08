@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { humanizeAuthError } from '@/lib/auth'
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -57,7 +58,7 @@ export default function SignUp() {
         replace: true,
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign up')
+      setError(humanizeAuthError(err))
     } finally {
       setLoading(false)
     }

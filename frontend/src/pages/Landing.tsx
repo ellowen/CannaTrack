@@ -326,7 +326,7 @@ export default function Landing() {
             </span>
           </a>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }} className="hidden md:flex">
+          <nav style={{ alignItems: 'center', gap: '32px' }} className="hidden md:flex">
             {NAV_LINKS.map(l => <a key={l.href} href={l.href} className="lp-link">{l.label}</a>)}
           </nav>
 
