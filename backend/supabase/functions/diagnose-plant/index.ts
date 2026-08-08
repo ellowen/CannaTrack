@@ -95,17 +95,26 @@ serve(async (req) => {
     const isPro = (profile?.is_pro ?? false) || trialActive
     const limit = isPro ? LIMITS.pro : LIMITS.free
 
-    // Upsert del contador mensual
-    const { data: usage, error: usageErr } = await adminClient
+    // Asegurar que la fila del mes exista, SIN pisar el contador si ya
+    // existe -- ignoreDuplicates:true hace ON CONFLICT DO NOTHING, a
+    // diferencia de ignoreDuplicates:false que reescribia diagnosis_count=0
+    // en cada llamada y volvia inefectivo el limite mensual.
+    const { error: ensureErr } = await adminClient
       .from('ai_usage')
       .upsert(
         { user_id: user.id, month, diagnosis_count: 0 },
-        { onConflict: 'user_id,month', ignoreDuplicates: false }
+        { onConflict: 'user_id,month', ignoreDuplicates: true }
       )
+    if (ensureErr) console.error('[rate-limit] upsert error:', ensureErr.message)
+
+    const { data: usage, error: usageErr } = await adminClient
+      .from('ai_usage')
       .select('diagnosis_count')
+      .eq('user_id', user.id)
+      .eq('month', month)
       .single()
 
-    if (usageErr) console.error('[rate-limit] upsert error:', usageErr.message)
+    if (usageErr) console.error('[rate-limit] select error:', usageErr.message)
 
     const currentCount = usage?.diagnosis_count ?? 0
     if (currentCount >= limit) {
