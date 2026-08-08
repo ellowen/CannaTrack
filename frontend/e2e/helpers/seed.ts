@@ -211,11 +211,24 @@ export function setMockProfile(context: BrowserContext, opts: MockProfileOptions
 }
 
 /** Navega dentro de la app autenticada y espera a que termine la carga de auth. */
+/**
+ * Navega y espera a que la app termine de cargar. "Cargando..." puede
+ * aparecer en DOS fases secuenciales y separadas que comparten el mismo
+ * texto: el auth-check de ProtectedRoute, y el fallback de <Suspense> del
+ * chunk lazy de la ruta (code splitting por ruta). Un solo chequeo de
+ * isVisible() antes de esperar puede perderse la segunda fase si arranca
+ * justo despues de que la primera ya desaparecio -- carrera que Chromium
+ * (mas rapido) casi nunca pierde pero WebKit si, de forma intermitente
+ * (confirmado en CI: mismos tests, mismos datos, fallan solo a veces).
+ * Loop acotado en vez de un chequeo unico: sin isVisible() racy, y usando
+ * count() (no strict-mode-sensible) para tolerar 0, 1 o mas coincidencias.
+ */
 export async function gotoApp(page: Page, path: string): Promise<void> {
   await page.goto(path)
   const loading = page.getByText('Cargando...')
-  if (await loading.isVisible().catch(() => false)) {
-    await loading.waitFor({ state: 'hidden', timeout: 15_000 })
+  for (let i = 0; i < 3; i++) {
+    if ((await loading.count()) === 0) break
+    await loading.first().waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {})
   }
 }
 
