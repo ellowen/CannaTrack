@@ -435,6 +435,7 @@ const es = {
     nav_faq:           'FAQ',
     nav_login:         'Iniciar sesion',
     nav_cta:           'Empezar gratis',
+    nav_menu:          'Menu',
 
     badge:             'MVP GRATUITO — DISPONIBLE AHORA',
     hero_h1_line1:     'Del brote a la cosecha,',
@@ -457,7 +458,7 @@ const es = {
     p1_a:              'Buscas el cuadro de REVEGETAR que tenes guardado en alguna carpeta, tratas de calcular en que semana estas y te olvidadas si ya lo aplicaste.',
     p2_q:              '"Perdi la cuenta. Estamos en S3 o S4?"',
     p2_a:              'La planta crecio, pero no tenes registro exacto de cuando empezo la vege ni cuando se acerca la floracion.',
-    p3_q:              '"La regie ayer o antier?"',
+    p3_q:              '"La regue ayer o antier?"',
     p3_a:              'Regaste de mas o dejaste pasar dias. Sin registro, tu cerebro inventa los datos y la planta lo paga.',
     p4_q:              '"En que semana empezo el estiramiento?"',
     p4_a:              'No tenes fotos sistematicas. La proxima cosecha vas a repetir los mismos errores porque no hay historial.',
@@ -568,7 +569,7 @@ const es = {
     faq8_q:            'Cuando sale el diagnostico por IA?',
     faq8_a:            'El diagnostico IA por foto (analisis de deficiencias, plagas y enfermedades con Claude AI) esta en desarrollo. Si te registras hoy, tenes acceso asegurado cuando salga.',
 
-    cta_h2:            'Tu primer cosecha perfecta empieza hoy.',
+    cta_h2:            'Tu primera cosecha perfecta empieza hoy.',
     cta_desc:          'Registrate gratis, carga tu primera planta y en 30 segundos tenes el calendario nutricional completo hasta la cosecha.',
     cta_main:          'Empezar gratis ahora →',
     cta_disclaimer:    'Sin tarjeta de credito. Sin compromisos.',
@@ -577,7 +578,7 @@ const es = {
     hero_visual_label2: 'Seguí',
     hero_visual_label3: 'Crecé',
 
-    footer_tagline:    'Seguimiento de cultivos de cannabis. Del brote a la cosecha.',
+    footer_tagline:    'Seguimiento de cultivos. Del brote a la cosecha.',
     footer_product:    'Producto',
     footer_access:     'Acceso',
     footer_create:     'Crear cuenta',

@@ -438,6 +438,7 @@ const en: Translations = {
     nav_faq:           'FAQ',
     nav_login:         'Sign in',
     nav_cta:           'Get started free',
+    nav_menu:          'Menu',
 
     badge:             'FREE MVP — AVAILABLE NOW',
     hero_h1_line1:     'From seedling to harvest,',
@@ -580,7 +581,7 @@ const en: Translations = {
     hero_visual_label2: 'Track',
     hero_visual_label3: 'Grow',
 
-    footer_tagline:    'Cannabis grow tracking. From seedling to harvest.',
+    footer_tagline:    'Grow tracking. From seedling to harvest.',
     footer_product:    'Product',
     footer_access:     'Access',
     footer_create:     'Create account',

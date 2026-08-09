@@ -257,8 +257,8 @@ export default function Landing() {
               {t('landing.nav_cta')}
             </Link>
             <button onClick={() => setMenuOpen(v => !v)}
-              style={{ background: 'none', border: 'none', color: C.ink2, cursor: 'pointer', padding: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}
-              className="md:hidden" aria-label="Menu">
+              style={{ background: 'none', border: 'none', color: C.ink2, cursor: 'pointer', padding: '4px', flexDirection: 'column', gap: '4px' }}
+              className="flex md:hidden" aria-label={t('landing.nav_menu')}>
               {[0, 1, 2].map(i => (
                 <div key={i} style={{ width: '20px', height: '2px', background: 'currentColor', borderRadius: '1px', transition: 'all 0.2s',
                   ...(menuOpen && i === 0 ? { transform: 'rotate(45deg) translate(4px, 4px)' } : {}),
@@ -325,11 +325,11 @@ export default function Landing() {
             <div style={{ flexShrink: 0, width: '100%', maxWidth: '420px', position: 'relative' }}>
               <GrowthLines variant="hero" />
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
-                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label1')}</span>
+                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label1')}</span>
                 <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
-                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label2')}</span>
+                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label2')}</span>
                 <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
-                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label3')}</span>
+                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label3')}</span>
               </div>
             </div>
           </div>
@@ -363,7 +363,7 @@ export default function Landing() {
               <div key={p.q} className="lp-card" style={{ padding: '24px' }}>
                 <div style={{ color: C.green, marginBottom: '14px' }}><p.Icon size={26} /></div>
                 <p style={{ color: C.ink1, fontSize: '14px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4 }}>{p.q}</p>
-                <p style={{ color: C.ink3, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{p.a}</p>
+                <p style={{ color: C.ink2, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{p.a}</p>
               </div>
             ))}
           </div>
@@ -420,7 +420,7 @@ export default function Landing() {
               <div key={f.title} className="lp-card" style={{ padding: '28px' }}>
                 <div style={{ color: C.green, marginBottom: '16px' }}><f.Icon size={30} /></div>
                 <h3 style={{ color: C.white, fontSize: '15px', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.2px' }}>{f.title}</h3>
-                <p style={{ color: C.ink3, fontSize: '13px', lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
+                <p style={{ color: C.ink2, fontSize: '13px', lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
               </div>
             ))}
           </div>
