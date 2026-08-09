@@ -443,8 +443,6 @@ const es = {
     hero_sub_bold:     'Cada tarea, cada dia, en tu bolsillo.',
     hero_cta:          'Empezar gratis →',
     hero_see_how:      'Ver como funciona',
-    hero_social_proof: '+200 cultivadores ya organizaron su grow',
-    hero_social_count: '+200 cultivadores',
 
     trust_revegetar:   'Tabla REVEGETAR oficial incluida',
     trust_offline:     'Funciona sin internet',
@@ -542,8 +540,14 @@ const es = {
     pp7:               'Exportar historial en PDF',
     pp8:               'Soporte prioritario',
 
-    testi_section:     'Lo que dicen nuestros usuarios',
-    testi_h2:          'Cultivadores que ya organizaron su grow',
+    why_section:       'Por que CultiTrack',
+    why_h2:            'Construido para acompañar cada etapa de tu cultivo',
+    why_p1_title:      'Organizacion',
+    why_p1_desc:       'Todo lo importante de cada planta en un solo lugar -- sin carpetas, sin planillas sueltas.',
+    why_p2_title:      'Seguimiento',
+    why_p2_desc:       'No dependas de la memoria para saber que hiciste. Cada riego, cada medicion, queda registrado.',
+    why_p3_title:      'Constancia',
+    why_p3_desc:       'Convertimos el cuidado diario de tus plantas en un proceso simple de sostener, cosecha tras cosecha.',
 
     faq_section:       'Preguntas frecuentes',
     faq_h2:            'Preguntas frecuentes',
@@ -566,11 +570,12 @@ const es = {
 
     cta_h2:            'Tu primer cosecha perfecta empieza hoy.',
     cta_desc:          'Registrate gratis, carga tu primera planta y en 30 segundos tenes el calendario nutricional completo hasta la cosecha.',
-    cta_email_placeholder: 'tu@email.com',
-    cta_notify_pro:    'Avisame del Pro',
     cta_main:          'Empezar gratis ahora →',
     cta_disclaimer:    'Sin tarjeta de credito. Sin compromisos.',
-    cta_sent:          'Te avisamos cuando el Plan Pro este disponible. Gracias!',
+
+    hero_visual_label1: 'Planificá',
+    hero_visual_label2: 'Seguí',
+    hero_visual_label3: 'Crecé',
 
     footer_tagline:    'Seguimiento de cultivos de cannabis. Del brote a la cosecha.',
     footer_product:    'Producto',
@@ -579,7 +584,7 @@ const es = {
     footer_login:      'Iniciar sesion',
     footer_contact:    'Contacto',
     footer_b2b:        'Marcas / B2B',
-    footer_copy:       '2024 CultiTrack. Todos los derechos reservados.',
+    footer_copy:       'CultiTrack. Todos los derechos reservados.',
     footer_privacy:    'Privacidad',
     footer_terms:      'Terminos',
     footer_age:        'Solo para mayores de 18 anos',

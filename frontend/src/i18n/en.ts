@@ -446,8 +446,6 @@ const en: Translations = {
     hero_sub_bold:     'Every task, every day, in your pocket.',
     hero_cta:          'Get started free →',
     hero_see_how:      'See how it works',
-    hero_social_proof: '+200 growers already organized their grow',
-    hero_social_count: '+200 growers',
 
     trust_revegetar:   'Official REVEGETAR table included',
     trust_offline:     'Works without internet',
@@ -545,8 +543,14 @@ const en: Translations = {
     pp7:               'Export history as PDF',
     pp8:               'Priority support',
 
-    testi_section:     'What our users say',
-    testi_h2:          'Growers who already organized their grow',
+    why_section:       'Why CultiTrack',
+    why_h2:            'Built to support every stage of your grow',
+    why_p1_title:      'Organization',
+    why_p1_desc:       'Everything that matters for each plant in one place -- no folders, no loose spreadsheets.',
+    why_p2_title:      'Tracking',
+    why_p2_desc:       'Stop relying on memory to know what you did. Every watering, every reading, gets logged.',
+    why_p3_title:      'Consistency',
+    why_p3_desc:       'We turn the daily care of your plants into a simple process you can keep up, harvest after harvest.',
 
     faq_section:       'FAQ',
     faq_h2:            'Frequently asked questions',
@@ -569,11 +573,12 @@ const en: Translations = {
 
     cta_h2:            'Your first perfect harvest starts today.',
     cta_desc:          'Sign up free, add your first plant and in 30 seconds you have the complete nutrition calendar all the way to harvest.',
-    cta_email_placeholder: 'your@email.com',
-    cta_notify_pro:    'Notify me about Pro',
     cta_main:          'Get started free now →',
     cta_disclaimer:    'No credit card. No commitments.',
-    cta_sent:          'We will let you know when the Pro plan is available. Thanks!',
+
+    hero_visual_label1: 'Plan',
+    hero_visual_label2: 'Track',
+    hero_visual_label3: 'Grow',
 
     footer_tagline:    'Cannabis grow tracking. From seedling to harvest.',
     footer_product:    'Product',
@@ -582,7 +587,7 @@ const en: Translations = {
     footer_login:      'Sign in',
     footer_contact:    'Contact',
     footer_b2b:        'Brands / B2B',
-    footer_copy:       '2024 CultiTrack. All rights reserved.',
+    footer_copy:       'CultiTrack. All rights reserved.',
     footer_privacy:    'Privacy',
     footer_terms:      'Terms',
     footer_age:        'For adults 18+ only',

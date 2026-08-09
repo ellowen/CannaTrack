@@ -1,0 +1,33 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#050E07" />
+
+  <!-- Growth Lines — motivo de marca, raiz / tallo / ramificacion, solo verde en distintas opacidades -->
+  <g fill="none" stroke="#3DCC63" stroke-linecap="round">
+    <path d="M 940 560 C 934 500, 946 460, 936 400" stroke-width="4" opacity="0.5" />
+    <path d="M 936 400 C 900 420, 860 424, 812 448" stroke-width="2.5" opacity="0.3" />
+    <path d="M 936 400 C 968 418, 992 418, 1024 446" stroke-width="2.5" opacity="0.3" />
+    <path d="M 938 400 C 932 320, 946 270, 936 190" stroke-width="4" opacity="0.55" />
+    <path d="M 936 300 C 880 284, 830 240, 764 224" stroke-width="2.5" opacity="0.35" />
+    <circle cx="764" cy="224" r="6" fill="#3DCC63" opacity="0.55" />
+    <path d="M 936 250 C 1000 232, 1052 190, 1116 176" stroke-width="2.5" opacity="0.35" />
+    <circle cx="1116" cy="176" r="6" fill="#3DCC63" opacity="0.55" />
+    <path d="M 936 190 C 928 130, 944 96, 934 48" stroke-width="3" opacity="0.75" />
+    <circle cx="934" cy="42" r="9" fill="#3DCC63" opacity="0.85" />
+    <circle cx="934" cy="42" r="18" fill="#3DCC63" opacity="0.14" />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="90" y="330" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="88" font-weight="800" letter-spacing="-2">
+    <tspan fill="#FFFFFF">Culti</tspan><tspan fill="#3DCC63">Track</tspan>
+  </text>
+  <text x="92" y="378" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="26" font-weight="500" fill="rgba(255,255,255,0.6)">
+    Seguimiento de cultivos de cannabis
+  </text>
+
+  <!-- Badge -->
+  <rect x="92" y="410" width="230" height="40" rx="20" fill="rgba(61,204,99,0.12)" stroke="rgba(61,204,99,0.3)" />
+  <circle cx="114" cy="430" r="4" fill="#3DCC63" />
+  <text x="128" y="436" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="16" font-weight="700" fill="#3DCC63" letter-spacing="0.5">
+    CALENDARIO NUTRICIONAL
+  </text>
+</svg>

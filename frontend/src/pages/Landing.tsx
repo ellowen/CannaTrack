@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from '@/i18n'
 import { useUserStore } from '@/store/userStore'
 import type { Language } from '@/i18n'
+import { GrowthLines } from '@/components/landing/GrowthLines'
+import {
+  ChartIcon, CalendarIcon, DropletIcon, CameraIcon, FlaskIcon,
+  SproutIcon, SignalOffIcon, SmartphoneIcon, TrophyIcon, ShieldIcon,
+  CheckBadgeIcon, LeafBadgeIcon,
+} from '@/components/landing/LandingIcons'
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 // ─── Colores de la landing (siempre dark) ────────────────────────────────────
 const C = {
@@ -24,6 +34,7 @@ function useFadeIn(threshold = 0.12) {
   useEffect(() => {
     if (!ref.current) return
     const el = ref.current
+    if (prefersReducedMotion()) return
     el.style.opacity = '0'
     el.style.transform = 'translateY(24px)'
     el.style.transition = 'opacity 0.6s ease, transform 0.6s ease'
@@ -76,113 +87,6 @@ function LogoMark({ size = 36 }: { size?: number }) {
   )
 }
 
-// ─── Mockup telefono ─────────────────────────────────────────────────────────
-function PhoneMockup() {
-  return (
-    <div style={{ position: 'relative', width: '280px', flexShrink: 0 }} className="lp-float">
-      <div style={{
-        background: 'linear-gradient(145deg, #0d1f11, #071008)',
-        borderRadius: '44px', padding: '10px',
-        border: '1px solid rgba(61,204,99,0.18)',
-        boxShadow: '0 0 80px rgba(61,204,99,0.08), 0 40px 100px rgba(0,0,0,0.7)',
-      }}>
-        <div style={{
-          background: C.bg, borderRadius: '36px', overflow: 'hidden',
-          height: '560px', padding: '18px 14px 0', position: 'relative',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '18px' }}>
-            <span style={{ color: C.ink3, fontSize: '10px', fontWeight: 600 }}>9:41</span>
-            <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-              {[3, 2, 1].map(h => (
-                <div key={h} style={{ width: '3px', height: `${h * 3 + 3}px`, background: C.ink3, borderRadius: '1px' }} />
-              ))}
-              <div style={{ width: '12px', height: '6px', border: `1px solid ${C.ink3}`, borderRadius: '2px', marginLeft: '3px' }}>
-                <div style={{ width: '8px', height: '4px', background: C.green, borderRadius: '1px' }} />
-              </div>
-            </div>
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: C.ink3, fontSize: '11px', margin: '0 0 2px' }}>Buenos dias, Marcos 👋</p>
-            <h3 style={{ color: C.white, fontSize: '18px', fontWeight: 800, margin: 0 }}>Tu grow hoy</h3>
-          </div>
-          <div style={{
-            background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)',
-            borderRadius: '12px', padding: '8px 12px',
-            display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px',
-          }}>
-            <span style={{ fontSize: '12px' }}>⚠️</span>
-            <span style={{ color: '#f87171', fontSize: '11px', fontWeight: 600 }}>1 tarea vencida — Riego Gelato</span>
-          </div>
-          <div style={{
-            background: 'rgba(61,204,99,0.07)', border: '1px solid rgba(61,204,99,0.22)',
-            borderRadius: '16px', padding: '12px', marginBottom: '8px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-              <div>
-                <span style={{ color: C.green, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em' }}>NUTRICION · S3 CRECIMIENTO</span>
-                <p style={{ color: C.white, fontSize: '13px', fontWeight: 700, margin: '2px 0 0' }}>Gelato #2</p>
-              </div>
-              <span style={{ background: C.greenDim, color: C.green, fontSize: '9px', fontWeight: 700, borderRadius: '8px', padding: '3px 8px' }}>Hoy</span>
-            </div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {['Growth 2ml/L', 'Calcium 1ml/L', 'Azospirilum 1ml/L'].map(p => (
-                <span key={p} style={{ background: 'rgba(255,255,255,0.06)', color: C.ink2, fontSize: '9px', borderRadius: '6px', padding: '2px 6px' }}>{p}</span>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <span style={{ color: C.ink3, fontSize: '9px' }}>EC 0.6-0.8</span>
-              <span style={{ color: C.ink3, fontSize: '9px' }}>pH 5.5-6.0</span>
-            </div>
-          </div>
-          <div style={{
-            background: C.card, border: `1px solid ${C.border}`,
-            borderRadius: '14px', padding: '10px 12px',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px',
-          }}>
-            <div>
-              <span style={{ color: C.ink3, fontSize: '9px' }}>RIEGO · Manana</span>
-              <p style={{ color: C.ink1, fontSize: '12px', fontWeight: 600, margin: '1px 0 0' }}>Riego + foliar</p>
-            </div>
-            <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: `1.5px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', border: `1.5px solid ${C.ink3}` }} />
-            </div>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: C.ink2, fontSize: '11px', fontWeight: 700 }}>Mis plantas</span>
-              <span style={{ color: C.green, fontSize: '10px' }}>Ver todas</span>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[
-                { name: 'Gelato #2', stage: 'S3 Vege', pct: 58, c: C.green },
-                { name: 'White Wid.', stage: 'F4 Bulking', pct: 76, c: '#f59e0b' },
-              ].map(plant => (
-                <div key={plant.name} style={{ flex: 1, background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '10px' }}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>🌿</div>
-                  <p style={{ color: C.white, fontSize: '10px', fontWeight: 700, margin: '0 0 1px' }}>{plant.name}</p>
-                  <p style={{ color: C.ink3, fontSize: '9px', margin: '0 0 6px' }}>{plant.stage}</p>
-                  <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '2px' }}>
-                    <div style={{ height: '100%', width: `${plant.pct}%`, background: plant.c, borderRadius: '2px' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            background: 'rgba(5,14,7,0.95)', backdropFilter: 'blur(12px)',
-            padding: '12px 20px 20px', display: 'flex', justifyContent: 'space-around',
-          }}>
-            {['🏠', '📅', '🌿', '📷', '👤'].map((icon, i) => (
-              <span key={i} style={{ fontSize: '17px', opacity: i === 0 ? 1 : 0.35, cursor: 'default' }}>{icon}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Landing() {
@@ -191,8 +95,6 @@ export default function Landing() {
   const setLanguage = useUserStore(s => s.setLanguage)
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const [email, setEmail] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
 
   const heroRef     = useRef<HTMLDivElement>(null)
   const problemRef  = useFadeIn()
@@ -200,13 +102,14 @@ export default function Landing() {
   const featuresRef = useFadeIn()
   const b2bRef      = useFadeIn()
   const pricingRef  = useFadeIn()
-  const testiRef    = useFadeIn()
+  const whyRef      = useFadeIn()
   const faqRef      = useFadeIn()
   const ctaRef      = useFadeIn()
 
   useEffect(() => {
     const el = heroRef.current
     if (!el) return
+    if (prefersReducedMotion()) return
     el.style.opacity = '0'
     el.style.transform = 'translateY(16px)'
     el.style.transition = 'opacity 0.8s ease, transform 0.8s ease'
@@ -216,11 +119,9 @@ export default function Landing() {
     }, 100))
   }, [])
 
-  function handleEmailSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!email.trim()) return
-    setEmailSent(true)
-  }
+  useEffect(() => {
+    document.documentElement.lang = language
+  }, [language])
 
   const NAV_LINKS = [
     { label: t('landing.nav_how'),      href: '#como-funciona' },
@@ -230,26 +131,27 @@ export default function Landing() {
   ]
 
   const PROBLEMS = [
-    { emoji: '📊', q: t('landing.p1_q'), a: t('landing.p1_a') },
-    { emoji: '📅', q: t('landing.p2_q'), a: t('landing.p2_a') },
-    { emoji: '💧', q: t('landing.p3_q'), a: t('landing.p3_a') },
-    { emoji: '📸', q: t('landing.p4_q'), a: t('landing.p4_a') },
+    { Icon: ChartIcon,    q: t('landing.p1_q'), a: t('landing.p1_a') },
+    { Icon: CalendarIcon, q: t('landing.p2_q'), a: t('landing.p2_a') },
+    { Icon: DropletIcon,  q: t('landing.p3_q'), a: t('landing.p3_a') },
+    { Icon: CameraIcon,   q: t('landing.p4_q'), a: t('landing.p4_a') },
   ]
 
+  // Un solo color de marca — la progresion se comunica con opacidad, no con hue.
   const STEPS = [
-    { num: '01', title: t('landing.step1_title'), desc: t('landing.step1_desc'), color: C.green },
-    { num: '02', title: t('landing.step2_title'), desc: t('landing.step2_desc'), color: '#60a5fa' },
-    { num: '03', title: t('landing.step3_title'), desc: t('landing.step3_desc'), color: '#f59e0b' },
-    { num: '04', title: t('landing.step4_title'), desc: t('landing.step4_desc'), color: '#a78bfa' },
+    { num: '01', title: t('landing.step1_title'), desc: t('landing.step1_desc'), opacity: 1 },
+    { num: '02', title: t('landing.step2_title'), desc: t('landing.step2_desc'), opacity: 0.85 },
+    { num: '03', title: t('landing.step3_title'), desc: t('landing.step3_desc'), opacity: 0.7 },
+    { num: '04', title: t('landing.step4_title'), desc: t('landing.step4_desc'), opacity: 0.55 },
   ]
 
   const FEATURES = [
-    { icon: '📅', title: t('landing.feat1_title'), desc: t('landing.feat1_desc') },
-    { icon: '🌿', title: t('landing.feat2_title'), desc: t('landing.feat2_desc') },
-    { icon: '📶', title: t('landing.feat3_title'), desc: t('landing.feat3_desc') },
-    { icon: '📸', title: t('landing.feat4_title'), desc: t('landing.feat4_desc') },
-    { icon: '🔬', title: t('landing.feat5_title'), desc: t('landing.feat5_desc') },
-    { icon: '🏆', title: t('landing.feat6_title'), desc: t('landing.feat6_desc') },
+    { Icon: CalendarIcon,   title: t('landing.feat1_title'), desc: t('landing.feat1_desc') },
+    { Icon: SproutIcon,     title: t('landing.feat2_title'), desc: t('landing.feat2_desc') },
+    { Icon: SignalOffIcon,  title: t('landing.feat3_title'), desc: t('landing.feat3_desc') },
+    { Icon: CameraIcon,     title: t('landing.feat4_title'), desc: t('landing.feat4_desc') },
+    { Icon: FlaskIcon,      title: t('landing.feat5_title'), desc: t('landing.feat5_desc') },
+    { Icon: TrophyIcon,     title: t('landing.feat6_title'), desc: t('landing.feat6_desc') },
   ]
 
   const FREE_FEATURES = [
@@ -264,13 +166,10 @@ export default function Landing() {
     t('landing.pp7'), t('landing.pp8'),
   ]
 
-  const TESTIMONIALS = [
-    { name: 'Martin R.', location: 'Buenos Aires', avatar: 'M', stars: 5,
-      text: 'Llevo 3 cosechas exitosas consecutivas desde que uso CultiTrack. Antes siempre se me cruzaban los dias con los nutrientes o me olvidaba el riego. Ahora abro la app y ya se exactamente que toca hacer.' },
-    { name: 'Sofia L.', location: 'Cordoba', avatar: 'S', stars: 5,
-      text: 'Lo instale y en 2 minutos tenia el calendario armado para mi White Widow con tabla REVEGETAR. Nunca mas calcule a mano. La seccion de fotos por semana me encanta para ver la evolucion.' },
-    { name: 'Diego M.', location: 'Mendoza', avatar: 'D', stars: 5,
-      text: 'Tengo 3 plantas en distintos estadios y CultiTrack me dice que toca hacer en cada una cada dia. Antes vivia confundido. Ahora el proceso es limpio y sistematico. Mis plantas nunca estuvieron mejor.' },
+  const WHY_PRINCIPLES = [
+    { Icon: LeafBadgeIcon,  title: t('landing.why_p1_title'), desc: t('landing.why_p1_desc') },
+    { Icon: ChartIcon,      title: t('landing.why_p2_title'), desc: t('landing.why_p2_desc') },
+    { Icon: SproutIcon,     title: t('landing.why_p3_title'), desc: t('landing.why_p3_desc') },
   ]
 
   const FAQS = [
@@ -285,11 +184,11 @@ export default function Landing() {
   ]
 
   const TRUST_BADGES = [
-    { icon: '✅', label: t('landing.trust_revegetar') },
-    { icon: '📶', label: t('landing.trust_offline') },
-    { icon: '📱', label: t('landing.trust_pwa') },
-    { icon: '🎮', label: t('landing.trust_gamif') },
-    { icon: '🔒', label: t('landing.trust_privacy') },
+    { Icon: CheckBadgeIcon, label: t('landing.trust_revegetar') },
+    { Icon: SignalOffIcon,  label: t('landing.trust_offline') },
+    { Icon: SmartphoneIcon, label: t('landing.trust_pwa') },
+    { Icon: TrophyIcon,     label: t('landing.trust_gamif') },
+    { Icon: ShieldIcon,     label: t('landing.trust_privacy') },
   ]
 
   const B2B_FEATURES = [
@@ -298,11 +197,9 @@ export default function Landing() {
   ]
 
   return (
-    <div style={{ background: C.bg, color: C.ink1, fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
+    <div className="lp-root" style={{ background: C.bg, color: C.ink1, fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
 
       <style>{`
-        .lp-float { animation: lp-float 4s ease-in-out infinite; }
-        @keyframes lp-float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
         .lp-glow { animation: lp-glow 2.5s ease-in-out infinite; }
         @keyframes lp-glow { 0%, 100% { box-shadow: 0 0 20px rgba(61,204,99,0.3); } 50% { box-shadow: 0 0 40px rgba(61,204,99,0.55); } }
         .lp-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
@@ -310,6 +207,21 @@ export default function Landing() {
         .lp-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; transition: all 0.2s; }
         .lp-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(61,204,99,0.2); transform: translateY(-2px); }
         .faq-content { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; }
+
+        .lp-root :focus-visible {
+          outline: 2px solid rgba(61,204,99,0.65);
+          outline-offset: 3px;
+          border-radius: 4px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lp-root * {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+            scroll-behavior: auto !important;
+          }
+        }
       `}</style>
 
       {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
@@ -409,16 +321,17 @@ export default function Landing() {
                 </a>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex' }}>
-                  {['M','S','D','J','A'].map((l, i) => (
-                    <div key={l} style={{ width: '28px', height: '28px', borderRadius: '50%', background: `hsl(${130 + i * 20}, 50%, ${25 + i * 5}%)`, border: '2px solid #050E07', marginLeft: i === 0 ? 0 : '-8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: C.white }}>{l}</div>
-                  ))}
-                </div>
-                <span style={{ color: C.ink3, fontSize: '13px' }}>{t('landing.hero_social_proof')}</span>
+            </div>
+            <div style={{ flexShrink: 0, width: '100%', maxWidth: '420px', position: 'relative' }}>
+              <GrowthLines variant="hero" />
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
+                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label1')}</span>
+                <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
+                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label2')}</span>
+                <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
+                <span style={{ color: C.ink3, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label3')}</span>
               </div>
             </div>
-            <div style={{ flexShrink: 0 }}><PhoneMockup /></div>
           </div>
         </div>
       </section>
@@ -428,15 +341,18 @@ export default function Landing() {
         <div style={{ maxWidth: '1120px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '24px', justifyContent: 'center', alignItems: 'center' }}>
           {TRUST_BADGES.map(b => (
             <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '7px', color: C.ink2, fontSize: '13px', fontWeight: 500 }}>
-              <span>{b.icon}</span><span>{b.label}</span>
+              <b.Icon size={16} /><span>{b.label}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── PROBLEMA ──────────────────────────────────────────────────────── */}
-      <section style={{ padding: '100px 24px' }}>
-        <div ref={problemRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
+      <section style={{ padding: '100px 24px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <GrowthLines variant="background" opacity={0.04} />
+        </div>
+        <div ref={problemRef} style={{ maxWidth: '1120px', margin: '0 auto', position: 'relative' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.problem_section')}</p>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1px', color: C.white, margin: '0 0 16px' }}>{t('landing.problem_h2')}</h2>
@@ -445,7 +361,7 @@ export default function Landing() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
             {PROBLEMS.map(p => (
               <div key={p.q} className="lp-card" style={{ padding: '24px' }}>
-                <div style={{ fontSize: '28px', marginBottom: '12px' }}>{p.emoji}</div>
+                <div style={{ color: C.green, marginBottom: '14px' }}><p.Icon size={26} /></div>
                 <p style={{ color: C.ink1, fontSize: '14px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4 }}>{p.q}</p>
                 <p style={{ color: C.ink3, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{p.a}</p>
               </div>
@@ -469,11 +385,11 @@ export default function Landing() {
             {STEPS.map((step, i) => (
               <div key={step.num} style={{ display: 'flex', gap: '24px', position: 'relative' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `${step.color}18`, border: `2px solid ${step.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: step.color, flexShrink: 0 }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `rgba(61,204,99,${step.opacity * 0.16})`, border: `2px solid rgba(61,204,99,${step.opacity * 0.55})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: C.green, opacity: 0.5 + step.opacity * 0.5, flexShrink: 0 }}>
                     {step.num}
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div style={{ flex: 1, width: '1px', background: `linear-gradient(to bottom, ${step.color}40, transparent)`, marginTop: '4px', minHeight: '48px' }} />
+                    <div style={{ flex: 1, width: '1px', background: `linear-gradient(to bottom, rgba(61,204,99,${step.opacity * 0.5}), transparent)`, marginTop: '4px', minHeight: '48px' }} />
                   )}
                 </div>
                 <div style={{ paddingBottom: i < STEPS.length - 1 ? '40px' : '0', paddingTop: '10px' }}>
@@ -502,7 +418,7 @@ export default function Landing() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
             {FEATURES.map(f => (
               <div key={f.title} className="lp-card" style={{ padding: '28px' }}>
-                <div style={{ fontSize: '32px', marginBottom: '14px' }}>{f.icon}</div>
+                <div style={{ color: C.green, marginBottom: '16px' }}><f.Icon size={30} /></div>
                 <h3 style={{ color: C.white, fontSize: '15px', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.2px' }}>{f.title}</h3>
                 <p style={{ color: C.ink3, fontSize: '13px', lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
               </div>
@@ -514,9 +430,9 @@ export default function Landing() {
       {/* ── B2B ───────────────────────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={b2bRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, rgba(61,204,99,0.05) 0%, rgba(96,165,250,0.05) 100%)', border: '1px solid rgba(61,204,99,0.15)', borderRadius: '28px', padding: '56px 48px', display: 'flex', gap: '48px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(61,204,99,0.07) 0%, rgba(61,204,99,0.02) 100%)', border: '1px solid rgba(61,204,99,0.15)', borderRadius: '28px', padding: '56px 48px', display: 'flex', gap: '48px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: '280px' }}>
-              <span style={{ background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>
+              <span style={{ background: C.greenDim, color: C.green, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>
                 {t('landing.b2b_badge')}
               </span>
               <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: '0 0 16px' }}>{t('landing.b2b_h2')}</h2>
@@ -529,7 +445,7 @@ export default function Landing() {
                 ))}
               </ul>
               <a href="mailto:hola@cannatrack.app?subject=Quiero listar mi tabla en CultiTrack"
-                style={{ display: 'inline-block', background: 'rgba(96,165,250,0.12)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
+                style={{ display: 'inline-block', background: C.greenDim, color: C.green, border: '1px solid rgba(61,204,99,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
                 {t('landing.b2b_cta')}
               </a>
             </div>
@@ -607,27 +523,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── TESTIMONIOS ───────────────────────────────────────────────────── */}
+      {/* ── POR QUE CULTITRACK ───────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={testiRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
+        <div ref={whyRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.testi_section')}</p>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: 0 }}>{t('landing.testi_h2')}</h2>
+            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.why_section')}</p>
+            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: 0 }}>{t('landing.why_h2')}</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            {TESTIMONIALS.map(testi => (
-              <div key={testi.name} className="lp-card" style={{ padding: '28px' }}>
-                <div style={{ display: 'flex', gap: '2px', marginBottom: '16px' }}>
-                  {Array.from({ length: testi.stars }).map((_, i) => <span key={i} style={{ color: '#f59e0b', fontSize: '14px' }}>★</span>)}
-                </div>
-                <p style={{ color: C.ink1, fontSize: '14px', lineHeight: 1.7, margin: '0 0 20px', fontStyle: 'italic' }}>"{testi.text}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `linear-gradient(135deg, ${C.green}40, ${C.green}20)`, border: `1px solid ${C.green}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 800, color: C.green }}>{testi.avatar}</div>
-                  <div>
-                    <p style={{ color: C.white, fontSize: '13px', fontWeight: 700, margin: 0 }}>{testi.name}</p>
-                    <p style={{ color: C.ink3, fontSize: '11px', margin: 0 }}>{testi.location}</p>
-                  </div>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+            {WHY_PRINCIPLES.map(p => (
+              <div key={p.title} className="lp-card" style={{ padding: '32px' }}>
+                <div style={{ color: C.green, marginBottom: '16px' }}><p.Icon size={28} /></div>
+                <h3 style={{ color: C.white, fontSize: '16px', fontWeight: 700, marginBottom: '10px', letterSpacing: '-0.2px' }}>{p.title}</h3>
+                <p style={{ color: C.ink2, fontSize: '14px', lineHeight: 1.7, margin: 0 }}>{p.desc}</p>
               </div>
             ))}
           </div>
@@ -645,11 +553,13 @@ export default function Landing() {
             {FAQS.map((faq, i) => (
               <div key={i} style={{ background: openFaq === i ? 'rgba(61,204,99,0.04)' : C.card, border: `1px solid ${openFaq === i ? 'rgba(61,204,99,0.2)' : C.border}`, borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-answer-${i}`}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', textAlign: 'left', gap: '12px' }}>
                   <span style={{ color: C.white, fontSize: '15px', fontWeight: 600, lineHeight: 1.4 }}>{faq.q}</span>
-                  <span style={{ color: openFaq === i ? C.green : C.ink3, fontSize: '18px', flexShrink: 0, transition: 'transform 0.3s', transform: openFaq === i ? 'rotate(45deg)' : 'rotate(0deg)', display: 'block', lineHeight: 1 }}>+</span>
+                  <span aria-hidden="true" style={{ color: openFaq === i ? C.green : C.ink3, fontSize: '18px', flexShrink: 0, transition: 'transform 0.3s', transform: openFaq === i ? 'rotate(45deg)' : 'rotate(0deg)', display: 'block', lineHeight: 1 }}>+</span>
                 </button>
-                <div className="faq-content" style={{ maxHeight: openFaq === i ? '200px' : '0', opacity: openFaq === i ? 1 : 0 }}>
+                <div id={`faq-answer-${i}`} className="faq-content" style={{ maxHeight: openFaq === i ? '200px' : '0', opacity: openFaq === i ? 1 : 0 }}>
                   <p style={{ color: C.ink2, fontSize: '14px', lineHeight: 1.7, padding: '0 20px 18px', margin: 0 }}>{faq.a}</p>
                 </div>
               </div>
@@ -662,33 +572,20 @@ export default function Landing() {
       <section style={{ padding: '80px 24px 100px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={ctaRef} style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ width: '200px', height: '200px', margin: '0 auto -140px', background: 'radial-gradient(circle, rgba(61,204,99,0.18), transparent 70%)' }} />
-          <div style={{ background: 'linear-gradient(145deg, rgba(61,204,99,0.07), rgba(10,26,13,0.8))', border: '1px solid rgba(61,204,99,0.2)', borderRadius: '28px', padding: '56px 36px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌿</div>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 900, letterSpacing: '-1px', color: C.white, margin: '0 0 16px' }}>{t('landing.cta_h2')}</h2>
-            <p style={{ color: C.ink2, fontSize: '16px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '480px', display: 'inline-block' }}>{t('landing.cta_desc')}</p>
+          <div style={{ background: 'linear-gradient(145deg, rgba(61,204,99,0.07), rgba(10,26,13,0.8))', border: '1px solid rgba(61,204,99,0.2)', borderRadius: '28px', padding: '56px 36px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '160px', height: '160px', opacity: 0.5, pointerEvents: 'none' }}>
+              <GrowthLines variant="hero" opacity={0.3} />
+            </div>
+            <div style={{ color: C.green, marginBottom: '16px', display: 'flex', justifyContent: 'center', position: 'relative' }}><LeafBadgeIcon size={40} /></div>
+            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 900, letterSpacing: '-1px', color: C.white, margin: '0 0 16px', position: 'relative' }}>{t('landing.cta_h2')}</h2>
+            <p style={{ color: C.ink2, fontSize: '16px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '480px', display: 'inline-block', position: 'relative' }}>{t('landing.cta_desc')}</p>
 
-            {emailSent ? (
-              <div style={{ background: C.greenDim, border: '1px solid rgba(61,204,99,0.3)', borderRadius: '14px', padding: '16px 24px', color: C.green, fontWeight: 600 }}>
-                ✅ {t('landing.cta_sent')}
-              </div>
-            ) : (
-              <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '10px', width: '100%', maxWidth: '420px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <input
-                    type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder={t('landing.cta_email_placeholder')}
-                    style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '12px 16px', color: C.white, fontSize: '14px', outline: 'none' }}
-                  />
-                  <button type="submit" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '14px', padding: '12px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {t('landing.cta_notify_pro')}
-                  </button>
-                </div>
-                <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }} className="lp-glow">
-                  {t('landing.cta_main')}
-                </Link>
-                <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>{t('landing.cta_disclaimer')}</p>
-              </form>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', position: 'relative' }}>
+              <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }} className="lp-glow">
+                {t('landing.cta_main')}
+              </Link>
+              <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>{t('landing.cta_disclaimer')}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -726,7 +623,7 @@ export default function Landing() {
             </div>
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>© {t('landing.footer_copy')}</p>
+            <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>© {new Date().getFullYear()} {t('landing.footer_copy')}</p>
             <div style={{ display: 'flex', gap: '20px' }}>
               <a href="#" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_privacy')}</a>
               <a href="#" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_terms')}</a>
