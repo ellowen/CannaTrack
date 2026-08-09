@@ -69,7 +69,23 @@ export const useUserStore = create<UserStore>()(
       lastActivityDate: null,
       totalXP: 0,
 
-      setUser: (userId, email, name) => set({ userId, email, name }),
+      setUser: (userId, email, name) => set((s) => {
+        // Cambio de cuenta en el mismo dispositivo (logout de A, login de
+        // B): onboarding y gamificacion son estado de la cuenta anterior,
+        // nunca deben heredarse a la nueva. Mismo userId (recarga/refresh
+        // de la misma sesion) no dispara el reset.
+        if (s.userId && s.userId !== userId) {
+          return {
+            userId, email, name,
+            onboarded: false,
+            streak: 0,
+            bestStreak: 0,
+            lastActivityDate: null,
+            totalXP: 0,
+          }
+        }
+        return { userId, email, name }
+      }),
       setName: (name) => set({ name }),
       setPotVolume: (potVolumeLiters) => set({ potVolumeLiters }),
       setTheme: (theme) => set({ theme }),

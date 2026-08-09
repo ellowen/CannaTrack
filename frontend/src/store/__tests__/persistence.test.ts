@@ -104,6 +104,34 @@ describe('Store Persistence', () => {
     expect(state.bestStreak).toBe(7)
   })
 
+  it('should reset onboarding/gamification state when a different account logs in on the same device', () => {
+    // USER A: onboarded + racha acumulada.
+    useUserStore.getState().setUser('user-A', 'a@test.com', 'Alice')
+    useUserStore.setState({ onboarded: true, streak: 1, bestStreak: 1, totalXP: 10, lastActivityDate: new Date() })
+
+    // logout -> login de USER B en el MISMO dispositivo: el estado de A no
+    // debe heredarse.
+    useUserStore.getState().setUser('user-B', 'b@test.com', 'Bob')
+    let state = useUserStore.getState()
+    expect(state.onboarded).toBe(false)
+    expect(state.streak).toBe(0)
+    expect(state.bestStreak).toBe(0)
+    expect(state.totalXP).toBe(0)
+    expect(state.lastActivityDate).toBeNull()
+    expect(state.userId).toBe('user-B')
+
+    // USER B avanza su propio onboarding/racha.
+    useUserStore.setState({ onboarded: true, streak: 3, bestStreak: 3 })
+
+    // logout -> login de B otra vez (misma cuenta): su propio estado SI
+    // debe persistir, sin resetearse.
+    useUserStore.getState().setUser('user-B', 'b@test.com', 'Bob')
+    state = useUserStore.getState()
+    expect(state.onboarded).toBe(true)
+    expect(state.streak).toBe(3)
+    expect(state.bestStreak).toBe(3)
+  })
+
   it('should apply a real task reward without exceeding the awarded amount', () => {
     useUserStore.setState({ totalXP: 100, streak: 3, bestStreak: 5 })
     useUserStore.getState().applyTaskReward(25, 4)
