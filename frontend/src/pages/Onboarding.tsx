@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useUserStore } from '@/store/userStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { hapticSuccess, hapticLight } from '@/lib/haptics'
+import { supabase } from '@/lib/auth'
 
 type Step = 'welcome' | 'name' | 'ready'
 
 export default function Onboarding() {
   const { setName, setOnboarded } = useUserStore()
+  const { user } = useAuth()
   const [step, setStep]       = useState<Step>('welcome')
   const [nameInput, setNameInput] = useState('')
 
@@ -16,7 +19,15 @@ export default function Onboarding() {
 
   function handleFinish() {
     hapticSuccess()
-    setName(nameInput.trim() || 'Cultivador')
+    const trimmedName = nameInput.trim() || 'Cultivador'
+    setName(trimmedName)
+    // Sin esto, el nombre elegido en onboarding se pierde en el proximo
+    // reload: AuthContext pisa userStore.name con profiles.username del
+    // servidor (mismo problema y mismo fix que Settings.tsx handleSave).
+    // Fire-and-forget (via .then) para no bloquear la transicion a
+    // /plants/new -- el builder de supabase-js es lazy y no dispara el
+    // fetch sin await/then.
+    if (user) void supabase.from('profiles').update({ username: trimmedName }).eq('id', user.id).then(() => {})
     // Layout detecta el flag y navega a /plants/new
     localStorage.setItem('ct-redirect', '/plants/new')
     setOnboarded(true)
