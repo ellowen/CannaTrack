@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { LogoMark } from '@/components/ui'
 import { completeTaskInSupabase } from '@/lib/sync'
 import { useTranslation } from '@/i18n'
+import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -416,6 +417,7 @@ export default function Home() {
           <div className="bg-app-card rounded-3xl border border-app-border overflow-hidden">
             {pending.map((task, i) => {
               const plant     = getPlant(task.plantId)
+              const plantIsCannabis = plant ? isCannabisPlant(plant) : true
               const isFlora   = !!plant?.floraStartDate
               const phaseDay  = plant
                 ? (isFlora && plant.floraStartDate
@@ -457,7 +459,7 @@ export default function Home() {
                         <span className="text-sm font-bold" style={{ color: typeColor }}>{TYPE_LABEL[task.type]}</span>
                         <span className="w-1 h-1 rounded-full bg-ink-4 shrink-0" />
                         <span className="text-xs text-ink-3">
-                          {isFlora ? 'Flora' : 'Vege'} S{weekNum} · D{phaseDay}
+                          {plantIsCannabis ? `${isFlora ? 'Flora' : 'Vege'} S${weekNum} · ` : ''}D{phaseDay}
                         </span>
                       </div>
 
@@ -586,6 +588,7 @@ export default function Home() {
 
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
             {plants.map((plant) => {
+              const plantIsCannabis = isCannabisPlant(plant)
               const isFlora  = !!plant.floraStartDate
               const phaseDay = isFlora && plant.floraStartDate
                 ? differenceInDays(today, plant.floraStartDate) + 1
@@ -593,8 +596,8 @@ export default function Home() {
               const weekNum  = Math.ceil(phaseDay / 7)
               const plantPending = pending.filter((t) => t.plantId === plant.id).length
               const accent = isFlora ? 'text-amber-500' : 'text-brand-400'
-              const borderColor = isFlora ? 'border-amber-500/20' : 'border-app-border'
-              const bgColor = isFlora ? 'bg-amber-500/5' : 'bg-app-card'
+              const borderColor = isFlora && plantIsCannabis ? 'border-amber-500/20' : 'border-app-border'
+              const bgColor = isFlora && plantIsCannabis ? 'bg-amber-500/5' : 'bg-app-card'
 
               return (
                 <Link
@@ -604,9 +607,11 @@ export default function Home() {
                 >
                   {/* Fase badge */}
                   <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg mb-2.5 ${
-                    isFlora ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-brand-subtle border border-brand-border'
+                    isFlora && plantIsCannabis ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-brand-subtle border border-brand-border'
                   }`}>
-                    <span className={`text-[10px] font-black tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
+                    {plantIsCannabis && (
+                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
+                    )}
                     <span className="text-[10px] text-ink-4">D{phaseDay}</span>
                   </div>
                   <p className="text-sm font-black text-ink-1 truncate">{plant.name}</p>

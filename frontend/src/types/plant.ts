@@ -126,14 +126,21 @@ export interface Plant {
 
 // Regla de negocio: cannabis (cropType ausente o 'cannabis') requiere
 // geneticType. Cualquier otro cropType puede omitirlo. Espeja el CHECK
-// plants_cannabis_requires_genetic_type de la migracion de Supabase --
-// no hay todavia ningun caller que use esto (PlantForm/sync.ts se tocan
-// recien cuando exista un flujo real de creacion no-cannabis), queda
-// preparado para cuando corresponda.
+// plants_cannabis_requires_genetic_type de la migracion de Supabase
+// (Fase 3, ya aplicada a produccion).
 export function isValidPlant(plant: Pick<Plant, 'cropType' | 'geneticType'>): boolean {
   const cropType = plant.cropType ?? 'cannabis'
   if (cropType === 'cannabis') return plant.geneticType !== undefined
   return true
+}
+
+// Punto unico de verdad para "esta planta usa la logica/UI de cannabis".
+// cropType ausente = planta existente antes de la Fase 4 = cannabis.
+// Usado por nutrition-utils.ts (fase/floracion) y por la UI (PlantForm,
+// Home, PlantDetail) para no mostrar/calcular nada cannabis-especifico
+// cuando corresponde a otro cultivo.
+export function isCannabisPlant(plant: Pick<Plant, 'cropType'>): boolean {
+  return (plant.cropType ?? 'cannabis') === 'cannabis'
 }
 
 export interface ScheduledTask {

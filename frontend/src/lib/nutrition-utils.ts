@@ -10,6 +10,7 @@ import type {
   ProductLine,
   AccessTier,
 } from '../types/plant'
+import { isCannabisPlant } from '../types/plant'
 
 // ─── Colores por línea ────────────────────────────────────────────────────────
 
@@ -132,6 +133,11 @@ export function getCurrentWeek(
   plant: Plant,
   date: Date,
 ): { cycle: CyclePhase; week: number; stage: PlantStage } | null {
+  // Vege/flora es biologia especifica de cannabis -- sin esto, una planta
+  // generica (tomate, albahaca, etc.) heredaria semanas/etapas de cannabis
+  // solo por el paso de los dias, sin tener esa metadata en absoluto.
+  if (!isCannabisPlant(plant)) return null
+
   // Si estamos en floración
   if (plant.floraStartDate && date >= plant.floraStartDate) {
     const diasFlora = diasEntre(plant.floraStartDate, date)
@@ -244,6 +250,7 @@ export function getRangesForDate(
  * Indica que el usuario debería registrar el inicio de floración manualmente.
  */
 export function awaitingFloraStart(plant: Plant): boolean {
+  if (!isCannabisPlant(plant)) return false
   if (plant.geneticType === 'autoflower') return false
   if (plant.floraStartDate) return false
   if (plant.status === 'harvested' || plant.status === 'discarded') return false
@@ -262,6 +269,7 @@ export function getCycleProgress(
   date: Date,
 ): { progress: number; phase: CyclePhase } | null {
   if (plant.status !== 'active') return null
+  if (!isCannabisPlant(plant)) return null
 
   const floraBase =
     plant.floraStartDate ??

@@ -19,6 +19,7 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       id: plant.id,
       user_id: (await supabase.auth.getUser()).data.user?.id,
       name: plant.name,
+      crop_type: plant.cropType ?? 'cannabis',
       genetics: plant.genetics,
       genetic_type: plant.geneticType,
       sex: plant.sex,
@@ -55,6 +56,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[]> {
       id: p.id,
       userId: p.user_id,
       name: p.name,
+      cropType: p.crop_type ?? 'cannabis',
       genetics: p.genetics,
       geneticType: p.genetic_type,
       sex: p.sex,
@@ -97,6 +99,7 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     // Convertir camelCase a snake_case para los campos conocidos
     const row: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if ('name' in changes)               row.name = changes.name
+    if ('cropType' in changes)           row.crop_type = changes.cropType
     if ('genetics' in changes)           row.genetics = changes.genetics
     if ('geneticType' in changes)        row.genetic_type = changes.geneticType
     if ('status' in changes)             row.status = changes.status

@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Button, Badge } from '@/components/ui'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
-import type { GeneticType, PlantSex, NutritionTable, ProductDose, NutritionWeek } from '@/types/plant'
+import type { CropType, GeneticType, PlantSex, NutritionTable, ProductDose, NutritionWeek } from '@/types/plant'
 import { STAGE_LABELS } from '@/types/plant'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 import { clsx } from 'clsx'
@@ -30,10 +30,26 @@ function filterWeeks(weeks: NutritionWeek[], selected: string[] | undefined): Nu
   return weeks.map((w) => ({ ...w, products: w.products.filter((p) => selected.includes(p.name)) }))
 }
 
+// ─── Cultivo ─────────────────────────────────────────────────────────────────
+// Opciones iniciales de cropType. No es un catalogo cerrado -- CropType
+// sigue siendo string abierto (ver types/plant.ts); esta lista es solo lo
+// que el selector ofrece hoy. Cannabis es el unico con datos/nutricion
+// reales; el resto persiste el crop_type elegido pero sin schedule
+// nutricional propio todavia (Fase 4 = modelo, no tablas nuevas).
+const CROP_OPTIONS = [
+  { value: 'cannabis', label: 'Cannabis' },
+  { value: 'tomato',   label: 'Tomate' },
+  { value: 'basil',    label: 'Albahaca' },
+  { value: 'other',    label: 'Otro' },
+] as const
+type CropChoice = typeof CROP_OPTIONS[number]['value']
+const CROP_VALUES = CROP_OPTIONS.map((c) => c.value) as CropChoice[]
+
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 export interface PlantFormValues {
   name: string
+  cropType: CropType
   genetics: string
   geneticType: GeneticType
   sex: PlantSex
@@ -164,6 +180,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
   const [values, setValues] = useState<PlantFormValues>({
     name: '',
+    cropType: 'cannabis',
     genetics: '',
     geneticType: 'feminized',
     sex: 'unknown',
@@ -179,6 +196,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     notes: '',
     ...initialValues,
   })
+  const isCannabis = values.cropType === 'cannabis'
 
   const [errors, setErrors] = useState<FieldError>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -195,6 +213,18 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     validateField(field, value)
     // Marcar como tocado
     setTouched((t) => ({ ...t, [field]: true }))
+  }
+
+  // Cambiar de cultivo limpia la tabla nutricional elegida -- no tiene
+  // sentido dejar puesta una tabla de cannabis (REVEGETAR/TopCrop) en una
+  // planta que ya no es cannabis, ni al reves dejar el paso de nutricion
+  // sin tabla si el usuario vuelve a cannabis.
+  function setCropType(v: CropType) {
+    setValues((vals) => ({
+      ...vals,
+      cropType: v,
+      nutritionTableId: v === 'cannabis' ? (availableTables[0]?.id ?? '') : '',
+    }))
   }
 
   function validateField(field: keyof PlantFormValues, value: any): void {
@@ -296,7 +326,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       validateField('startDate', values.startDate)
       validateField('potCount', values.potCount)
       validateField('potVolumeLiters', values.potVolumeLiters)
-      if (values.geneticType === 'autoflower') {
+      if (isCannabis && values.geneticType === 'autoflower') {
         validateField('autoFlowerTotalDays', values.autoFlowerTotalDays)
       }
     }
@@ -313,6 +343,21 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
   function renderStep1() {
     return (
       <div className="space-y-5">
+        <div>
+          <label className={labelClass}>¿Qué vas a cultivar?</label>
+          <ToggleGroup<CropChoice>
+            options={CROP_VALUES}
+            value={values.cropType as CropChoice}
+            onChange={(v) => setCropType(v)}
+            renderLabel={(v) => CROP_OPTIONS.find((c) => c.value === v)?.label ?? v}
+          />
+          {!isCannabis && (
+            <p className="text-xs text-ink-4 mt-2">
+              Todavía no tenemos calendario nutricional para este cultivo — vas a poder registrar tareas, riego y observaciones igual.
+            </p>
+          )}
+        </div>
+
         <div>
           <label className={labelClass}>Nombre de la planta *</label>
           <input
@@ -339,14 +384,14 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
         </div>
 
         <div>
-          <label className={labelClass}>Genética *</label>
+          <label className={labelClass}>{isCannabis ? 'Genética *' : 'Variedad *'}</label>
           <input
             type="text"
             required
             value={values.genetics}
             onChange={(e) => set('genetics', e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, genetics: true }))}
-            placeholder="Ej: White Widow"
+            placeholder={isCannabis ? 'Ej: White Widow' : 'Ej: Cherry, Genovesa...'}
             className={clsx(
               fieldClass,
               touched.genetics && errors.genetics && 'border-red-600 focus:ring-red-500/20 focus:border-red-600'
@@ -362,19 +407,21 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
           )}
         </div>
 
-        <div>
-          <label className={labelClass}>Tipo de genética</label>
-          <ToggleGroup
-            options={['feminized', 'autoflower', 'regular'] as const}
-            value={values.geneticType}
-            onChange={(v) => set('geneticType', v)}
-            renderLabel={(v) =>
-              v === 'feminized' ? 'Feminizada' : v === 'autoflower' ? 'Auto' : 'Regular'
-            }
-          />
-        </div>
+        {isCannabis && (
+          <div>
+            <label className={labelClass}>Tipo de genética</label>
+            <ToggleGroup
+              options={['feminized', 'autoflower', 'regular'] as const}
+              value={values.geneticType}
+              onChange={(v) => set('geneticType', v)}
+              renderLabel={(v) =>
+                v === 'feminized' ? 'Feminizada' : v === 'autoflower' ? 'Auto' : 'Regular'
+              }
+            />
+          </div>
+        )}
 
-        {values.geneticType === 'autoflower' && (
+        {isCannabis && values.geneticType === 'autoflower' && (
           <div>
             <label className={labelClass}>Días totales del ciclo *</label>
             <input
@@ -396,7 +443,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
           </div>
         )}
 
-        {values.geneticType === 'regular' && (
+        {isCannabis && values.geneticType === 'regular' && (
           <div>
             <label className={labelClass}>Sexo</label>
             <ToggleGroup
@@ -515,13 +562,15 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
           <div className="grid grid-cols-2 gap-y-2 text-sm">
             <span className="text-ink-3">Planta</span>
             <span className="text-ink-1 font-medium truncate">{values.name || '—'}</span>
-            <span className="text-ink-3">Genética</span>
+            <span className="text-ink-3">{isCannabis ? 'Genética' : 'Variedad'}</span>
             <span className="text-ink-1 font-medium">{values.genetics || '—'}</span>
-            <span className="text-ink-3">Tipo</span>
+            <span className="text-ink-3">{isCannabis ? 'Tipo' : 'Cultivo'}</span>
             <span className="text-ink-1 font-medium">
-              {values.geneticType === 'feminized' ? 'Feminizada'
-                : values.geneticType === 'autoflower' ? `Auto (${values.autoFlowerTotalDays}d)`
-                : 'Regular'}
+              {isCannabis
+                ? (values.geneticType === 'feminized' ? 'Feminizada'
+                  : values.geneticType === 'autoflower' ? `Auto (${values.autoFlowerTotalDays}d)`
+                  : 'Regular')
+                : (CROP_OPTIONS.find((c) => c.value === values.cropType)?.label ?? values.cropType)}
             </span>
           </div>
         </div>
@@ -536,42 +585,51 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
     return (
       <div className="space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className={labelClass}>Tabla nutricional</label>
-            <Link
-              to={`/nutrition/new?returnTo=${encodeURIComponent(location.pathname)}`}
-              onClick={(e) => {
-                if (values.name.trim() && !confirm('Vas a salir del formulario. Se perderán los datos ingresados. ¿Continuar?')) {
-                  e.preventDefault()
-                }
-              }}
-              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
-            >
-              + Crear propia
-            </Link>
+        {isCannabis ? (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={labelClass}>Tabla nutricional</label>
+              <Link
+                to={`/nutrition/new?returnTo=${encodeURIComponent(location.pathname)}`}
+                onClick={(e) => {
+                  if (values.name.trim() && !confirm('Vas a salir del formulario. Se perderán los datos ingresados. ¿Continuar?')) {
+                    e.preventDefault()
+                  }
+                }}
+                className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+              >
+                + Crear propia
+              </Link>
+            </div>
+            {availableTables.length > 1 ? (
+              <select
+                value={values.nutritionTableId}
+                onChange={(e) => {
+                  set('nutritionTableId', e.target.value)
+                  set('availableProducts', undefined)
+                }}
+                className={fieldClass}
+              >
+                {availableTables.map((t) => (
+                  <option key={t.id} value={t.id} className="bg-app-elevated">
+                    {t.name}{!t.isOfficial ? ' (custom)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-ink-3 px-3 py-2.5 rounded-xl bg-app-elevated border border-app-border">
+                {availableTables[0]?.name ?? 'Sin tablas disponibles'}
+              </p>
+            )}
           </div>
-          {availableTables.length > 1 ? (
-            <select
-              value={values.nutritionTableId}
-              onChange={(e) => {
-                set('nutritionTableId', e.target.value)
-                set('availableProducts', undefined)
-              }}
-              className={fieldClass}
-            >
-              {availableTables.map((t) => (
-                <option key={t.id} value={t.id} className="bg-app-elevated">
-                  {t.name}{!t.isOfficial ? ' (custom)' : ''}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <p className="text-sm text-ink-3 px-3 py-2.5 rounded-xl bg-app-elevated border border-app-border">
-              {availableTables[0]?.name ?? 'Sin tablas disponibles'}
+        ) : (
+          <div className="rounded-xl border border-app-border bg-app-elevated px-4 py-3.5">
+            <p className="text-sm font-medium text-ink-1 mb-1">Sin tabla nutricional todavía</p>
+            <p className="text-xs text-ink-3 leading-relaxed">
+              Para {CROP_OPTIONS.find((c) => c.value === values.cropType)?.label.toLowerCase() ?? 'este cultivo'} todavía no tenemos un calendario de nutrición armado. Podés agregar tus propios productos abajo, y vas a poder registrar tareas, riego y observaciones igual.
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Selector de productos */}
         {table && (() => {

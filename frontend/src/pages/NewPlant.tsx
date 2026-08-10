@@ -25,6 +25,7 @@ export default function NewPlant() {
     const [year, month, day] = values.startDate.split('-').map(Number)
     const plant = await addPlant({
       name: values.name,
+      cropType: values.cropType,
       genetics: values.genetics,
       geneticType: values.geneticType,
       sex: values.sex,

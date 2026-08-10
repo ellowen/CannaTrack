@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isValidPlant } from '../plant'
+import { isValidPlant, isCannabisPlant } from '../plant'
 
 // Fase 3 -- desbloqueo multi-cultivo del modelo de datos. Estos tests
 // cubren la regla de negocio que espeja la migracion de Supabase
@@ -49,5 +49,24 @@ describe('isValidPlant', () => {
   // en la practica, pero el tipo lo permite) no debe romper la validacion
   it('cropType no-cannabis con geneticType igual presente: valida', () => {
     expect(isValidPlant({ cropType: 'tomato', geneticType: 'feminized' })).toBe(true)
+  })
+})
+
+// Fase 4 -- isCannabisPlant es el guard que usan nutrition-utils.ts, Home.tsx
+// y PlantDetail.tsx para no mostrar/calcular nada especifico de cannabis en
+// plantas de otros cultivos.
+describe('isCannabisPlant', () => {
+  it('cropType ausente (planta existente antes de Fase 4): cannabis', () => {
+    expect(isCannabisPlant({})).toBe(true)
+  })
+
+  it("cropType: 'cannabis' explicito: cannabis", () => {
+    expect(isCannabisPlant({ cropType: 'cannabis' })).toBe(true)
+  })
+
+  it("cropType: 'tomato'/'basil'/otro: no cannabis", () => {
+    expect(isCannabisPlant({ cropType: 'tomato' })).toBe(false)
+    expect(isCannabisPlant({ cropType: 'basil' })).toBe(false)
+    expect(isCannabisPlant({ cropType: 'other' })).toBe(false)
   })
 })

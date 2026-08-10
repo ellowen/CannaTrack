@@ -18,7 +18,7 @@ import { MeasurementSection } from '@/components/measurements'
 import { HarvestSheet, ProgressRing } from '@/components/plant'
 import { calculatePlantHealth, healthColor } from '@/lib/gamification'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress, getTasksForDate } from '@/lib/nutrition-utils'
-import { STAGE_LABELS, STAGE_EMOJIS } from '@/types/plant'
+import { STAGE_LABELS, STAGE_EMOJIS, isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
 
 export default function PlantDetail() {
@@ -60,12 +60,16 @@ export default function PlantDetail() {
   const potLiters = plant.potVolumeLiters ?? potVolumeLiters
   const cycleProgress = getCycleProgress(plant, today)
   const isFlora = currentWeek?.cycle === 'flora'
+  const plantIsCannabis = isCannabisPlant(plant)
 
-  const stageEmoji = currentWeek ? (STAGE_EMOJIS[currentWeek.stage] ?? '🌱') : '✂️'
-  const stageLabel = currentWeek ? (STAGE_LABELS[currentWeek.stage] ?? '') : 'Completada'
+  const stageEmoji = currentWeek ? (STAGE_EMOJIS[currentWeek.stage] ?? '🌱') : (plantIsCannabis ? '✂️' : '🌱')
+  const stageLabel = currentWeek ? (STAGE_LABELS[currentWeek.stage] ?? '') : (plantIsCannabis ? 'Completada' : '')
+  // Sin currentWeek (planta no-cannabis, o cannabis fuera de rango de
+  // seguimiento) no mostramos etiqueta VEGE/FLORA -- no tiene sentido
+  // asumir esas fases para un cultivo que no las tiene.
   const cycleTag = currentWeek
     ? currentWeek.cycle === 'vege' ? `VEGE S${currentWeek.week}` : `FLORA F${currentWeek.week}`
-    : 'Completada'
+    : (plantIsCannabis ? 'Completada' : '')
 
   const health = calculatePlantHealth(tasks)
   const hColor = healthColor(health)
@@ -131,13 +135,15 @@ export default function PlantDetail() {
         </div>
 
         <div className="relative">
-          <span className={`inline-flex items-center text-[11px] font-black px-3 py-1 rounded-full mb-2 tracking-widest uppercase border ${
-            isFlora
-              ? 'bg-amber-500/30 text-amber-200 border-amber-400/40'
-              : 'bg-brand-400/30 text-green-200 border-green-400/40'
-          }`}>
-            {cycleTag}
-          </span>
+          {cycleTag && (
+            <span className={`inline-flex items-center text-[11px] font-black px-3 py-1 rounded-full mb-2 tracking-widest uppercase border ${
+              isFlora
+                ? 'bg-amber-500/30 text-amber-200 border-amber-400/40'
+                : 'bg-brand-400/30 text-green-200 border-green-400/40'
+            }`}>
+              {cycleTag}
+            </span>
+          )}
           <h1 className="text-2xl font-black text-white leading-tight">{plant.name}</h1>
           <p className="text-sm text-white/70 mt-0.5">{plant.genetics}</p>
 
@@ -173,10 +179,10 @@ export default function PlantDetail() {
           ))}
         </div>
 
-        {/* Badges: fotoperiodo (indoor) + sustrato */}
-        {(plant.location === 'indoor' || (plant.growMedium && plant.growMedium !== 'soil')) && (
+        {/* Badges: fotoperiodo (indoor, solo cannabis) + sustrato */}
+        {((plant.location === 'indoor' && plantIsCannabis) || (plant.growMedium && plant.growMedium !== 'soil')) && (
           <div className="flex flex-wrap gap-2">
-            {plant.location === 'indoor' && (
+            {plant.location === 'indoor' && plantIsCannabis && (
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
                 {isFlora ? '🌙 12/12' : '☀️ 18/6'}
               </span>
@@ -543,8 +549,8 @@ export default function PlantDetail() {
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={cycleTag} />
 
-        {/* Iniciar floracion — visible desde el primer dia de vege */}
-        {!plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (
+        {/* Iniciar floracion — visible desde el primer dia de vege, solo cannabis */}
+        {plantIsCannabis && !plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (
           <button
             onClick={() => setFloraPickerOpen(true)}
             className="w-full py-4 rounded-2xl font-black text-base text-white tap-highlight-none active:scale-[0.98] transition-all shadow-lg"

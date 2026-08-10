@@ -27,6 +27,7 @@ export default function EditPlant() {
   // Mapear Plant → PlantFormValues para pre-llenar el formulario
   const initialValues: Partial<PlantFormValues> = {
     name:                plant.name,
+    cropType:            plant.cropType ?? 'cannabis',
     genetics:            plant.genetics,
     geneticType:         plant.geneticType,
     sex:                 plant.sex,
@@ -49,6 +50,7 @@ export default function EditPlant() {
     const [year, month, day] = values.startDate.split('-').map(Number)
     editPlant(plantId, {
       name:                values.name,
+      cropType:            values.cropType,
       genetics:            values.genetics,
       geneticType:         values.geneticType,
       sex:                 values.sex,
