@@ -93,9 +93,9 @@ export type TaskType = 'nutrition' | 'irrigation' | 'foliar' | 'observation' | '
 
 // Tipo de cultivo. 'cannabis' es el unico valor usado hoy -- el string abierto
 // deja lugar a futuros cultivos sin forzar un enum cerrado todavia.
-// Campo solo de frontend: no tiene columna en Supabase (plants.genetic_type
-// sigue siendo NOT NULL + CHECK a nivel de base), asi que no se persiste.
 // Ausente = planta existente/actual = tratar como 'cannabis'.
+// Corresponde a plants.crop_type (migracion 20260810000000_plants_crop_type.sql,
+// preparada pero NO aplicada a produccion todavia).
 export type CropType = 'cannabis' | string
 
 export interface Plant {
@@ -103,8 +103,12 @@ export interface Plant {
   name: string
   cropType?: CropType
   genetics: string
-  geneticType: GeneticType
-  sex: PlantSex
+  // Opcionales: geneticType/sex son obligatorios SOLO para cannabis. La
+  // migracion 20260810000000_plants_crop_type.sql refleja esta misma regla
+  // a nivel de base (CHECK plants_cannabis_requires_genetic_type). No
+  // confiar solo en el tipo -- usar isValidPlant() antes de persistir.
+  geneticType?: GeneticType
+  sex?: PlantSex
   startDate: Date
   floraStartDate?: Date
   endDate?: Date
@@ -118,6 +122,18 @@ export interface Plant {
   customProducts?: ProductDose[] // productos del usuario, no ligados a ninguna tabla
   status: PlantStatus
   notes?: string
+}
+
+// Regla de negocio: cannabis (cropType ausente o 'cannabis') requiere
+// geneticType. Cualquier otro cropType puede omitirlo. Espeja el CHECK
+// plants_cannabis_requires_genetic_type de la migracion de Supabase --
+// no hay todavia ningun caller que use esto (PlantForm/sync.ts se tocan
+// recien cuando exista un flujo real de creacion no-cannabis), queda
+// preparado para cuando corresponda.
+export function isValidPlant(plant: Pick<Plant, 'cropType' | 'geneticType'>): boolean {
+  const cropType = plant.cropType ?? 'cannabis'
+  if (cropType === 'cannabis') return plant.geneticType !== undefined
+  return true
 }
 
 export interface ScheduledTask {

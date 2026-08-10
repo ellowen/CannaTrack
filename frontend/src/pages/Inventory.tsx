@@ -51,7 +51,7 @@ export default function Inventory() {
       (p) =>
         p.name.toLowerCase().includes(query) ||
         p.genetics.toLowerCase().includes(query) ||
-        p.geneticType.toLowerCase().includes(query)
+        (p.geneticType ?? '').toLowerCase().includes(query)
     )
   }, [plantsByTab, searchQuery])
 
