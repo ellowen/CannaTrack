@@ -101,7 +101,12 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     if ('name' in changes)               row.name = changes.name
     if ('cropType' in changes)           row.crop_type = changes.cropType
     if ('genetics' in changes)           row.genetics = changes.genetics
-    if ('geneticType' in changes)        row.genetic_type = changes.geneticType
+    // ?? null (no undefined): un cultivo no-cannabis debe LIMPIAR estos
+    // campos en Supabase, no dejarlos sin tocar. undefined se descarta
+    // silenciosamente al serializar el PATCH (la columna no se actualiza);
+    // null se envia explicitamente y borra el residuo de cannabis.
+    if ('geneticType' in changes)        row.genetic_type = changes.geneticType ?? null
+    if ('sex' in changes)                row.sex = changes.sex ?? null
     if ('status' in changes)             row.status = changes.status
     if ('floraStartDate' in changes)     row.flora_start_date = changes.floraStartDate instanceof Date
       ? (changes.floraStartDate as Date).toISOString().split('T')[0]

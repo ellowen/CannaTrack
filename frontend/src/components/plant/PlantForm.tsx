@@ -3,10 +3,15 @@ import { Link, useLocation } from 'react-router-dom'
 import { Button, Badge } from '@/components/ui'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
-import type { CropType, GeneticType, PlantSex, NutritionTable, ProductDose, NutritionWeek } from '@/types/plant'
+import type { CropType, NutritionTable, ProductDose, NutritionWeek } from '@/types/plant'
 import { STAGE_LABELS } from '@/types/plant'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 import { clsx } from 'clsx'
+import { normalizeFormValuesForSubmit } from './PlantForm.utils'
+import type { PlantFormValues } from './PlantForm.utils'
+
+export type { PlantFormValues }
+export { normalizeFormValuesForSubmit }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -46,24 +51,6 @@ type CropChoice = typeof CROP_OPTIONS[number]['value']
 const CROP_VALUES = CROP_OPTIONS.map((c) => c.value) as CropChoice[]
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
-
-export interface PlantFormValues {
-  name: string
-  cropType: CropType
-  genetics: string
-  geneticType: GeneticType
-  sex: PlantSex
-  startDate: string
-  location: 'indoor' | 'outdoor'
-  growMedium: 'soil' | 'coco' | 'hydro'
-  potCount: number
-  potVolumeLiters: number
-  nutritionTableId: string
-  autoFlowerTotalDays: number
-  availableProducts: string[] | undefined
-  customProducts: ProductDose[]
-  notes: string
-}
 
 interface FieldError {
   [key: string]: string | undefined
@@ -334,7 +321,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     if (step < 3 && isStepValid()) {
       setStep((s) => s + 1)
     } else if (step === 3) {
-      onSubmit(values)
+      onSubmit(normalizeFormValuesForSubmit(values))
     }
   }
 
@@ -412,7 +399,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             <label className={labelClass}>Tipo de genética</label>
             <ToggleGroup
               options={['feminized', 'autoflower', 'regular'] as const}
-              value={values.geneticType}
+              value={values.geneticType ?? 'feminized'}
               onChange={(v) => set('geneticType', v)}
               renderLabel={(v) =>
                 v === 'feminized' ? 'Feminizada' : v === 'autoflower' ? 'Auto' : 'Regular'
@@ -448,7 +435,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             <label className={labelClass}>Sexo</label>
             <ToggleGroup
               options={['unknown', 'female', 'male'] as const}
-              value={values.sex}
+              value={values.sex ?? 'unknown'}
               onChange={(v) => set('sex', v)}
               renderLabel={(v) =>
                 v === 'unknown' ? 'Desconocido' : v === 'female' ? 'Hembra' : 'Macho'
@@ -567,7 +554,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             <span className="text-ink-3">{isCannabis ? 'Tipo' : 'Cultivo'}</span>
             <span className="text-ink-1 font-medium">
               {isCannabis
-                ? (values.geneticType === 'feminized' ? 'Feminizada'
+                ? ((values.geneticType ?? 'feminized') === 'feminized' ? 'Feminizada'
                   : values.geneticType === 'autoflower' ? `Auto (${values.autoFlowerTotalDays}d)`
                   : 'Regular')
                 : (CROP_OPTIONS.find((c) => c.value === values.cropType)?.label ?? values.cropType)}
