@@ -91,9 +91,17 @@ export type PlantSex = 'unknown' | 'female' | 'male'
 export type PlantStatus = 'active' | 'harvested' | 'discarded'
 export type TaskType = 'nutrition' | 'irrigation' | 'foliar' | 'observation' | 'harvest'
 
+// Tipo de cultivo. 'cannabis' es el unico valor usado hoy -- el string abierto
+// deja lugar a futuros cultivos sin forzar un enum cerrado todavia.
+// Campo solo de frontend: no tiene columna en Supabase (plants.genetic_type
+// sigue siendo NOT NULL + CHECK a nivel de base), asi que no se persiste.
+// Ausente = planta existente/actual = tratar como 'cannabis'.
+export type CropType = 'cannabis' | string
+
 export interface Plant {
   id: string
   name: string
+  cropType?: CropType
   genetics: string
   geneticType: GeneticType
   sex: PlantSex
