@@ -1,6 +1,12 @@
--- PROPUESTA -- NO APLICADA A PRODUCCION TODAVIA.
--- Requiere autorizacion explicita antes de correr (Fase 3 de
--- generalizacion multi-cultivo -- ver GLOBAL GENERALIZATION reports).
+-- APLICADA A PRODUCCION el 2026-08-10 (Fase 3 de generalizacion
+-- multi-cultivo -- ver GLOBAL GENERALIZATION reports). Autorizada
+-- explicitamente antes de correr. Verificada post-aplicacion: 9/9
+-- plantas reales intactas, 0 perdida de datos, constraint nuevo y
+-- CHECK original ambos funcionando (insert no-cannabis exitoso,
+-- insert cannabis sin genetic_type rechazado, insert con
+-- genetic_type invalido rechazado, insert cannabis normal sin
+-- cambios). RLS/triggers/funciones sin cambios, tal como se
+-- proyectaba en esta misma auditoria.
 --
 -- Objetivo: permitir que el modelo de datos represente una planta que NO
 -- sea cannabis, sin romper ni una sola planta de cannabis existente.
