@@ -193,6 +193,30 @@ export async function replaceTasksForPlantInSupabase(plantId: string, tasks: Sch
   }
 }
 
+/**
+ * Igual que replaceTasksForPlantInSupabase, pero SOLO toca tareas
+ * pendientes (completed = false). Las tareas ya completadas son historial
+ * y nunca deben borrarse/reinsertarse -- ademas de perder su estado,
+ * user_xp_log.task_id tiene "on delete set null", asi que borrar una tarea
+ * completada rompe el vinculo con el XP que ya se otorgo por ella. Usar
+ * esto (no replaceTasksForPlantInSupabase) al regenerar el calendario como
+ * efecto secundario de editar una planta.
+ */
+export async function replacePendingTasksForPlantInSupabase(plantId: string, pendingTasks: ScheduledTask[]): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('scheduled_tasks')
+      .delete()
+      .eq('plant_id', plantId)
+      .eq('completed', false)
+    if (error) throw error
+    if (pendingTasks.length > 0) await syncTasksToSupabase(pendingTasks)
+  } catch (error) {
+    console.error('Error reemplazando tareas pendientes:', error)
+    throw error
+  }
+}
+
 export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTask[] | null> {
   try {
     const { data, error } = await supabase
