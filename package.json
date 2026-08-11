@@ -2,6 +2,9 @@
   "name": "cannatrack",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "shared",
     "frontend",
@@ -16,5 +19,8 @@
   },
   "dependencies": {
     "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.113.0"
   }
 }

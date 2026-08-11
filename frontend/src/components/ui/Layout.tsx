@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { usePageTransition } from '@/hooks/usePageTransition'
 import InstallBanner from './InstallBanner'
+import ToastHost from './ToastHost'
 import { PageLoader } from '../LoadingSpinner'
 import { useTasks } from '@/hooks/useTasks'
 import { usePlantStore } from '@/store/plantStore'
@@ -56,6 +57,7 @@ export default function Layout() {
       </main>
 
       <InstallBanner />
+      <ToastHost />
 
       <nav className="fixed bottom-0 left-0 right-0 z-20" style={{ transform: 'translateZ(0)' }}>
         <div className="max-w-lg mx-auto">

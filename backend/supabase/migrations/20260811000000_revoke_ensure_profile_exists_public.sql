@@ -1,0 +1,21 @@
+-- ============================================================
+-- FIX (auditoria pre-launch, segunda pasada): ensure_profile_exists
+-- (user_id uuid, user_email text) es SECURITY DEFINER y tenia EXECUTE
+-- otorgado a anon/authenticated/PUBLIC, sin verificar auth.uid() contra
+-- el user_id recibido. El INSERT usa ON CONFLICT (id) DO NOTHING, asi
+-- que nunca puede sobrescribir un profile ya existente -- pero para un
+-- auth.users "huerfano" (sin profile todavia, caso ya documentado en
+-- 20260808000005), CUALQUIERA -- incluido un cliente sin sesion --
+-- podia invocarla con un user_id ajeno + un user_email arbitrario y
+-- crearle un profile con username derivado de ese email falso.
+--
+-- No esta llamada desde ningun lado del frontend (grep confirma cero
+-- referencias fuera de comentarios de migraciones) -- es codigo muerto
+-- desde la perspectiva de la app, pero seguia siendo invocable
+-- directamente via RPC con la clave anon publica. Como nada legitimo
+-- depende de que sea publica, se revoca por completo (mismo criterio
+-- ya aplicado a log_xp/update_streak) en vez de agregarle una
+-- verificacion auth.uid() para un caso de uso que no existe hoy.
+-- ============================================================
+
+REVOKE EXECUTE ON FUNCTION ensure_profile_exists(uuid, text) FROM PUBLIC, anon, authenticated;

@@ -49,14 +49,22 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  // Verificar el secreto del webhook
+  // Verificar el secreto del webhook. Fail-closed: si el secreto no esta
+  // configurado en el proyecto, el endpoint rechaza TODO en vez de aceptar
+  // cualquier request sin verificar -- de lo contrario cualquiera podria
+  // POSTear un app_user_id arbitrario con un evento de activacion y
+  // otorgarse Pro gratis (bypass de pago). Requiere setear
+  // REVENUECAT_WEBHOOK_SECRET (supabase secrets set) y configurar el mismo
+  // valor como Authorization header en el dashboard de RevenueCat.
   const secret = Deno.env.get('REVENUECAT_WEBHOOK_SECRET')
-  if (secret) {
-    const authHeader = req.headers.get('Authorization')
-    if (authHeader !== secret) {
-      console.warn('[rc-webhook] Authorization invalida')
-      return new Response('Unauthorized', { status: 401 })
-    }
+  if (!secret) {
+    console.error('[rc-webhook] REVENUECAT_WEBHOOK_SECRET no configurado -- rechazando por seguridad')
+    return new Response('Webhook not configured', { status: 503 })
+  }
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader !== secret) {
+    console.warn('[rc-webhook] Authorization invalida')
+    return new Response('Unauthorized', { status: 401 })
   }
 
   let payload: RCPayload

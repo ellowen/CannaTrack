@@ -19,3 +19,12 @@
 # additional_redirect_urls = ["https://localhost:3000"]
 # jwt_expiry = 3600
 # enable_signup = true
+
+# revenuecat-webhook recibe llamadas de RevenueCat (no del frontend), que
+# autentica con su propio secreto (REVENUECAT_WEBHOOK_SECRET, verificado
+# dentro de la funcion) en vez de un JWT/anon key de Supabase. Sin esto el
+# gateway de Supabase rechaza la llamada de RevenueCat ANTES de que la
+# funcion pueda verificar su propio secreto (probado en vivo: 401
+# UNAUTHORIZED_INVALID_JWT_FORMAT incluso con el secreto correcto).
+[functions.revenuecat-webhook]
+verify_jwt = false

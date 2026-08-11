@@ -9,6 +9,7 @@ import { usePlantStore } from '@/store/plantStore'
 import { useUserStore } from '@/store/userStore'
 import { syncMeasurementToSupabase } from '@/lib/sync'
 import type { TaskCompletionReward } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 
@@ -91,7 +92,12 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
 
     if (hasMeasure) {
       const log = addMeasurement({ plantId: task.plantId, logDate: new Date(), ec: ecNum, ph: phNum })
-      if (userId) void syncMeasurementToSupabase(log, userId)
+      if (userId) {
+        syncMeasurementToSupabase(log, userId).catch((err) => {
+          console.error('Error sincronizando medicion:', err)
+          showErrorToast('No se pudo sincronizar la medición. Revisá tu conexión.')
+        })
+      }
     }
 
     // El premio (si hay) lo devuelve Supabase — nunca se calcula localmente.

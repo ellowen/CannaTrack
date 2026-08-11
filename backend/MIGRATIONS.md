@@ -58,6 +58,23 @@ error de idempotencia de arriba). Cada una se verifico contra la DB real
 en una transaccion con `ROLLBACK` antes de aplicarse en serio. Detalle de
 cada hallazgo en el informe de release gate.
 
+## Release hardening (RELEASE FINAL — beta publica)
+
+`20260811000000_revoke_ensure_profile_exists_public.sql` y
+`20260811000001_fix_handle_task_completion_null_check.sql` — aplicadas a
+produccion y verificadas en vivo. La primera revoca el `EXECUTE` publico
+de `ensure_profile_exists` (SECURITY DEFINER sin chequeo de auth.uid(),
+callable por cualquiera sin autenticarse para crear un perfil con
+username arbitrario en cualquier fila huerfana de `auth.users`; funcion
+confirmada sin ningun caller real en el frontend). La segunda corrige
+`handle_task_completion`: comparaba `<> auth.uid()` en vez de
+`IS DISTINCT FROM`, lo que en SQL evalua a NULL (no rechaza) cuando
+`auth.uid()` es NULL -- un caller anonimo real. Verificado antes/despues:
+un caller autenticado sigue funcionando igual, un caller anonimo con los
+mismos IDs reales ahora recibe `400 not_authorized` (antes dependia por
+casualidad de que `user_xp_log.user_id` sea NOT NULL para no otorgar XP,
+no de un rechazo explicito).
+
 ## Plan seguro para recuperar una historia de migraciones consistente
 
 **No se ejecuto en esta auditoria** — alto riesgo de romper produccion sin

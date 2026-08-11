@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { usePlants } from '@/hooks/usePlants'
 import { usePlantStore } from '@/store/plantStore'
@@ -19,30 +20,39 @@ export default function NewPlant() {
 
   const activePlants = plants.filter((p) => p.status === 'active')
   const atFreeLimit  = !hasProAccess(plan) && activePlants.length >= FREE_PLANT_LIMIT
+  const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(values: PlantFormValues) {
-    hapticSuccess()
-    const [year, month, day] = values.startDate.split('-').map(Number)
-    const plant = await addPlant({
-      name: values.name,
-      cropType: values.cropType,
-      genetics: values.genetics,
-      geneticType: values.geneticType,
-      sex: values.sex,
-      startDate: new Date(year, month - 1, day),
-      location: values.location,
-      growMedium: values.growMedium,
-      potCount: values.potCount,
-      potVolumeLiters: values.potVolumeLiters,
-      nutritionTableId: values.nutritionTableId,
-      autoFlowerTotalDays: values.autoFlowerTotalDays,
-      availableProducts: values.availableProducts,
-      customProducts: values.customProducts.length > 0 ? values.customProducts : undefined,
-      status: 'active',
-      notes: values.notes || undefined,
-    })
+    if (submitting) return
+    setSubmitting(true)
+    try {
+      hapticSuccess()
+      const [year, month, day] = values.startDate.split('-').map(Number)
+      const plant = await addPlant({
+        name: values.name,
+        cropType: values.cropType,
+        genetics: values.genetics,
+        geneticType: values.geneticType,
+        sex: values.sex,
+        startDate: new Date(year, month - 1, day),
+        location: values.location,
+        growMedium: values.growMedium,
+        potCount: values.potCount,
+        potVolumeLiters: values.potVolumeLiters,
+        nutritionTableId: values.nutritionTableId,
+        autoFlowerTotalDays: values.autoFlowerTotalDays,
+        availableProducts: values.availableProducts,
+        customProducts: values.customProducts.length > 0 ? values.customProducts : undefined,
+        status: 'active',
+        notes: values.notes || undefined,
+      })
 
-    navigate(`/plants/${plant.id}`)
+      navigate(`/plants/${plant.id}`)
+    } finally {
+      // Ver comentario equivalente en EditPlant.tsx: sin esto, un error no
+      // capturado dejaba el boton "Guardando..." deshabilitado para siempre.
+      setSubmitting(false)
+    }
   }
 
   if (atFreeLimit) {
@@ -110,6 +120,7 @@ export default function NewPlant() {
       <div className="flex items-center gap-3 mb-7">
         <Link
           to="/"
+          aria-label="Volver"
           className="w-9 h-9 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-ink-2 tap-highlight-none active:scale-95 transition-all"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
@@ -122,7 +133,7 @@ export default function NewPlant() {
         </div>
       </div>
 
-      <PlantForm onSubmit={handleSubmit} />
+      <PlantForm onSubmit={handleSubmit} loading={submitting} />
     </div>
   )
 }

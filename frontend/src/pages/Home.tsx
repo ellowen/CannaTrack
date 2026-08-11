@@ -14,7 +14,8 @@ import { getLevelInfo } from '@/lib/gamification'
 import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogoMark } from '@/components/ui'
-import { completeTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -77,7 +78,7 @@ export default function Home() {
   const navigate  = useNavigate()
   const { name, streak, totalXP, applyTaskReward } = useUserStore()
   const levelInfo = getLevelInfo(totalXP)
-  const { isLoading } = useAuth()
+  const { isLoading, dataLoadError } = useAuth()
   const { plants, allPlants } = usePlants()
   const [historialOpen, setHistorialOpen]     = useState(false)
   const [overdueExpanded, setOverdueExpanded] = useState(false)
@@ -108,10 +109,12 @@ export default function Home() {
     // paralelo — via este handler y via completeTask — pudiendo otorgar
     // XP duplicado por la misma tarea). El premio que se aplica al cache
     // local es el que devuelve Supabase, no un calculo propio.
-    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => null)))
+    let hadError = false
+    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => { hadError = true; return null })))
     const xpGained = rewards.reduce((sum, r) => sum + (r?.xpGained ?? 0), 0)
     const newStreak = rewards.reduce<number | null>((max, r) => (r?.newStreak != null ? Math.max(max ?? 0, r.newStreak) : max), null)
     if (xpGained > 0) applyTaskReward(xpGained, newStreak)
+    if (hadError) showErrorToast('Algunas tareas no se pudieron sincronizar. Revisá tu conexión.')
   }
 
   const handleRefresh = useCallback(() => { hapticSuccess(); setRefreshKey((k) => k + 1) }, [])
@@ -165,10 +168,12 @@ export default function Home() {
     hapticSuccess()
     const ids = pending.map((t) => t.id)
     ids.forEach((id) => completeTask(id))
-    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => null)))
+    let hadError = false
+    const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => { hadError = true; return null })))
     const xpGained = rewards.reduce((sum, r) => sum + (r?.xpGained ?? 0), 0)
     const newStreak = rewards.reduce<number | null>((max, r) => (r?.newStreak != null ? Math.max(max ?? 0, r.newStreak) : max), null)
     if (xpGained > 0) applyTaskReward(xpGained, newStreak)
+    if (hadError) showErrorToast('Algunas tareas no se pudieron sincronizar. Revisá tu conexión.')
   }
 
   return (
@@ -317,6 +322,23 @@ export default function Home() {
             {[0,1,2].map(i => <div key={i} className="skeleton h-28 w-32 shrink-0" />)}
           </div>
           <div className="skeleton h-16 w-full" />
+        </div>
+      ) : plants.length === 0 && dataLoadError ? (
+        /* No se pudo cargar -- distinto de "no tenes plantas todavia":
+           sin esto, una falla de red al abrir la app se veia identica al
+           estado de usuario nuevo. */
+        <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
+          <div className="text-7xl mb-4 select-none">⚠️</div>
+          <h2 className="text-xl font-black text-ink-1 mb-2">No pudimos cargar tus datos</h2>
+          <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
+            Revisá tu conexión e intentá de nuevo.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 bg-brand-400 text-white font-bold px-7 py-4 rounded-2xl shadow-glow-brand transition-all active:scale-[0.97] tap-highlight-none text-base"
+          >
+            Reintentar
+          </button>
         </div>
       ) : plants.length === 0 ? (
         /* Sin plantas */
@@ -523,7 +545,7 @@ export default function Home() {
                       {TYPE_LABEL[task.type] ?? task.type} · {getPlant(task.plantId)?.name ?? '—'}
                     </span>
                     <button
-                      onClick={() => { hapticLight(); uncompleteTask(task.id) }}
+                      onClick={() => { hapticLight(); uncompleteTask(task.id); void uncompleteTaskInSupabase(task.id) }}
                       className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-elevated border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
@@ -744,6 +766,7 @@ export default function Home() {
           return await completeTaskInSupabase(taskId, notes)
         } catch (err) {
           console.error('Error sincronizando tarea completada:', err)
+          showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
           return null
         }
       }}

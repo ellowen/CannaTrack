@@ -90,6 +90,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
                 tabIndex={-1}
               >
@@ -106,6 +107,11 @@ export default function Login() {
                 )}
               </button>
             </div>
+            <p className="text-right mt-2">
+              <Link to="/forgot-password" className="text-xs text-green-400 font-semibold">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
           </div>
 
           <button

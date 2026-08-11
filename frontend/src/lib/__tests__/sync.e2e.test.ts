@@ -128,7 +128,7 @@ describe.runIf(hasCreds)('Ciclo completo contra la DB real', () => {
     }
     await syncPlantToSupabase(plant)
     const plants = await loadPlantsFromSupabase(userId)
-    const found = plants.find((p) => p.id === PLANT_ID)
+    const found = plants!.find((p) => p.id === PLANT_ID)
     expect(found).toBeDefined()
     expect(found!.growMedium).toBe('hydro')
     expect(found!.location).toBe('indoor')
@@ -136,71 +136,71 @@ describe.runIf(hasCreds)('Ciclo completo contra la DB real', () => {
 
   it('sincronizar 3 tareas y leerlas', async () => {
     await syncTasksToSupabase([mkTask(), mkTask({ week: 2 }), mkTask({ type: 'irrigation' })])
-    const tasks = (await loadTasksFromSupabase(userId)).filter((t) => t.plantId === PLANT_ID)
+    const tasks = (await loadTasksFromSupabase(userId))!.filter((t) => t.plantId === PLANT_ID)
     expect(tasks).toHaveLength(3)
   })
 
   it('completar tarea: completed=true y xp_awarded=true en la DB', async () => {
-    const tasks = (await loadTasksFromSupabase(userId)).filter((t) => t.plantId === PLANT_ID)
+    const tasks = (await loadTasksFromSupabase(userId))!.filter((t) => t.plantId === PLANT_ID)
     await completeTaskInSupabase(tasks[0].id, 'nota e2e')
-    const after = (await loadTasksFromSupabase(userId)).find((t) => t.id === tasks[0].id)!
+    const after = (await loadTasksFromSupabase(userId))!.find((t) => t.id === tasks[0].id)!
     expect(after.completed).toBe(true)
     expect(after.xpAwarded).toBe(true)
     expect(after.completionNotes).toBe('nota e2e')
   })
 
   it('deshacer tarea: completed=false pero xp_awarded SIGUE true (exploit cerrado)', async () => {
-    const done = (await loadTasksFromSupabase(userId)).find((t) => t.plantId === PLANT_ID && t.completed)!
+    const done = (await loadTasksFromSupabase(userId))!.find((t) => t.plantId === PLANT_ID && t.completed)!
     await uncompleteTaskInSupabase(done.id)
-    const after = (await loadTasksFromSupabase(userId)).find((t) => t.id === done.id)!
+    const after = (await loadTasksFromSupabase(userId))!.find((t) => t.id === done.id)!
     expect(after.completed).toBe(false)
     expect(after.xpAwarded).toBe(true)
   })
 
   it('regenerar tareas: reemplaza sin dejar duplicados en la DB', async () => {
     await replaceTasksForPlantInSupabase(PLANT_ID, [mkTask({ week: 9 }), mkTask({ week: 10 })])
-    const tasks = (await loadTasksFromSupabase(userId)).filter((t) => t.plantId === PLANT_ID)
+    const tasks = (await loadTasksFromSupabase(userId))!.filter((t) => t.plantId === PLANT_ID)
     expect(tasks).toHaveLength(2) // si quedaran las 3 viejas serian 5
     expect(tasks.map((t) => t.week).sort()).toEqual([10, 9].sort())
   })
 
   it('editar planta: nombre y sustrato se actualizan en la DB', async () => {
     await updatePlantInSupabase(PLANT_ID, { name: 'E2E Editada', growMedium: 'coco' })
-    const found = (await loadPlantsFromSupabase(userId)).find((p) => p.id === PLANT_ID)!
+    const found = (await loadPlantsFromSupabase(userId))!.find((p) => p.id === PLANT_ID)!
     expect(found.name).toBe('E2E Editada')
     expect(found.growMedium).toBe('coco')
   })
 
   it('cosechar y reactivar: el status viaja a la DB', async () => {
     await updatePlantStatusInSupabase(PLANT_ID, 'harvested')
-    let found = (await loadPlantsFromSupabase(userId)).find((p) => p.id === PLANT_ID)!
+    let found = (await loadPlantsFromSupabase(userId))!.find((p) => p.id === PLANT_ID)!
     expect(found.status).toBe('harvested')
     await updatePlantStatusInSupabase(PLANT_ID, 'active')
-    found = (await loadPlantsFromSupabase(userId)).find((p) => p.id === PLANT_ID)!
+    found = (await loadPlantsFromSupabase(userId))!.find((p) => p.id === PLANT_ID)!
     expect(found.status).toBe('active')
   })
 
   it('medicion EC/pH: alta y baja contra la DB', async () => {
     const m = { id: crypto.randomUUID(), plantId: PLANT_ID, logDate: new Date(), ec: 1.2, ph: 6.1 }
     await syncMeasurementToSupabase(m, userId)
-    let logs = (await loadMeasurementsFromSupabase(userId)).filter((l) => l.plantId === PLANT_ID)
+    let logs = (await loadMeasurementsFromSupabase(userId))!.filter((l) => l.plantId === PLANT_ID)
     expect(logs).toHaveLength(1)
     expect(logs[0].ec).toBe(1.2)
     await deleteMeasurementFromSupabase(m.id)
-    logs = (await loadMeasurementsFromSupabase(userId)).filter((l) => l.plantId === PLANT_ID)
+    logs = (await loadMeasurementsFromSupabase(userId))!.filter((l) => l.plantId === PLANT_ID)
     expect(logs).toHaveLength(0)
   })
 
   it('diario: crear, editar notas y borrar contra la DB', async () => {
     const log = { id: crypto.randomUUID(), plantId: PLANT_ID, weekLabel: 'V1', logDate: new Date(), notes: 'original' }
     await syncWeekLogToSupabase(log, userId)
-    let logs = (await loadWeekLogsFromSupabase(userId)).filter((l) => l.plantId === PLANT_ID)
+    let logs = (await loadWeekLogsFromSupabase(userId))!.filter((l) => l.plantId === PLANT_ID)
     expect(logs).toHaveLength(1)
     await updateWeekLogInSupabase(log.id, { notes: 'editada' })
-    logs = (await loadWeekLogsFromSupabase(userId)).filter((l) => l.plantId === PLANT_ID)
+    logs = (await loadWeekLogsFromSupabase(userId))!.filter((l) => l.plantId === PLANT_ID)
     expect(logs[0].notes).toBe('editada')
     await deleteWeekLogFromSupabase(log.id)
-    logs = (await loadWeekLogsFromSupabase(userId)).filter((l) => l.plantId === PLANT_ID)
+    logs = (await loadWeekLogsFromSupabase(userId))!.filter((l) => l.plantId === PLANT_ID)
     expect(logs).toHaveLength(0)
   })
 

@@ -223,10 +223,10 @@ const en: Translations = {
     regen_btn:           'Regenerate',
     sign_out_desc:       'Disconnect your account on this device.',
     sign_out_error:      'Error signing out',
-    delete_all_title:    'Delete all data',
-    delete_all_desc:     'Deletes plants, tasks, photos and measurements. Cannot be undone.',
-    delete_all_btn:      'Delete all',
-    delete_all_confirm:  'This action cannot be undone.',
+    delete_all_title:    'Clear local data',
+    delete_all_desc:     'Clears the copy saved on this device (plants, tasks, photos and measurements). If your account is synced, your data stays intact on the server and reappears next time you sign in. To delete your account and data entirely, contact us.',
+    delete_all_btn:      'Clear',
+    delete_all_confirm:  "You're about to clear the local copy of your data on this device. If your account is synced, nothing is lost — it stays on the server.",
   },
 
   login: {

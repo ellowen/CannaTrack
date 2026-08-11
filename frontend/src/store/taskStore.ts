@@ -2,6 +2,18 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ScheduledTask } from '@/types/plant'
 import { dateReviver } from '@/lib/storage'
+import { parseDateOnly } from '@/lib/date-utils'
+
+// Fallback defensivo: scheduledDate deberia llegar siempre como Date (ya
+// sea recien creado, o revivido desde localStorage por dateReviver, que
+// espera ISO completo con "T"). Si por algun motivo llega como string
+// "YYYY-MM-DD" puro (sin hora), parsearlo como fecha LOCAL -- new
+// Date("YYYY-MM-DD") lo interpreta como medianoche UTC, corriendo la
+// fecha un dia para husos horarios detras de UTC.
+function toLocalDate(value: Date | string): Date {
+  if (value instanceof Date) return value
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? parseDateOnly(value) : new Date(value)
+}
 
 type TaskFilter = 'all' | 'today' | 'overdue' | 'completed'
 
@@ -90,9 +102,7 @@ export const useTaskStore = create<TaskStore>()(
       getTodayTasks: () => {
         const today = todayStr()
         return get().tasks.filter((t) => {
-          const scheduled = t.scheduledDate instanceof Date
-            ? t.scheduledDate
-            : new Date(t.scheduledDate)
+          const scheduled = toLocalDate(t.scheduledDate)
           const mm = String(scheduled.getMonth() + 1).padStart(2, '0')
           const dd = String(scheduled.getDate()).padStart(2, '0')
           const dateStr = `${scheduled.getFullYear()}-${mm}-${dd}`
@@ -102,9 +112,7 @@ export const useTaskStore = create<TaskStore>()(
       getOverdueTasks: () => {
         const now = new Date()
         return get().tasks.filter((t) => {
-          const scheduled = t.scheduledDate instanceof Date
-            ? t.scheduledDate
-            : new Date(t.scheduledDate)
+          const scheduled = toLocalDate(t.scheduledDate)
           return scheduled < now && !t.completed
         })
       },

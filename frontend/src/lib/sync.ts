@@ -8,6 +8,7 @@ import { supabase } from './auth'
 import type { Plant, ScheduledTask } from '@/types/plant'
 import type { MeasurementLog } from '@/types/measurement'
 import type { WeekLog } from '@/types/weekLog'
+import { parseDateOnly, formatDateOnly } from './date-utils'
 
 // ────────────────────────────────────────────────────────────────────
 // PLANTAS
@@ -23,8 +24,8 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       genetics: plant.genetics,
       genetic_type: plant.geneticType,
       sex: plant.sex,
-      start_date: plant.startDate,
-      flora_start_date: plant.floraStartDate,
+      start_date: formatDateOnly(plant.startDate),
+      flora_start_date: plant.floraStartDate ? formatDateOnly(plant.floraStartDate) : null,
       auto_flower_total_days: plant.autoFlowerTotalDays,
       location: plant.location,
       grow_medium: plant.growMedium ?? 'soil',
@@ -43,7 +44,12 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
   }
 }
 
-export async function loadPlantsFromSupabase(userId: string): Promise<Plant[]> {
+// `null` distingue una carga que fallo (error de red/servidor -- el
+// caller debe conservar el cache local y mostrar un estado de error) de
+// un array vacio genuino (el usuario realmente no tiene datos todavia).
+// Antes ambos casos devolvian `[]`, y una pantalla de inicio sin datos
+// por una falla de red se mostraba igual que "todavia no tenes plantas".
+export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | null> {
   try {
     const { data, error } = await supabase
       .from('plants')
@@ -60,8 +66,8 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[]> {
       genetics: p.genetics,
       geneticType: p.genetic_type,
       sex: p.sex,
-      startDate: new Date(p.start_date),
-      floraStartDate: p.flora_start_date ? new Date(p.flora_start_date) : undefined,
+      startDate: parseDateOnly(p.start_date),
+      floraStartDate: p.flora_start_date ? parseDateOnly(p.flora_start_date) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
       location: p.location,
       growMedium: p.grow_medium ?? 'soil',
@@ -76,7 +82,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[]> {
     })) as Plant[]
   } catch (error) {
     console.error('Error cargando plantas:', error)
-    return []
+    return null
   }
 }
 
@@ -109,7 +115,7 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     if ('sex' in changes)                row.sex = changes.sex ?? null
     if ('status' in changes)             row.status = changes.status
     if ('floraStartDate' in changes)     row.flora_start_date = changes.floraStartDate instanceof Date
-      ? (changes.floraStartDate as Date).toISOString().split('T')[0]
+      ? formatDateOnly(changes.floraStartDate as Date)
       : changes.floraStartDate
     if ('notes' in changes)              row.notes = changes.notes
     if ('nutritionTableId' in changes)   row.nutrition_table_id = changes.nutritionTableId
@@ -143,7 +149,7 @@ export async function syncTasksToSupabase(tasks: ScheduledTask[]): Promise<void>
       plant_id: t.plantId,
       type: t.type,
       scheduled_date: t.scheduledDate instanceof Date
-        ? t.scheduledDate.toISOString().split('T')[0]
+        ? formatDateOnly(t.scheduledDate)
         : t.scheduledDate,
       cycle: t.cycle,
       week: t.week,
@@ -187,7 +193,7 @@ export async function replaceTasksForPlantInSupabase(plantId: string, tasks: Sch
   }
 }
 
-export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTask[]> {
+export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTask[] | null> {
   try {
     const { data, error } = await supabase
       .from('scheduled_tasks')
@@ -201,7 +207,7 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
       plantId: t.plant_id,
       userId: t.user_id,
       type: t.type,
-      scheduledDate: new Date(t.scheduled_date),
+      scheduledDate: parseDateOnly(t.scheduled_date),
       cycle: t.cycle,
       week: t.week,
       stage: t.stage,
@@ -218,7 +224,7 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
     })) as ScheduledTask[]
   } catch (error) {
     console.error('Error cargando tareas:', error)
-    return []
+    return null
   }
 }
 
@@ -316,7 +322,7 @@ export async function syncMeasurementToSupabase(log: MeasurementLog, userId: str
   }
 }
 
-export async function loadMeasurementsFromSupabase(userId: string): Promise<MeasurementLog[]> {
+export async function loadMeasurementsFromSupabase(userId: string): Promise<MeasurementLog[] | null> {
   try {
     const { data, error } = await supabase
       .from('measurements')
@@ -334,7 +340,7 @@ export async function loadMeasurementsFromSupabase(userId: string): Promise<Meas
     })) as MeasurementLog[]
   } catch (error) {
     console.error('Error cargando mediciones:', error)
-    return []
+    return null
   }
 }
 
@@ -342,12 +348,21 @@ export async function loadMeasurementsFromSupabase(userId: string): Promise<Meas
 // WEEK LOGS
 // ────────────────────────────────────────────────────────────────────
 
+// plant-photos es un bucket privado (ver
+// 20260810010002_make_plant_photos_private.sql -- antes era publico y
+// cualquiera sin autenticarse podia listar/descargar fotos ajenas).
+// uploadPhotoToStorage devuelve el PATH del objeto (para persistir en
+// week_logs.photo_url) y una signed URL (para mostrarla ya mismo). La
+// signed URL expira -- nunca guardarla como si fuera estable, generar
+// una nueva on-demand via getSignedPhotoUrl() cuando haga falta.
+const PHOTO_SIGNED_URL_TTL_SECONDS = 6 * 60 * 60
+
 export async function uploadPhotoToStorage(
   userId: string,
   plantId: string,
   logId: string,
   dataUrl: string
-): Promise<string | null> {
+): Promise<{ path: string; signedUrl: string } | null> {
   try {
     const res = await fetch(dataUrl)
     const blob = await res.blob()
@@ -357,11 +372,35 @@ export async function uploadPhotoToStorage(
       .from('plant-photos')
       .upload(path, blob, { upsert: true, contentType: blob.type })
     if (error) throw error
-    const { data } = supabase.storage.from('plant-photos').getPublicUrl(path)
-    return data.publicUrl
+    const signedUrl = await getSignedPhotoUrl(path)
+    if (!signedUrl) return null
+    return { path, signedUrl }
   } catch (error) {
     console.error('Error subiendo foto:', error)
     return null
+  }
+}
+
+// Acepta tanto un path nuevo (userId/plantId/logId.ext) como, por
+// compatibilidad con filas viejas de antes de este fix, una URL publica
+// completa ya guardada -- le extrae el path real en ese caso.
+function extractPhotoStoragePath(pathOrLegacyUrl: string): string {
+  const marker = '/plant-photos/'
+  const idx = pathOrLegacyUrl.indexOf(marker)
+  return idx >= 0 ? pathOrLegacyUrl.slice(idx + marker.length).split('?')[0] : pathOrLegacyUrl
+}
+
+export async function getSignedPhotoUrl(pathOrLegacyUrl: string): Promise<string | undefined> {
+  try {
+    const path = extractPhotoStoragePath(pathOrLegacyUrl)
+    const { data, error } = await supabase.storage
+      .from('plant-photos')
+      .createSignedUrl(path, PHOTO_SIGNED_URL_TTL_SECONDS)
+    if (error) throw error
+    return data?.signedUrl
+  } catch (error) {
+    console.error('Error generando signed URL de foto:', error)
+    return undefined
   }
 }
 
@@ -373,7 +412,7 @@ export async function syncWeekLogToSupabase(log: WeekLog, userId: string): Promi
       plant_id:   log.plantId,
       week_label: log.weekLabel,
       log_date:   log.logDate instanceof Date
-        ? log.logDate.toISOString().split('T')[0]
+        ? formatDateOnly(log.logDate)
         : log.logDate,
       notes:      log.notes ?? '',
       photo_url:  log.photoUrl ?? null,
@@ -398,14 +437,22 @@ export async function updateWeekLogInSupabase(logId: string, changes: { notes?: 
 
 export async function deleteWeekLogFromSupabase(logId: string): Promise<void> {
   try {
-    const { error } = await supabase.from('week_logs').delete().eq('id', logId)
+    const { data, error } = await supabase.from('week_logs').delete().eq('id', logId).select('photo_url')
     if (error) throw error
+    // Limpiar la foto en Storage -- si no se borra aca queda huerfana
+    // (nadie mas la referencia una vez borrada la fila de week_logs).
+    const photoUrl = data?.[0]?.photo_url as string | undefined
+    if (photoUrl) {
+      const path = extractPhotoStoragePath(photoUrl)
+      const { error: storageError } = await supabase.storage.from('plant-photos').remove([path])
+      if (storageError) console.error('Error eliminando foto huerfana de Storage:', storageError)
+    }
   } catch (error) {
     console.error('Error eliminando week log:', error)
   }
 }
 
-export async function loadWeekLogsFromSupabase(userId: string): Promise<WeekLog[]> {
+export async function loadWeekLogsFromSupabase(userId: string): Promise<WeekLog[] | null> {
   try {
     const { data, error } = await supabase
       .from('week_logs')
@@ -413,17 +460,17 @@ export async function loadWeekLogsFromSupabase(userId: string): Promise<WeekLog[
       .eq('user_id', userId)
       .order('log_date', { ascending: false })
     if (error) throw error
-    return data.map((l: any) => ({
+    return await Promise.all(data.map(async (l: any) => ({
       id:           l.id,
       plantId:      l.plant_id,
       weekLabel:    l.week_label,
-      logDate:      new Date(l.log_date),
+      logDate:      parseDateOnly(l.log_date),
       notes:        l.notes ?? '',
       photoDataUrl: undefined,
-      photoUrl:     l.photo_url ?? undefined,
-    })) as WeekLog[]
+      photoUrl:     l.photo_url ? await getSignedPhotoUrl(l.photo_url) : undefined,
+    }))) as WeekLog[]
   } catch (error) {
     console.error('Error cargando week logs:', error)
-    return []
+    return null
   }
 }

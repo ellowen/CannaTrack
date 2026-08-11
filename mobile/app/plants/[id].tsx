@@ -98,10 +98,11 @@ export default function PlantDetailScreen() {
       // Solo tareas de flora — las de vege ya ocurrieron y no deben reinserarse
       const newTasks = allTasks.filter(t => t.cycle === 'flora')
 
-      // Operacion atomica via RPC — DELETE + INSERT + UPDATE en una sola transaccion
+      // Operacion atomica via RPC — DELETE + INSERT + UPDATE en una sola transaccion.
+      // La identidad la resuelve el propio RPC via auth.uid(), no se envia
+      // userId como parametro (ver 20260810010000_fix_start_flora_phase_auth.sql).
       const { error: rpcError } = await supabase.rpc('start_flora_phase', {
         p_plant_id:         plant.id,
-        p_user_id:          user?.id,
         p_flora_start_date: floraStartDate.toISOString().split('T')[0],
         p_tasks: newTasks.map(t => ({
           type:           t.type,

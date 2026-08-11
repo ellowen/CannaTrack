@@ -20,6 +20,8 @@ import { calculatePlantHealth, healthColor } from '@/lib/gamification'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress, getTasksForDate } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS, isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
+import { showErrorToast } from '@/store/toastStore'
+import { formatDateOnly } from '@/lib/date-utils'
 
 export default function PlantDetail() {
   const { t } = useTranslation()
@@ -28,7 +30,7 @@ export default function PlantDetail() {
   const { getPlantById, startFlora, harvestPlant, discardPlant, reactivatePlant } = usePlants()
   const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
-  const [floraDateInput, setFloraDateInput] = useState(() => new Date().toISOString().slice(0, 10))
+  const [floraDateInput, setFloraDateInput] = useState(() => formatDateOnly(new Date()))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
@@ -268,6 +270,26 @@ export default function PlantDetail() {
           </div>
         )}
 
+        {/* Salud (sin ProgressRing) -- para cultivos no-cannabis, que no
+            tienen ciclo vege/flora pero si tienen tareas cuya finalizacion
+            calculatePlantHealth() ya mide de forma agnostica al cultivo. */}
+        {!cycleProgress && !plantIsCannabis && plant.status === 'active' && (
+          <div className="glass-card rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-semibold text-ink-3">Salud</span>
+              <span className={`text-[11px] font-black tabular ${
+                hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
+              }`}>{health}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${health}%`, background: healthGradient }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Mediciones EC / pH */}
         <MeasurementSection
           plantId={plant.id}
@@ -301,7 +323,7 @@ export default function PlantDetail() {
                   <input
                     type="date"
                     value={floraDateInput}
-                    max={new Date().toISOString().slice(0, 10)}
+                    max={formatDateOnly(new Date())}
                     onChange={(e) => setFloraDateInput(e.target.value)}
                     className="w-full rounded-xl border border-flora-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-flora-border transition-colors shadow-card"
                   />
@@ -317,15 +339,19 @@ export default function PlantDetail() {
                     {t('common.cancel')}
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const [y, m, d] = floraDateInput.split('-').map(Number)
                       const floraDate = new Date(y, m - 1, d)
-                      startFlora(plant.id, floraDate)
-                      // Sincronizar estado de planta (sin bloquear)
-                      updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
-                        console.error('Error sincronizando flora:', err)
-                      )
-                      setFloraPickerOpen(false)
+                      try {
+                        await startFlora(plant.id, floraDate)
+                        updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                          console.error('Error sincronizando flora:', err)
+                        )
+                        setFloraPickerOpen(false)
+                      } catch (err) {
+                        console.error('Error iniciando floracion:', err)
+                        showErrorToast('No se pudo iniciar la floración. Intentá de nuevo.')
+                      }
                     }}
                     className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
                   >
@@ -336,12 +362,16 @@ export default function PlantDetail() {
             ) : (
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    startFlora(plant.id, new Date())
-                    // Sincronizar estado de planta (sin bloquear)
-                    updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
-                      console.error('Error sincronizando flora:', err)
-                    )
+                  onClick={async () => {
+                    try {
+                      await startFlora(plant.id, new Date())
+                      updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                        console.error('Error sincronizando flora:', err)
+                      )
+                    } catch (err) {
+                      console.error('Error iniciando floracion:', err)
+                      showErrorToast('No se pudo iniciar la floración. Intentá de nuevo.')
+                    }
                   }}
                   className="flex-1 py-3 rounded-xl border border-flora-border text-flora-text font-bold text-sm tap-highlight-none active:scale-95 transition-all bg-app-card"
                 >
@@ -580,7 +610,7 @@ export default function PlantDetail() {
               <input
                 type="date"
                 value={floraDateInput}
-                max={new Date().toISOString().slice(0, 10)}
+                max={formatDateOnly(new Date())}
                 onChange={(e) => setFloraDateInput(e.target.value)}
                 className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-colors shadow-card"
               />
@@ -596,14 +626,19 @@ export default function PlantDetail() {
                 {t('common.cancel')}
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const [y, m, d] = floraDateInput.split('-').map(Number)
                   const floraDate = new Date(y, m - 1, d)
-                  startFlora(plant.id, floraDate)
-                  updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
-                    console.error('Error sincronizando flora:', err)
-                  )
-                  setFloraPickerOpen(false)
+                  try {
+                    await startFlora(plant.id, floraDate)
+                    updatePlantStatusInSupabase(plant.id, 'active').catch((err) =>
+                      console.error('Error sincronizando flora:', err)
+                    )
+                    setFloraPickerOpen(false)
+                  } catch (err) {
+                    console.error('Error iniciando floracion:', err)
+                    showErrorToast('No se pudo iniciar la floración. Intentá de nuevo.')
+                  }
                 }}
                 className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
               >
@@ -634,7 +669,7 @@ export default function PlantDetail() {
               </button>
 
               {/* Cosechar */}
-              {(plant.floraStartDate || plant.geneticType === 'autoflower') && (
+              {(!plantIsCannabis || plant.floraStartDate || plant.geneticType === 'autoflower') && (
                 <button
                   onClick={() => setHarvestSheetOpen(true)}
                   className="flex-1 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
@@ -657,7 +692,7 @@ export default function PlantDetail() {
             </div>
 
             {/* Finalizar cultivo sin haber iniciado flora */}
-            {!plant.floraStartDate && plant.geneticType !== 'autoflower' && (
+            {plantIsCannabis && !plant.floraStartDate && plant.geneticType !== 'autoflower' && (
               <button
                 onClick={() => setHarvestSheetOpen(true)}
                 className="mt-3 w-full py-3 rounded-2xl border border-amber-500/20 text-sm font-bold text-amber-400 bg-amber-500/5 tap-highlight-none active:scale-95 transition-all"
@@ -702,6 +737,7 @@ export default function PlantDetail() {
             return await completeTaskInSupabase(taskId, notes)
           } catch (err) {
             console.error('Error sincronizando tarea completada:', err)
+            showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
             return null
           }
         }}

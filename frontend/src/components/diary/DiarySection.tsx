@@ -54,14 +54,20 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
       updateLog(editing.id, { notes: data.notes, photoDataUrl: data.photoDataUrl })
       if (user) {
         void (async () => {
-          let photoUrl: string | undefined
+          // Solo se manda photoUrl a Supabase cuando hay foto NUEVA -- de lo
+          // contrario se reescribiria el path guardado con la signed URL
+          // (que expira) que ya esta en el estado local.
+          let newPhotoPath: string | undefined
           if (data.photoDataUrl && data.photoDataUrl !== editing.photoDataUrl) {
-            photoUrl = await uploadPhotoToStorage(user.id, plantId, editing.id, data.photoDataUrl) ?? undefined
-            if (photoUrl) updateLog(editing.id, { photoUrl })
+            const uploaded = await uploadPhotoToStorage(user.id, plantId, editing.id, data.photoDataUrl)
+            if (uploaded) {
+              newPhotoPath = uploaded.path
+              updateLog(editing.id, { photoUrl: uploaded.signedUrl })
+            }
           }
           void updateWeekLogInSupabase(editing.id, {
             notes: data.notes,
-            photoUrl: photoUrl ?? editing.photoUrl,
+            ...(newPhotoPath ? { photoUrl: newPhotoPath } : {}),
           })
         })()
       }
@@ -77,10 +83,10 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
         void (async () => {
           let logToSync = newLog
           if (data.photoDataUrl) {
-            const photoUrl = await uploadPhotoToStorage(user.id, plantId, newLog.id, data.photoDataUrl) ?? undefined
-            if (photoUrl) {
-              updateLog(newLog.id, { photoUrl })
-              logToSync = { ...newLog, photoUrl }
+            const uploaded = await uploadPhotoToStorage(user.id, plantId, newLog.id, data.photoDataUrl)
+            if (uploaded) {
+              updateLog(newLog.id, { photoUrl: uploaded.signedUrl })
+              logToSync = { ...newLog, photoUrl: uploaded.path }
             }
           }
           void syncWeekLogToSupabase(logToSync, user.id)
@@ -99,11 +105,11 @@ export default function DiarySection({ plantId, currentWeekLabel }: DiarySection
     })
     if (user) {
       void (async () => {
-        const photoUrl = await uploadPhotoToStorage(user.id, plantId, newLog.id, photoDataUrl) ?? undefined
+        const uploaded = await uploadPhotoToStorage(user.id, plantId, newLog.id, photoDataUrl)
         let logToSync = newLog
-        if (photoUrl) {
-          updateLog(newLog.id, { photoUrl })
-          logToSync = { ...newLog, photoUrl }
+        if (uploaded) {
+          updateLog(newLog.id, { photoUrl: uploaded.signedUrl })
+          logToSync = { ...newLog, photoUrl: uploaded.path }
         }
         void syncWeekLogToSupabase(logToSync, user.id)
       })()

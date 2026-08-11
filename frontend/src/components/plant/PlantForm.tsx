@@ -9,6 +9,7 @@ import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 import { clsx } from 'clsx'
 import { normalizeFormValuesForSubmit } from './PlantForm.utils'
 import type { PlantFormValues } from './PlantForm.utils'
+import { formatDateOnly } from '@/lib/date-utils'
 
 export type { PlantFormValues }
 export { normalizeFormValuesForSubmit }
@@ -160,7 +161,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
   const { potVolumeLiters } = useUserStore()
   const location = useLocation()
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = formatDateOnly(new Date())
   const [step, setStep] = useState(1)
   const [showSchedule, setShowSchedule] = useState(false)
   const [showProducts, setShowProducts] = useState(false)
@@ -734,6 +735,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                 <button
                   type="button"
                   onClick={() => set('customProducts', values.customProducts.filter((_, j) => j !== i))}
+                  aria-label={`Quitar producto ${p.name}`}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-4 hover:text-red-500 hover:bg-red-50 transition-colors tap-highlight-none"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">

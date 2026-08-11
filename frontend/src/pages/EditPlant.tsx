@@ -1,15 +1,18 @@
+import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { usePlants } from '@/hooks/usePlants'
 import { PlantForm } from '@/components/plant'
 import type { PlantFormValues } from '@/components/plant'
 import { Button } from '@/components/ui'
 import { useTranslation } from '@/i18n'
+import { formatDateOnly } from '@/lib/date-utils'
 
 export default function EditPlant() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getPlantById, editPlant } = usePlants()
+  const [submitting, setSubmitting] = useState(false)
 
   if (!id) return null
   const plant = getPlantById(id)
@@ -31,7 +34,7 @@ export default function EditPlant() {
     genetics:            plant.genetics,
     geneticType:         plant.geneticType,
     sex:                 plant.sex,
-    startDate:           plant.startDate.toISOString().slice(0, 10),
+    startDate:           formatDateOnly(plant.startDate),
     location:            plant.location,
     growMedium:          plant.growMedium ?? 'soil',
     potCount:            plant.potCount,
@@ -46,27 +49,37 @@ export default function EditPlant() {
   const plantId = id!
   const savedFloraStart = plant.floraStartDate
 
-  function handleSubmit(values: PlantFormValues) {
-    const [year, month, day] = values.startDate.split('-').map(Number)
-    editPlant(plantId, {
-      name:                values.name,
-      cropType:            values.cropType,
-      genetics:            values.genetics,
-      geneticType:         values.geneticType,
-      sex:                 values.sex,
-      startDate:           new Date(year, month - 1, day),
-      floraStartDate:      savedFloraStart,   // preservar fecha de flora
-      location:            values.location,
-      growMedium:          values.growMedium,
-      potCount:            values.potCount,
-      potVolumeLiters:     values.potVolumeLiters,
-      nutritionTableId:    values.nutritionTableId,
-      autoFlowerTotalDays: values.autoFlowerTotalDays,
-      availableProducts:   values.availableProducts,
-      customProducts:      values.customProducts.length > 0 ? values.customProducts : undefined,
-      notes:               values.notes || undefined,
-    })
-    navigate(`/plants/${plantId}`, { replace: true })
+  async function handleSubmit(values: PlantFormValues) {
+    if (submitting) return
+    setSubmitting(true)
+    try {
+      const [year, month, day] = values.startDate.split('-').map(Number)
+      await editPlant(plantId, {
+        name:                values.name,
+        cropType:            values.cropType,
+        genetics:            values.genetics,
+        geneticType:         values.geneticType,
+        sex:                 values.sex,
+        startDate:           new Date(year, month - 1, day),
+        floraStartDate:      savedFloraStart,   // preservar fecha de flora
+        location:            values.location,
+        growMedium:          values.growMedium,
+        potCount:            values.potCount,
+        potVolumeLiters:     values.potVolumeLiters,
+        nutritionTableId:    values.nutritionTableId,
+        autoFlowerTotalDays: values.autoFlowerTotalDays,
+        availableProducts:   values.availableProducts,
+        customProducts:      values.customProducts.length > 0 ? values.customProducts : undefined,
+        notes:               values.notes || undefined,
+      })
+      navigate(`/plants/${plantId}`, { replace: true })
+    } finally {
+      // Si editPlant() nunca resuelve (error de red no capturado, timeout)
+      // o el catch interno no alcanza a correr, el boton quedaba
+      // "Guardando..." deshabilitado para siempre -- sin este finally el
+      // usuario no podia reintentar sin recargar la pagina entera.
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -74,6 +87,7 @@ export default function EditPlant() {
       <div className="flex items-center gap-3 mb-7">
         <Link
           to={`/plants/${id}`}
+          aria-label="Volver"
           className="w-9 h-9 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-ink-2 tap-highlight-none active:scale-95 transition-all"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
@@ -98,6 +112,7 @@ export default function EditPlant() {
         initialValues={initialValues}
         submitLabel={t('editPlant.save')}
         onSubmit={handleSubmit}
+        loading={submitting}
       />
     </div>
   )

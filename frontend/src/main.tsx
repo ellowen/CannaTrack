@@ -6,6 +6,9 @@ import App from './App'
 import './styles/index.css'
 import { initI18n } from './i18n'
 import { useUserStore } from './store/userStore'
+import { initSentry } from './lib/sentry'
+
+initSentry()
 
 // Inicializar i18n con el idioma guardado del usuario
 initI18n(useUserStore.getState().language ?? 'es')

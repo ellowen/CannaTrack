@@ -6,6 +6,8 @@ import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import SignUp from '@/pages/SignUp'
 import Landing from '@/pages/Landing'
+import ForgotPassword from '@/pages/ForgotPassword'
+import ResetPassword from '@/pages/ResetPassword'
 
 // Code splitting: solo el camino critico (landing/login/signup/home) va en
 // el bundle principal. El resto de la app se carga bajo demanda — Layout
@@ -35,6 +37,14 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignUp />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPassword />,
   },
   {
     path: '/',

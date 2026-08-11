@@ -9,6 +9,7 @@ import { hasProAccess } from '@/lib/plan'
 import { useSubscription } from '@/hooks/useSubscription'
 import type { Plant } from '@/types/plant'
 import { useTranslation } from '@/i18n'
+import { useAuth } from '@/contexts/AuthContext'
 
 const FREE_PLANT_LIMIT = 1
 
@@ -140,6 +141,7 @@ function HistoryPlantCard({ plant, t }: { plant: Plant; t: (key: string) => stri
 
 export default function PlantBrowser() {
   const { t } = useTranslation()
+  const { dataLoadError } = useAuth()
   const plants      = usePlantStore((s) => s.plants)
   const tasks       = useTaskStore((s) => s.tasks)
   const { plan }    = useSubscription()
@@ -293,7 +295,23 @@ export default function PlantBrowser() {
 
       {/* Content */}
       <div className="px-4 py-4 pb-24 space-y-3">
-        {filtered.length === 0 ? (
+        {plants.length === 0 && dataLoadError ? (
+          /* Falla de red al cargar -- distinto de "no tenes plantas
+             todavia" (ver mismo patron en Home.tsx). */
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
+            <div className="text-5xl mb-4 opacity-60">⚠️</div>
+            <h2 className="text-lg font-black text-ink-1 mb-2">No pudimos cargar tus datos</h2>
+            <p className="text-sm text-ink-3 mb-6 max-w-xs leading-relaxed">
+              Revisá tu conexión e intentá de nuevo.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 rounded-2xl bg-brand-400 text-white font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
             <div className="text-5xl mb-4 opacity-60 float">🌱</div>
             <h2 className="text-lg font-black text-ink-1 mb-2">

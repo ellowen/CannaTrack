@@ -2,6 +2,9 @@
   "name": "cultitrack-frontend",
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -14,6 +17,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@sentry/react": "^10.70.0",
     "@supabase/supabase-js": "^2.47.0",
     "clsx": "^2.0.0",
     "date-fns": "^3.0.0",

@@ -444,7 +444,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="mailto:hola@cannatrack.app?subject=Quiero listar mi tabla en CultiTrack"
+              <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi tabla en CultiTrack"
                 style={{ display: 'inline-block', background: C.greenDim, color: C.green, border: '1px solid rgba(61,204,99,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
                 {t('landing.b2b_cta')}
               </a>
@@ -616,8 +616,8 @@ export default function Landing() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <Link to="/signup" className="lp-link" style={{ fontSize: '13px', color: C.ink2, textDecoration: 'none' }}>{t('landing.footer_create')}</Link>
                   <Link to="/login" className="lp-link" style={{ fontSize: '13px', color: C.ink2, textDecoration: 'none' }}>{t('landing.footer_login')}</Link>
-                  <a href="mailto:hola@cannatrack.app" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_contact')}</a>
-                  <a href="mailto:hola@cannatrack.app?subject=Quiero listar mi marca" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_b2b')}</a>
+                  <a href="mailto:cultitrack@gmail.com" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_contact')}</a>
+                  <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi marca" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_b2b')}</a>
                 </div>
               </div>
             </div>
@@ -625,8 +625,8 @@ export default function Landing() {
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>© {new Date().getFullYear()} {t('landing.footer_copy')}</p>
             <div style={{ display: 'flex', gap: '20px' }}>
-              <a href="#" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_privacy')}</a>
-              <a href="#" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_terms')}</a>
+              <a href="/privacy.html" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_privacy')}</a>
+              <a href="/terms.html" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_terms')}</a>
               <a href="#" className="lp-link" style={{ fontSize: '12px', color: C.ink3 }}>{t('landing.footer_age')}</a>
             </div>
           </div>

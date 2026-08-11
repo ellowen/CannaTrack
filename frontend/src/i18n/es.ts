@@ -221,10 +221,10 @@ const es = {
     regen_btn:           'Regenerar',
     sign_out_desc:       'Desconectate de tu cuenta en este dispositivo.',
     sign_out_error:      'Error al cerrar sesion',
-    delete_all_title:    'Borrar todos los datos',
-    delete_all_desc:     'Elimina plantas, tareas, fotos y mediciones. No se puede deshacer.',
-    delete_all_btn:      'Borrar todo',
-    delete_all_confirm:  'Esta accion no se puede deshacer.',
+    delete_all_title:    'Limpiar datos locales',
+    delete_all_desc:     'Borra la copia guardada en este dispositivo (plantas, tareas, fotos y mediciones). Si tu cuenta esta sincronizada, tus datos siguen intactos en el servidor y vuelven a aparecer la proxima vez que inicies sesion. Para eliminar tu cuenta y tus datos por completo, escribinos.',
+    delete_all_btn:      'Limpiar',
+    delete_all_confirm:  'Vas a borrar la copia local de tus datos en este dispositivo. Si tu cuenta esta sincronizada, no se pierden: siguen en el servidor.',
   },
 
   login: {

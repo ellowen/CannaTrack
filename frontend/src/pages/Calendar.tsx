@@ -11,6 +11,7 @@ import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
 import { hapticLight } from '@/lib/haptics'
 import { completeTaskInSupabase } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
@@ -218,6 +219,7 @@ export default function Calendar() {
             return await completeTaskInSupabase(taskId, notes)
           } catch (err) {
             console.error('Error sincronizando tarea completada:', err)
+            showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
             return null
           }
         }}

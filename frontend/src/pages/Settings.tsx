@@ -15,7 +15,8 @@ import { Button, Toggle } from '@/components/ui'
 import { clsx } from 'clsx'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
-import { replaceTasksForPlantInSupabase } from '@/lib/sync'
+import { replacePendingTasksForPlantInSupabase } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
 import { useSubscription } from '@/hooks/useSubscription'
 
 const fieldClass =
@@ -33,7 +34,7 @@ export default function Settings() {
   const { user, signOut } = useAuth()
   const { name, potVolumeLiters, theme, language, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setLanguage, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
-  const { setTasks } = useTaskStore()
+  const { tasks, setTasks } = useTaskStore()
   const { tables, removeTable } = useNutritionStore()
   const customTables = tables.filter((tbl) => !tbl.isOfficial)
   const officialTables = tables.filter((tbl) => tbl.isOfficial)
@@ -68,18 +69,39 @@ export default function Settings() {
   const [regenDone, setRegenDone] = useState(false)
   const notifBlocked = 'Notification' in window && Notification.permission === 'denied'
 
-  function handleRegenerate() {
+  async function handleRegenerate() {
+    if (!confirm(
+      'Se van a recalcular las tareas pendientes de tus plantas activas según su tabla nutricional actual. Las tareas ya completadas NO se van a tocar. ¿Continuar?'
+    )) return
+
     const activePlants = plants.filter((p) => p.status === 'active')
-    for (const plant of activePlants) {
-      const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
-      if (!table) continue
-      const regenerated = generatePlantSchedule(plant, table)
-      setTasks(plant.id, regenerated)
-      // Persistir en la DB (borra las viejas de la planta y sube las nuevas)
-      void replaceTasksForPlantInSupabase(plant.id, regenerated)
+    try {
+      for (const plant of activePlants) {
+        const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
+        if (!table) continue
+        const candidateTasks = generatePlantSchedule(plant, table)
+
+        // Las tareas ya completadas son historial: nunca se borran ni se
+        // regeneran (mismo criterio que usePlants.editPlant -- antes esta
+        // funcion usaba replaceTasksForPlantInSupabase, que borraba TODO,
+        // incluidas las completadas, perdiendo completed_at/xp_awarded y
+        // habilitando re-otorgar XP por la misma tarea).
+        const existingForPlant = tasks.filter((t) => t.plantId === plant.id)
+        const completedExisting = existingForPlant.filter((t) => t.completed)
+        const slotKey = (t: { cycle: string; week: number; type: string }) => `${t.cycle}|${t.week}|${t.type}`
+        const completedSlots = new Set(completedExisting.map(slotKey))
+        const newPending = candidateTasks.filter((t) => !completedSlots.has(slotKey(t)))
+
+        setTasks(plant.id, [...completedExisting, ...newPending])
+        // Persistir en la DB: reemplaza solo las tareas pendientes.
+        await replacePendingTasksForPlantInSupabase(plant.id, newPending)
+      }
+      setRegenDone(true)
+      setTimeout(() => setRegenDone(false), 3000)
+    } catch (error) {
+      console.error('[handleRegenerate] Error sincronizando:', error)
+      showErrorToast('No se pudieron regenerar los calendarios. Revisá tu conexión e intentá de nuevo.')
     }
-    setRegenDone(true)
-    setTimeout(() => setRegenDone(false), 3000)
   }
 
   async function handleNotifToggle() {
@@ -344,6 +366,7 @@ export default function Settings() {
                 </Link>
                 <button
                   onClick={() => handleDeleteTable(tbl.id, tbl.name)}
+                  aria-label={`Eliminar tabla ${tbl.name}`}
                   className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 tap-highlight-none active:scale-95"
                 >
                   ×

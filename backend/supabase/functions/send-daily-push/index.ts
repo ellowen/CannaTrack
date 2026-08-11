@@ -33,7 +33,7 @@ serve(async () => {
   const serviceKey      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const vapidPublicKey  = Deno.env.get('VAPID_PUBLIC_KEY')!
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
-  const vapidEmail      = Deno.env.get('VAPID_EMAIL') ?? 'mailto:admin@cannatrack.app'
+  const vapidEmail      = Deno.env.get('VAPID_EMAIL') ?? 'mailto:cultitrack@gmail.com'
 
   if (!vapidPublicKey || !vapidPrivateKey) {
     return new Response('VAPID keys not configured', { status: 500 })

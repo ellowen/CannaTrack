@@ -18,13 +18,14 @@ export function useInitSync() {
         const user = await getCurrentUser()
         if (!user) return
 
-        // Cargar plantas de Supabase
+        // Cargar plantas de Supabase (null = fallo la carga -- conservar
+        // el cache local en vez de pisarlo con un array vacio)
         const plants = await loadPlantsFromSupabase(user.id)
-        setPlants(plants)
+        if (plants !== null) setPlants(plants)
 
         // Cargar tareas de Supabase
         const tasks = await loadTasksFromSupabase(user.id)
-        setAllTasks(tasks)
+        if (tasks !== null) setAllTasks(tasks)
       } catch (error) {
         console.error('Error en sincronización inicial:', error)
         // No lanzar error, solo usar lo que está en localStorage

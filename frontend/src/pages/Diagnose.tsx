@@ -10,6 +10,7 @@ import { usePlants } from '@/hooks/usePlants'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { resizeImageFile } from '@/lib/image-utils'
 import { syncWeekLogToSupabase } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,12 @@ export default function Diagnose() {
         notes:      '',
         photoDataUrl: dataUrl,
       })
-      if (userId) void syncWeekLogToSupabase(log, userId)
+      if (userId) {
+        syncWeekLogToSupabase(log, userId).catch((syncErr) => {
+          console.error('Error sincronizando foto de diario:', syncErr)
+          showErrorToast('La foto se guardó localmente pero no se pudo sincronizar. Revisá tu conexión.')
+        })
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al subir la foto')
     } finally {

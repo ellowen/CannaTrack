@@ -11,6 +11,8 @@ import {
   updatePlantStatusInSupabase,
 } from '@/lib/sync'
 import type { Plant, NutritionTable } from '@/types/plant'
+import { showErrorToast } from '@/store/toastStore'
+import { formatDateOnly } from '@/lib/date-utils'
 
 function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
   return {
@@ -36,17 +38,22 @@ export function usePlants() {
     storeAdd(plant)
 
     const table = tables.find((t) => t.id === plant.nutritionTableId)
-    if (table) {
-      const effective = plant.availableProducts
-        ? applyProductFilter(table, plant.availableProducts)
-        : table
-      const tasks = generatePlantSchedule(plant, effective)
-      setTasks(plant.id, tasks)
-      // Persistir en Supabase
-      void syncPlantToSupabase(plant)
-      void syncTasksToSupabase(tasks)
-    } else {
-      void syncPlantToSupabase(plant)
+    try {
+      if (table) {
+        const effective = plant.availableProducts
+          ? applyProductFilter(table, plant.availableProducts)
+          : table
+        const tasks = generatePlantSchedule(plant, effective)
+        setTasks(plant.id, tasks)
+        // Persistir en Supabase
+        await syncPlantToSupabase(plant)
+        await syncTasksToSupabase(tasks)
+      } else {
+        await syncPlantToSupabase(plant)
+      }
+    } catch (error) {
+      console.error('[addPlant] Error sincronizando:', error)
+      showErrorToast('La planta se guardó en este dispositivo, pero no se pudo sincronizar. Revisá tu conexión.')
     }
 
     return plant
@@ -54,17 +61,32 @@ export function usePlants() {
 
   async function discardPlant(id: string) {
     updatePlant(id, { status: 'discarded', endDate: new Date() })
-    void updatePlantStatusInSupabase(id, 'discarded')
+    try {
+      await updatePlantStatusInSupabase(id, 'discarded')
+    } catch (error) {
+      console.error('[discardPlant] Error sincronizando:', error)
+      showErrorToast('No se pudo sincronizar el descarte. Revisá tu conexión.')
+    }
   }
 
   async function harvestPlant(id: string) {
     updatePlant(id, { status: 'harvested', endDate: new Date() })
-    void updatePlantStatusInSupabase(id, 'harvested')
+    try {
+      await updatePlantStatusInSupabase(id, 'harvested')
+    } catch (error) {
+      console.error('[harvestPlant] Error sincronizando:', error)
+      showErrorToast('No se pudo sincronizar la cosecha. Revisá tu conexión.')
+    }
   }
 
   async function reactivatePlant(id: string) {
     updatePlant(id, { status: 'active', endDate: undefined })
-    void updatePlantStatusInSupabase(id, 'active')
+    try {
+      await updatePlantStatusInSupabase(id, 'active')
+    } catch (error) {
+      console.error('[reactivatePlant] Error sincronizando:', error)
+      showErrorToast('No se pudo sincronizar la reactivación. Revisá tu conexión.')
+    }
   }
 
   async function startFlora(id: string, floraStartDate: Date) {
@@ -74,7 +96,12 @@ export function usePlants() {
     const table = tables.find((t) => t.id === plant.nutritionTableId)
     if (!table) {
       updatePlant(id, { floraStartDate })
-      void updatePlantInSupabase(id, { floraStartDate })
+      try {
+        await updatePlantInSupabase(id, { floraStartDate })
+      } catch (error) {
+        console.error('[startFlora] Error sincronizando:', error)
+        throw error
+      }
       return
     }
 
@@ -90,30 +117,30 @@ export function usePlants() {
     updatePlant(id, { floraStartDate })
     setTasks(id, floraTasks)
 
-    // Operacion atomica en Supabase via RPC
-    const { data: authData } = await supabase.auth.getUser()
-    const userId = authData.user?.id
-    if (userId) {
-      const { error } = await supabase.rpc('start_flora_phase', {
-        p_plant_id:         id,
-        p_user_id:          userId,
-        p_flora_start_date: floraStartDate.toISOString().split('T')[0],
-        p_tasks: floraTasks.map((t) => ({
-          type:           t.type,
-          scheduled_date: t.scheduledDate instanceof Date
-            ? t.scheduledDate.toISOString().split('T')[0]
-            : t.scheduledDate,
-          cycle:          t.cycle,
-          week:           t.week,
-          stage:          t.stage,
-          ec_min:         t.ecMin,
-          ec_max:         t.ecMax,
-          ph_min:         t.phMin,
-          ph_max:         t.phMax,
-          products:       t.products ?? [],
-        })),
-      })
-      if (error) console.error('[startFlora] RPC error:', error)
+    // Operacion atomica en Supabase via RPC. La identidad la resuelve
+    // el propio RPC via auth.uid() -- no se envia userId como parametro
+    // (ver 20260810010000_fix_start_flora_phase_auth.sql).
+    const { error } = await supabase.rpc('start_flora_phase', {
+      p_plant_id:         id,
+      p_flora_start_date: formatDateOnly(floraStartDate),
+      p_tasks: floraTasks.map((t) => ({
+        type:           t.type,
+        scheduled_date: t.scheduledDate instanceof Date
+          ? formatDateOnly(t.scheduledDate)
+          : t.scheduledDate,
+        cycle:          t.cycle,
+        week:           t.week,
+        stage:          t.stage,
+        ec_min:         t.ecMin,
+        ec_max:         t.ecMax,
+        ph_min:         t.phMin,
+        ph_max:         t.phMax,
+        products:       t.products ?? [],
+      })),
+    })
+    if (error) {
+      console.error('[startFlora] RPC error:', error)
+      throw error
     }
   }
 
@@ -127,19 +154,24 @@ export function usePlants() {
     const updated: Plant = { ...existing, ...data }
     updatePlant(id, data)
 
-    // Regenerar tareas si cambia tabla o genetica
-    const table = tables.find((t) => t.id === updated.nutritionTableId)
-    if (table) {
-      const effective = updated.availableProducts
-        ? applyProductFilter(table, updated.availableProducts)
-        : table
-      const tasks = generatePlantSchedule(updated, effective)
-      setTasks(id, tasks)
-      // Reemplazo atomico: si solo insertaramos, las tareas viejas quedan en la DB
-      void replaceTasksForPlantInSupabase(id, tasks)
-    }
+    try {
+      // Regenerar tareas si cambia tabla o genetica
+      const table = tables.find((t) => t.id === updated.nutritionTableId)
+      if (table) {
+        const effective = updated.availableProducts
+          ? applyProductFilter(table, updated.availableProducts)
+          : table
+        const tasks = generatePlantSchedule(updated, effective)
+        setTasks(id, tasks)
+        // Reemplazo atomico: si solo insertaramos, las tareas viejas quedan en la DB
+        await replaceTasksForPlantInSupabase(id, tasks)
+      }
 
-    void updatePlantInSupabase(id, data as Record<string, unknown>)
+      await updatePlantInSupabase(id, data as Record<string, unknown>)
+    } catch (error) {
+      console.error('[editPlant] Error sincronizando:', error)
+      showErrorToast('Los cambios se guardaron en este dispositivo, pero no se pudieron sincronizar. Revisá tu conexión.')
+    }
   }
 
   return {

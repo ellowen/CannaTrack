@@ -87,14 +87,14 @@ export async function signOut() {
  * Returns unsubscribe function.
  */
 export function onAuthStateChange(
-  callback: (user: User | null) => void
+  callback: (user: User | null, event: string) => void
 ) {
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     // INITIAL_SESSION duplica la carga que ya hace initAuth() (getSession())
     // al montar — sin este filtro, cada carga inicial dispara loadUserData()
     // dos veces en paralelo (una desde initAuth, otra desde este listener).
     if (_event === 'INITIAL_SESSION') return
-    callback(session?.user || null)
+    callback(session?.user || null, _event)
   })
 
   return data.subscription?.unsubscribe
@@ -116,6 +116,27 @@ export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser()
   if (error) throw error
   return data.user
+}
+
+/**
+ * Envia el email de recuperacion de contraseña. Supabase redirige al
+ * link del email hacia redirectTo con la sesion de recuperacion en el
+ * hash de la URL (detectSessionInUrl:true la toma sola al cargar la app).
+ */
+export async function requestPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error) throw error
+}
+
+/**
+ * Actualiza la contraseña del usuario actual. Solo funciona con una
+ * sesion de recuperacion activa (o una sesion normal ya logueada).
+ */
+export async function updatePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
 }
 
 /**
@@ -164,6 +185,8 @@ export function humanizeAuthError(error: unknown): string {
   if (msg.includes('rate limit') || msg.includes('too many requests')) return 'Demasiados intentos. Esperá un momento y volvé a intentar.'
   if (msg.includes('network') || msg.includes('fetch failed') || msg.includes('failed to fetch')) return 'No pudimos conectar. Revisá tu conexión a internet e intentá de nuevo.'
   if (msg.includes('email address') && msg.includes('invalid')) return 'Ese email no parece válido.'
+  if (msg.includes('new password should be different')) return 'La nueva contraseña debe ser distinta de la anterior.'
+  if (msg.includes('auth session missing') || msg.includes('session not found')) return 'El link de recuperación venció o ya se usó. Pedí uno nuevo.'
 
   return 'No pudimos completar la acción. Intentá de nuevo en un momento.'
 }

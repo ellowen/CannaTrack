@@ -133,6 +133,7 @@ export default function SignUp() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
                 tabIndex={-1}
               >
@@ -174,6 +175,7 @@ export default function SignUp() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
                 tabIndex={-1}
               >
@@ -203,6 +205,17 @@ export default function SignUp() {
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta →'}
           </button>
+
+          <p className="text-center text-neutral-500 text-xs mt-3 leading-relaxed">
+            Al crear una cuenta aceptás nuestros{' '}
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+              Términos
+            </a>{' '}
+            y nuestra{' '}
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+              Política de Privacidad
+            </a>.
+          </p>
         </form>
 
         {/* Divider */}

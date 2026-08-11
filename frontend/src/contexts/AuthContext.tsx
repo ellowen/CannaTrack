@@ -43,6 +43,11 @@ interface AuthContextType {
   profile: Profile | null
   isLoading: boolean
   isSignedIn: boolean
+  /** true si la ultima carga de datos (plantas/tareas/etc) fallo -- el
+   * cache local sigue intacto, pero las pantallas que muestran "no tenes
+   * datos todavia" cuando el store esta vacio deben mostrar un error en
+   * vez de la copia de estado vacio si esto esta en true. */
+  dataLoadError: boolean
   signUp: (data: SignUpData) => Promise<void>
   signIn: (credentials: AuthCredentials) => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -71,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [dataLoadError, setDataLoadError] = useState(false)
 
   async function loadUserData(userId: string, userEmail?: string, profile?: Profile | null) {
     const [plants, tasks, measurements, weekLogs] = await Promise.all([
@@ -79,10 +85,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loadMeasurementsFromSupabase(userId),
       loadWeekLogsFromSupabase(userId),
     ])
-    usePlantStore.getState().setPlants(plants)
-    useTaskStore.getState().setAllTasks(tasks)
-    useMeasurementStore.getState().setLogs(measurements)
-    useWeekLogStore.getState().setLogs(weekLogs)
+    // null = la carga de ese recurso fallo -- se conserva lo que ya habia
+    // en el store (cache local) en vez de pisarlo con un array vacio, que
+    // se veria identico a "el usuario no tiene datos todavia".
+    if (plants !== null) usePlantStore.getState().setPlants(plants)
+    if (tasks !== null) useTaskStore.getState().setAllTasks(tasks)
+    if (measurements !== null) useMeasurementStore.getState().setLogs(measurements)
+    if (weekLogs !== null) useWeekLogStore.getState().setLogs(weekLogs)
+    // Solo plantas/tareas gatean el estado de error de la pantalla
+    // principal (Home) -- mediciones y diario son datos secundarios con su
+    // propia seccion/estado, una falla ahi no debe mostrarse como si toda
+    // la carga hubiera fallado.
+    setDataLoadError(plants === null || tasks === null)
     if (userEmail || profile?.username) {
       useUserStore.getState().setUser(userId, userEmail ?? '', profile?.username ?? '')
     }
@@ -131,9 +145,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (authUser) => {
+    const unsubscribe = onAuthStateChange(async (authUser, event) => {
       setUser(authUser)
       if (authUser) {
+        // TOKEN_REFRESHED es rutinario (~cada hora en cualquier sesion
+        // activa) para el MISMO usuario -- no debe disparar loadUserData(),
+        // que reemplaza por completo plants/tasks/etc en el store local.
+        // Sin este corte, cualquier cambio optimista todavia no confirmado
+        // en Supabase (ver usePlants.ts) podia desaparecer silenciosamente
+        // en el proximo refresh de token, sin que la escritura haya
+        // fallado realmente -- solo por pisar el estado local con lo que
+        // ya habia en el servidor antes de que la sync terminara.
+        if (event === 'TOKEN_REFRESHED') return
         try {
           const loadedProfile = await loadProfile(authUser.id)
           setProfile(loadedProfile)
@@ -201,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     isLoading,
     isSignedIn: !!user,
+    dataLoadError,
     signUp: handleSignUp,
     signIn: handleSignIn,
     signInWithGoogle: handleSignInWithGoogle,

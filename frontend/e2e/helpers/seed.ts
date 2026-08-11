@@ -16,6 +16,19 @@ import type { Page, BrowserContext } from '@playwright/test'
 
 const SUPABASE_REF = 'wpvvfroutebiwckrenmq'
 
+/**
+ * Postgres `date` (sin hora) SIEMPRE devuelve "YYYY-MM-DD" via REST, nunca
+ * un timestamp completo. parseDateOnly() de la app espera exactamente ese
+ * formato -- un timestamp completo (con "T...Z") la rompe silenciosamente
+ * (produce un Invalid Date que despues explota en date-fns.format()).
+ * Usar esto para start_date/flora_start_date/scheduled_date/log_date, NUNCA
+ * .toISOString() directo, para que el mock refleje lo que Supabase real
+ * devuelve.
+ */
+function toDateOnly(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10)
+}
+
 export interface SeedPlantOptions {
   id?: string
   name?: string
@@ -257,9 +270,9 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
     genetics: 'Northern Lights',
     geneticType: 'feminized',
     sex: 'unknown',
-    startDate: new Date(now - (p.daysAgo ?? 20) * day).toISOString(),
+    startDate: toDateOnly(now - (p.daysAgo ?? 20) * day),
     ...(p.floraDaysAgo != null
-      ? { floraStartDate: new Date(now - p.floraDaysAgo * day).toISOString() }
+      ? { floraStartDate: toDateOnly(now - p.floraDaysAgo * day) }
       : {}),
     location: p.location ?? 'indoor',
     growMedium: p.growMedium ?? 'soil',
@@ -275,7 +288,7 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
           id: `e2e-task-nut-${pl.id}`,
           plantId: pl.id,
           type: 'nutrition',
-          scheduledDate: new Date(now).toISOString(),
+          scheduledDate: toDateOnly(now),
           cycle: 'vege',
           week: 3,
           stage: 'growth',
@@ -290,7 +303,7 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
           id: `e2e-task-irr-${pl.id}`,
           plantId: pl.id,
           type: 'irrigation',
-          scheduledDate: new Date(now).toISOString(),
+          scheduledDate: toDateOnly(now),
           cycle: 'vege',
           week: 3,
           stage: 'growth',
