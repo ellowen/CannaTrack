@@ -18,3 +18,11 @@ frontend/test-cannatrack.mjs
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+# Skills de terceros gestionados fuera del repo (symlinks locales)
+.claude/skills/react-native/
+.claude/skills/react-native-best-practices/
+.claude/skills/supabase/
+.claude/skills/supabase-postgres-best-practices/
+.claude/skills/vercel-react-native-skills/
+.claude/skills/vercel-react-view-transitions/
+.claude/skills/vitest/
