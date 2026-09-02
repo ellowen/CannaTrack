@@ -35,7 +35,7 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
     if (result.success) {
       track('paywall_purchase_completed')
       await refetch()
-      Alert.alert('Plan Pro activado', 'Bienvenido a CannaTrack Pro.', [{ text: 'Empezar', onPress: onClose }])
+      Alert.alert('Plan Pro activado', 'Bienvenido a Cultitrack Pro.', [{ text: 'Empezar', onPress: onClose }])
     } else if (result.error) {
       track('paywall_purchase_error', { error: result.error })
       Alert.alert('No se pudo completar', result.error)
@@ -76,7 +76,7 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
             >
               <Text style={{ fontSize: 36 }}>👑</Text>
             </LinearGradient>
-            <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>CannaTrack Pro</Text>
+            <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>Cultitrack Pro</Text>
             <Text style={{ color: '#6D4FB0', fontSize: 14, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
               Todo lo que necesitas para el cultivo perfecto
             </Text>

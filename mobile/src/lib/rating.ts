@@ -7,8 +7,8 @@ import * as StoreReview from 'expo-store-review'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { track } from '@/lib/analytics'
 
-const KEY_TASKS_COMPLETED = 'cannatrack:tasks_completed_count'
-const KEY_RATING_SHOWN    = 'cannatrack:rating_shown'
+const KEY_TASKS_COMPLETED = 'cultitrack:tasks_completed_count'
+const KEY_RATING_SHOWN    = 'cultitrack:rating_shown'
 const THRESHOLD           = 5   // mostrar despues de N tareas completadas
 
 /**

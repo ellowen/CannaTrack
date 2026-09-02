@@ -330,7 +330,7 @@ export default function PlantDetailScreen() {
           style={{ padding: 28, borderRadius: 20 }}
         >
           <Text style={{ color: '#6D8C74', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>
-            CANNATRACK
+            CULTITRACK
           </Text>
           <Text style={{ color: '#E4F2E7', fontSize: 26, fontWeight: '900', marginBottom: 4 }}>
             {plant.name}
@@ -353,7 +353,7 @@ export default function PlantDetailScreen() {
             </View>
           </View>
           <Text style={{ color: '#2C3E2E', fontSize: 11, textAlign: 'right' }}>
-            {format(new Date(), 'dd MMM yyyy', { locale: es })} · cannatrack.app
+            {format(new Date(), 'dd MMM yyyy', { locale: es })} · cultitrack.app
           </Text>
         </LinearGradient>
       </View>

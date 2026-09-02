@@ -155,7 +155,7 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <LogoMark size={42} primaryColor="#52CC64" secondaryColor="#3DAA50" />
               <View>
-                <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 }}>CannaTrack</Text>
+                <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 }}>Cultitrack</Text>
                 <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' }}>
                   {format(new Date(), "EEE d 'de' MMM", { locale: es })}
                 </Text>

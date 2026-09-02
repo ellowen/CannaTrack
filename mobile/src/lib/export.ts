@@ -106,7 +106,7 @@ export async function exportPlantHistory(data: ExportData): Promise<void> {
   }
 
   // ── Escribir y compartir ───────────────────────────────────────────────
-  const filename  = `cannatrack_${plant.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`
+  const filename  = `cultitrack_${plant.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`
   const filepath  = FileSystem.cacheDirectory + filename
   const content   = '﻿' + lines.join('\n')  // BOM para que Excel lo abra bien
 

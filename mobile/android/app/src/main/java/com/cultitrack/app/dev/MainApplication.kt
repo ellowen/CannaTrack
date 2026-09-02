@@ -1,4 +1,4 @@
-package com.cannatrack.app
+package com.cultitrack.app.dev
 
 import android.app.Application
 import android.content.res.Configuration

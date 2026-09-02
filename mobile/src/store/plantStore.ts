@@ -53,7 +53,7 @@ export const usePlantStore = create<PlantStore>()(
       getPlantsCount: () => get().plants.length,
     }),
     {
-      name: 'cannatrack-plants',
+      name: 'cultitrack-plants',
       partialize: (state) => ({
         plants: state.plants,
         selectedPlantId: state.selectedPlantId,

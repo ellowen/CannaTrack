@@ -337,7 +337,7 @@ export default function SettingsScreen() {
                 </View>
                 <View>
                   <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Acerca de</Text>
-                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>CannaTrack v1.0.0</Text>
+                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>Cultitrack v1.0.0</Text>
                 </View>
               </View>
             </View>

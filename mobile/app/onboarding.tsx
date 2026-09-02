@@ -192,7 +192,7 @@ export default function OnboardingScreen() {
                 <Text style={{ fontSize: 56 }}>🌱</Text>
               </LinearGradient>
               <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12 }}>
-                Bienvenido a CannaTrack
+                Bienvenido a Cultitrack
               </Text>
               <Text style={{ color: '#728C74', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>
                 Vamos a configurar tu primera planta.{'\n'}Te lleva menos de un minuto.

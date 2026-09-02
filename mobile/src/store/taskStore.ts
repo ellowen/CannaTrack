@@ -113,7 +113,7 @@ export const useTaskStore = create<TaskStore>()(
       getPendingCount: () => get().tasks.filter((t) => !t.completed).length,
     }),
     {
-      name: 'cannatrack-tasks',
+      name: 'cultitrack-tasks',
       partialize: (state) => ({ tasks: state.tasks }),
       storage: createAsyncStorage(),
     }

@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 
-const SESSION_KEY = 'cannatrack_session_v1'
+const SESSION_KEY = 'cultitrack_session_v1'
 const BIOMETRIC_MAX_ATTEMPTS = 5
 let failedBiometricAttempts = 0
 

@@ -1,5 +1,5 @@
 /**
- * Test setup file for CannaTrack mobile tests.
+ * Test setup file for Cultitrack mobile tests.
  * Shared mocks and utilities for all test files.
  */
 

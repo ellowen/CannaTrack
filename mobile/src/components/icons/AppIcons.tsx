@@ -1,6 +1,6 @@
 /**
- * CannaTrack — Custom SVG Icon Library
- * All icons are original designs built for the CannaTrack visual identity.
+ * Cultitrack — Custom SVG Icon Library
+ * All icons are original designs built for the Cultitrack visual identity.
  * Viewbox: 24x24. Use `size` prop to scale.
  */
 import React from 'react'
@@ -366,7 +366,7 @@ export function BackIcon({ size = 24, color = '#52CC64' }: IconProps) {
   )
 }
 
-// ─── CannaTrack Logo Mark ─────────────────────────────────────────────────────
+// ─── Cultitrack Logo Mark ─────────────────────────────────────────────────────
 // Geometric cannabis leaf coin — 5 pointed leaflets + stem inside a circle
 export function LogoMark({ size = 48, primaryColor = '#52CC64', secondaryColor = '#3DAA50' }: {
   size?: number

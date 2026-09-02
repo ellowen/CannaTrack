@@ -4,17 +4,17 @@ const IS_DEV  = process.env.EXPO_PUBLIC_APP_ENV === 'development'
 const IS_PREV = process.env.EXPO_PUBLIC_APP_ENV === 'preview'
 
 // Bundle ID base — dev y preview tienen sufijo para coexistir con prod en el mismo dispositivo
-const BUNDLE_ID = IS_DEV ? 'com.cannatrack.app.dev' : IS_PREV ? 'com.cannatrack.app.preview' : 'com.cannatrack.app'
-const APP_NAME  = IS_DEV ? 'CannaTrack Dev' : IS_PREV ? 'CannaTrack Preview' : 'CannaTrack'
+const BUNDLE_ID = IS_DEV ? 'com.cultitrack.app.dev' : IS_PREV ? 'com.cultitrack.app.preview' : 'com.cultitrack.app'
+const APP_NAME  = IS_DEV ? 'Cultitrack Dev' : IS_PREV ? 'Cultitrack Preview' : 'Cultitrack'
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name:    APP_NAME,
-  slug:    'cannatrack',
+  slug:    'cultitrack',
   version: '0.1.0',
   orientation: 'portrait',
   icon:    './assets/icon.png',
-  scheme:  IS_DEV ? 'cannatrack-dev' : IS_PREV ? 'cannatrack-preview' : 'cannatrack',
+  scheme:  IS_DEV ? 'cultitrack-dev' : IS_PREV ? 'cultitrack-preview' : 'cultitrack',
   userInterfaceStyle: 'automatic',
   splash: {
     image:           './assets/splash.png',
@@ -54,7 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-local-authentication',
       {
-        faceIDPermission: 'CannaTrack usa Face ID para que puedas ingresar mas rapido.',
+        faceIDPermission: 'Cultitrack usa Face ID para que puedas ingresar mas rapido.',
       },
     ],
     [
@@ -68,8 +68,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-image-picker',
       {
-        photosPermission: 'CannaTrack necesita acceso a tus fotos para el diario de cultivo.',
-        cameraPermission: 'CannaTrack necesita acceso a la camara para fotografiar tus plantas.',
+        photosPermission: 'Cultitrack necesita acceso a tus fotos para el diario de cultivo.',
+        cameraPermission: 'Cultitrack necesita acceso a la camara para fotografiar tus plantas.',
       },
     ],
   ],

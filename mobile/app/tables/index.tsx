@@ -250,7 +250,7 @@ export default function TablesMarketplaceScreen() {
         {/* Footer informativo */}
         <View style={{ marginTop: 8, paddingHorizontal: 4 }}>
           <Text style={{ color: '#2C3E2E', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
-            Cada tabla fue adaptada al modelo CannaTrack (vege variable + flora 8 semanas).{'\n'}
+            Cada tabla fue adaptada al modelo Cultitrack (vege variable + flora 8 semanas).{'\n'}
             Las marcas certificadas muestran su logo y enlace oficial.
           </Text>
         </View>

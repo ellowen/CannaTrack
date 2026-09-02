@@ -83,7 +83,7 @@ export default function AuthScreen() {
             >
               <Text style={{ fontSize: 44 }}>🌿</Text>
             </LinearGradient>
-            <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900' }}>CannaTrack</Text>
+            <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900' }}>Cultitrack</Text>
             <Text style={{ color: '#728C74', fontSize: 14, marginTop: 6 }}>
               {mode === 'login' ? 'Ingresa a tu cuenta' : 'Crea tu cuenta gratis'}
             </Text>

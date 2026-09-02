@@ -40,7 +40,7 @@ export async function sharePlantCard(
     result:  'tmpfile',
   })
 
-  const filename = `cannatrack_${plant.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.png`
+  const filename = `cultitrack_${plant.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.png`
   const dest     = (FileSystem.cacheDirectory ?? '') + filename
 
   await FileSystem.copyAsync({ from: uri, to: dest })

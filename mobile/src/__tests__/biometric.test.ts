@@ -164,7 +164,7 @@ describe('Biometric Authentication', () => {
       await saveSessionForBiometric(mockSession as any)
 
       expect(vi.mocked(SecureStore.setItemAsync)).toHaveBeenCalledWith(
-        'cannatrack_session_v1',
+        'cultitrack_session_v1',
         JSON.stringify({
           access_token: 'access_abc123',
           refresh_token: 'refresh_xyz789',
@@ -179,7 +179,7 @@ describe('Biometric Authentication', () => {
 
       expect(result).toBe(true)
       expect(vi.mocked(SecureStore.getItemAsync)).toHaveBeenCalledWith(
-        'cannatrack_session_v1'
+        'cultitrack_session_v1'
       )
     })
 
@@ -195,7 +195,7 @@ describe('Biometric Authentication', () => {
       await clearSavedSession()
 
       expect(vi.mocked(SecureStore.deleteItemAsync)).toHaveBeenCalledWith(
-        'cannatrack_session_v1'
+        'cultitrack_session_v1'
       )
     })
   })

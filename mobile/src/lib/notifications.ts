@@ -66,7 +66,7 @@ export async function scheduleDailyReminder(hour = 9, minute = 0): Promise<void>
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '🌿 CannaTrack',
+      title: '🌿 Cultitrack',
       body:  'Revisa las tareas del dia para tus plantas',
       data:  { type: 'daily_reminder' },
     },
