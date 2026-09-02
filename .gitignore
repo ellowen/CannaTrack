@@ -10,6 +10,8 @@ frontend/node_modules/
 frontend/dist/
 .claude/worktrees/
 .claude/settings.local.json
+# Obsidian (vault de docs/)
+.obsidian/
 # Temp del CLI de Supabase
 backend/supabase/.temp/
 supabase/.temp/
