@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const { isDark, toggleTheme } = useTheme()
   const [notifications, setNotifications] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const [loadedUsername, setLoadedUsername] = useState('')
   const [username, setUsername] = useState('')
@@ -134,6 +135,36 @@ export default function SettingsScreen() {
       { text: 'Cancelar' },
       { text: 'Cerrar', style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
     ])
+  }
+
+  async function handleDeleteAccount() {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se van a borrar tu perfil, tus plantas, historial y fotos de forma permanente. Esta accion no se puede deshacer.',
+      [
+        { text: 'Cancelar' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true)
+            try {
+              const { error } = await supabase.functions.invoke('delete-account')
+              if (error) throw new Error(error.message)
+              track('account_deleted')
+              await supabase.auth.signOut()
+              router.replace('/auth')
+            } catch (e) {
+              Alert.alert(
+                'No se pudo eliminar la cuenta',
+                e instanceof Error ? e.message : 'Intenta de nuevo mas tarde.'
+              )
+              setDeletingAccount(false)
+            }
+          },
+        },
+      ]
+    )
   }
 
   if (loading) {
@@ -370,6 +401,20 @@ export default function SettingsScreen() {
 
             <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
               <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              disabled={deletingAccount}
+              style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#1C2E1E', opacity: deletingAccount ? 0.5 : 1 }}
+            >
+              {deletingAccount ? (
+                <ActivityIndicator color="#EF4444" />
+              ) : (
+                <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600', textAlign: 'center', opacity: 0.7 }}>
+                  Eliminar cuenta
+                </Text>
+              )}
             </TouchableOpacity>
           </LinearGradient>
 

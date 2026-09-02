@@ -49,6 +49,7 @@ export type AnalyticsEvent =
   | 'sign_up'
   | 'sign_in'
   | 'sign_out'
+  | 'account_deleted'
   // Onboarding
   | 'onboarding_completed'
   // Plantas

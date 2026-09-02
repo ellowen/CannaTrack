@@ -41,6 +41,7 @@ export default function Settings() {
   const officialTables = tables.filter((tbl) => tbl.isOfficial)
   const subscription = useSubscription()
   const [signingOut, setSigningOut] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const [usernameInput, setUsernameInput] = useState('')
   const [usernameSaving, setUsernameSaving] = useState(false)
   const [usernameSaved, setUsernameSaved] = useState(false)
@@ -505,6 +506,35 @@ export default function Settings() {
               className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
             >
               {t('settings.delete_all_btn')}
+            </button>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 pt-3 border-t border-app-border">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink-1">{t('settings.delete_account_title')}</p>
+              <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
+                {t('settings.delete_account_desc')}
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!confirm(t('settings.delete_account_confirm'))) return
+                setDeletingAccount(true)
+                try {
+                  const { error } = await supabase.functions.invoke('delete-account')
+                  if (error) throw error
+                  await signOut()
+                  navigate('/login', { replace: true })
+                } catch (error) {
+                  console.error('[deleteAccount] Error:', error)
+                  alert(t('settings.delete_account_error'))
+                  setDeletingAccount(false)
+                }
+              }}
+              disabled={deletingAccount}
+              className="shrink-0 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all disabled:opacity-50"
+            >
+              {deletingAccount ? t('settings.deleting_account') : t('settings.delete_account_btn')}
             </button>
           </div>
         </div>
