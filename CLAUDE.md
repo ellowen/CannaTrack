@@ -235,6 +235,10 @@ claude
 Empezá la sesión con:
 > "Leé el CLAUDE.md y el estado actual del repo. Luego vamos a trabajar en: [tarea]"
 
+Al arrancar, revisar `docs/log/` por entradas nuevas desde la última sesión
+y resumirlas antes de asumir que el usuario se acuerda. Al cerrar una sesión
+con cambios no triviales, dejar una entrada nueva ahí (ver `docs/log/README.md`).
+
 ### Con Claude.ai
 Adjuntá siempre:
 1. Este archivo `CLAUDE.md`

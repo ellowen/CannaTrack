@@ -5,6 +5,7 @@ vault de Obsidian.
 
 ## Vigente
 - [[../CLAUDE.md|CLAUDE.md]] — contexto, arquitectura, convenciones, estado actual (fuente de verdad)
+- [[log/README.md|log/]] — bitacora de sesiones (que se hizo, por que, que falta)
 - [[ROADMAP.md]] — roadmap original
 - [[ARQUITECTURA.md]] — arquitectura original
 - [[cannatrack_plan_accion.md]] — plan de accion original
