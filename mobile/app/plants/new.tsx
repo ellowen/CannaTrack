@@ -13,6 +13,18 @@ import PaywallModal from '@/components/PaywallModal'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
+type CropType = 'cannabis' | string
+
+// Mismas opciones que frontend/src/components/plant/PlantForm.tsx --
+// cannabis es el unico cultivo con tabla nutricional propia hoy, el
+// resto persiste el crop_type elegido pero sin schedule automatico
+// (Fase 4 = modelo, no tablas nuevas).
+const CROP_OPTIONS: { value: CropType; label: string }[] = [
+  { value: 'cannabis', label: 'Cannabis' },
+  { value: 'tomato',   label: 'Tomate' },
+  { value: 'basil',    label: 'Albahaca' },
+  { value: 'other',    label: 'Otro' },
+]
 
 const GENETIC_OPTIONS: { value: GeneticType; label: string; emoji: string; desc: string }[] = [
   { value: 'feminized',  label: 'Feminizada',      emoji: '🌸', desc: 'Ciclo de flora manual' },
@@ -25,6 +37,7 @@ export default function NewPlantScreen() {
   const { isPro, loading: planLoading, canCreatePlant, refetch: refetchPlan } = usePlan()
 
   const [name, setName]             = useState('')
+  const [cropType, setCropType]     = useState<CropType>('cannabis')
   const [geneticType, setGeneticType] = useState<GeneticType>('feminized')
   const [startDate, setStartDate]   = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -35,9 +48,20 @@ export default function NewPlantScreen() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showPaywall, setShowPaywall] = useState(false)
 
+  const isCannabis = cropType === 'cannabis'
+
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
   }, [tables, selectedTableId])
+
+  // Cambiar de cultivo limpia la tabla elegida -- no tiene sentido dejar
+  // puesta una tabla de cannabis en una planta que ya no lo es (mismo
+  // criterio que PlantForm.setCropType en la web).
+  function handleCropTypeChange(v: CropType) {
+    setCropType(v)
+    if (v !== 'cannabis') setSelectedTableId('')
+    else if (!selectedTableId) setSelectedTableId(tables[0]?.id ?? '')
+  }
 
   // Show paywall once plan loads and user can't create
   useEffect(() => {
@@ -67,11 +91,12 @@ export default function NewPlantScreen() {
           user_id:              currentUser.id,
           name:                 name.trim(),
           genetics:             name.trim(),
-          genetic_type:         geneticType,
+          crop_type:            cropType,
+          genetic_type:         isCannabis ? geneticType : null,
           sex:                  null,
-          auto_flower_total_days: geneticType === 'autoflower' ? 77 : null,
+          auto_flower_total_days: isCannabis && geneticType === 'autoflower' ? 77 : null,
           start_date:           startDate.toISOString().split('T')[0],
-          nutrition_table_id:   selectedTableId || tables[0]?.id || 'revegetar-v1',
+          nutrition_table_id:   isCannabis ? (selectedTableId || tables[0]?.id || 'revegetar-v1') : '',
           location:             'indoor',
           pot_count:            1,
           pot_volume_liters:    11,
@@ -81,10 +106,10 @@ export default function NewPlantScreen() {
         .maybeSingle()
       if (plantErr || !plantRow) throw plantErr || new Error('No se pudo crear la planta')
 
-      const table = tables.find(t => t.id === plantRow.nutrition_table_id) || tables[0]
+      const table = isCannabis ? (tables.find(t => t.id === plantRow.nutrition_table_id) || tables[0]) : undefined
       if (table) {
         const plant: Plant = {
-          id: plantRow.id, name: plantRow.name, genetics: plantRow.genetics,
+          id: plantRow.id, name: plantRow.name, cropType, genetics: plantRow.genetics,
           geneticType, sex: 'unknown', startDate, location: 'indoor',
           potCount: 1, potVolumeLiters: 11, nutritionTableId: table.id, status: 'active',
         }
@@ -195,7 +220,43 @@ export default function NewPlantScreen() {
             {fieldErrors.name && <Text style={{ color: '#EF4444', fontSize: 12, marginTop: 6, marginLeft: 4 }}>{fieldErrors.name}</Text>}
           </View>
 
+          {/* Que vas a cultivar */}
+          <View>
+            <Text style={sectionLabel}>¿Que vas a cultivar?</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {CROP_OPTIONS.map(opt => {
+                const isSelected = cropType === opt.value
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => handleCropTypeChange(opt.value)}
+                    disabled={loading}
+                    activeOpacity={0.8}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      borderWidth: isSelected ? 1.5 : 1,
+                      borderColor: isSelected ? '#52CC64' : '#1C2E1E',
+                      backgroundColor: isSelected ? 'rgba(82,204,100,0.12)' : '#131A10',
+                    }}
+                  >
+                    <Text style={{ color: isSelected ? '#52CC64' : '#728C74', fontSize: 14, fontWeight: isSelected ? '800' : '600' }}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+            {!isCannabis && (
+              <Text style={{ color: '#728C74', fontSize: 12, marginTop: 8, lineHeight: 17 }}>
+                Todavia no tenemos calendario nutricional para este cultivo — vas a poder registrar tareas, riego y observaciones igual.
+              </Text>
+            )}
+          </View>
+
           {/* Tipo de genetica */}
+          {isCannabis && (
           <View>
             <Text style={sectionLabel}>Tipo de genetica</Text>
             <View style={{ gap: 8 }}>
@@ -234,6 +295,7 @@ export default function NewPlantScreen() {
               })}
             </View>
           </View>
+          )}
 
           {/* Fecha de inicio */}
           <View>
@@ -261,6 +323,14 @@ export default function NewPlantScreen() {
           </View>
 
           {/* Tabla nutricional */}
+          {!isCannabis ? (
+            <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0F1510', paddingHorizontal: 16, paddingVertical: 14 }}>
+              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', marginBottom: 4 }}>Sin tabla nutricional todavia</Text>
+              <Text style={{ color: '#728C74', fontSize: 12, lineHeight: 18 }}>
+                Para {CROP_OPTIONS.find(c => c.value === cropType)?.label.toLowerCase() ?? 'este cultivo'} todavia no tenemos un calendario de nutricion armado. Vas a poder registrar tareas, riego y observaciones igual.
+              </Text>
+            </View>
+          ) : (
           <View>
             <Text style={sectionLabel}>Tabla nutricional</Text>
             <View style={{ gap: 8 }}>
@@ -302,6 +372,7 @@ export default function NewPlantScreen() {
               </TouchableOpacity>
             </View>
           </View>
+          )}
 
           {/* CTA */}
           <TouchableOpacity onPress={handleCreate} disabled={loading} activeOpacity={0.85} style={{ marginTop: 8 }}>

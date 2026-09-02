@@ -95,7 +95,7 @@ export type TaskType = 'nutrition' | 'irrigation' | 'foliar' | 'observation' | '
 // deja lugar a futuros cultivos sin forzar un enum cerrado todavia.
 // Ausente = planta existente/actual = tratar como 'cannabis'.
 // Corresponde a plants.crop_type (migracion 20260810000000_plants_crop_type.sql,
-// preparada pero NO aplicada a produccion todavia).
+// aplicada a produccion el 2026-08-10).
 export type CropType = 'cannabis' | string
 
 export interface Plant {
