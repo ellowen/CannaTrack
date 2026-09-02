@@ -13,6 +13,8 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { getLevelInfo } from '@/lib/gamification'
 import { completeTaskInSupabase } from '@/lib/sync'
+import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import type { ScheduledTask } from '@/types/plant'
 
 const taskTypeLabel: Record<string, string> = {
@@ -133,6 +135,8 @@ export default function Dashboard() {
       return reward
     } catch (err) {
       console.error('Error sincronizando tarea completada:', err)
+      showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
+      enqueueSyncAction('completeTask', { taskId: completingTask.id, notes })
       setCompletingTask(null)
       return null
     }

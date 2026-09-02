@@ -17,6 +17,7 @@ import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } f
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
 import { replacePendingTasksForPlantInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useSubscription } from '@/hooks/useSubscription'
 
 const fieldClass =
@@ -75,32 +76,42 @@ export default function Settings() {
     )) return
 
     const activePlants = plants.filter((p) => p.status === 'active')
-    try {
-      for (const plant of activePlants) {
-        const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
-        if (!table) continue
-        const candidateTasks = generatePlantSchedule(plant, table)
+    let hadError = false
 
-        // Las tareas ya completadas son historial: nunca se borran ni se
-        // regeneran (mismo criterio que usePlants.editPlant -- antes esta
-        // funcion usaba replaceTasksForPlantInSupabase, que borraba TODO,
-        // incluidas las completadas, perdiendo completed_at/xp_awarded y
-        // habilitando re-otorgar XP por la misma tarea).
-        const existingForPlant = tasks.filter((t) => t.plantId === plant.id)
-        const completedExisting = existingForPlant.filter((t) => t.completed)
-        const slotKey = (t: { cycle: string; week: number; type: string }) => `${t.cycle}|${t.week}|${t.type}`
-        const completedSlots = new Set(completedExisting.map(slotKey))
-        const newPending = candidateTasks.filter((t) => !completedSlots.has(slotKey(t)))
+    for (const plant of activePlants) {
+      const table = tables.find((tbl) => tbl.id === plant.nutritionTableId)
+      if (!table) continue
+      const candidateTasks = generatePlantSchedule(plant, table)
 
-        setTasks(plant.id, [...completedExisting, ...newPending])
-        // Persistir en la DB: reemplaza solo las tareas pendientes.
+      // Las tareas ya completadas son historial: nunca se borran ni se
+      // regeneran (mismo criterio que usePlants.editPlant -- antes esta
+      // funcion usaba replaceTasksForPlantInSupabase, que borraba TODO,
+      // incluidas las completadas, perdiendo completed_at/xp_awarded y
+      // habilitando re-otorgar XP por la misma tarea).
+      const existingForPlant = tasks.filter((t) => t.plantId === plant.id)
+      const completedExisting = existingForPlant.filter((t) => t.completed)
+      const slotKey = (t: { cycle: string; week: number; type: string }) => `${t.cycle}|${t.week}|${t.type}`
+      const completedSlots = new Set(completedExisting.map(slotKey))
+      const newPending = candidateTasks.filter((t) => !completedSlots.has(slotKey(t)))
+
+      setTasks(plant.id, [...completedExisting, ...newPending])
+      // Persistir en la DB: reemplaza solo las tareas pendientes.
+      // Cada planta se intenta de forma independiente -- que una falle no
+      // debe frenar la regeneracion del resto.
+      try {
         await replacePendingTasksForPlantInSupabase(plant.id, newPending)
+      } catch (error) {
+        hadError = true
+        console.error(`[handleRegenerate] Error sincronizando planta ${plant.id}:`, error)
+        enqueueSyncAction('replacePendingTasks', { plantId: plant.id, tasks: newPending })
       }
+    }
+
+    if (hadError) {
+      showErrorToast('Algunos calendarios no se pudieron sincronizar. Se reintentará cuando vuelva la conexión.')
+    } else {
       setRegenDone(true)
       setTimeout(() => setRegenDone(false), 3000)
-    } catch (error) {
-      console.error('[handleRegenerate] Error sincronizando:', error)
-      showErrorToast('No se pudieron regenerar los calendarios. Revisá tu conexión e intentá de nuevo.')
     }
   }
 

@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Text, ActivityIndicator, Animated, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { onNetworkStateChange } from '@/lib/network'
 import { useSyncStore } from '@/store/syncStore'
+import { useSync } from '@/hooks/useSync'
 
 type IndicatorState = 'offline' | 'syncing' | 'none'
 
@@ -22,6 +23,7 @@ export function OfflineIndicator() {
   const fadeAnim = new Animated.Value(0)
 
   const { syncQueue, isSyncing, lastSyncAt } = useSyncStore()
+  const { sync } = useSync()
   const hasPending = syncQueue.length > 0
   const pendingCount = syncQueue.length
 
@@ -84,13 +86,6 @@ export function OfflineIndicator() {
     })
     return cleanup
   }, [syncQueue.length])
-
-  // Callback para sincronizar manualmente
-  const handleManualSync = useCallback(() => {
-    const { enqueueSyncAction } = useSyncStore.getState()
-    // Trigger sync - será procesado por el servicio de sync
-    console.log('[Manual] User triggered sync')
-  }, [])
 
   if (state === 'none') return null
 
@@ -181,7 +176,7 @@ export function OfflineIndicator() {
                 •
               </Text>
               <TouchableOpacity
-                onPress={handleManualSync}
+                onPress={() => void sync()}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 4,

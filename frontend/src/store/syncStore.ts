@@ -2,9 +2,19 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { dateReviver } from '@/lib/storage'
 
+export type SyncActionType =
+  | 'addPlant'
+  | 'updatePlantStatus'
+  | 'updatePlantData'
+  | 'replaceTasks'
+  | 'replacePendingTasks'
+  | 'completeTask'
+  | 'syncMeasurement'
+  | 'deleteMeasurement'
+
 export type SyncAction = {
   id: string
-  type: 'addPlant' | 'updatePlant' | 'completeTask' | 'addXP' | 'uploadPhoto'
+  type: SyncActionType
   payload: Record<string, unknown>
   timestamp: Date
 }
@@ -17,6 +27,7 @@ interface SyncStore {
 
   // Acciones
   enqueueSyncAction: (action: Omit<SyncAction, 'id' | 'timestamp'>) => void
+  removeActionsFromQueue: (ids: string[]) => void
   clearQueue: () => void
   setIsSyncing: (v: boolean) => void
   setSyncError: (error: string | null) => void
@@ -47,6 +58,9 @@ export const useSyncStore = create<SyncStore>()(
             },
           ],
         })),
+
+      removeActionsFromQueue: (ids) =>
+        set((s) => ({ syncQueue: s.syncQueue.filter((a) => !ids.includes(a.id)) })),
 
       clearQueue: () => set({ syncQueue: [] }),
       setIsSyncing: (isSyncing) => set({ isSyncing }),

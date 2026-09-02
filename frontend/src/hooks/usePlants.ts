@@ -13,6 +13,7 @@ import {
 import type { Plant, NutritionTable } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
 import { formatDateOnly } from '@/lib/date-utils'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 
 function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
   return {
@@ -54,6 +55,7 @@ export function usePlants() {
     } catch (error) {
       console.error('[addPlant] Error sincronizando:', error)
       showErrorToast('La planta se guardó en este dispositivo, pero no se pudo sincronizar. Revisá tu conexión.')
+      enqueueSyncAction('addPlant', { plant })
     }
 
     return plant
@@ -66,6 +68,7 @@ export function usePlants() {
     } catch (error) {
       console.error('[discardPlant] Error sincronizando:', error)
       showErrorToast('No se pudo sincronizar el descarte. Revisá tu conexión.')
+      enqueueSyncAction('updatePlantStatus', { plantId: id, status: 'discarded' })
     }
   }
 
@@ -76,6 +79,7 @@ export function usePlants() {
     } catch (error) {
       console.error('[harvestPlant] Error sincronizando:', error)
       showErrorToast('No se pudo sincronizar la cosecha. Revisá tu conexión.')
+      enqueueSyncAction('updatePlantStatus', { plantId: id, status: 'harvested' })
     }
   }
 
@@ -86,6 +90,7 @@ export function usePlants() {
     } catch (error) {
       console.error('[reactivatePlant] Error sincronizando:', error)
       showErrorToast('No se pudo sincronizar la reactivación. Revisá tu conexión.')
+      enqueueSyncAction('updatePlantStatus', { plantId: id, status: 'active' })
     }
   }
 
@@ -100,6 +105,7 @@ export function usePlants() {
         await updatePlantInSupabase(id, { floraStartDate })
       } catch (error) {
         console.error('[startFlora] Error sincronizando:', error)
+        enqueueSyncAction('updatePlantData', { plantId: id, changes: { floraStartDate } })
         throw error
       }
       return
@@ -153,10 +159,10 @@ export function usePlants() {
     if (!existing) return
     const updated: Plant = { ...existing, ...data }
     updatePlant(id, data)
+    const table = tables.find((t) => t.id === updated.nutritionTableId)
 
     try {
       // Regenerar tareas si cambia tabla o genetica
-      const table = tables.find((t) => t.id === updated.nutritionTableId)
       if (table) {
         const effective = updated.availableProducts
           ? applyProductFilter(table, updated.availableProducts)
@@ -171,6 +177,11 @@ export function usePlants() {
     } catch (error) {
       console.error('[editPlant] Error sincronizando:', error)
       showErrorToast('Los cambios se guardaron en este dispositivo, pero no se pudieron sincronizar. Revisá tu conexión.')
+      if (table) {
+        const currentTasks = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
+        enqueueSyncAction('replaceTasks', { plantId: id, tasks: currentTasks })
+      }
+      enqueueSyncAction('updatePlantData', { plantId: id, changes: data })
     }
   }
 

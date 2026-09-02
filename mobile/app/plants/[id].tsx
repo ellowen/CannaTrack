@@ -25,7 +25,7 @@ import { sharePlantCard } from '@/lib/share'
 import { exportPlantHistory } from '@/lib/export'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
-import { enqueueSyncAction } from '@/lib/syncQueue'
+import { useSyncStore } from '@/store/syncStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
@@ -161,12 +161,16 @@ export default function PlantDetailScreen() {
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
 
     // Intentar escritura directa; si falla (offline) encolar para sync posterior (H-03)
+    const completedAt = new Date()
     const { error: completeError } = await supabase
       .from('scheduled_tasks')
-      .update({ completed: true, completed_at: new Date().toISOString(), completion_notes: notes ?? null })
+      .update({ completed: true, completed_at: completedAt.toISOString(), completion_notes: notes ?? null })
       .eq('id', taskId)
     if (completeError) {
-      enqueueSyncAction('completeTask', { taskId, notes })
+      useSyncStore.getState().enqueueSyncAction({
+        type: 'completeTask',
+        payload: { taskId, completedAt, completionNotes: notes ?? null },
+      })
     }
     if (user) {
       if (ec != null || ph != null) {

@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { LogoMark } from '@/components/ui'
 import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -767,6 +768,7 @@ export default function Home() {
         } catch (err) {
           console.error('Error sincronizando tarea completada:', err)
           showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
+          enqueueSyncAction('completeTask', { taskId, notes })
           return null
         }
       }}

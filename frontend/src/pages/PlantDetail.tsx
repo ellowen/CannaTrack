@@ -21,6 +21,7 @@ import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCyclePr
 import { STAGE_LABELS, STAGE_EMOJIS, isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import { formatDateOnly } from '@/lib/date-utils'
 
 export default function PlantDetail() {
@@ -738,6 +739,7 @@ export default function PlantDetail() {
           } catch (err) {
             console.error('Error sincronizando tarea completada:', err)
             showErrorToast('No se pudo sincronizar la tarea completada. Revisá tu conexión.')
+            enqueueSyncAction('completeTask', { taskId, notes })
             return null
           }
         }}

@@ -10,6 +10,7 @@ import { useUserStore } from '@/store/userStore'
 import { syncMeasurementToSupabase } from '@/lib/sync'
 import type { TaskCompletionReward } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
 
@@ -96,6 +97,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
         syncMeasurementToSupabase(log, userId).catch((err) => {
           console.error('Error sincronizando medicion:', err)
           showErrorToast('No se pudo sincronizar la medición. Revisá tu conexión.')
+          enqueueSyncAction('syncMeasurement', { log, userId })
         })
       }
     }

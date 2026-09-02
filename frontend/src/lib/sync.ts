@@ -16,7 +16,9 @@ import { parseDateOnly, formatDateOnly } from './date-utils'
 
 export async function syncPlantToSupabase(plant: Plant): Promise<void> {
   try {
-    const { error } = await supabase.from('plants').insert([{
+    // upsert (no insert): si se reintenta desde la sync queue tras un
+    // fallo parcial (planta ok, tareas no), no debe romper por PK duplicada.
+    const { error } = await supabase.from('plants').upsert([{
       id: plant.id,
       user_id: (await supabase.auth.getUser()).data.user?.id,
       name: plant.name,
@@ -322,6 +324,7 @@ export async function deleteMeasurementFromSupabase(measurementId: string): Prom
     if (error) throw error
   } catch (error) {
     console.error('Error eliminando medicion:', error)
+    throw error
   }
 }
 
@@ -343,6 +346,7 @@ export async function syncMeasurementToSupabase(log: MeasurementLog, userId: str
     if (error) throw error
   } catch (error) {
     console.error('Error sincronizando medicion:', error)
+    throw error
   }
 }
 

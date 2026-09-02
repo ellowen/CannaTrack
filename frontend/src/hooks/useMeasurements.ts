@@ -3,6 +3,7 @@ import { useUserStore } from '@/store/userStore'
 import type { MeasurementLog } from '@/types/measurement'
 import { syncMeasurementToSupabase, deleteMeasurementFromSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
+import { enqueueSyncAction } from '@/lib/syncQueue'
 
 export function useMeasurements(plantId: string) {
   const { logs, addLog: storeAddLog, deleteLog: storeDeleteLog } = useMeasurementStore()
@@ -18,6 +19,7 @@ export function useMeasurements(plantId: string) {
       syncMeasurementToSupabase(log, userId).catch((err) => {
         console.error('Error sincronizando medicion:', err)
         showErrorToast('No se pudo sincronizar la medición. Revisá tu conexión.')
+        enqueueSyncAction('syncMeasurement', { log, userId })
       })
     }
     return log
@@ -28,6 +30,7 @@ export function useMeasurements(plantId: string) {
     deleteMeasurementFromSupabase(id).catch((err) => {
       console.error('Error eliminando medicion:', err)
       showErrorToast('No se pudo eliminar la medición del servidor. Revisá tu conexión.')
+      enqueueSyncAction('deleteMeasurement', { measurementId: id })
     })
   }
 
