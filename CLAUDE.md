@@ -20,12 +20,24 @@ historial fotográfico y diagnóstico por IA.
 
 ## ESTADO ACTUAL DEL PROYECTO
 
+*Actualizado a partir de git log — ago 2026. Ver `docs/archive-abril2026/`
+para los docs de sesión de abril 2026 (desactualizados, guardados como referencia
+historica).*
+
 - [x] Etapa 0 — Estructura monorepo + motor nutricional
-- [x] Etapa 1 — UI React iniciada (en progreso)
-- [ ] Etapa 1 — UI React completa con localStorage
-- [ ] Etapa 2 — Backend Supabase conectado
-- [ ] Etapa 3 — App mobile React Native / Expo
+- [x] Etapa 1 — UI React completa con Zustand + localStorage
+- [x] Etapa 2 — Backend Supabase conectado (auth, RLS, Storage, Edge Functions)
+- [x] Etapa 3 — App mobile Expo/React Native (tabs: home, plants, tasks, diagnose, profile)
+- [x] Landing rebrandeada a **Cultitrack**, deploy en Vercel
+- [x] Modelo comercial: trial Pro de 30 dias + suscripcion (RevenueCat webhook)
+- [x] Soporte multi-cultivo (`cropType` opcional en `Plant`, no solo cannabis)
+- [x] Diagnostico IA por foto (`diagnose-plant` edge function, gateado a Pro, rate limit 30/mes Pro - 5/mes Free)
+- [x] Hardening de seguridad: RLS de `profiles`/`diagnosis_logs`, exploits de XP/racha/rate-limit cerrados
+- [x] Suite E2E Playwright + CI
 - [ ] Etapa 4 — Marketplace de tablas nutricionales (B2B)
+
+Ultimo commit: ver `git log -1`. No asumir el estado de este archivo sin
+confirmar contra `git log` — historicamente quedo desactualizado varios meses.
 
 ---
 
@@ -233,26 +245,13 @@ Adjuntá siempre:
 
 ## PRÓXIMOS PASOS POR PRIORIDAD
 
-### URGENTE — Terminar Etapa 1
-- [ ] Stores con Zustand + localStorage (plantStore, taskStore, nutritionStore, userStore)
-- [ ] Componentes UI base (Button, Card, Badge)
-- [ ] Página NewPlant con formulario completo
-- [ ] Página Home con PlantCard y tareas del día
-- [ ] Página PlantDetail con NutritionCard, TaskItem, botón "Iniciar floración"
-- [ ] React Router conectando todas las páginas
+*Etapas 1-3 completas (ver ESTADO ACTUAL). Pendiente real, a confirmar con
+el usuario antes de asumir prioridad:*
 
-### IMPORTANTE — Etapa 2
-- [ ] Setup Supabase: auth, tablas, storage de fotos
-- [ ] Migrar stores de localStorage a Supabase
-- [ ] Plan Free vs Pro (feature flags)
-- [ ] Upload y galería de fotos por semana
-
-### FUTURO — Etapa 3+
-- [ ] React Native + Expo (reutilizando el motor)
-- [ ] Notificaciones push nativas
-- [ ] Diagnóstico IA por foto (Claude API vision)
-- [ ] Marketplace de tablas B2B
+### PENDIENTE
+- [ ] Etapa 4 — Marketplace de tablas nutricionales (B2B)
 - [ ] White label para marcas
+- [ ] Confirmar con el usuario que sigue en el roadmap de multi-cultivo (Fase 4 ya arranco 2026-08-10)
 
 ---
 
@@ -335,4 +334,4 @@ User instructions always override this file.
 
 *CannaTrack — App de seguimiento de cultivos de cannabis*
 *Repo: https://github.com/ellowen/CannaTrack.git*
-*Última actualización: Abril 2026*
+*Última actualización: 2026-09-02 (seccion ESTADO ACTUAL / PROXIMOS PASOS revisada contra git log)*
