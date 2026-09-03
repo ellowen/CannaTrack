@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, FlatList,
   Alert, RefreshControl, TextInput,
 } from 'react-native'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
@@ -109,13 +109,7 @@ export default function PlantsScreen() {
     await load() // recarga historial
   }
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
-      >
-        {/* Header */}
+  const header = (
         <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingTop: 20, paddingBottom: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingHorizontal: 20 }}>
             <View>
@@ -186,10 +180,39 @@ export default function PlantsScreen() {
             })}
           </ScrollView>
         </LinearGradient>
+  )
 
-        {/* Lista filtrada */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          {filteredPlants.length === 0 ? (
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09' }}>
+      <FlatList
+        data={filteredPlants}
+        keyExtractor={plant => plant.id}
+        renderItem={({ item: plant }) => (
+          <View style={{ paddingHorizontal: 16 }}>
+            {plant.status === 'active' ? (
+              <ActivePlantCard
+                plant={plant}
+                pendingToday={todayTaskMap[plant.id] ?? 0}
+                onDelete={() => {
+                  Alert.alert(
+                    t('plantsTab.discard_alert_title'),
+                    t('plantsTab.discard_alert_message', { name: plant.name }),
+                    [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { text: t('plantsTab.discard_button'), style: 'destructive', onPress: () => handleDeletePlant(plant.id) },
+                    ]
+                  )
+                }}
+              />
+            ) : (
+              <HistoryPlantCard plant={plant} />
+            )}
+          </View>
+        )}
+        ListHeaderComponent={header}
+        ListHeaderComponentStyle={{ marginBottom: 12 }}
+        ListEmptyComponent={
+          <View style={{ paddingHorizontal: 16 }}>
             <TouchableOpacity
               onPress={activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'vege' || activeFilter === 'flora' ? () => router.push('/plants/new' as never) : undefined}
               activeOpacity={0.85}
@@ -216,32 +239,12 @@ export default function PlantsScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-          ) : (
-            filteredPlants.map(plant =>
-              plant.status === 'active' ? (
-                <ActivePlantCard
-                  key={plant.id}
-                  plant={plant}
-                  pendingToday={todayTaskMap[plant.id] ?? 0}
-                  onDelete={() => {
-                    Alert.alert(
-                      t('plantsTab.discard_alert_title'),
-                      t('plantsTab.discard_alert_message', { name: plant.name }),
-                      [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        { text: t('plantsTab.discard_button'), style: 'destructive', onPress: () => handleDeletePlant(plant.id) },
-                      ]
-                    )
-                  }}
-                />
-              ) : (
-                <HistoryPlantCard key={plant.id} plant={plant} />
-              )
-            )
-          )}
-        </View>
-      </ScrollView>
-
+          </View>
+        }
+        contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#52CC64" />}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   )
 }
