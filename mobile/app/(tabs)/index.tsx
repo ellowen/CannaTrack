@@ -12,7 +12,6 @@ import { useTasks } from '@/hooks/useTasks'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { completeTaskInSupabase, loadPlantsFromSupabase } from '@/lib/sync'
-import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { getLevelInfo } from '@shared/lib/gamification'
 import { CompleteTaskSheet, type SheetTask } from '@/components/CompleteTaskSheet'
 import {
@@ -109,9 +108,7 @@ export default function HomeScreen() {
     completeTaskInSupabase(taskId, notes).catch(console.error)
     if (task && (ec != null || ph != null) && user) {
       await supabase.from('measurements').insert({ user_id: user.id, plant_id: task.plantId ?? null, ec: ec ?? null, ph: ph ?? null, notes: notes?.trim() || null })
-      void awardXP(user.id, XP_VALUES.COMPLETE_WITH_MEASUREMENT)
-    } else if (user) { void awardXP(user.id, XP_VALUES.COMPLETE_TASK) }
-    if (user) void recordDailyActivity(user.id)
+    }
     setOverdueTasks(prev => prev.filter(t => t.id !== taskId))
     setSheetTask(null)
   }

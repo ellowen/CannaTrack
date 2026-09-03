@@ -2,6 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SyncAction } from '@/store/syncStore'
 import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
+// Ruta relativa, no alias -- '@/lib/sync' es ambiguo entre este archivo
+// (mobile/src/lib/sync/syncService.ts) y mobile/src/lib/sync.ts.
+import { completeTaskInSupabase } from '../sync'
 
 /**
  * Resuelve conflictos entre versiones local y remota de una entidad.
@@ -124,19 +127,13 @@ export class SyncService {
     }
   }
 
-  private async syncCompleteTask(supabase: SupabaseClient, action: SyncAction): Promise<void> {
-    const { taskId, completedAt, completionNotes } = action.payload as Record<string, any>
-
-    const { error } = await supabase
-      .from('scheduled_tasks')
-      .update({
-        completed: true,
-        completed_at: completedAt?.toISOString() || new Date().toISOString(),
-        completion_notes: completionNotes,
-      })
-      .eq('id', taskId)
-
-    if (error) throw error
+  private async syncCompleteTask(_supabase: SupabaseClient, action: SyncAction): Promise<void> {
+    const { taskId, completionNotes } = action.payload as Record<string, any>
+    // Via handle_task_completion (RPC) -- otorga XP/racha real en la DB, no
+    // solo marca completed. Un update directo (como antes) nunca los
+    // guardaba: profiles tiene un trigger que revierte escrituras directas
+    // de xp/streak_days del cliente.
+    await completeTaskInSupabase(taskId, completionNotes ?? undefined)
   }
 
   private async syncAddXP(supabase: SupabaseClient, action: SyncAction): Promise<void> {

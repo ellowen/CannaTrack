@@ -13,7 +13,7 @@ import { useDateLocale } from '@/lib/dateLocale'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
-import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
+import { completeTaskInSupabase } from '@/lib/sync'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import type { NutritionTable } from '@shared/types/plant'
@@ -128,7 +128,6 @@ export default function PlantDetailScreen() {
       // Actualizar store global — plantas y tareas reflejan flora inmediatamente
       updateStoreP(plant.id, { floraStartDate })
       setStoreTasks(plant.id, newTasks)
-      if (user) awardXP(user.id, XP_VALUES.START_FLORA)
       track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
       void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
       setFloraDateModal(false)
@@ -147,7 +146,6 @@ export default function PlantDetailScreen() {
     }).eq('id', plant.id)
     updateStoreP(plant.id, { status: 'harvested' })
     void cancelPlantNotifications(plant.id)
-    if (user) void awardXP(user.id, XP_VALUES.HARVEST)
     router.replace('/(tabs)')
   }
 
@@ -163,30 +161,22 @@ export default function PlantDetailScreen() {
     // Actualizar estado local primero (offline-first)
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, completed: true } : t))
 
-    // Intentar escritura directa; si falla (offline) encolar para sync posterior (H-03)
-    const completedAt = new Date()
-    const { error: completeError } = await supabase
-      .from('scheduled_tasks')
-      .update({ completed: true, completed_at: completedAt.toISOString(), completion_notes: notes ?? null })
-      .eq('id', taskId)
-    if (completeError) {
+    // Intentar completar via RPC (handle_task_completion otorga XP/racha
+    // real en la DB); si falla (offline) encolar para sync posterior (H-03)
+    try {
+      await completeTaskInSupabase(taskId, notes)
+    } catch {
       useSyncStore.getState().enqueueSyncAction({
         type: 'completeTask',
-        payload: { taskId, completedAt, completionNotes: notes ?? null },
+        payload: { taskId, completedAt: new Date(), completionNotes: notes ?? null },
       })
     }
-    if (user) {
-      if (ec != null || ph != null) {
-        await supabase.from('measurements').insert({
-          user_id: user.id, plant_id: id,
-          ec: ec ?? null, ph: ph ?? null,
-          notes: notes?.trim() || null,
-        })
-        void awardXP(user.id, XP_VALUES.COMPLETE_WITH_MEASUREMENT)
-      } else {
-        void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
-      }
-      void recordDailyActivity(user.id)
+    if (user && (ec != null || ph != null)) {
+      await supabase.from('measurements').insert({
+        user_id: user.id, plant_id: id,
+        ec: ec ?? null, ph: ph ?? null,
+        notes: notes?.trim() || null,
+      })
     }
     setSheetTask(null)
     // Rearmar notificaciones de la planta con el task recien completado excluido

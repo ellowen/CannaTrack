@@ -156,18 +156,52 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
   }
 }
 
-export async function completeTaskInSupabase(taskId: string, notes?: string): Promise<void> {
+export interface TaskCompletionReward {
+  /** null cuando la tarea ya habia otorgado XP antes (deshacer/rehacer) — sin premio nuevo. */
+  xpGained: number | null
+  newStreak: number | null
+}
+
+/**
+ * Completa la tarea y devuelve el premio REAL otorgado por la DB
+ * (handle_task_completion -> log_xp/update_streak), no un calculo local.
+ * Supabase es la fuente de verdad del XP/racha -- un trigger en profiles
+ * (protect_profile_system_columns) revierte silenciosamente cualquier
+ * escritura directa de xp/streak_days del cliente, asi que awardXP()/
+ * recordDailyActivity() (lib/xp.ts, ahora eliminadas) nunca guardaban nada.
+ * Misma implementacion que frontend/src/lib/sync.ts.
+ */
+export async function completeTaskInSupabase(taskId: string, notes?: string): Promise<TaskCompletionReward> {
   try {
+    const { data: existing, error: fetchError } = await supabase
+      .from('scheduled_tasks')
+      .select('xp_awarded, user_id')
+      .eq('id', taskId)
+      .single()
+    if (fetchError) throw fetchError
+
+    let reward: TaskCompletionReward = { xpGained: null, newStreak: null }
+    if (!existing.xp_awarded) {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('handle_task_completion', {
+        task_id_param: taskId,
+        user_id_param: existing.user_id,
+      })
+      if (rpcError) throw rpcError
+      reward = { xpGained: rpcData?.xp_gained ?? 0, newStreak: rpcData?.new_streak ?? null }
+    }
+
     const { error } = await supabase
       .from('scheduled_tasks')
       .update({
         completed: true,
         completed_at: new Date().toISOString(),
         completion_notes: notes,
+        xp_awarded: true,
       })
       .eq('id', taskId)
 
     if (error) throw error
+    return reward
   } catch (error) {
     console.error('Error completando tarea:', error)
     throw error

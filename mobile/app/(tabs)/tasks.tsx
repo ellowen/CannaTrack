@@ -7,7 +7,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { useTranslation } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
+import { completeTaskInSupabase } from '@/lib/sync'
 import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
 import { useDateLocale } from '@/lib/dateLocale'
 import type { ScheduledTask } from '@shared/types/plant'
@@ -173,9 +173,7 @@ export default function CalendarScreen() {
 
   async function completeTask(taskId: string) {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    await supabase.from('scheduled_tasks')
-      .update({ completed: true, completed_at: new Date().toISOString() })
-      .eq('id', taskId)
+    completeTaskInSupabase(taskId).catch(console.error)
     setTasks(prev => {
       const updated = prev.map(t => t.id === taskId ? { ...t, completed: true } : t)
       const dayTasks = updated.filter(t => {
@@ -189,10 +187,6 @@ export default function CalendarScreen() {
       if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) triggerCelebration()
       return updated
     })
-    if (user) {
-      void awardXP(user.id, XP_VALUES.COMPLETE_TASK)
-      void recordDailyActivity(user.id)
-    }
   }
 
   const celebrationScale = celebrationAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.025, 1] })

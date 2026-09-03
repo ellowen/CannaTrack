@@ -12,7 +12,6 @@ import { validatePhoto } from '@/lib/photoValidation'
 import { differenceInDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { awardXP, XP_VALUES } from '@/lib/xp'
 import { useTranslation } from '@/i18n'
 
 const { width: screenWidth } = Dimensions.get('window')
@@ -128,7 +127,6 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
       const isNewPhoto = photoUri && photoUri !== existing?.photoUrl
       if (isNewPhoto && photoUri) {
         finalPhotoUrl = await uploadPhoto(photoUri, photoBase64)
-        awardXP(userId, XP_VALUES.UPLOAD_PHOTO)
       }
 
       if (existing) {
