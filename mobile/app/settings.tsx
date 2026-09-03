@@ -11,10 +11,14 @@ import { scheduleDailyReminder, schedulePlantTaskNotification } from '@/lib/noti
 import * as Notifications from 'expo-notifications'
 import { loadTasksFromSupabase, loadPlantsFromSupabase } from '@/lib/sync'
 import { track } from '@/lib/analytics'
+import { useTranslation, LANGUAGES } from '@/i18n'
+import { useUserStore } from '@/store/userStore'
 
 export default function SettingsScreen() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { isDark, toggleTheme } = useTheme()
+  const { language, setLanguage } = useUserStore()
   const [notifications, setNotifications] = useState(true)
   const [loading, setLoading] = useState(true)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -87,12 +91,12 @@ export default function SettingsScreen() {
 
   async function handleSaveUsername() {
     const trimmed = username.trim()
-    if (!trimmed) { setUsernameError('El nombre no puede estar vacio'); return }
-    if (trimmed.length > 30) { setUsernameError('Maximo 30 caracteres'); return }
+    if (!trimmed) { setUsernameError(t('settings.username_empty_error')); return }
+    if (trimmed.length > 30) { setUsernameError(t('settings.username_max_error')); return }
     if (!user) return
     setSaveState('saving')
     const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
-    if (error) { setSaveState('idle'); setUsernameError('Error al guardar'); return }
+    if (error) { setSaveState('idle'); setUsernameError(t('settings.username_save_error')); return }
     setLoadedUsername(trimmed)
     setUsername(trimmed)
     setSaveState('saved')
@@ -131,20 +135,20 @@ export default function SettingsScreen() {
   }
 
   async function handleSignOut() {
-    Alert.alert('Cerrar sesion', '¿Estas seguro?', [
-      { text: 'Cancelar' },
-      { text: 'Cerrar', style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
+    Alert.alert(t('settings.sign_out_title'), t('settings.sign_out_confirm'), [
+      { text: t('common.cancel') },
+      { text: t('settings.sign_out'), style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
     ])
   }
 
   async function handleDeleteAccount() {
     Alert.alert(
-      'Eliminar cuenta',
-      'Se van a borrar tu perfil, tus plantas, historial y fotos de forma permanente. Esta accion no se puede deshacer.',
+      t('settings.delete_account_confirm_title'),
+      t('settings.delete_account_confirm_desc'),
       [
-        { text: 'Cancelar' },
+        { text: t('common.cancel') },
         {
-          text: 'Eliminar',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             setDeletingAccount(true)
@@ -156,8 +160,8 @@ export default function SettingsScreen() {
               router.replace('/auth')
             } catch (e) {
               Alert.alert(
-                'No se pudo eliminar la cuenta',
-                e instanceof Error ? e.message : 'Intenta de nuevo mas tarde.'
+                t('settings.delete_account_error_title'),
+                e instanceof Error ? e.message : t('settings.delete_account_error_desc')
               )
               setDeletingAccount(false)
             }
@@ -191,7 +195,7 @@ export default function SettingsScreen() {
             >
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
-            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Configuracion</Text>
+            <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{t('settings.title')}</Text>
           </View>
         </LinearGradient>
 
@@ -199,7 +203,7 @@ export default function SettingsScreen() {
 
           {/* Username */}
           <View>
-            <Text style={sectionLabel}>Nombre de usuario</Text>
+            <Text style={sectionLabel}>{t('settings.username_label')}</Text>
             <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', padding: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <TextInput
@@ -229,7 +233,7 @@ export default function SettingsScreen() {
                     style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 }}
                   >
                     <Text style={{ color: saveDisabled ? '#3A5040' : '#080E09', fontWeight: '700', fontSize: 13 }}>
-                      {saveState === 'saved' ? '✓' : 'Guardar'}
+                      {saveState === 'saved' ? '✓' : t('common.save')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -242,7 +246,7 @@ export default function SettingsScreen() {
 
           {/* Settings toggles */}
           <View>
-            <Text style={sectionLabel}>Preferencias</Text>
+            <Text style={sectionLabel}>{t('settings.preferences')}</Text>
             <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
 
               {/* Dark mode */}
@@ -252,8 +256,8 @@ export default function SettingsScreen() {
                     <Text style={{ fontSize: 18 }}>{isDark ? '🌙' : '☀️'}</Text>
                   </View>
                   <View>
-                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Modo oscuro</Text>
-                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>Tema {isDark ? 'oscuro' : 'claro'}</Text>
+                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{t('settings.dark_mode')}</Text>
+                    <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>{isDark ? t('settings.theme_dark') : t('settings.theme_light')}</Text>
                   </View>
                 </View>
                 <Switch
@@ -264,6 +268,38 @@ export default function SettingsScreen() {
                 />
               </View>
 
+              {/* Idioma */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 18 }}>🌐</Text>
+                  </View>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{t('settings.language')}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {LANGUAGES.map(l => {
+                    const isSelected = language === l.code
+                    return (
+                      <TouchableOpacity
+                        key={l.code}
+                        onPress={() => setLanguage(l.code)}
+                        activeOpacity={0.8}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 10,
+                          borderWidth: isSelected ? 1.5 : 1,
+                          borderColor: isSelected ? '#52CC64' : '#1C2E1E',
+                          backgroundColor: isSelected ? 'rgba(82,204,100,0.12)' : 'transparent',
+                        }}
+                      >
+                        <Text style={{ fontSize: 13 }}>{l.flag} {l.code.toUpperCase()}</Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
+              </View>
+
               {/* Notifications */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: notifications ? 1 : 0, borderBottomColor: '#1C2E1E' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -271,9 +307,9 @@ export default function SettingsScreen() {
                     <Text style={{ fontSize: 18 }}>🔔</Text>
                   </View>
                   <View>
-                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Notificaciones</Text>
+                    <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{t('settings.notifications')}</Text>
                     <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>
-                      Recordatorio a las {String(notificationHour).padStart(2, '0')}:{String(notificationMinute).padStart(2, '0')}
+                      {t('settings.notifications_reminder_at', { time: `${String(notificationHour).padStart(2, '0')}:${String(notificationMinute).padStart(2, '0')}` })}
                     </Text>
                   </View>
                 </View>
@@ -289,7 +325,7 @@ export default function SettingsScreen() {
               {notifications && (
                 <View style={{ padding: 16 }}>
                   <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 16 }}>
-                    Hora del recordatorio
+                    {t('settings.reminder_time')}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
                     {/* Hours */}
@@ -333,7 +369,7 @@ export default function SettingsScreen() {
                     </View>
                   </View>
                   {timeChangeState === 'saved' && (
-                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 12 }}>✓ Guardado</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 12 }}>✓ {t('common.saved')}</Text>
                   )}
                 </View>
               )}
@@ -351,8 +387,8 @@ export default function SettingsScreen() {
                   <Text style={{ fontSize: 18 }}>📊</Text>
                 </View>
                 <View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Tablas Nutricionales</Text>
-                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>REVEGETAR, Top Crop y mas</Text>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{t('settings.nutrition_tables')}</Text>
+                  <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>{t('settings.nutrition_tables_desc')}</Text>
                 </View>
               </View>
               <Text style={{ color: '#3A5C3E', fontSize: 18 }}>›</Text>
@@ -367,7 +403,7 @@ export default function SettingsScreen() {
                   <Text style={{ fontSize: 18 }}>🌿</Text>
                 </View>
                 <View>
-                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>Acerca de</Text>
+                  <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>{t('settings.about')}</Text>
                   <Text style={{ color: '#728C74', fontSize: 12, marginTop: 1 }}>Cultitrack v1.0.0</Text>
                 </View>
               </View>
@@ -381,7 +417,7 @@ export default function SettingsScreen() {
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 16 }}>🔒</Text>
                 </View>
-                <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600' }}>Politica de Privacidad</Text>
+                <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600' }}>{t('settings.privacy_policy')}</Text>
               </View>
               <Text style={{ color: '#3A5040', fontSize: 16 }}>›</Text>
             </TouchableOpacity>
@@ -394,13 +430,13 @@ export default function SettingsScreen() {
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 16 }}>📄</Text>
                 </View>
-                <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600' }}>Terminos de Servicio</Text>
+                <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600' }}>{t('settings.terms_of_service')}</Text>
               </View>
               <Text style={{ color: '#3A5040', fontSize: 16 }}>›</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
-              <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
+              <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>{t('settings.sign_out')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -412,7 +448,7 @@ export default function SettingsScreen() {
                 <ActivityIndicator color="#EF4444" />
               ) : (
                 <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600', textAlign: 'center', opacity: 0.7 }}>
-                  Eliminar cuenta
+                  {t('settings.delete_account')}
                 </Text>
               )}
             </TouchableOpacity>

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { AccessTier } from '@shared/types/plant'
 import { computeStreak, getLevelInfo, XP } from '@shared/lib/gamification'
 import { createAsyncStorage } from '@/lib/storage'
+import { i18n, type Language } from '@/i18n'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
@@ -13,6 +14,7 @@ interface UserStore {
   plan: AccessTier
   potVolumeLiters: number
   theme: ThemePreference
+  language: Language
   notificationsEnabled: boolean
   onboarded: boolean
 
@@ -29,6 +31,7 @@ interface UserStore {
   updatePlan: (plan: AccessTier) => void
   setPotVolume: (liters: number) => void
   setTheme: (theme: ThemePreference) => void
+  setLanguage: (language: Language) => void
   setNotificationsEnabled: (v: boolean) => void
   setOnboarded: (v: boolean) => void
   updatePreferences: (prefs: Partial<{ notificationsEnabled: boolean; onboarded: boolean }>) => void
@@ -48,6 +51,7 @@ export const useUserStore = create<UserStore>()(
       plan: 'free' as AccessTier,
       potVolumeLiters: 11,
       theme: 'system',
+      language: 'es' as Language,
       notificationsEnabled: false,
       onboarded: false,
       streak: 0,
@@ -61,6 +65,10 @@ export const useUserStore = create<UserStore>()(
       updatePlan: (plan) => set({ plan }),
       setPotVolume: (potVolumeLiters) => set({ potVolumeLiters }),
       setTheme: (theme) => set({ theme }),
+      setLanguage: (language) => {
+        set({ language })
+        void i18n.changeLanguage(language)
+      },
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setOnboarded: (onboarded) => set({ onboarded }),
       updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),

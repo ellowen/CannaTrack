@@ -2,11 +2,19 @@ import '../global.css'
 import { initSentry, Sentry } from '@/lib/sentry'
 import { initPurchases, identifyUser, resetUser } from '@/lib/purchases'
 import { initAnalytics, identifyAnalytics, resetAnalytics, track } from '@/lib/analytics'
+import { initI18n, i18n } from '@/i18n'
+import { useUserStore } from '@/store/userStore'
 import { useEffect, useState } from 'react'
 
 initSentry()
 initPurchases()
 initAnalytics()
+initI18n()
+// El idioma persistido tarda en hidratar desde AsyncStorage -- initI18n()
+// ya arranco en 'es' (default), esto lo corrige apenas termina de cargar.
+useUserStore.persist.onFinishHydration((state) => {
+  if (state.language !== i18n.language) void i18n.changeLanguage(state.language)
+})
 import { Platform, View, ActivityIndicator } from 'react-native'
 import { Stack, router } from 'expo-router'
 
@@ -30,7 +38,6 @@ import * as Notifications from 'expo-notifications'
 import { useInitSync } from '@/hooks/useInitSync'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { ThemeProvider } from '@/context/ThemeContext'
-import { useUserStore } from '@/store/userStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import type { Session } from '@supabase/supabase-js'
