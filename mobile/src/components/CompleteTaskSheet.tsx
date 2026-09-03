@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert, ScrollView } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import { track } from '@/lib/analytics'
+import { useTranslation } from '@/i18n'
 
-const TYPE_LABEL: Record<string, string> = {
-  nutrition:   'Nutricion',
-  irrigation:  'Riego',
-  foliar:      'Foliar',
-  observation: 'Observacion',
-  harvest:     'Cosecha',
+const TYPE_LABEL_KEY: Record<string, string> = {
+  nutrition:   'completeTaskSheet.type_nutrition',
+  irrigation:  'completeTaskSheet.type_irrigation',
+  foliar:      'completeTaskSheet.type_foliar',
+  observation: 'completeTaskSheet.type_observation',
+  harvest:     'completeTaskSheet.type_harvest',
 }
 const TYPE_ICON: Record<string, string> = {
   nutrition:   '🍃',
@@ -59,6 +60,7 @@ interface Props {
 }
 
 export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props) {
+  const { t } = useTranslation()
   const [ec, setEc]               = useState('')
   const [ph, setPh]               = useState('')
   const [notes, setNotes]         = useState('')
@@ -147,42 +149,42 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
 
   if (!task) return null
 
-  const t           = task  // narrowed non-null ref for closures
-  const showMeasure = MEASUREMENT_TYPES.has(t.type)
-  const showRecipe  = RECIPE_TYPES.has(t.type) && (t.products?.length ?? 0) > 0
-  const liters      = (t.potCount ?? 1) * (t.potVolumeLiters ?? 10)
+  const tk          = task  // narrowed non-null ref for closures
+  const showMeasure = MEASUREMENT_TYPES.has(tk.type)
+  const showRecipe  = RECIPE_TYPES.has(tk.type) && (tk.products?.length ?? 0) > 0
+  const liters      = (tk.potCount ?? 1) * (tk.potVolumeLiters ?? 10)
   const ecNum       = parseFloat(ec)
   const phNum       = parseFloat(ph)
   const hasMeasure  = !isNaN(ecNum) && ecNum > 0 && !isNaN(phNum) && phNum > 0
-  const weekLabel   = t.cycle === 'vege' ? `V${t.week}` : `F${t.week}`
-  const icon        = TYPE_ICON[t.type] ?? '📌'
-  const label       = TYPE_LABEL[t.type] ?? t.type
+  const weekLabel   = tk.cycle === 'vege' ? `V${tk.week}` : `F${tk.week}`
+  const icon        = TYPE_ICON[tk.type] ?? '📌'
+  const label       = TYPE_LABEL_KEY[tk.type] ? t(TYPE_LABEL_KEY[tk.type]) : tk.type
 
   // Status en tiempo real de EC y pH
   function ecStatus(): 'ok' | 'warn' | 'bad' | null {
-    if (!ec || isNaN(ecNum) || !t.ecMin) return null
-    if (ecNum >= t.ecMin && ecNum <= (t.ecMax ?? 99))  return 'ok'
-    if (Math.abs(ecNum - (ecNum < t.ecMin ? t.ecMin : t.ecMax ?? t.ecMin)) < 0.3) return 'warn'
+    if (!ec || isNaN(ecNum) || !tk.ecMin) return null
+    if (ecNum >= tk.ecMin && ecNum <= (tk.ecMax ?? 99))  return 'ok'
+    if (Math.abs(ecNum - (ecNum < tk.ecMin ? tk.ecMin : tk.ecMax ?? tk.ecMin)) < 0.3) return 'warn'
     return 'bad'
   }
   function phStatus(): 'ok' | 'warn' | 'bad' | null {
-    if (!ph || isNaN(phNum) || !t.phMin) return null
-    if (phNum >= t.phMin && phNum <= (t.phMax ?? 99))  return 'ok'
-    if (Math.abs(phNum - (phNum < t.phMin ? t.phMin : t.phMax ?? t.phMin)) < 0.3) return 'warn'
+    if (!ph || isNaN(phNum) || !tk.phMin) return null
+    if (phNum >= tk.phMin && phNum <= (tk.phMax ?? 99))  return 'ok'
+    if (Math.abs(phNum - (phNum < tk.phMin ? tk.phMin : tk.phMax ?? tk.phMin)) < 0.3) return 'warn'
     return 'bad'
   }
 
   const STATUS_COLOR = { ok: '#52CC64', warn: '#F59E0B', bad: '#EF4444' }
   const STATUS_ICON  = { ok: '✓', warn: '~', bad: '✕' }
-  const STATUS_LABEL = { ok: 'Ideal', warn: 'Cerca', bad: 'Fuera' }
+  const STATUS_LABEL = { ok: t('completeTaskSheet.status_ok'), warn: t('completeTaskSheet.status_warn'), bad: t('completeTaskSheet.status_bad') }
 
   const ec_st = ecStatus()
   const ph_st = phStatus()
 
   function confirmLabel() {
-    if (hasMeasure)        return 'Guardar EC/pH ✓'
-    if (notes.trim())      return 'Guardar nota ✓'
-    return 'Confirmar ✓'
+    if (hasMeasure)        return t('completeTaskSheet.confirm_save_measure')
+    if (notes.trim())      return t('completeTaskSheet.confirm_save_note')
+    return t('completeTaskSheet.confirm_confirm')
   }
 
   function handleSkip() {
@@ -210,11 +212,11 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
   function handleDismiss() {
     if (notes.trim() || ec.trim() || ph.trim()) {
       Alert.alert(
-        'Descartar cambios',
-        'Tienes datos sin guardar. ¿Estás seguro?',
+        t('completeTaskSheet.discard_changes_title'),
+        t('completeTaskSheet.discard_changes_message'),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Descartar', style: 'destructive', onPress: () => {
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('completeTaskSheet.discard_button'), style: 'destructive', onPress: () => {
             onClose()
             panY.setValue(0)
             opacityAnim.setValue(1)
@@ -265,7 +267,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
             }}>
               <Text style={{ fontSize: 52, marginBottom: 12 }}>✅</Text>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginBottom: 8 }}>
-                Tarea completada
+                {t('completeTaskSheet.task_completed_overlay')}
               </Text>
               <Text style={{ color: '#52CC64', fontSize: 36, fontWeight: '900' }}>
                 +{xpReward.xp} XP
@@ -282,22 +284,22 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <Text style={{ color: '#E4F2E7', fontSize: 17, fontWeight: '900' }}>
-                  {label} completada ✓
+                  {t('completeTaskSheet.task_completed_label', { label })}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <View style={{
-                  backgroundColor: t.cycle === 'flora' ? '#2D1A4A' : '#0D2010',
+                  backgroundColor: tk.cycle === 'flora' ? '#2D1A4A' : '#0D2010',
                   borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2,
                 }}>
                   <Text style={{
-                    color: t.cycle === 'flora' ? '#C084FC' : '#52CC64',
+                    color: tk.cycle === 'flora' ? '#C084FC' : '#52CC64',
                     fontSize: 10, fontWeight: '800',
                   }}>{weekLabel}</Text>
                 </View>
-                {t.ecMin != null && (
+                {tk.ecMin != null && (
                   <Text style={{ color: '#3A5040', fontSize: 10 }}>
-                    Objetivo: EC {t.ecMin}–{t.ecMax} · pH {t.phMin}–{t.phMax}
+                    {t('completeTaskSheet.target_label', { ecMin: tk.ecMin, ecMax: tk.ecMax, phMin: tk.phMin, phMax: tk.phMax })}
                   </Text>
                 )}
               </View>
@@ -313,7 +315,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
                 activeOpacity={0.7}
               >
                 <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
-                  🧪 Receta · {t.products!.length} producto{t.products!.length > 1 ? 's' : ''}
+                  {t('completeTaskSheet.recipe_title', { count: tk.products!.length })}
                 </Text>
                 <Text style={{ color: '#3A5040', fontSize: 12 }}>{recipeOpen ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -324,9 +326,9 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
                   borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden',
                 }}>
                   <Text style={{ color: '#3A5040', fontSize: 10, fontWeight: '600', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4 }}>
-                    Para {fmt(liters)}L ({t.potCount ?? 1} maceta{(t.potCount ?? 1) > 1 ? 's' : ''} × {t.potVolumeLiters ?? 10}L)
+                    {t('completeTaskSheet.recipe_for_volume', { liters: fmt(liters), count: tk.potCount ?? 1, potVolume: tk.potVolumeLiters ?? 10 })}
                   </Text>
-                  {t.products!.map((p, i) => {
+                  {tk.products!.map((p, i) => {
                     const minVol = fmt(p.minDose * liters)
                     const maxVol = fmt(p.maxDose * liters)
                     const lineCol = LINE_COLOR[p.line ?? ''] ?? DEFAULT_LINE_COLOR
@@ -356,7 +358,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
           {/* EC / pH con feedback en tiempo real */}
           {showMeasure && (
             <View style={{ marginBottom: 14 }}>
-              <Text style={lbl}>💧 Medicion (opcional)</Text>
+              <Text style={lbl}>{t('completeTaskSheet.measurement_label')}</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -412,7 +414,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder={showMeasure ? 'Observaciones adicionales... (opcional)' : 'Observaciones, estado de la planta... (opcional)'}
+            placeholder={showMeasure ? t('completeTaskSheet.notes_placeholder_with_measure') : t('completeTaskSheet.notes_placeholder_default')}
             placeholderTextColor="#3A5040"
             multiline
             style={[inp, { minHeight: 60, textAlignVertical: 'top', marginBottom: 18 }]}
@@ -428,7 +430,7 @@ export function CompleteTaskSheet({ visible, task, onClose, onComplete }: Props)
                 paddingVertical: 14, alignItems: 'center',
               }}
             >
-              <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 13 }}>Saltar</Text>
+              <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 13 }}>{t('completeTaskSheet.skip_button')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleConfirm}

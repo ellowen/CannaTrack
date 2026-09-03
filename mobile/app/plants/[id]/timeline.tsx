@@ -5,9 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useTranslation } from '@/i18n'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,8 +33,12 @@ interface TLEvent {
 const TASK_ICON: Record<string, string> = {
   nutrition: '🧪', irrigation: '💧', observation: '👁', foliar: '🌿', harvest: '✂️',
 }
-const TASK_LABEL: Record<string, string> = {
-  nutrition: 'Nutricion', irrigation: 'Riego', observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
+const TASK_LABEL_KEY: Record<string, string> = {
+  nutrition: 'plantTimeline.task_nutrition',
+  irrigation: 'plantTimeline.task_irrigation',
+  observation: 'plantTimeline.task_observation',
+  foliar: 'plantTimeline.task_foliar',
+  harvest: 'plantTimeline.task_harvest',
 }
 const TASK_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6', observation: '#F59E0B', foliar: '#A855F7', harvest: '#EF4444',
@@ -42,6 +47,8 @@ const TASK_COLOR: Record<string, string> = {
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function TimelineScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
 
@@ -131,18 +138,18 @@ export default function TimelineScreen() {
   // Group by date label
   const grouped: { label: string; items: TLEvent[] }[] = []
   for (const e of filtered) {
-    const lbl = format(e.date, "EEEE d 'de' MMMM", { locale: es })
+    const lbl = format(e.date, "EEEE d 'de' MMMM", { locale: dateLocale })
     const last = grouped[grouped.length - 1]
     if (last && last.label === lbl) last.items.push(e)
     else grouped.push({ label: lbl, items: [e] })
   }
 
   const FILTERS: { key: EventKind | 'all'; label: string; icon: string }[] = [
-    { key: 'all',         label: 'Todo',     icon: '⚡' },
-    { key: 'task',        label: 'Tareas',   icon: '✅' },
-    { key: 'measurement', label: 'Medidas',  icon: '🧪' },
-    { key: 'diary',       label: 'Diario',   icon: '📸' },
-    { key: 'phase',       label: 'Fases',    icon: '🌸' },
+    { key: 'all',         label: t('plantTimeline.filter_all'),          icon: '⚡' },
+    { key: 'task',        label: t('plantTimeline.filter_tasks'),        icon: '✅' },
+    { key: 'measurement', label: t('plantTimeline.filter_measurements'), icon: '🧪' },
+    { key: 'diary',       label: t('plantTimeline.filter_diary'),        icon: '📸' },
+    { key: 'phase',       label: t('plantTimeline.filter_phases'),       icon: '🌸' },
   ]
 
   const totalDays = plantStart ? differenceInDays(new Date(), plantStart) : 0
@@ -163,12 +170,12 @@ export default function TimelineScreen() {
             <BackIcon size={20} color="#52CC64" />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Timeline</Text>
+            <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{t('plantTimeline.title')}</Text>
             <Text style={{ color: '#3A5040', fontSize: 13, marginTop: 1 }} numberOfLines={1}>{plantName}</Text>
           </View>
           <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', alignItems: 'center' }}>
             <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '900', lineHeight: 18 }}>{totalDays}</Text>
-            <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700' }}>dias</Text>
+            <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700' }}>{t('plantTimeline.days_suffix')}</Text>
           </View>
         </View>
 
@@ -205,8 +212,8 @@ export default function TimelineScreen() {
       ) : filtered.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
           <Text style={{ fontSize: 40 }}>📭</Text>
-          <Text style={{ color: '#4A7A50', fontSize: 16, fontWeight: '700' }}>Sin registros</Text>
-          <Text style={{ color: '#2D4A30', fontSize: 13 }}>No hay eventos de este tipo aun</Text>
+          <Text style={{ color: '#4A7A50', fontSize: 16, fontWeight: '700' }}>{t('plantTimeline.empty_title')}</Text>
+          <Text style={{ color: '#2D4A30', fontSize: 13 }}>{t('plantTimeline.empty_desc')}</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
@@ -257,6 +264,7 @@ function dotColor(evt: TLEvent): string {
 // ─── Event Card ───────────────────────────────────────────────────────────────
 
 function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
+  const { t } = useTranslation()
   const time = format(evt.date, 'HH:mm')
 
   if (evt.kind === 'start') {
@@ -264,8 +272,8 @@ function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
       <LinearGradient colors={['#0A1A0C', '#080E09']} style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1A3A1E', padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ fontSize: 20 }}>🌱</Text>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '900' }}>Inicio del cultivo</Text>
-          <Text style={{ color: '#2D5030', fontSize: 12, marginTop: 1 }}>Primera semana de crecimiento</Text>
+          <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '900' }}>{t('plantTimeline.start_title')}</Text>
+          <Text style={{ color: '#2D5030', fontSize: 12, marginTop: 1 }}>{t('plantTimeline.start_desc')}</Text>
         </View>
         <Text style={{ color: '#2A4030', fontSize: 11 }}>{time}</Text>
       </LinearGradient>
@@ -277,8 +285,8 @@ function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
       <LinearGradient colors={['#1A0E00', '#0E0800']} style={{ borderRadius: 14, borderWidth: 1, borderColor: '#3D2200', padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ fontSize: 20 }}>🌸</Text>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#F59E0B', fontSize: 15, fontWeight: '900' }}>Inicio de floracion</Text>
-          <Text style={{ color: '#5A3800', fontSize: 12, marginTop: 1 }}>El calendario se recalculo desde hoy</Text>
+          <Text style={{ color: '#F59E0B', fontSize: 15, fontWeight: '900' }}>{t('plantTimeline.phase_title')}</Text>
+          <Text style={{ color: '#5A3800', fontSize: 12, marginTop: 1 }}>{t('plantTimeline.phase_desc')}</Text>
         </View>
         <View style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderRadius: 7, paddingHorizontal: 8, paddingVertical: 3 }}>
           <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '900' }}>F1</Text>
@@ -290,7 +298,8 @@ function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
   if (evt.kind === 'task') {
     const color = TASK_COLOR[evt.taskType ?? ''] ?? '#728C74'
     const icon = TASK_ICON[evt.taskType ?? ''] ?? '📋'
-    const label = TASK_LABEL[evt.taskType ?? ''] ?? evt.taskType
+    const labelKey = TASK_LABEL_KEY[evt.taskType ?? '']
+    const label = labelKey ? t(labelKey) : evt.taskType
     const cyc = evt.taskCycle === 'flora' ? 'F' : 'V'
     return (
       <View style={{ backgroundColor: '#0E1510', borderRadius: 14, borderWidth: 1, borderColor: '#182018', overflow: 'hidden', flexDirection: 'row' }}>
@@ -325,7 +334,7 @@ function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
       <LinearGradient colors={['#0A1220', '#080E09']} style={{ borderRadius: 14, borderWidth: 1, borderColor: '#1A2840', padding: 13 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
           <Text style={{ fontSize: 17, marginRight: 8 }}>🧪</Text>
-          <Text style={{ color: '#60A5FA', fontSize: 15, fontWeight: '800', flex: 1 }}>Medicion</Text>
+          <Text style={{ color: '#60A5FA', fontSize: 15, fontWeight: '800', flex: 1 }}>{t('plantTimeline.measurement_title')}</Text>
           <View style={{ backgroundColor: 'rgba(96,165,250,0.1)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, marginRight: 6 }}>
             <Text style={{ color: '#60A5FA', fontSize: 11, fontWeight: '800' }}>{wk}</Text>
           </View>
@@ -362,7 +371,7 @@ function EventCard({ evt, wk }: { evt: TLEvent; wk: string }) {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
           <Text style={{ fontSize: 17 }}>📸</Text>
-          <Text style={{ color: accent, fontSize: 15, fontWeight: '800', flex: 1 }}>Entrada de diario</Text>
+          <Text style={{ color: accent, fontSize: 15, fontWeight: '800', flex: 1 }}>{t('plantTimeline.diary_entry_title')}</Text>
           <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.1)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.2)' : 'rgba(82,204,100,0.2)' }}>
             <Text style={{ color: accent, fontSize: 11, fontWeight: '900' }}>{evt.weekLabel ?? wk}</Text>
           </View>

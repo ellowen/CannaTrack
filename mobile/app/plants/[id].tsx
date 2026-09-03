@@ -9,8 +9,9 @@ import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format, differenceInDays, addDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startFloraPhase } from '@shared/lib/nutrition-engine'
@@ -34,12 +35,14 @@ const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
   observation: '#F59E0B', foliar: '#A855F7', harvest: '#EF4444',
 }
-const TYPE_LABEL: Record<string, string> = {
-  nutrition: 'Nutricion', irrigation: 'Riego',
-  observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
-}
 
 export default function PlantDetailScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
+  const TYPE_LABEL: Record<string, string> = {
+    nutrition: t('plantDetail.task_nutrition'), irrigation: t('plantDetail.task_irrigation'),
+    observation: t('plantDetail.task_observation'), foliar: t('plantDetail.task_foliar'), harvest: t('plantDetail.task_harvest'),
+  }
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const { isPro } = usePlan()
@@ -86,7 +89,7 @@ export default function PlantDetailScreen() {
     if (!plant) return
     const table = tables.find(t => t.id === plant.nutritionTableId)
     if (!table) {
-      alert(`Tabla no encontrada: ${plant.nutritionTableId}`)
+      alert(t('plantDetail.table_not_found_alert', { tableId: plant.nutritionTableId }))
       setFloraDateModal(false)
       return
     }
@@ -130,7 +133,7 @@ export default function PlantDetailScreen() {
       void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
       setFloraDateModal(false)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al iniciar floracion'
+      const msg = e instanceof Error ? e.message : t('plantDetail.flora_start_error_default')
       setFloraError(msg)
     }
   }
@@ -201,7 +204,7 @@ export default function PlantDetailScreen() {
     try {
       await sharePlantCard(shareCardRef, plant)
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo compartir')
+      Alert.alert(t('plantDetail.error_title'), e instanceof Error ? e.message : t('plantDetail.share_error_default'))
     } finally {
       setSharing(false)
     }
@@ -210,9 +213,9 @@ export default function PlantDetailScreen() {
   async function handleExport() {
     if (!plant || !user) return
     if (!isPro) {
-      Alert.alert('Feature Pro', 'La exportacion de historial esta disponible en el plan Pro.', [
-        { text: 'Ver planes', onPress: () => router.push('/(tabs)/profile' as never) },
-        { text: 'Cancelar' },
+      Alert.alert(t('plantDetail.pro_feature_title'), t('plantDetail.export_pro_message'), [
+        { text: t('plantDetail.view_plans_button'), onPress: () => router.push('/(tabs)/profile' as never) },
+        { text: t('common.cancel') },
       ])
       return
     }
@@ -242,7 +245,7 @@ export default function PlantDetailScreen() {
       track('export_completed', { plant_id: plant.id })
     } catch (e) {
       track('export_error', { plant_id: plant.id, error: e instanceof Error ? e.message : 'unknown' })
-      Alert.alert('Error al exportar', e instanceof Error ? e.message : 'Intenta de nuevo')
+      Alert.alert(t('plantDetail.export_error_title'), e instanceof Error ? e.message : t('plantDetail.export_error_default'))
     } finally {
       setExporting(false)
     }
@@ -256,7 +259,7 @@ export default function PlantDetailScreen() {
 
   if (!plant) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: '#728C74' }}>Planta no encontrada</Text>
+      <Text style={{ color: '#728C74' }}>{t('plantDetail.not_found')}</Text>
     </SafeAreaView>
   )
 
@@ -336,24 +339,24 @@ export default function PlantDetailScreen() {
             {plant.name}
           </Text>
           <Text style={{ color: '#6D8C74', fontSize: 14, marginBottom: 20 }}>
-            {plant.genetics} · {plant.geneticType === 'autoflower' ? 'Autofloreciente' : plant.geneticType === 'feminized' ? 'Feminizada' : 'Regular'}
+            {plant.genetics} · {plant.geneticType === 'autoflower' ? t('plantDetail.genetic_autoflower') : plant.geneticType === 'feminized' ? t('plantDetail.genetic_feminized') : t('plantDetail.genetic_regular')}
           </Text>
           <View style={{ flexDirection: 'row', gap: 20, marginBottom: 24 }}>
             <View>
-              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>DIA</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{t('plantDetail.day_label')}</Text>
               <Text style={{ color: phaseAccent, fontSize: 32, fontWeight: '900' }}>{daysSinceStart}</Text>
             </View>
             <View>
-              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{t('plantDetail.health_label')}</Text>
               <Text style={{ color: healthColor, fontSize: 32, fontWeight: '900' }}>{health}%</Text>
             </View>
             <View>
-              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>ETAPA</Text>
-              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{t('plantDetail.stage_label')}</Text>
+              <Text style={{ color: phaseAccent, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{isFlora ? t('plantDetail.phase_flora') : t('plantDetail.phase_vege')}</Text>
             </View>
           </View>
           <Text style={{ color: '#2C3E2E', fontSize: 11, textAlign: 'right' }}>
-            {format(new Date(), 'dd MMM yyyy', { locale: es })} · cultitrack.app
+            {format(new Date(), 'dd MMM yyyy', { locale: dateLocale })} · cultitrack.app
           </Text>
         </LinearGradient>
       </View>
@@ -377,7 +380,7 @@ export default function PlantDetailScreen() {
                 borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.3)' : 'rgba(82,204,100,0.3)',
               }}>
                 <Text style={{ color: phaseAccent, fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>
-                  {isFlora ? 'FLORA' : 'VEGE'}
+                  {isFlora ? t('plantDetail.phase_flora') : t('plantDetail.phase_vege')}
                 </Text>
               </View>
             </View>
@@ -393,16 +396,16 @@ export default function PlantDetailScreen() {
             </View>
             <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
               <Text style={{ color: '#728C74', fontSize: 12 }}>
-                {plant.location === 'indoor' ? '🏠 Indoor' : '☀️ Outdoor'}
+                {plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor')}
               </Text>
             </View>
             <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Text style={{ color: '#728C74', fontSize: 12 }}>🪴 {plant.potCount}x{plant.potVolumeLiters}L</Text>
+              <Text style={{ color: '#728C74', fontSize: 12 }}>{t('plantDetail.pot_chip', { count: plant.potCount, liters: plant.potVolumeLiters })}</Text>
             </View>
             {estimatedHarvest && (
               <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
                 <Text style={{ color: harvestChipColor, fontSize: 12 }}>
-                  🌾 {daysToHarvest != null && daysToHarvest > 0 ? `${daysToHarvest}d para cosecha` : format(estimatedHarvest, 'd MMM', { locale: es })}
+                  🌾 {daysToHarvest != null && daysToHarvest > 0 ? t('plantDetail.days_to_harvest_chip', { days: daysToHarvest }) : format(estimatedHarvest, 'd MMM', { locale: dateLocale })}
                 </Text>
               </View>
             )}
@@ -411,7 +414,7 @@ export default function PlantDetailScreen() {
           {/* Health bar */}
           <View style={{ marginTop: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>SALUD</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>{t('plantDetail.health_label')}</Text>
               <Text style={{ color: healthColor, fontSize: 12, fontWeight: '800' }}>{health}%</Text>
             </View>
             <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
@@ -433,7 +436,7 @@ export default function PlantDetailScreen() {
           {/* Tareas de hoy */}
           {todayTasks.length > 0 && (
             <View>
-              <Text style={sectionLabel}>⚡ HOY</Text>
+              <Text style={sectionLabel}>{t('plantDetail.today_section')}</Text>
               <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1E3020', overflow: 'hidden' }}>
                 {todayTasks.map((task, i) => (
                   <View key={task.id} style={{
@@ -474,7 +477,7 @@ export default function PlantDetailScreen() {
                           })}
                           style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7, marginLeft: 10 }}
                         >
-                          <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>Hecho ✓</Text>
+                          <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>{t('plantDetail.mark_done')}</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -487,7 +490,7 @@ export default function PlantDetailScreen() {
           {/* Proximas tareas */}
           {upcoming.length > 0 && (
             <View>
-              <Text style={sectionLabel}>PROXIMAS TAREAS</Text>
+              <Text style={sectionLabel}>{t('plantDetail.upcoming_section')}</Text>
               <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1E3020', overflow: 'hidden' }}>
                 {upcoming.map((task, i) => (
                   <View key={task.id} style={{
@@ -502,7 +505,7 @@ export default function PlantDetailScreen() {
                           <Text style={{ color: '#3A5040' }}> · {task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`}</Text>
                         </Text>
                         <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2, textTransform: 'capitalize' }}>
-                          {format(new Date(task.scheduledDate), "EEEE d MMM", { locale: es })}
+                          {format(new Date(task.scheduledDate), "EEEE d MMM", { locale: dateLocale })}
                         </Text>
                       </View>
                     </View>
@@ -515,7 +518,7 @@ export default function PlantDetailScreen() {
           {todayTasks.length === 0 && upcoming.length === 0 && (
             <LinearGradient colors={['#131A10', '#0C1009']} style={{ alignItems: 'center', paddingVertical: 40, borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E' }}>
               <Text style={{ fontSize: 32 }}>🌤️</Text>
-              <Text style={{ color: '#728C74', marginTop: 8, fontSize: 14 }}>Sin tareas pendientes</Text>
+              <Text style={{ color: '#728C74', marginTop: 8, fontSize: 14 }}>{t('plantDetail.no_pending_tasks')}</Text>
             </LinearGradient>
           )}
 
@@ -527,9 +530,9 @@ export default function PlantDetailScreen() {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={{ borderRadius: 18, paddingVertical: 18, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.4)' }}
               >
-                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>🌸 Iniciar floracion</Text>
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>{t('plantDetail.start_flora_button')}</Text>
                 <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 }}>
-                  Recalcula el calendario desde hoy
+                  {t('plantDetail.start_flora_subtitle')}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -542,9 +545,9 @@ export default function PlantDetailScreen() {
                 colors={['#1A0505', '#100303']}
                 style={{ borderRadius: 18, paddingVertical: 18, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}
               >
-                <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 16 }}>🌾 Cosechar</Text>
+                <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 16 }}>{t('plantDetail.harvest_button')}</Text>
                 <Text style={{ color: 'rgba(239,68,68,0.5)', fontSize: 11, marginTop: 4 }}>
-                  Marca esta planta como cosechada
+                  {t('plantDetail.harvest_subtitle')}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -554,12 +557,12 @@ export default function PlantDetailScreen() {
           {plant.nutritionTableId === 'custom' && (plant.customProducts?.length ?? 0) > 0 && (
             <View>
               <Text style={sectionLabel}>
-                🧪 MIS PRODUCTOS · {isFlora ? 'FLORA' : 'VEGE'}
+                {t('plantDetail.my_products_title', { phase: isFlora ? t('plantDetail.phase_flora') : t('plantDetail.phase_vege') })}
               </Text>
               <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
                 {/* Litros stepper */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>Preparar para</Text>
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>{t('plantDetail.prepare_for')}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
                     <TouchableOpacity onPress={() => setLiters(v => Math.max(1, v - 1))} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
                       <Text style={{ color: liters <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>−</Text>
@@ -586,7 +589,7 @@ export default function PlantDetailScreen() {
                     return (
                       <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1C2E1E' }}>
                         <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.1)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 3 }}>
-                          <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 10, fontWeight: '800' }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+                          <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 10, fontWeight: '800' }}>{isFlora ? t('plantDetail.phase_flora') : t('plantDetail.phase_vege')}</Text>
                         </View>
                         <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{cp.name}</Text>
                         <View style={{ alignItems: 'flex-end' }}>
@@ -602,8 +605,8 @@ export default function PlantDetailScreen() {
                   })}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
                   <Text style={{ color: '#3A5040', fontSize: 11 }}>
-                    {plant.potCount > 1 ? `${plant.potCount} macetas · ${liters}L total` : `${liters}L`}
-                    {' · '}Plan personalizado
+                    {plant.potCount > 1 ? t('plantDetail.pots_total_liters', { count: plant.potCount, liters }) : t('plantDetail.liters_label', { liters })}
+                    {' · '}{t('plantDetail.custom_plan_label')}
                   </Text>
                 </View>
               </View>
@@ -616,9 +619,9 @@ export default function PlantDetailScreen() {
               style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', padding: 20, alignItems: 'center', gap: 8 }}
             >
               <Text style={{ fontSize: 28 }}>✨</Text>
-              <Text style={{ color: '#A78BFA', fontSize: 14, fontWeight: '700' }}>Plan personalizado</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 14, fontWeight: '700' }}>{t('plantDetail.custom_plan_label')}</Text>
               <Text style={{ color: '#6A4A9A', fontSize: 13, textAlign: 'center', lineHeight: 19 }}>
-                Agrega tus productos en Editar planta con dosis separadas por VEGE y FLORA.
+                {t('plantDetail.custom_plan_empty_desc')}
               </Text>
             </LinearGradient>
           )}
@@ -627,7 +630,7 @@ export default function PlantDetailScreen() {
           {plant.nutritionTableId !== 'custom' && nutritionTask && (nutritionTask.products?.length > 0 || nutritionTask.ecMin) && (
             <View>
               <Text style={sectionLabel}>
-                🧪 NUTRICION · {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
+                {t('plantDetail.nutrition_section_title', { weekLabel: nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}` })}
               </Text>
               <View style={{ backgroundColor: '#0E1510', borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
                 {/* Header EC/PH */}
@@ -644,15 +647,15 @@ export default function PlantDetailScreen() {
                         color: nutritionTask.cycle === 'flora' ? '#C084FC' : '#52CC64',
                         fontSize: 12, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase',
                       }}>
-                        Semana {nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}`}
+                        {t('plantDetail.week_label', { weekLabel: nutritionTask.cycle === 'vege' ? `V${nutritionTask.week}` : `F${nutritionTask.week}` })}
                       </Text>
                       <Text style={{ color: '#728C74', fontSize: 12, marginTop: 2 }}>{nutritionTask.stage}</Text>
                     </View>
                   </View>
                   {nutritionTask.ecMin != null && (
                     <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'flex-end' }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800' }}>EC {nutritionTask.ecMin}–{nutritionTask.ecMax}</Text>
-                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>pH {nutritionTask.phMin}–{nutritionTask.phMax}</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 12, fontWeight: '800' }}>{t('plantDetail.ec_range', { min: nutritionTask.ecMin, max: nutritionTask.ecMax })}</Text>
+                      <Text style={{ color: '#728C74', fontSize: 10, marginTop: 1 }}>{t('plantDetail.ph_range', { min: nutritionTask.phMin, max: nutritionTask.phMax })}</Text>
                     </View>
                   )}
                 </LinearGradient>
@@ -663,7 +666,7 @@ export default function PlantDetailScreen() {
                   paddingHorizontal: 16, paddingVertical: 10,
                   borderBottomWidth: 1, borderBottomColor: '#1C2E1E',
                 }}>
-                  <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>Preparar para</Text>
+                  <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>{t('plantDetail.prepare_for')}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 12, overflow: 'hidden' }}>
                     <TouchableOpacity
                       onPress={() => setLiters(v => Math.max(1, v - 1))}
@@ -723,7 +726,7 @@ export default function PlantDetailScreen() {
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 16 }}>
                     <Text style={{ fontSize: 18 }}>💧</Text>
-                    <Text style={{ color: '#728C74', fontSize: 15 }}>Solo agua - semana de limpieza</Text>
+                    <Text style={{ color: '#728C74', fontSize: 15 }}>{t('plantDetail.water_only_week')}</Text>
                   </View>
                 )}
 
@@ -743,7 +746,7 @@ export default function PlantDetailScreen() {
                   return (
                     <View key={`custom-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>
-                        <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '800' }}>PROPIO</Text>
+                        <Text style={{ color: '#728C74', fontSize: 10, fontWeight: '800' }}>{t('plantDetail.own_product_badge')}</Text>
                       </View>
                       <Text style={{ color: '#B8D4BC', fontSize: 14, fontWeight: '600', flex: 1 }}>{p.name}</Text>
                       <View style={{ alignItems: 'flex-end' }}>
@@ -763,14 +766,14 @@ export default function PlantDetailScreen() {
                   <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1C2E1E', flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={{ color: '#3A5040', fontSize: 10 }}>
                       {liters !== (plant.potCount ?? 1) * (plant.potVolumeLiters ?? 11)
-                        ? `Calculado para ${liters}L`
+                        ? t('plantDetail.calculated_for_liters', { liters })
                         : plant.potCount > 1
-                          ? `${plant.potCount} macetas · ${liters}L total`
-                          : `${liters}L por maceta`}
+                          ? t('plantDetail.pots_total_liters', { count: plant.potCount, liters })
+                          : t('plantDetail.liters_per_pot', { liters })}
                     </Text>
                     {nutritionTask.ecMin != null && (
                       <Text style={{ color: '#3A5040', fontSize: 10 }}>
-                        EC {nutritionTask.ecMin}–{nutritionTask.ecMax} · pH {nutritionTask.phMin}–{nutritionTask.phMax}
+                        {t('plantDetail.ec_range', { min: nutritionTask.ecMin, max: nutritionTask.ecMax })} · {t('plantDetail.ph_range', { min: nutritionTask.phMin, max: nutritionTask.phMax })}
                       </Text>
                     )}
                   </View>
@@ -781,12 +784,12 @@ export default function PlantDetailScreen() {
 
           {/* Acciones rapidas */}
           <View>
-            <Text style={sectionLabel}>ACCIONES RAPIDAS</Text>
+            <Text style={sectionLabel}>{t('plantDetail.quick_actions_section')}</Text>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
               {[
-                { icon: '📸', label: 'Diario',   route: `/plants/${id}/diary`,        pro: false, color: '#52CC64' },
-                { icon: '📊', label: 'Medidas',  route: `/plants/${id}/measurements`, pro: false, color: '#52CC64' },
-                { icon: '📅', label: 'Timeline', route: `/plants/${id}/timeline`,     pro: false, color: '#52CC64' },
+                { icon: '📸', label: t('plantDetail.quick_action_diary'),        route: `/plants/${id}/diary`,        pro: false, color: '#52CC64' },
+                { icon: '📊', label: t('plantDetail.quick_action_measurements'), route: `/plants/${id}/measurements`, pro: false, color: '#52CC64' },
+                { icon: '📅', label: t('plantDetail.quick_action_timeline'),     route: `/plants/${id}/timeline`,     pro: false, color: '#52CC64' },
               ].map(action => (
                 <TouchableOpacity
                   key={action.label}
@@ -815,9 +818,9 @@ export default function PlantDetailScreen() {
                   style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', padding: 14, alignItems: 'center' }}
                 >
                   <Text style={{ fontSize: 22, marginBottom: 6 }}>🤖</Text>
-                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>IA</Text>
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{t('plantDetail.quick_action_ai')}</Text>
                   <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>{t('plantDetail.pro_badge')}</Text>
                   </View>
                 </LinearGradient>
               </TouchableOpacity>
@@ -832,9 +835,9 @@ export default function PlantDetailScreen() {
                     ? <ActivityIndicator color="#A78BFA" size="small" style={{ marginBottom: 6 }} />
                     : <Text style={{ fontSize: 22, marginBottom: 6 }}>📤</Text>
                   }
-                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Exportar</Text>
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{t('plantDetail.export_action')}</Text>
                   <View style={{ marginTop: 4, backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                    <Text style={{ color: '#A78BFA', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>{t('plantDetail.pro_badge')}</Text>
                   </View>
                 </LinearGradient>
               </TouchableOpacity>
@@ -849,7 +852,7 @@ export default function PlantDetailScreen() {
                     ? <ActivityIndicator color="#52CC64" size="small" style={{ marginBottom: 6 }} />
                     : <Text style={{ fontSize: 22, marginBottom: 6 }}>🔗</Text>
                   }
-                  <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>Compartir</Text>
+                  <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>{t('plantDetail.share_action')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -858,7 +861,7 @@ export default function PlantDetailScreen() {
           {/* Zona de peligro */}
           <View style={{ borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 }}>
             <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
-              Zona de peligro
+              {t('plantDetail.danger_zone')}
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {/* Descartar (always available) */}
@@ -866,11 +869,11 @@ export default function PlantDetailScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     Alert.alert(
-                      'Descartar planta',
-                      `¿Seguro que queres descartar "${plant.name}"? Esta accion no se puede deshacer.`,
+                      t('plantDetail.discard_confirm_title'),
+                      t('plantDetail.discard_confirm_message', { name: plant.name }),
                       [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Descartar', style: 'destructive', onPress: confirmDiscard },
+                        { text: t('common.cancel'), style: 'cancel' },
+                        { text: t('plantDetail.discard_button'), style: 'destructive', onPress: confirmDiscard },
                       ]
                     )
                   }}
@@ -882,8 +885,8 @@ export default function PlantDetailScreen() {
                     style={{ borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' }}
                   >
                     <Text style={{ fontSize: 18, marginBottom: 3 }}>🗑️</Text>
-                    <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 12 }}>Descartar</Text>
-                    <Text style={{ color: 'rgba(239,68,68,0.4)', fontSize: 11, marginTop: 2 }}>Murio / no sirve</Text>
+                    <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 12 }}>{t('plantDetail.discard_button')}</Text>
+                    <Text style={{ color: 'rgba(239,68,68,0.4)', fontSize: 11, marginTop: 2 }}>{t('plantDetail.discard_button_subtitle')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               )}
@@ -899,8 +902,8 @@ export default function PlantDetailScreen() {
                   style={{ borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: '#1C2E1E' }}
                 >
                   <Text style={{ fontSize: 18, marginBottom: 3 }}>⚙️</Text>
-                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 12 }}>Editar</Text>
-                  <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 2 }}>Nombre, macetas...</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 12 }}>{t('common.edit')}</Text>
+                  <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 2 }}>{t('plantDetail.edit_button_subtitle')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -950,14 +953,14 @@ export default function PlantDetailScreen() {
             <View style={{ width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
             <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', marginBottom: 6 }}>
-              Iniciar floracion 🌸
+              {t('plantDetail.flora_modal_title')}
             </Text>
             <Text style={{ color: '#728C74', fontSize: 13, marginBottom: 24, lineHeight: 18 }}>
-              El calendario se recalcula desde la fecha seleccionada
+              {t('plantDetail.flora_modal_desc')}
             </Text>
 
             <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>
-              Fecha de inicio de flora
+              {t('plantDetail.flora_start_date_label')}
             </Text>
 
             {/* Date picker display */}
@@ -1004,7 +1007,7 @@ export default function PlantDetailScreen() {
               paddingVertical: 10,
               marginBottom: 24,
             }}>
-              <Text style={{ color: '#F59E0B', fontSize: 12 }}>⚠️ Esta accion regenera el calendario desde cero</Text>
+              <Text style={{ color: '#F59E0B', fontSize: 12 }}>{t('plantDetail.flora_regenerate_warning')}</Text>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -1012,7 +1015,7 @@ export default function PlantDetailScreen() {
                 onPress={() => setFloraDateModal(false)}
                 style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, paddingVertical: 15, alignItems: 'center' }}
               >
-                <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>Cancelar</Text>
+                <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 14 }}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={confirmFlora} activeOpacity={0.85} style={{ flex: 2 }}>
                 <LinearGradient
@@ -1020,7 +1023,7 @@ export default function PlantDetailScreen() {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={{ borderRadius: 16, paddingVertical: 15, alignItems: 'center' }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>Confirmar floracion</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>{t('plantDetail.confirm_flora_button')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

@@ -8,6 +8,7 @@ import { usePlantStore } from '@/store/plantStore'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format, startOfDay } from 'date-fns'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule, startFloraPhase } from '@shared/lib/nutrition-engine'
@@ -50,6 +51,7 @@ const LINE_COLOR: Record<string, { bg: string; text: string }> = {
 }
 
 export default function EditPlantScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const updateStoreP = usePlantStore(s => s.updatePlant)
@@ -125,9 +127,9 @@ export default function EditPlantScreen() {
   }, [tables, selectedTableId])
 
   async function handleDelete() {
-    Alert.alert('Eliminar planta', '¿Seguro? Esta accion no se puede deshacer.', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+    Alert.alert(t('plantEdit.delete_confirm_title'), t('plantEdit.delete_confirm_message'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
         if (!id || !user) return
         await supabase.from('scheduled_tasks').delete().eq('plant_id', id)
         await supabase.from('plants').delete().eq('id', id).eq('user_id', user.id)
@@ -238,7 +240,7 @@ export default function EditPlantScreen() {
       })
       router.back()
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
+      Alert.alert(t('plantEdit.error_title'), e instanceof Error ? e.message : t('plantEdit.save_error_default'))
     } finally {
       setSaving(false)
     }
@@ -270,8 +272,8 @@ export default function EditPlantScreen() {
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>Editar planta</Text>
-              <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 1 }}>Los cambios se guardan al tocar Guardar</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{t('plantEdit.title')}</Text>
+              <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 1 }}>{t('plantEdit.header_subtitle')}</Text>
             </View>
           </View>
           <TouchableOpacity onPress={handleSave} disabled={!canSave} activeOpacity={0.85}>
@@ -281,7 +283,7 @@ export default function EditPlantScreen() {
             >
               {saving
                 ? <ActivityIndicator color="#080E09" size="small" />
-                : <Text style={{ color: canSave ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 13 }}>Guardar</Text>
+                : <Text style={{ color: canSave ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 13 }}>{t('common.save')}</Text>
               }
             </LinearGradient>
           </TouchableOpacity>
@@ -291,39 +293,39 @@ export default function EditPlantScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
         {/* Seccion: Identidad */}
-        <Section label="Identidad" icon="🌿">
-          <Field label="Nombre">
+        <Section label={t('plantEdit.section_identity')} icon="🌿">
+          <Field label={t('plantEdit.field_name')}>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Ej: Planta #1"
+              placeholder={t('plantEdit.name_placeholder')}
               placeholderTextColor="#2D4A30"
               style={inp}
             />
           </Field>
-          <Field label="Genetica">
+          <Field label={t('plantEdit.field_genetics')}>
             <TextInput
               value={genetics}
               onChangeText={setGenetics}
-              placeholder="Ej: Blue Dream, OG Kush..."
+              placeholder={t('plantEdit.genetics_placeholder')}
               placeholderTextColor="#2D4A30"
               style={inp}
             />
           </Field>
-          <Field label="Tipo">
+          <Field label={t('plantEdit.field_type')}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {([
-                ['feminized', '♀', 'Fem'],
-                ['autoflower', '⏱', 'Auto'],
-                ['regular', '⚥', 'Reg'],
-              ] as const).map(([t, icon, label]) => (
+                ['feminized', '♀', t('plantEdit.genetic_type_fem')],
+                ['autoflower', '⏱', t('plantEdit.genetic_type_auto')],
+                ['regular', '⚥', t('plantEdit.genetic_type_reg')],
+              ] as const).map(([gt, icon, label]) => (
                 <TouchableOpacity
-                  key={t}
-                  onPress={() => setGeneticType(t)}
+                  key={gt}
+                  onPress={() => setGeneticType(gt)}
                   activeOpacity={0.8}
                   style={{ flex: 1 }}
                 >
-                  {geneticType === t ? (
+                  {geneticType === gt ? (
                     <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 11, alignItems: 'center', gap: 3 }}>
                       <Text style={{ fontSize: 16 }}>{icon}</Text>
                       <Text style={{ color: '#080E09', fontWeight: '800', fontSize: 11 }}>{label}</Text>
@@ -340,19 +342,19 @@ export default function EditPlantScreen() {
           </Field>
 
           {geneticType === 'autoflower' && (
-            <Field label="Dias totales de cultivo">
+            <Field label={t('plantEdit.field_total_days')}>
               <Stepper value={autoFlowerTotalDays} min={50} max={120} step={1} unit="d" onChange={setAutoFlowerTotalDays} />
-              <Text style={{ color: '#2D4A30', fontSize: 11, marginTop: 6 }}>Tipico: 70-80 dias desde germinacion</Text>
+              <Text style={{ color: '#2D4A30', fontSize: 11, marginTop: 6 }}>{t('plantEdit.autoflower_typical_hint')}</Text>
             </Field>
           )}
 
           {geneticType === 'regular' && (
-            <Field label="Sexo">
+            <Field label={t('plantEdit.field_sex')}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {([
-                  ['female', '♀', '#52CC64', 'Hembra'],
-                  ['male',   '♂', '#3B82F6', 'Macho'],
-                  ['unknown','?', '#728C74', 'N/D'],
+                  ['female', '♀', '#52CC64', t('plantEdit.sex_female')],
+                  ['male',   '♂', '#3B82F6', t('plantEdit.sex_male')],
+                  ['unknown','?', '#728C74', t('plantEdit.sex_unknown')],
                 ] as const).map(([s, icon, color, label]) => (
                   <TouchableOpacity
                     key={s}
@@ -374,16 +376,16 @@ export default function EditPlantScreen() {
         </Section>
 
         {/* Seccion: Ciclo */}
-        <Section label="Ciclo de cultivo" icon="📅">
+        <Section label={t('plantEdit.section_cycle')} icon="📅">
           {/* Fecha de inicio */}
-          <Field label="Fecha de inicio">
+          <Field label={t('plantEdit.field_start_date')}>
             <TouchableOpacity
               onPress={() => setShowStartPicker(true)}
               activeOpacity={0.8}
               style={[inp, { justifyContent: 'center' }]}
             >
               <Text style={{ color: startDate ? '#E4F2E7' : '#2D4A30', fontSize: 15 }}>
-                {startDate ? format(startDateObj, 'dd/MM/yyyy') : 'Seleccionar fecha'}
+                {startDate ? format(startDateObj, 'dd/MM/yyyy') : t('plantEdit.select_date_placeholder')}
               </Text>
             </TouchableOpacity>
             {showStartPicker && (
@@ -402,7 +404,7 @@ export default function EditPlantScreen() {
 
           {/* Fecha de inicio de flora (solo feminizada/regular que ya florecio) */}
           {geneticType !== 'autoflower' && (
-            <Field label="Inicio de floracion (opcional)">
+            <Field label={t('plantEdit.field_flora_start')}>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                 <TouchableOpacity
                   onPress={() => setShowFloraPicker(true)}
@@ -410,7 +412,7 @@ export default function EditPlantScreen() {
                   style={[inp, { flex: 1, justifyContent: 'center' }]}
                 >
                   <Text style={{ color: floraStartDate ? '#F59E0B' : '#2D4A30', fontSize: 15 }}>
-                    {floraStartDate ? format(floraDateObj, 'dd/MM/yyyy') : 'No iniciada aun'}
+                    {floraStartDate ? format(floraDateObj, 'dd/MM/yyyy') : t('plantEdit.flora_not_started_placeholder')}
                   </Text>
                 </TouchableOpacity>
                 {floraStartDate && (
@@ -445,16 +447,16 @@ export default function EditPlantScreen() {
           >
             <Text style={{ fontSize: 16 }}>⚠️</Text>
             <Text style={{ color: '#F59E0B', fontSize: 12, flex: 1, lineHeight: 17 }}>
-              Al guardar con fecha o tipo modificado, se te ofrecera regenerar las tareas pendientes automaticamente
+              {t('plantEdit.regenerate_warning')}
             </Text>
           </LinearGradient>
         </Section>
 
         {/* Seccion: Cultivo */}
-        <Section label="Configuracion" icon="🪴">
-          <Field label="Ubicacion">
+        <Section label={t('plantEdit.section_config')} icon="🪴">
+          <Field label={t('plantEdit.field_location')}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {([['indoor', '🏠', 'Indoor'], ['outdoor', '☀️', 'Outdoor']] as const).map(([l, icon, label]) => (
+              {([['indoor', '🏠', t('plantEdit.location_indoor')], ['outdoor', '☀️', t('plantEdit.location_outdoor')]] as const).map(([l, icon, label]) => (
                 <TouchableOpacity key={l} onPress={() => setLocation(l)} activeOpacity={0.8} style={{ flex: 1 }}>
                   {location === l ? (
                     <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ borderRadius: 12, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
@@ -473,12 +475,12 @@ export default function EditPlantScreen() {
           </Field>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Field label="Cantidad de macetas">
+              <Field label={t('plantEdit.field_pot_count')}>
                 <Stepper value={potCount} min={1} max={20} step={1} unit="" onChange={setPotCount} />
               </Field>
             </View>
             <View style={{ flex: 1 }}>
-              <Field label="Litros por maceta">
+              <Field label={t('plantEdit.field_pot_liters')}>
                 <Stepper value={potVolumeLiters} min={1} max={200} step={1} unit="L" onChange={setPotVolumeLiters} />
               </Field>
             </View>
@@ -486,11 +488,11 @@ export default function EditPlantScreen() {
         </Section>
 
         {/* Seccion: Notas */}
-        <Section label="Notas" icon="📝">
+        <Section label={t('plantEdit.section_notes')} icon="📝">
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder="Observaciones, recordatorios, caracteristicas de esta planta..."
+            placeholder={t('plantEdit.notes_placeholder')}
             placeholderTextColor="#2D4A30"
             multiline
             numberOfLines={3}
@@ -499,7 +501,7 @@ export default function EditPlantScreen() {
         </Section>
 
         {/* Seccion: Tabla nutricional */}
-        <Section label="Tabla nutricional" icon="🧪">
+        <Section label={t('plantEdit.section_nutrition_table')} icon="🧪">
             {/* Selector de tabla - deduplicado por nombre normalizado + Custom */}
           {(() => {
             const seen = new Set<string>()
@@ -509,7 +511,7 @@ export default function EditPlantScreen() {
               seen.add(key)
               return true
             })
-            const allOptions = [...deduped, { id: CUSTOM_TABLE_ID, name: 'Custom' }]
+            const allOptions = [...deduped, { id: CUSTOM_TABLE_ID, name: t('plantEdit.custom_table_label') }]
             return (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {allOptions.map(opt => {
@@ -547,14 +549,14 @@ export default function EditPlantScreen() {
               <View style={{ gap: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.0, textTransform: 'uppercase' }}>
-                    Filtrar productos
+                    {t('plantEdit.filter_products_label')}
                   </Text>
                   <TouchableOpacity
                     onPress={() => setAvailableProducts(null)}
                     style={{ backgroundColor: availableProducts === null ? 'rgba(82,204,100,0.12)' : 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: availableProducts === null ? 'rgba(82,204,100,0.25)' : '#1C2E1E' }}
                   >
                     <Text style={{ color: availableProducts === null ? '#52CC64' : '#728C74', fontSize: 12, fontWeight: '700' }}>
-                      {availableProducts === null ? '✓ Todos' : `${availableProducts.length} sel.`}
+                      {availableProducts === null ? t('plantEdit.filter_all_label') : t('plantEdit.filter_selected_count', { count: availableProducts.length })}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -616,20 +618,20 @@ export default function EditPlantScreen() {
             >
               <Text style={{ fontSize: 20 }}>✨</Text>
               <Text style={{ color: '#A78BFA', fontSize: 13, flex: 1, lineHeight: 19 }}>
-                Agrega tus propios productos con dosis separadas para{' '}
-                <Text style={{ fontWeight: '800' }}>VEGE</Text> y{' '}
-                <Text style={{ fontWeight: '800' }}>FLORA</Text> en la seccion de abajo.
+                {t('plantEdit.custom_note_prefix')}{' '}
+                <Text style={{ fontWeight: '800' }}>{t('plantEdit.custom_note_vege')}</Text> {t('plantEdit.custom_note_middle')}{' '}
+                <Text style={{ fontWeight: '800' }}>{t('plantEdit.custom_note_flora')}</Text> {t('plantEdit.custom_note_suffix')}
               </Text>
             </LinearGradient>
           )}
         </Section>
 
         {/* Seccion: Productos propios */}
-        <Section label="Productos propios" icon="✏️">
+        <Section label={t('plantEdit.section_custom_products')} icon="✏️">
           <Text style={{ color: '#3A5040', fontSize: 13, lineHeight: 19, marginBottom: 6 }}>
             {selectedTableId === CUSTOM_TABLE_ID
-              ? 'Carga tus productos con dosis por etapa. Se aplican segun la fase actual de la planta.'
-              : 'Suplementos de otras marcas. Se muestran junto a la tabla seleccionada.'}
+              ? t('plantEdit.custom_desc_custom_table')
+              : t('plantEdit.custom_desc_other_table')}
           </Text>
 
           {customProducts.length > 0 && (
@@ -641,12 +643,12 @@ export default function EditPlantScreen() {
                     {/* Phase badge */}
                     {p.phases === 'vege' && (
                       <View style={{ backgroundColor: 'rgba(82,204,100,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)' }}>
-                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '900' }}>🌿 VEGE</Text>
+                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '900' }}>{t('plantEdit.phase_badge_vege')}</Text>
                       </View>
                     )}
                     {p.phases === 'flora' && (
                       <View style={{ backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)' }}>
-                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '900' }}>🌸 FLORA</Text>
+                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '900' }}>{t('plantEdit.phase_badge_flora')}</Text>
                       </View>
                     )}
                     {p.phases === 'both' && (
@@ -666,7 +668,7 @@ export default function EditPlantScreen() {
                   <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#1C2E1E' }}>
                     {(p.phases === 'vege' || p.phases === 'both') && (
                       <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
-                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>VEGE</Text>
+                        <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>{t('plantEdit.dose_label_vege')}</Text>
                         <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
                           {p.vegeMin === p.vegeMax ? p.vegeMax : `${p.vegeMin}–${p.vegeMax}`} {p.unit}/L
                         </Text>
@@ -675,7 +677,7 @@ export default function EditPlantScreen() {
                     {p.phases === 'both' && <View style={{ width: 1, backgroundColor: '#1C2E1E' }} />}
                     {(p.phases === 'flora' || p.phases === 'both') && (
                       <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 }}>
-                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>FLORA</Text>
+                        <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }}>{t('plantEdit.dose_label_flora')}</Text>
                         <Text style={{ color: '#B8D4BC', fontSize: 13, fontWeight: '700' }}>
                           {p.floraMin === p.floraMax ? p.floraMax : `${p.floraMin}–${p.floraMax}`} {p.unit}/L
                         </Text>
@@ -692,12 +694,12 @@ export default function EditPlantScreen() {
               colors={['#0D1A10', '#090E09']}
               style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', padding: 16, gap: 16 }}
             >
-              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nuevo producto</Text>
+              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{t('plantEdit.new_product_title')}</Text>
 
               <TextInput
                 value={newProduct.name}
                 onChangeText={v => setNewProduct(p => ({ ...p, name: v }))}
-                placeholder="Nombre del producto..."
+                placeholder={t('plantEdit.product_name_placeholder')}
                 placeholderTextColor="#2D4A30"
                 autoFocus
                 style={inp}
@@ -722,12 +724,12 @@ export default function EditPlantScreen() {
 
               {/* Fase */}
               <View>
-                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Usar en</Text>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>{t('plantEdit.use_in_label')}</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {([
-                    ['vege',  '🌿', 'Solo VEGE',  '#52CC64', 'rgba(82,204,100,0.15)',  'rgba(82,204,100,0.3)' ],
-                    ['flora', '🌸', 'Solo FLORA', '#F59E0B', 'rgba(245,158,11,0.15)', 'rgba(245,158,11,0.3)' ],
-                    ['both',  '✨', 'Ambas',      '#A78BFA', 'rgba(167,139,250,0.15)','rgba(167,139,250,0.3)'],
+                    ['vege',  '🌿', t('plantEdit.phase_option_vege'),  '#52CC64', 'rgba(82,204,100,0.15)',  'rgba(82,204,100,0.3)' ],
+                    ['flora', '🌸', t('plantEdit.phase_option_flora'), '#F59E0B', 'rgba(245,158,11,0.15)', 'rgba(245,158,11,0.3)' ],
+                    ['both',  '✨', t('plantEdit.phase_option_both'),  '#A78BFA', 'rgba(167,139,250,0.15)','rgba(167,139,250,0.3)'],
                   ] as const).map(([phase, icon, label, color, bg, border]) => (
                     <TouchableOpacity
                       key={phase}
@@ -745,15 +747,15 @@ export default function EditPlantScreen() {
               {/* VEGE doses */}
               {(newProduct.phases === 'vege' || newProduct.phases === 'both') && (
                 <View style={{ backgroundColor: 'rgba(82,204,100,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)', padding: 12, gap: 10 }}>
-                  <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌿 VEGETACION (dosis/L)</Text>
+                  <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>{t('plantEdit.vege_doses_header')}</Text>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>{t('plantEdit.min_label')}</Text>
                       <Stepper value={newProduct.vegeMin} min={0} max={500} step={1} unit={newProduct.unit}
                         onChange={v => setNewProduct(p => ({ ...p, vegeMin: v, vegeMax: Math.max(v, p.vegeMax) }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                      <Text style={{ color: '#2D5030', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>{t('plantEdit.max_label')}</Text>
                       <Stepper value={newProduct.vegeMax} min={newProduct.vegeMin} max={500} step={1} unit={newProduct.unit}
                         onChange={v => setNewProduct(p => ({ ...p, vegeMax: v }))} />
                     </View>
@@ -764,15 +766,15 @@ export default function EditPlantScreen() {
               {/* FLORA doses */}
               {(newProduct.phases === 'flora' || newProduct.phases === 'both') && (
                 <View style={{ backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)', padding: 12, gap: 10 }}>
-                  <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>🌸 FLORACION (dosis/L)</Text>
+                  <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>{t('plantEdit.flora_doses_header')}</Text>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Min</Text>
+                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>{t('plantEdit.min_label')}</Text>
                       <Stepper value={newProduct.floraMin} min={0} max={500} step={1} unit={newProduct.unit}
                         onChange={v => setNewProduct(p => ({ ...p, floraMin: v, floraMax: Math.max(v, p.floraMax) }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Max</Text>
+                      <Text style={{ color: '#5A3800', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>{t('plantEdit.max_label')}</Text>
                       <Stepper value={newProduct.floraMax} min={newProduct.floraMin} max={500} step={1} unit={newProduct.unit}
                         onChange={v => setNewProduct(p => ({ ...p, floraMax: v }))} />
                     </View>
@@ -785,7 +787,7 @@ export default function EditPlantScreen() {
                   onPress={() => { setShowAddForm(false); setNewProduct(EMPTY_NEW) }}
                   style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C2E1E' }}
                 >
-                  <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 14 }}>Cancelar</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '600', fontSize: 14 }}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -803,7 +805,7 @@ export default function EditPlantScreen() {
                     style={{ borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}
                   >
                     <Text style={{ color: newProduct.name.trim() ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 14 }}>
-                      Agregar producto
+                      {t('plantEdit.add_product_button')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -816,7 +818,7 @@ export default function EditPlantScreen() {
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', borderStyle: 'dashed', backgroundColor: 'rgba(82,204,100,0.04)' }}
             >
               <Text style={{ color: '#52CC64', fontSize: 22, lineHeight: 24, fontWeight: '300' }}>+</Text>
-              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>Agregar producto</Text>
+              <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 14 }}>{t('plantEdit.add_product_button')}</Text>
             </TouchableOpacity>
           )}
         </Section>
@@ -825,14 +827,14 @@ export default function EditPlantScreen() {
         <View style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(239,68,68,0.15)', overflow: 'hidden' }}>
           <LinearGradient colors={['#150505', '#0E0303']} style={{ padding: 16 }}>
             <Text style={{ color: '#3A3A3A', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
-              Zona de peligro
+              {t('plantEdit.danger_zone')}
             </Text>
             <TouchableOpacity
               onPress={handleDelete}
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', backgroundColor: 'rgba(239,68,68,0.06)' }}
             >
               <Text style={{ fontSize: 16 }}>🗑️</Text>
-              <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Eliminar planta permanentemente</Text>
+              <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>{t('plantEdit.delete_permanently_button')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>

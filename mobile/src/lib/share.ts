@@ -15,7 +15,6 @@ try {
 import * as Sharing from 'expo-sharing'
 import * as FileSystem from 'expo-file-system/legacy'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import type { RefObject } from 'react'
 import { track } from '@/lib/analytics'
 import type { Plant } from '@shared/types/plant'

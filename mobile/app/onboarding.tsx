@@ -9,25 +9,30 @@ import { useAuth } from '@/hooks/useAuth'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format, subDays, startOfDay } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { generatePlantSchedule, startFloraPhase } from '@shared/lib/nutrition-engine'
 import type { Plant } from '@shared/types/plant'
+import { useTranslation } from '@/i18n'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
 type Location    = 'indoor' | 'outdoor'
 
 const TOTAL_STEPS = 6
 
-const GENETIC_OPTIONS: { value: GeneticType; emoji: string; label: string; desc: string }[] = [
-  { value: 'feminized',  emoji: '♀️',  label: 'Feminizada',     desc: 'Floracion manual - vos decides cuando' },
-  { value: 'autoflower', emoji: '⚡',  label: 'Autofloreciente', desc: 'Florece sola a las 5 semanas' },
-  { value: 'regular',    emoji: '🌿', label: 'Regular',          desc: 'Puede ser macho o hembra' },
-]
+function getGeneticOptions(t: (key: string) => string): { value: GeneticType; emoji: string; label: string; desc: string }[] {
+  return [
+    { value: 'feminized',  emoji: '♀️',  label: t('onboarding.genetic_feminized_label'),  desc: t('onboarding.genetic_feminized_desc') },
+    { value: 'autoflower', emoji: '⚡',  label: t('onboarding.genetic_autoflower_label'), desc: t('onboarding.genetic_autoflower_desc') },
+    { value: 'regular',    emoji: '🌿', label: t('onboarding.genetic_regular_label'),     desc: t('onboarding.genetic_regular_desc') },
+  ]
+}
 
-const LOCATION_OPTIONS: { value: Location; emoji: string; label: string; desc: string }[] = [
-  { value: 'indoor',  emoji: '🏠', label: 'Indoor',  desc: 'Ambiente controlado - luz artificial' },
-  { value: 'outdoor', emoji: '☀️', label: 'Outdoor', desc: 'Luz natural - ciclos del sol' },
-]
+function getLocationOptions(t: (key: string) => string): { value: Location; emoji: string; label: string; desc: string }[] {
+  return [
+    { value: 'indoor',  emoji: '🏠', label: t('onboarding.location_indoor_label'),  desc: t('onboarding.location_indoor_desc') },
+    { value: 'outdoor', emoji: '☀️', label: t('onboarding.location_outdoor_label'), desc: t('onboarding.location_outdoor_desc') },
+  ]
+}
 
 const sectionLabel = {
   color: '#728C74', fontSize: 13, fontWeight: '700' as const,
@@ -35,8 +40,12 @@ const sectionLabel = {
 }
 
 export default function OnboardingScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { user } = useAuth()
   const { tables } = useNutritionTables()
+  const GENETIC_OPTIONS = getGeneticOptions(t)
+  const LOCATION_OPTIONS = getLocationOptions(t)
   const [step, setStep]               = useState(0)
   const [plantName, setPlantName]     = useState('')
   const [genetics, setGenetics]       = useState('')
@@ -96,7 +105,7 @@ export default function OnboardingScreen() {
         .select()
         .maybeSingle()
 
-      if (plantErr || !plantRow) throw plantErr ?? new Error('Error al crear la planta')
+      if (plantErr || !plantRow) throw plantErr ?? new Error(t('onboarding.plant_create_error'))
 
       const plant: Plant = {
         id:               plantRow.id,
@@ -115,8 +124,8 @@ export default function OnboardingScreen() {
         status:           'active',
       }
 
-      const table = tables.find(t => t.id === selectedTableId)
-      if (!table) throw new Error('Tabla nutricional no encontrada')
+      const table = tables.find(tb => tb.id === selectedTableId)
+      if (!table) throw new Error(t('onboarding.nutrition_table_not_found'))
       // Si ya inicio flora, generar cronograma completo con VEGE + FLORA
       const tasks = useFloraDate
         ? startFloraPhase(plant, useFloraDate, table)
@@ -151,7 +160,7 @@ export default function OnboardingScreen() {
 
       router.replace(`/plants/${plantRow.id}`)
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear la planta')
+      Alert.alert(t('onboarding.error_title'), e instanceof Error ? e.message : t('onboarding.finish_generic_error'))
     } finally {
       setLoading(false)
     }
@@ -192,13 +201,13 @@ export default function OnboardingScreen() {
                 <Text style={{ fontSize: 56 }}>🌱</Text>
               </LinearGradient>
               <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12 }}>
-                Bienvenido a Cultitrack
+                {t('onboarding.welcome_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>
-                Vamos a configurar tu primera planta.{'\n'}Te lleva menos de un minuto.
+                {t('onboarding.welcome_desc')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 20, marginTop: 36 }}>
-                {['📅 Calendario', '📊 Nutricion', '🤖 IA'].map(item => (
+                {[t('onboarding.feature_calendar'), t('onboarding.feature_nutrition'), t('onboarding.feature_ai')].map(item => (
                   <LinearGradient
                     key={item}
                     colors={['#1A3D1E', '#0F2412']}
@@ -215,13 +224,13 @@ export default function OnboardingScreen() {
           {step === 1 && (
             <View>
               <Text style={[sectionLabel, { marginBottom: 20 }]}>
-                PASO 1 DE {TOTAL_STEPS - 1}
+                {t('onboarding.step_label', { step: 1, total: TOTAL_STEPS - 1 })}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
-                Como se llama tu planta?
+                {t('onboarding.plant_name_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
-                Puede ser un apodo o nombre descriptivo
+                {t('onboarding.plant_name_desc')}
               </Text>
               <LinearGradient
                 colors={plantName ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
@@ -231,7 +240,7 @@ export default function OnboardingScreen() {
                   <TextInput
                     value={plantName}
                     onChangeText={setPlantName}
-                    placeholder="Ej: White Widow #1"
+                    placeholder={t('onboarding.plant_name_placeholder')}
                     placeholderTextColor="#3A5040"
                     autoFocus
                     style={{
@@ -249,13 +258,13 @@ export default function OnboardingScreen() {
           {step === 2 && (
             <View>
               <Text style={[sectionLabel, { marginBottom: 20 }]}>
-                PASO 2 DE {TOTAL_STEPS - 1}
+                {t('onboarding.step_label', { step: 2, total: TOTAL_STEPS - 1 })}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
-                Que genetica es?
+                {t('onboarding.genetics_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 28 }}>
-                La variedad o cruce de la planta
+                {t('onboarding.genetics_desc')}
               </Text>
               <LinearGradient
                 colors={genetics ? ['#1A3D1E', '#0F2412'] : ['#111A12', '#080E09']}
@@ -265,7 +274,7 @@ export default function OnboardingScreen() {
                   <TextInput
                     value={genetics}
                     onChangeText={setGenetics}
-                    placeholder="Ej: White Widow, OG Kush..."
+                    placeholder={t('onboarding.genetics_placeholder')}
                     placeholderTextColor="#3A5040"
                     autoFocus
                     style={{
@@ -283,13 +292,13 @@ export default function OnboardingScreen() {
           {step === 3 && (
             <View>
               <Text style={[sectionLabel, { marginBottom: 20 }]}>
-                PASO 3 DE {TOTAL_STEPS - 1}
+                {t('onboarding.step_label', { step: 3, total: TOTAL_STEPS - 1 })}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
-                Tipo de planta
+                {t('onboarding.genetic_type_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
-                Esto define como se genera el calendario
+                {t('onboarding.genetic_type_desc')}
               </Text>
               <View style={{ gap: 10 }}>
                 {GENETIC_OPTIONS.map(opt => {
@@ -332,7 +341,7 @@ export default function OnboardingScreen() {
               {geneticType === 'autoflower' && (
                 <View style={{ marginTop: 16 }}>
                   <Text style={[sectionLabel, { marginBottom: 8 }]}>
-                    Dias totales del ciclo
+                    {t('onboarding.autoflower_days_label')}
                   </Text>
                   <LinearGradient
                     colors={['#111A12', '#080E09']}
@@ -351,7 +360,7 @@ export default function OnboardingScreen() {
                     />
                   </LinearGradient>
                   <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 4 }}>
-                    Tipico: 70-84 dias desde germinacion
+                    {t('onboarding.autoflower_days_hint')}
                   </Text>
                 </View>
               )}
@@ -360,13 +369,13 @@ export default function OnboardingScreen() {
               {geneticType === 'regular' && (
                 <View style={{ marginTop: 16 }}>
                   <Text style={[sectionLabel, { marginBottom: 8 }]}>
-                    Sexo (opcional)
+                    {t('onboarding.sex_label')}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {([
-                      { value: 'female',  label: 'Hembra', color: '#52CC64' },
-                      { value: 'male',    label: 'Macho',  color: '#3B82F6' },
-                      { value: 'unknown', label: 'No se',  color: '#728C74' },
+                      { value: 'female',  label: t('onboarding.sex_female'),  color: '#52CC64' },
+                      { value: 'male',    label: t('onboarding.sex_male'),    color: '#3B82F6' },
+                      { value: 'unknown', label: t('onboarding.sex_unknown'), color: '#728C74' },
                     ] as const).map(opt => (
                       <TouchableOpacity
                         key={opt.value}
@@ -394,13 +403,13 @@ export default function OnboardingScreen() {
           {step === 4 && (
             <View>
               <Text style={[sectionLabel, { marginBottom: 20 }]}>
-                PASO 4 DE {TOTAL_STEPS - 1}
+                {t('onboarding.step_label', { step: 4, total: TOTAL_STEPS - 1 })}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
-                Donde esta tu planta?
+                {t('onboarding.location_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
-                Esto afecta las condiciones recomendadas
+                {t('onboarding.location_desc')}
               </Text>
               <View style={{ gap: 10 }}>
                 {LOCATION_OPTIONS.map(opt => {
@@ -441,10 +450,10 @@ export default function OnboardingScreen() {
 
               {/* Macetas */}
               <View style={{ marginTop: 24, gap: 16 }}>
-                <Text style={[sectionLabel, { marginBottom: 0 }]}>Macetas</Text>
+                <Text style={[sectionLabel, { marginBottom: 0 }]}>{t('onboarding.pots_label')}</Text>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{t('onboarding.pots_count_label')}</Text>
                     <LinearGradient colors={['#111A12', '#080E09']} style={{ borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', overflow: 'hidden' }}>
                       <TouchableOpacity onPress={() => setPotCount(c => Math.max(1, c - 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
                         <Text style={{ color: potCount <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700' }}>-</Text>
@@ -458,7 +467,7 @@ export default function OnboardingScreen() {
                     </LinearGradient>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Litros</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{t('onboarding.pots_volume_label')}</Text>
                     <LinearGradient colors={['#111A12', '#080E09']} style={{ borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', flexDirection: 'row', overflow: 'hidden' }}>
                       <TouchableOpacity onPress={() => setPotVolume(v => Math.max(1, v - 1))} style={{ width: 40, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1C2E1E' }}>
                         <Text style={{ color: potVolume <= 1 ? '#2D4A30' : '#52CC64', fontSize: 20, fontWeight: '700' }}>-</Text>
@@ -474,15 +483,15 @@ export default function OnboardingScreen() {
                 </View>
 
                 {/* Inicio del cultivo */}
-                <Text style={[sectionLabel, { marginBottom: 0, marginTop: 4 }]}>Inicio del cultivo</Text>
+                <Text style={[sectionLabel, { marginBottom: 0, marginTop: 4 }]}>{t('onboarding.grow_start_label')}</Text>
 
                 {/* Chips rapidos */}
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {[
-                    { label: 'Hoy',     date: startOfDay(new Date()) },
-                    { label: 'Ayer',    date: subDays(startOfDay(new Date()), 1) },
-                    { label: '3 dias',  date: subDays(startOfDay(new Date()), 3) },
-                    { label: '1 semana',date: subDays(startOfDay(new Date()), 7) },
+                    { label: t('onboarding.date_today'),     date: startOfDay(new Date()) },
+                    { label: t('onboarding.date_yesterday'), date: subDays(startOfDay(new Date()), 1) },
+                    { label: t('onboarding.date_3days'),     date: subDays(startOfDay(new Date()), 3) },
+                    { label: t('onboarding.date_1week'),     date: subDays(startOfDay(new Date()), 7) },
                   ].map(opt => {
                     const active = startDate.toISOString().split('T')[0] === opt.date.toISOString().split('T')[0]
                     return (
@@ -506,9 +515,9 @@ export default function OnboardingScreen() {
                   onPress={() => setShowStartPicker(true)}
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}
                 >
-                  <Text style={{ color: '#6D8C74', fontSize: 13 }}>Fecha exacta</Text>
+                  <Text style={{ color: '#6D8C74', fontSize: 13 }}>{t('onboarding.exact_date_label')}</Text>
                   <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>
-                    {format(startDate, "d 'de' MMMM, yyyy", { locale: es })}
+                    {format(startDate, "d 'de' MMMM, yyyy", { locale: dateLocale })}
                   </Text>
                 </TouchableOpacity>
                 {showStartPicker && (
@@ -530,7 +539,7 @@ export default function OnboardingScreen() {
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text style={{ fontSize: 16 }}>🌸</Text>
                         <Text style={{ color: floraAlreadyStarted ? '#F59E0B' : '#6D8C74', fontSize: 13, fontWeight: '600' }}>
-                          Ya inicio la floracion
+                          {t('onboarding.flora_started_toggle')}
                         </Text>
                       </View>
                       <View style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: floraAlreadyStarted ? '#F59E0B' : '#1C2E1E', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 }}>
@@ -544,9 +553,9 @@ export default function OnboardingScreen() {
                           onPress={() => setShowFloraPicker(true)}
                           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(245,158,11,0.06)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' }}
                         >
-                          <Text style={{ color: '#A06820', fontSize: 13 }}>Inicio de flora</Text>
+                          <Text style={{ color: '#A06820', fontSize: 13 }}>{t('onboarding.flora_start_label')}</Text>
                           <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '700' }}>
-                            {format(floraStartDate, "d 'de' MMMM, yyyy", { locale: es })}
+                            {format(floraStartDate, "d 'de' MMMM, yyyy", { locale: dateLocale })}
                           </Text>
                         </TouchableOpacity>
                         {showFloraPicker && (
@@ -570,13 +579,13 @@ export default function OnboardingScreen() {
           {step === 5 && (
             <View>
               <Text style={[sectionLabel, { marginBottom: 20 }]}>
-                PASO 5 DE {TOTAL_STEPS - 1}
+                {t('onboarding.step_label', { step: 5, total: TOTAL_STEPS - 1 })}
               </Text>
               <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', marginBottom: 8 }}>
-                Que tabla usas?
+                {t('onboarding.nutrition_table_title')}
               </Text>
               <Text style={{ color: '#728C74', fontSize: 14, marginBottom: 24 }}>
-                Selecciona los fertilizantes que vas a usar
+                {t('onboarding.nutrition_table_desc')}
               </Text>
               <View style={{ gap: 10 }}>
                 {tables.map(table => {
@@ -598,11 +607,11 @@ export default function OnboardingScreen() {
                               borderWidth: 1, borderColor: table.accessTier === 'pro' ? '#A78BFA' : '#2A5A2E',
                             }}>
                               <Text style={{ fontSize: 11, fontWeight: '700', color: table.accessTier === 'pro' ? '#A78BFA' : '#52CC64' }}>
-                                {table.accessTier === 'pro' ? 'PRO' : 'GRATIS'}
+                                {table.accessTier === 'pro' ? t('onboarding.tier_pro') : t('onboarding.tier_free')}
                               </Text>
                             </View>
                             <Text style={{ color: '#3A5040', fontSize: 12 }}>
-                              {table.vegeWeeks.length + table.floraWeeks.length} semanas
+                              {t('onboarding.weeks_count', { count: table.vegeWeeks.length + table.floraWeeks.length })}
                             </Text>
                           </View>
                         </View>
@@ -640,7 +649,7 @@ export default function OnboardingScreen() {
               {loading
                 ? <ActivityIndicator color="#080E09" />
                 : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>
-                    {step === TOTAL_STEPS - 1 ? 'Crear mi planta  →' : 'Siguiente  →'}
+                    {step === TOTAL_STEPS - 1 ? t('onboarding.finish_button') : t('onboarding.next_button')}
                   </Text>
               }
             </LinearGradient>
@@ -650,7 +659,7 @@ export default function OnboardingScreen() {
               onPress={() => setStep(step - 1)}
               style={{ paddingVertical: 14, alignItems: 'center' }}
             >
-              <Text style={{ color: '#728C74', fontSize: 14, fontWeight: '600' }}>← Atras</Text>
+              <Text style={{ color: '#728C74', fontSize: 14, fontWeight: '600' }}>{t('onboarding.back_button')}</Text>
             </TouchableOpacity>
           )}
         </View>

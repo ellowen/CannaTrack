@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { View, Text, PanResponder, Animated, Dimensions } from 'react-native'
 import type { ScheduledTask } from '@shared/types/plant'
+import { useTranslation } from '@/i18n'
 
 const { width } = Dimensions.get('window')
 const SWIPE_THRESHOLD = width * 0.3 // Swipe 30% of width to complete
@@ -18,6 +19,7 @@ export function SwipeableTaskItem({
   onComplete,
   children,
 }: SwipeableTaskItemProps) {
+  const { t } = useTranslation()
   const pan = useRef(new Animated.ValueXY()).current
   const [isCompleted, setIsCompleted] = useState(false)
 
@@ -71,7 +73,7 @@ export function SwipeableTaskItem({
         }}
       >
         <Text style={{ color: '#52CC64', fontWeight: '700', fontSize: 12 }}>
-          ✓ Hecho
+          ✓ {t('swipeableTaskItem.done')}
         </Text>
       </View>
 

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { purchasePro, restorePurchases } from '@/lib/purchases'
 import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
+import { useTranslation } from '@/i18n'
 
 interface Props {
   visible:  boolean
@@ -11,15 +12,16 @@ interface Props {
   feature?: string  // contexto opcional para analytics
 }
 
-const FEATURES = [
-  { icon: '🌿', text: 'Plantas ilimitadas' },
-  { icon: '🤖', text: '30 diagnosticos IA por mes' },
-  { icon: '📊', text: 'Todas las tablas nutricionales' },
-  { icon: '📸', text: 'Historial fotografico completo' },
-  { icon: '📤', text: 'Exportar historial (proximamente)' },
+const FEATURE_KEYS = [
+  { icon: '🌿', key: 'paywallModal.feature_unlimited_plants' },
+  { icon: '🤖', key: 'paywallModal.feature_ai_diagnosis' },
+  { icon: '📊', key: 'paywallModal.feature_all_tables' },
+  { icon: '📸', key: 'paywallModal.feature_photo_history' },
+  { icon: '📤', key: 'paywallModal.feature_export_soon' },
 ]
 
 export default function PaywallModal({ visible, onClose, feature }: Props) {
+  const { t } = useTranslation()
   const { refetch } = usePlan()
   const [loading, setLoading]     = useState(false)
   const [restoring, setRestoring] = useState(false)
@@ -35,10 +37,10 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
     if (result.success) {
       track('paywall_purchase_completed')
       await refetch()
-      Alert.alert('Plan Pro activado', 'Bienvenido a Cultitrack Pro.', [{ text: 'Empezar', onPress: onClose }])
+      Alert.alert(t('paywallModal.purchase_success_title'), t('paywallModal.purchase_success_message'), [{ text: t('paywallModal.purchase_success_button'), onPress: onClose }])
     } else if (result.error) {
       track('paywall_purchase_error', { error: result.error })
-      Alert.alert('No se pudo completar', result.error)
+      Alert.alert(t('paywallModal.purchase_error_title'), result.error)
     }
   }
 
@@ -50,12 +52,12 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
     if (result.isPro) {
       track('paywall_restore_completed', { restored: true })
       await refetch()
-      Alert.alert('Compra restaurada', 'Tu plan Pro fue restaurado.', [{ text: 'Continuar', onPress: onClose }])
+      Alert.alert(t('paywallModal.restore_success_title'), t('paywallModal.restore_success_message'), [{ text: t('paywallModal.restore_success_button'), onPress: onClose }])
     } else if (result.error) {
-      Alert.alert('Error', result.error)
+      Alert.alert(t('paywallModal.restore_error_title'), result.error)
     } else {
       track('paywall_restore_completed', { restored: false })
-      Alert.alert('Sin compras previas', 'No encontramos ninguna compra de Pro en tu cuenta.')
+      Alert.alert(t('paywallModal.restore_none_title'), t('paywallModal.restore_none_message'))
     }
   }
 
@@ -78,16 +80,16 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
             </LinearGradient>
             <Text style={{ color: '#E4F2E7', fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>Cultitrack Pro</Text>
             <Text style={{ color: '#6D4FB0', fontSize: 14, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-              Todo lo que necesitas para el cultivo perfecto
+              {t('paywallModal.subtitle')}
             </Text>
           </View>
           <View style={{ paddingHorizontal: 24, gap: 10, marginBottom: 24 }}>
-            {FEATURES.map((f, i) => (
+            {FEATURE_KEYS.map((f, i) => (
               <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(124,58,237,0.15)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 18 }}>{f.icon}</Text>
                 </View>
-                <Text style={{ color: '#C4B5FD', fontSize: 14, fontWeight: '600' }}>{f.text}</Text>
+                <Text style={{ color: '#C4B5FD', fontSize: 14, fontWeight: '600' }}>{t(f.key)}</Text>
               </View>
             ))}
           </View>
@@ -99,8 +101,8 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
               >
                 {loading ? <ActivityIndicator color='#E4F2E7' /> : (
                   <>
-                    <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 16 }}>Activar Pro - USD 5/mes</Text>
-                    <Text style={{ color: 'rgba(228,242,231,0.5)', fontSize: 11 }}>Cancela cuando quieras</Text>
+                    <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 16 }}>{t('paywallModal.purchase_cta')}</Text>
+                    <Text style={{ color: 'rgba(228,242,231,0.5)', fontSize: 11 }}>{t('paywallModal.purchase_cta_sub')}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -109,16 +111,16 @@ export default function PaywallModal({ visible, onClose, feature }: Props) {
               <TouchableOpacity onPress={handleRestore} disabled={loading || restoring} activeOpacity={0.7}
                 style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: 'rgba(167,139,250,0.08)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)', alignItems: 'center' }}>
                 {restoring ? <ActivityIndicator color='#A78BFA' size='small' /> : (
-                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Restaurar compra</Text>
+                  <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{t('paywallModal.restore_button')}</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity onPress={onClose} disabled={loading || restoring} activeOpacity={0.7}
                 style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E', alignItems: 'center' }}>
-                <Text style={{ color: '#4A6A50', fontSize: 13, fontWeight: '700' }}>Ahora no</Text>
+                <Text style={{ color: '#4A6A50', fontSize: 13, fontWeight: '700' }}>{t('paywallModal.dismiss_button')}</Text>
               </TouchableOpacity>
             </View>
             <Text style={{ color: '#3A2860', fontSize: 11, textAlign: 'center', lineHeight: 16 }}>
-              Al suscribirte aceptas los Terminos de Servicio y la Politica de Privacidad.
+              {t('paywallModal.legal_disclaimer')}
             </Text>
           </View>
         </LinearGradient>

@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getAchievements, getLevelInfo } from '@shared/lib/gamification'
 import type { AchievementData, Achievement } from '@shared/lib/gamification'
+import { useTranslation } from '@/i18n'
 
 // Progreso calculado por id de logro
 function getProgress(a: Achievement, d: AchievementData): { current: number; target: number } | null {
@@ -32,13 +33,20 @@ function getProgress(a: Achievement, d: AchievementData): { current: number; tar
   }
 }
 
-const CATEGORY_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  consistencia: { label: 'Consistencia', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
-  cultivo:      { label: 'Cultivo',      color: '#52CC64', bg: 'rgba(82,204,100,0.1)',  border: 'rgba(82,204,100,0.2)' },
-  conocimiento: { label: 'Conocimiento', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.2)' },
+const CATEGORY_META: Record<string, { color: string; bg: string; border: string }> = {
+  consistencia: { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
+  cultivo:      { color: '#52CC64', bg: 'rgba(82,204,100,0.1)',  border: 'rgba(82,204,100,0.2)' },
+  conocimiento: { color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.2)' },
+}
+
+const CATEGORY_LABEL_KEY: Record<string, string> = {
+  consistencia: 'achievements.category_consistencia',
+  cultivo:      'achievements.category_cultivo',
+  conocimiento: 'achievements.category_conocimiento',
 }
 
 export default function AchievementsScreen() {
+  const { t } = useTranslation()
   const { user, loading: authLoading } = useAuth()
   const [data, setData] = useState<AchievementData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -114,9 +122,9 @@ export default function AchievementsScreen() {
               <BackIcon size={20} color="#A78BFA" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Logros</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{t('achievements.title')}</Text>
               <Text style={{ color: '#6D4FB0', fontSize: 13, marginTop: 1 }}>
-                {levelInfo.current.emoji} {levelInfo.current.name} · {data.totalXP} XP
+                {t('achievements.level_xp', { emoji: levelInfo.current.emoji, name: levelInfo.current.name, xp: data.totalXP })}
               </Text>
             </View>
           </View>
@@ -128,21 +136,21 @@ export default function AchievementsScreen() {
               style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)' }}
             >
               <Text style={{ color: '#A78BFA', fontSize: 26, fontWeight: '900' }}>{unlocked.length}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>Logrados</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>{t('achievements.stat_unlocked')}</Text>
             </LinearGradient>
             <LinearGradient
               colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
               style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' }}
             >
               <Text style={{ color: '#728C74', fontSize: 26, fontWeight: '900' }}>{locked.length}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>Restantes</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>{t('achievements.stat_remaining')}</Text>
             </LinearGradient>
             <LinearGradient
               colors={['rgba(82,204,100,0.12)', 'rgba(82,204,100,0.04)']}
               style={{ flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(82,204,100,0.18)' }}
             >
               <Text style={{ color: '#52CC64', fontSize: 26, fontWeight: '900' }}>{pct}%</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>Completado</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2, fontWeight: '600' }}>{t('achievements.stat_completed')}</Text>
             </LinearGradient>
           </View>
 
@@ -161,7 +169,7 @@ export default function AchievementsScreen() {
           {/* Desbloqueados - agrupados por categoria */}
           {unlocked.length > 0 ? (
             <View style={{ gap: 20 }}>
-              <Text style={sectionLabel}>Desbloqueados</Text>
+              <Text style={sectionLabel}>{t('achievements.section_unlocked')}</Text>
               {unlockedByCategory.map(({ cat, items }) => {
                 const meta = CATEGORY_META[cat]
                 return (
@@ -170,7 +178,7 @@ export default function AchievementsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <View style={{ backgroundColor: meta.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: meta.border }}>
                         <Text style={{ color: meta.color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>
-                          {meta.label.toUpperCase()}
+                          {t(CATEGORY_LABEL_KEY[cat]).toUpperCase()}
                         </Text>
                       </View>
                       <View style={{ flex: 1, height: 1, backgroundColor: meta.border }} />
@@ -200,9 +208,9 @@ export default function AchievementsScreen() {
               style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 40, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 40, marginBottom: 12 }}>🌱</Text>
-              <Text style={{ color: '#728C74', fontSize: 15, fontWeight: '700', textAlign: 'center' }}>Sin logros todavia</Text>
+              <Text style={{ color: '#728C74', fontSize: 15, fontWeight: '700', textAlign: 'center' }}>{t('achievements.no_achievements_title')}</Text>
               <Text style={{ color: '#3A5040', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-                Completa tareas y registra{'\n'}mediciones para desbloquear logros
+                {t('achievements.no_achievements_desc')}
               </Text>
             </LinearGradient>
           )}
@@ -210,7 +218,7 @@ export default function AchievementsScreen() {
           {/* Por desbloquear con barra de progreso */}
           {locked.length > 0 && (
             <View>
-              <Text style={sectionLabel}>Por desbloquear</Text>
+              <Text style={sectionLabel}>{t('achievements.section_locked')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {locked.map(a => {
                   const prog = getProgress(a, data)
@@ -233,7 +241,7 @@ export default function AchievementsScreen() {
                             <View style={{ height: '100%', borderRadius: 2, width: `${progPct * 100}%`, backgroundColor: hasProgress ? '#52CC64' : '#1C2E1E' }} />
                           </View>
                           <Text style={{ color: hasProgress ? '#3D6642' : '#1C2E1E', fontSize: 11, fontWeight: '700', marginTop: 4 }}>
-                            {prog.current} / {prog.target}
+                            {t('achievements.progress_fraction', { current: prog.current, target: prog.target })}
                           </Text>
                         </View>
                       )}

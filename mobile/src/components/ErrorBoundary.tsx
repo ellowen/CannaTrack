@@ -2,6 +2,7 @@ import { Component, type ReactNode } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as Updates from 'expo-updates'
+import { i18n } from '@/i18n'
 
 interface Props {
   children: ReactNode
@@ -75,14 +76,13 @@ export class ErrorBoundary extends Component<Props, State> {
             color: '#E4F2E7', fontSize: 22, fontWeight: '900',
             textAlign: 'center', marginBottom: 8,
           }}>
-            Algo salio mal
+            {i18n.t('errorBoundary.title')}
           </Text>
           <Text style={{
             color: '#6D8C74', fontSize: 14, textAlign: 'center',
             lineHeight: 20, marginBottom: 32,
           }}>
-            La app encontro un error inesperado.{'\n'}
-            Tus datos estan seguros — recarga para continuar.
+            {i18n.t('errorBoundary.message')}
           </Text>
 
           {/* Acciones */}
@@ -95,7 +95,7 @@ export class ErrorBoundary extends Component<Props, State> {
             }}
           >
             <Text style={{ color: '#080E09', fontSize: 15, fontWeight: '800' }}>
-              Recargar app
+              {i18n.t('errorBoundary.reload_button')}
             </Text>
           </TouchableOpacity>
 
@@ -109,7 +109,7 @@ export class ErrorBoundary extends Component<Props, State> {
             }}
           >
             <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '700' }}>
-              Intentar continuar
+              {i18n.t('errorBoundary.dismiss_button')}
             </Text>
           </TouchableOpacity>
 
@@ -120,7 +120,7 @@ export class ErrorBoundary extends Component<Props, State> {
               padding: 14, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
             }}>
               <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>
-                ERROR (solo visible en desarrollo)
+                {i18n.t('errorBoundary.dev_error_label')}
               </Text>
               <Text style={{ color: '#F87171', fontSize: 11, fontFamily: 'monospace', lineHeight: 16 }}>
                 {error.message}

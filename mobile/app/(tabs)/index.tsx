@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
+import { useTranslation } from '@/i18n'
 import { usePlants } from '@/hooks/usePlants'
 import { usePlantStore } from '@/store/plantStore'
 import { useTasks } from '@/hooks/useTasks'
@@ -25,9 +26,9 @@ const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
   observation: '#F59E0B', foliar: '#A855F7', harvest: '#EF4444',
 }
-const TYPE_LABEL: Record<string, string> = {
-  nutrition: 'Nutricion', irrigation: 'Riego',
-  observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
+const TYPE_LABEL_KEY: Record<string, string> = {
+  nutrition: 'type_nutrition', irrigation: 'type_irrigation',
+  observation: 'type_observation', foliar: 'type_foliar', harvest: 'type_harvest',
 }
 
 function TaskTypeIcon({ type, size = 22 }: { type: string; size?: number }) {
@@ -46,6 +47,8 @@ type ProfileData = {
 type UpcomingDay = { date: Date; count: number }
 
 export default function HomeScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { user }   = useAuth()
   const { plants } = usePlants()
   const setPlants = usePlantStore(s => s.setPlants)
@@ -64,7 +67,7 @@ export default function HomeScreen() {
   const levelInfo = getLevelInfo(profile.xp)
   const xpToNext  = levelInfo.next ? levelInfo.next.xpRequired - profile.xp : 0
   const hour      = new Date().getHours()
-  const greeting  = hour < 12 ? 'Buenos dias' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting  = hour < 12 ? t('home.greeting_morning') : hour < 20 ? t('home.greeting_afternoon') : t('home.greeting_evening')
 
   // Recargar datos cada vez que el tab home toma foco (volver de crear planta, settings, etc.)
   useFocusEffect(
@@ -86,7 +89,7 @@ export default function HomeScreen() {
       supabase.from('plants').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'harvested'),
     ])
     if (profileRes.data) {
-      setProfile({ username: profileRes.data.username ?? user.email?.split('@')[0] ?? 'Cultivador', streak: profileRes.data.streak_days ?? 0, bestStreak: profileRes.data.best_streak ?? 0, xp: profileRes.data.xp ?? 0, harvestedCount: harvestRes.count ?? 0 })
+      setProfile({ username: profileRes.data.username ?? user.email?.split('@')[0] ?? t('home.default_username'), streak: profileRes.data.streak_days ?? 0, bestStreak: profileRes.data.best_streak ?? 0, xp: profileRes.data.xp ?? 0, harvestedCount: harvestRes.count ?? 0 })
     }
     setOverdueTasks((overdueRes.data ?? []).map(rowToTask))
     const countByDate: Record<string, number> = {}
@@ -157,7 +160,7 @@ export default function HomeScreen() {
               <View>
                 <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 }}>Cultitrack</Text>
                 <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' }}>
-                  {format(new Date(), "EEE d 'de' MMM", { locale: es })}
+                  {format(new Date(), "EEE d 'de' MMM", { locale: dateLocale })}
                 </Text>
               </View>
             </View>
@@ -186,7 +189,7 @@ export default function HomeScreen() {
           <View style={{ marginTop: 18 }}>
             <Text style={{ color: '#728C74', fontSize: 14, fontWeight: '600' }}>{greeting}</Text>
             <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5, marginTop: 2 }}>
-              {profile.username || 'Cultivador'}
+              {profile.username || t('home.default_username')}
             </Text>
           </View>
 
@@ -198,7 +201,7 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
                     <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{levelInfo.current.name}</Text>
-                    <Text style={{ color: '#6B46C1', fontSize: 12, fontWeight: '700' }}>{xpToNext} XP para {levelInfo.next.name}</Text>
+                    <Text style={{ color: '#6B46C1', fontSize: 12, fontWeight: '700' }}>{t('home.xp_to_next', { xp: xpToNext, name: levelInfo.next.name })}</Text>
                   </View>
                   <View style={{ height: 4, backgroundColor: 'rgba(139,92,246,0.15)', borderRadius: 2, overflow: 'hidden' }}>
                     <LinearGradient
@@ -228,7 +231,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: '#EF4444', fontSize: 15, fontWeight: '900' }}>
-                    {overdueTasks.length} tarea{overdueTasks.length > 1 ? 's' : ''} vencida{overdueTasks.length > 1 ? 's' : ''}
+                    {t('home.overdue_count', { count: overdueTasks.length })}
                   </Text>
                   <Text style={{ color: '#7A2A2A', fontSize: 13, marginTop: 2 }}>
                     {overdueTasks.map(t => plants.find(p => p.id === t.plantId)?.name).filter(Boolean).join(', ')}
@@ -239,7 +242,7 @@ export default function HomeScreen() {
                   style={{ borderRadius: 12, overflow: 'hidden' }}
                 >
                   <LinearGradient colors={['#C0392B', '#922B21']} style={{ paddingHorizontal: 14, paddingVertical: 9 }}>
-                    <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>Resolver</Text>
+                    <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>{t('home.resolve')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -251,9 +254,9 @@ export default function HomeScreen() {
                       <TouchableOpacity key={task.id} onPress={() => openSheet(task)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}>
                         <TaskTypeIcon type={task.type} size={16} />
                         <Text style={{ color: '#C47070', fontSize: 13, flex: 1, fontWeight: '600' }}>
-                          {TYPE_LABEL[task.type]} — {plant?.name ?? '—'}
+                          {t(`home.${TYPE_LABEL_KEY[task.type]}`)} — {plant?.name ?? '—'}
                         </Text>
-                        <Text style={{ color: '#7A2A2A', fontSize: 12 }}>Marcar hecho</Text>
+                        <Text style={{ color: '#7A2A2A', fontSize: 12 }}>{t('home.mark_done')}</Text>
                       </TouchableOpacity>
                     )
                   })}
@@ -271,12 +274,12 @@ export default function HomeScreen() {
                 style={{ borderRadius: 24, padding: 40, alignItems: 'center', borderWidth: 1.5, borderColor: '#1A4A20', borderStyle: 'dashed' }}
               >
                 <LogoMark size={72} primaryColor="#52CC64" secondaryColor="#3DAA50" />
-                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 20, marginTop: 18 }}>Empeza a cultivar</Text>
+                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 20, marginTop: 18 }}>{t('home.no_plants_title')}</Text>
                 <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 8, textAlign: 'center', lineHeight: 22 }}>
-                  Crea tu primera planta{'\n'}para empezar a seguirla
+                  {t('home.no_plants_desc')}
                 </Text>
                 <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ marginTop: 22, borderRadius: 16, paddingHorizontal: 28, paddingVertical: 14 }}>
-                  <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>Nueva planta →</Text>
+                  <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>{t('home.new_plant_cta')}</Text>
                 </LinearGradient>
               </LinearGradient>
             </TouchableOpacity>
@@ -292,8 +295,8 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 28 }}>🌿</Text>
                 </View>
               </View>
-              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>Dia libre!</Text>
-              <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 6 }}>Sin tareas programadas hoy</Text>
+              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>{t('home.free_day_title')}</Text>
+              <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 6 }}>{t('home.free_day_subtitle')}</Text>
             </LinearGradient>
           ) : allDone ? (
             /* Todas completadas */
@@ -305,12 +308,12 @@ export default function HomeScreen() {
                 <ProgressRing done={done.length} total={tasks.length} size={90} color="#52CC64" />
                 <View style={{ position: 'absolute', alignItems: 'center' }}>
                   <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{done.length}</Text>
-                  <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>listas</Text>
+                  <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>{t('home.ready_label')}</Text>
                 </View>
               </View>
-              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>Todo al dia!</Text>
+              <Text style={{ color: '#52CC64', fontSize: 22, fontWeight: '900', marginTop: 14 }}>{t('home.all_done_title')}</Text>
               <Text style={{ color: '#3D6642', fontSize: 15, marginTop: 6 }}>
-                {done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''} hoy
+                {t('home.done_today_count', { count: done.length })}
               </Text>
             </LinearGradient>
           ) : (
@@ -327,7 +330,7 @@ export default function HomeScreen() {
                     <ProgressRing done={done.length} total={tasks.length} size={76} color="#52CC64" />
                     <View style={{ position: 'absolute', alignItems: 'center' }}>
                       <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', lineHeight: 22 }}>{pending.length}</Text>
-                      <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>pendiente{pending.length > 1 ? 's' : ''}</Text>
+                      <Text style={{ color: '#3D6642', fontSize: 10, fontWeight: '700' }}>{t('home.pending_label', { count: pending.length })}</Text>
                     </View>
                   </View>
 
@@ -335,20 +338,20 @@ export default function HomeScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ color: '#E8F5EA', fontSize: 24, fontWeight: '900', lineHeight: 26 }}>
-                        Para hacer hoy
+                        {t('home.pending_title')}
                       </Text>
                       {pending.length > 1 && (
                         <TouchableOpacity onPress={handleCompleteAll} activeOpacity={0.8} style={{ borderRadius: 10, overflow: 'hidden' }}>
                           <LinearGradient colors={['#1A4A20', '#0D2810']} style={{ paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#2A6A30' }}>
-                            <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>✓ Todo</Text>
+                            <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>{t('home.complete_all_cta')}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       )}
                     </View>
                     <Text style={{ color: '#3D6642', fontSize: 14, marginTop: 4 }}>
                       {done.length > 0
-                        ? `${done.length} de ${tasks.length} completada${done.length > 1 ? 's' : ''}`
-                        : `${tasks.length} tarea${tasks.length > 1 ? 's' : ''} programada${tasks.length > 1 ? 's' : ''}`
+                        ? t('home.progress_completed', { count: done.length, done: done.length, total: tasks.length })
+                        : t('home.tasks_scheduled', { count: tasks.length })
                       }
                     </Text>
                     {/* Mini progress bar */}
@@ -404,10 +407,10 @@ export default function HomeScreen() {
                           {/* Tipo + fase */}
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                             <TaskTypeIcon type={task.type} size={18} />
-                            <Text style={{ color: typeColor, fontSize: 15, fontWeight: '700' }}>{TYPE_LABEL[task.type]}</Text>
+                            <Text style={{ color: typeColor, fontSize: 15, fontWeight: '700' }}>{t(`home.${TYPE_LABEL_KEY[task.type]}`)}</Text>
                             <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2D4A30' }} />
                             <Text style={{ color: '#4A7A50', fontSize: 13 }}>
-                              {isFlora ? 'Flora' : 'Vege'} S{weekNum} · D{phaseDay}
+                              {isFlora ? t('home.phase_flora') : t('home.phase_vege')} {t('home.phase_week_day', { week: weekNum, day: phaseDay })}
                             </Text>
                           </View>
 
@@ -461,7 +464,7 @@ export default function HomeScreen() {
                       <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '900' }}>✓</Text>
                     </View>
                     <Text style={{ color: '#2D5A35', fontSize: 13, fontWeight: '600' }}>
-                      {done.length} completada{done.length > 1 ? 's' : ''} hoy
+                      {t('home.completed_today_short', { count: done.length })}
                     </Text>
                   </View>
                 )}
@@ -474,10 +477,10 @@ export default function HomeScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                  Mis plantas
+                  {t('home.my_plants')}
                 </Text>
                 <TouchableOpacity onPress={() => router.push('/(tabs)/plants')}>
-                  <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '700' }}>Ver todas →</Text>
+                  <Text style={{ color: '#3D6642', fontSize: 13, fontWeight: '700' }}>{t('home.view_all')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -503,7 +506,7 @@ export default function HomeScreen() {
                             <Text style={{ fontSize: 20 }}>{isFlora ? '🌸' : '🌿'}</Text>
                             <View style={{ flex: 1 }}>
                               <Text style={{ color: accent, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>
-                                {isFlora ? 'FLORA' : 'VEGE'}
+                                {isFlora ? t('home.phase_flora_upper') : t('home.phase_vege_upper')}
                               </Text>
                               <Text style={{ color: isFlora ? '#C08040' : '#4A9A54', fontSize: 12, fontWeight: '600' }}>
                                 S{weekNum} · D{phaseDay}
@@ -514,7 +517,7 @@ export default function HomeScreen() {
                           <Text style={{ color: isFlora ? '#7A5020' : '#3D6642', fontSize: 12, marginTop: 3 }} numberOfLines={1}>{plant.genetics}</Text>
                           {plantPending > 0 && (
                             <View style={{ marginTop: 8, backgroundColor: isFlora ? 'rgba(245,158,11,0.12)' : 'rgba(82,204,100,0.12)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start', borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.25)' : 'rgba(82,204,100,0.2)' }}>
-                              <Text style={{ color: accent, fontSize: 11, fontWeight: '800' }}>⚡ {plantPending} hoy</Text>
+                              <Text style={{ color: accent, fontSize: 11, fontWeight: '800' }}>{t('home.pending_today', { count: plantPending })}</Text>
                             </View>
                           )}
                         </LinearGradient>
@@ -526,7 +529,7 @@ export default function HomeScreen() {
                   <TouchableOpacity onPress={() => router.push('/(tabs)/plants')} activeOpacity={0.8}>
                     <View style={{ borderRadius: 18, borderWidth: 1.5, borderColor: '#1C3020', borderStyle: 'dashed', padding: 14, minWidth: 100, alignItems: 'center', justifyContent: 'center', minHeight: 110 }}>
                       <Text style={{ color: '#2D5040', fontSize: 28, fontWeight: '300' }}>+</Text>
-                      <Text style={{ color: '#2D5040', fontSize: 12, fontWeight: '700', marginTop: 4 }}>Nueva</Text>
+                      <Text style={{ color: '#2D5040', fontSize: 12, fontWeight: '700', marginTop: 4 }}>{t('home.new_plant')}</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -538,7 +541,7 @@ export default function HomeScreen() {
           {plants.length > 0 && (
             <View>
               <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>
-                Proxima semana
+                {t('home.upcoming')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 5 }}>
                 {upcomingDays.map((day, i) => {
@@ -552,7 +555,7 @@ export default function HomeScreen() {
                           style={{ borderRadius: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#1E3A22' }}
                         >
                           <Text style={{ color: '#4A7A50', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>
-                            {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
+                            {format(day.date, 'EEE', { locale: dateLocale }).slice(0, 2)}
                           </Text>
                           <Text style={{ color: '#E8F5EA', fontSize: 16, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
                           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#52CC64', marginTop: 5 }} />
@@ -561,7 +564,7 @@ export default function HomeScreen() {
                       ) : (
                         <View style={{ borderRadius: 14, paddingVertical: 10, alignItems: 'center', backgroundColor: '#0A1009', borderWidth: 1, borderColor: '#0F1A10' }}>
                           <Text style={{ color: isWeekend ? '#2A4A30' : '#1E2A20', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
-                            {format(day.date, 'EEE', { locale: es }).slice(0, 2)}
+                            {format(day.date, 'EEE', { locale: dateLocale }).slice(0, 2)}
                           </Text>
                           <Text style={{ color: '#1E2A20', fontSize: 16, fontWeight: '900', marginTop: 3 }}>{format(day.date, 'd')}</Text>
                           <View style={{ height: 6, marginTop: 5 }} />

@@ -4,17 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlan } from '@/hooks/usePlan'
 import { supabase } from '@/lib/supabase'
 import { getLevelInfo, getAchievements, LEVELS } from '@shared/lib/gamification'
 import type { AchievementData } from '@shared/lib/gamification'
 import PaywallModal from '@/components/PaywallModal'
+import { useTranslation } from '@/i18n'
 
 type HarvestedPlant = { id: string; name: string; genetics: string; startDate: Date; completionRate: number }
 
 export default function ProfileScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { user, loading: authLoading } = useAuth()
   const { isPro } = usePlan()
   const [showPaywall, setShowPaywall] = useState(false)
@@ -51,7 +54,7 @@ export default function ProfileScreen() {
         supabase.from('week_logs').select('*', { count: 'exact', head: true }).eq('user_id', uid).not('photo_url', 'is', null),
       ])
 
-      setProfile({ xp: p?.xp ?? 0, streak: p?.streak_days ?? 0, bestStreak: 0, username: p?.username ?? email?.split('@')[0] ?? 'Cultivador' })
+      setProfile({ xp: p?.xp ?? 0, streak: p?.streak_days ?? 0, bestStreak: 0, username: p?.username ?? email?.split('@')[0] ?? t('profileTab.default_username') })
       setCompletedToday(tasksToday?.length ?? 0)
       setAchievementData({
         streak:               p?.streak_days ?? 0,
@@ -92,9 +95,9 @@ export default function ProfileScreen() {
   }, [user?.id, authLoading]))
 
   async function handleSignOut() {
-    Alert.alert('Cerrar sesion', '¿Estas seguro?', [
-      { text: 'Cancelar' },
-      { text: 'Cerrar', style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
+    Alert.alert(t('settings.sign_out_title'), t('settings.sign_out_confirm'), [
+      { text: t('common.cancel') },
+      { text: t('profileTab.sign_out_action'), style: 'destructive', onPress: async () => { await supabase.auth.signOut(); router.replace('/auth') } },
     ])
   }
 
@@ -106,7 +109,7 @@ export default function ProfileScreen() {
           onPress={handleSignOut}
           style={{ marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' }}
         >
-          <Text style={{ color: '#EF4444', fontWeight: '700' }}>Cerrar sesion</Text>
+          <Text style={{ color: '#EF4444', fontWeight: '700' }}>{t('settings.sign_out')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     )
@@ -138,13 +141,13 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>{profile.username}</Text>
               <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '600', marginTop: 3 }}>
-                Nivel {lvl.level} — {lvl.name}
+                {t('profileTab.level_label', { level: lvl.level, name: lvl.name })}
               </Text>
               {/* XP bar */}
               <View style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '700' }}>{profile.xp} XP</Text>
-                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>{nextLvl.xpRequired} XP</Text>}
+                  <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '700' }}>{t('profileTab.xp_value', { xp: profile.xp })}</Text>
+                  {nextLvl && <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>{t('profileTab.xp_value', { xp: nextLvl.xpRequired })}</Text>}
                 </View>
                 <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                   <LinearGradient
@@ -155,7 +158,7 @@ export default function ProfileScreen() {
                 </View>
                 {nextLvl && (
                   <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 4 }}>
-                    {nextLvl.xpRequired - profile.xp} XP para {nextLvl.name} {nextLvl.emoji}
+                    {t('profileTab.xp_needed', { amount: nextLvl.xpRequired - profile.xp, name: nextLvl.name, emoji: nextLvl.emoji })}
                   </Text>
                 )}
               </View>
@@ -172,9 +175,9 @@ export default function ProfileScreen() {
           {/* Quick stats */}
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 20 }}>
             {[
-              { value: profile.streak, label: 'Dias racha', icon: '🔥', hot: profile.streak >= 7, color: '#F59E0B' },
-              { value: profile.bestStreak, label: 'Mejor racha', icon: '⚡', hot: false, color: '#A78BFA' },
-              { value: completedToday, label: 'Hoy', icon: '✅', hot: completedToday > 0, color: '#52CC64' },
+              { value: profile.streak, label: t('profileTab.stat_streak_days'), icon: '🔥', hot: profile.streak >= 7, color: '#F59E0B' },
+              { value: profile.bestStreak, label: t('profileTab.stat_best_streak'), icon: '⚡', hot: false, color: '#A78BFA' },
+              { value: completedToday, label: t('profileTab.stat_today'), icon: '✅', hot: completedToday > 0, color: '#52CC64' },
             ].map(s => (
               <LinearGradient
                 key={s.label}
@@ -198,7 +201,7 @@ export default function ProfileScreen() {
 
           {/* Camino del cultivador */}
           <View>
-            <Text style={sectionLabel}>Camino del cultivador</Text>
+            <Text style={sectionLabel}>{t('profileTab.section_path')}</Text>
             <LinearGradient colors={['#130E22', '#0C0A18']} style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(139,92,246,0.15)', padding: 16 }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
@@ -227,8 +230,8 @@ export default function ProfileScreen() {
               </ScrollView>
               <Text style={{ color: '#728C74', fontSize: 13 }}>
                 {nextLvl
-                  ? `${nextLvl.xpRequired - profile.xp} XP para ${nextLvl.name} ${nextLvl.emoji}`
-                  : 'Nivel maximo alcanzado ⚡'}
+                  ? t('profileTab.xp_needed', { amount: nextLvl.xpRequired - profile.xp, name: nextLvl.name, emoji: nextLvl.emoji })
+                  : t('profileTab.max_level_reached')}
               </Text>
             </LinearGradient>
           </View>
@@ -236,15 +239,15 @@ export default function ProfileScreen() {
           {/* Stats grid */}
           {ad && (
             <View>
-              <Text style={sectionLabel}>Estadisticas</Text>
+              <Text style={sectionLabel}>{t('profileTab.section_stats')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {[
-                  { icon: '✅', value: ad.totalTasksCompleted, label: 'Tareas completadas', color: '#52CC64' },
-                  { icon: '🧪', value: ad.tasksWithMeasurement, label: 'Mediciones EC/pH', color: '#3B82F6' },
-                  { icon: '📸', value: ad.totalPhotos,          label: 'Fotos en el diario', color: '#F59E0B' },
-                  { icon: '🌿', value: ad.activePlants,         label: 'Plantas activas', color: '#22C55E' },
-                  { icon: '✂️', value: ad.harvestedPlants,      label: 'Cosechas', color: '#A855F7' },
-                  { icon: '💎', value: ad.totalXP,              label: 'XP total', color: '#C084FC' },
+                  { icon: '✅', value: ad.totalTasksCompleted, label: t('profileTab.stat_tasks_completed'), color: '#52CC64' },
+                  { icon: '🧪', value: ad.tasksWithMeasurement, label: t('profileTab.stat_measurements'), color: '#3B82F6' },
+                  { icon: '📸', value: ad.totalPhotos,          label: t('profileTab.stat_photos'), color: '#F59E0B' },
+                  { icon: '🌿', value: ad.activePlants,         label: t('profileTab.stat_active_plants'), color: '#22C55E' },
+                  { icon: '✂️', value: ad.harvestedPlants,      label: t('profileTab.stat_harvests'), color: '#A855F7' },
+                  { icon: '💎', value: ad.totalXP,              label: t('profileTab.stat_total_xp'), color: '#C084FC' },
                 ].map(s => (
                   <LinearGradient
                     key={s.label}
@@ -271,10 +274,10 @@ export default function ProfileScreen() {
           {/* Logros desbloqueados */}
           <View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <Text style={sectionLabel}>Logros desbloqueados</Text>
+              <Text style={sectionLabel}>{t('profileTab.section_achievements_unlocked')}</Text>
               <TouchableOpacity onPress={() => router.push('/achievements')}>
                 <Text style={{ color: '#8B5CF6', fontSize: 13, fontWeight: '700' }}>
-                  {unlocked.length}/{unlocked.length + locked.length} Ver todos →
+                  {t('profileTab.view_all', { unlocked: unlocked.length, total: unlocked.length + locked.length })}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -282,7 +285,7 @@ export default function ProfileScreen() {
               <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', padding: 28, alignItems: 'center' }}>
                 <Text style={{ fontSize: 30, marginBottom: 10 }}>🔒</Text>
                 <Text style={{ color: '#728C74', fontSize: 13, textAlign: 'center' }}>
-                  Completa tu primera tarea para desbloquear logros
+                  {t('profileTab.no_achievements')}
                 </Text>
               </LinearGradient>
             ) : (
@@ -313,7 +316,7 @@ export default function ProfileScreen() {
           {/* Por desbloquear */}
           {locked.length > 0 && (
             <View>
-              <Text style={sectionLabel}>Por desbloquear</Text>
+              <Text style={sectionLabel}>{t('profileTab.section_locked')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {locked.slice(0, 4).map(a => (
                   <View
@@ -341,7 +344,7 @@ export default function ProfileScreen() {
           {/* Wall of Fame */}
           {harvestedList.length > 0 && (
             <View>
-              <Text style={sectionLabel}>Wall of Fame</Text>
+              <Text style={sectionLabel}>{t('profileTab.section_wall_of_fame')}</Text>
               <View style={{ gap: 10 }}>
                 {harvestedList.map(plant => (
                   <TouchableOpacity
@@ -362,11 +365,11 @@ export default function ProfileScreen() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
                           <View style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
                             <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '700' }}>
-                              {plant.completionRate}% cumpl.
+                              {t('profileTab.completion_rate', { rate: plant.completionRate })}
                             </Text>
                           </View>
                           <Text style={{ color: '#3A5040', fontSize: 10 }}>
-                            {differenceInDays(new Date(), plant.startDate)}d · {format(plant.startDate, "d MMM yyyy", { locale: es })}
+                            {t('profileTab.days_since', { days: differenceInDays(new Date(), plant.startDate), date: format(plant.startDate, "d MMM yyyy", { locale: dateLocale }) })}
                           </Text>
                         </View>
                       </View>
@@ -394,13 +397,13 @@ export default function ProfileScreen() {
                   </LinearGradient>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                      <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>Activar Pro</Text>
+                      <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '900' }}>{t('profileTab.pro_activate_title')}</Text>
                       <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.3)' }}>
-                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 }}>USD 5/MES</Text>
+                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 }}>{t('profileTab.pro_price_badge')}</Text>
                       </View>
                     </View>
                     <Text style={{ color: '#6D4FB0', fontSize: 13, lineHeight: 18 }}>
-                      Plantas ilimitadas · Todas las tablas · IA
+                      {t('profileTab.pro_desc')}
                     </Text>
                   </View>
                   <Text style={{ color: '#7C3AED', fontSize: 20 }}>›</Text>
@@ -419,11 +422,11 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 22 }}>👑</Text>
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#A78BFA', fontSize: 15, fontWeight: '900' }}>Plan Pro activo</Text>
-                <Text style={{ color: '#6D4FB0', fontSize: 12, marginTop: 2 }}>Acceso completo a todas las funciones</Text>
+                <Text style={{ color: '#A78BFA', fontSize: 15, fontWeight: '900' }}>{t('profileTab.pro_active_title')}</Text>
+                <Text style={{ color: '#6D4FB0', fontSize: 12, marginTop: 2 }}>{t('profileTab.pro_active_desc')}</Text>
               </View>
               <View style={{ backgroundColor: 'rgba(167,139,250,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 }}>PRO</Text>
+                <Text style={{ color: '#A78BFA', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 }}>{t('profileTab.pro_badge')}</Text>
               </View>
             </LinearGradient>
           )}
@@ -431,25 +434,25 @@ export default function ProfileScreen() {
           {/* Cuenta */}
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Correo</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{t('profileTab.account_email_label')}</Text>
               <Text style={{ color: '#B8D4BC', fontSize: 15 }}>{user?.email}</Text>
             </View>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1C2E1E' }}>
-              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Plan</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{t('profileTab.account_plan_label')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {isPro ? (
                   <>
-                    <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '900' }}>Pro</Text>
+                    <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '900' }}>{t('profileTab.plan_pro')}</Text>
                     <View style={{ backgroundColor: 'rgba(167,139,250,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-                      <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>ACTIVO</Text>
+                      <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>{t('profileTab.plan_active_badge')}</Text>
                     </View>
                   </>
                 ) : (
                   <>
-                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Free</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>{t('profileTab.plan_free')}</Text>
                     <TouchableOpacity onPress={() => setShowPaywall(true)}>
                       <View style={{ backgroundColor: 'rgba(167,139,250,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
-                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800' }}>UPGRADE →</Text>
+                        <Text style={{ color: '#A78BFA', fontSize: 10, fontWeight: '800' }}>{t('profileTab.upgrade_badge')}</Text>
                       </View>
                     </TouchableOpacity>
                   </>
@@ -457,7 +460,7 @@ export default function ProfileScreen() {
               </View>
             </View>
             <TouchableOpacity onPress={handleSignOut} style={{ padding: 16 }}>
-              <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>Cerrar sesion</Text>
+              <Text style={{ color: '#EF4444', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>{t('settings.sign_out')}</Text>
             </TouchableOpacity>
           </LinearGradient>
 

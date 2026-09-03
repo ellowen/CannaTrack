@@ -10,6 +10,7 @@ import { track } from '@/lib/analytics'
 import { usePlan } from '@/hooks/usePlan'
 import { useDiagnosisQuota } from '@/hooks/useDiagnosisQuota'
 import PaywallModal from '@/components/PaywallModal'
+import { useTranslation } from '@/i18n'
 
 interface DiagnosisResult {
   summary: string
@@ -22,14 +23,14 @@ const SEVERITY_COLOR  = { alta: '#EF4444', media: '#F59E0B', baja: '#52CC64' }
 const SEVERITY_BG     = { alta: 'rgba(239,68,68,0.1)', media: 'rgba(245,158,11,0.1)', baja: 'rgba(82,204,100,0.1)' }
 const SEVERITY_BORDER = { alta: 'rgba(239,68,68,0.25)', media: 'rgba(245,158,11,0.25)', baja: 'rgba(82,204,100,0.25)' }
 
-const TIPS = [
-  'Foto con buena iluminacion, sin sombras',
-  'Enfoca las hojas con posibles problemas',
-  'Incluye la hoja entera, no solo el problema',
-  'Foto nitida, sin movimiento ni desenfoque',
-]
-
 export default function DiagnosisScreen() {
+  const { t } = useTranslation()
+  const TIPS = [
+    t('plantDiagnosis.tip_lighting'),
+    t('plantDiagnosis.tip_focus'),
+    t('plantDiagnosis.tip_full_leaf'),
+    t('plantDiagnosis.tip_sharp'),
+  ]
   const { id } = useLocalSearchParams<{ id: string }>()
   const { isPro, loading: planLoading } = usePlan()
   const quota = useDiagnosisQuota()
@@ -46,9 +47,9 @@ export default function DiagnosisScreen() {
     if (!isPro) { setShowPaywall(true); return }
     if (quota.isAtLimit) {
       Alert.alert(
-        'Limite mensual alcanzado',
-        `Usaste ${quota.used}/${quota.limit} diagnosticos este mes. El contador se reinicia el 1 del proximo mes.`,
-        [{ text: 'Entendido' }]
+        t('plantDiagnosis.quota_limit_title'),
+        t('plantDiagnosis.quota_limit_message', { used: quota.used, limit: quota.limit }),
+        [{ text: t('plantDiagnosis.understood') }]
       )
       return
     }
@@ -77,7 +78,7 @@ export default function DiagnosisScreen() {
       // El Edge Function devuelve limitReached si se supero el cupo
       if (data?.limitReached) {
         track('diagnosis_error', { plant_id: id, error: 'limit_reached' })
-        Alert.alert('Limite alcanzado', data.error ?? 'Limite mensual de diagnosticos alcanzado.', [{ text: 'OK' }])
+        Alert.alert(t('plantDiagnosis.limit_reached_title'), data.error ?? t('plantDiagnosis.limit_reached_default'), [{ text: t('plantDiagnosis.ok') }])
         void quota.refetch()
         return
       }
@@ -89,7 +90,7 @@ export default function DiagnosisScreen() {
       track('diagnosis_completed', { plant_id: id, health_score: res.healthScore, issues_count: res.issues.length, usage_after: res._usage?.used ?? null })
     } catch (e) {
       track('diagnosis_error', { plant_id: id, error: e instanceof Error ? e.message : 'unknown' })
-      Alert.alert('Error en diagnostico', e instanceof Error ? e.message : 'No se pudo conectar al servicio', [{ text: 'OK' }])
+      Alert.alert(t('plantDiagnosis.error_title'), e instanceof Error ? e.message : t('plantDiagnosis.error_default'), [{ text: t('plantDiagnosis.ok') }])
     } finally {
       setLoading(false)
     }
@@ -112,7 +113,7 @@ export default function DiagnosisScreen() {
       <PaywallModal
         visible={showPaywall}
         onClose={() => { setShowPaywall(false); router.canGoBack() ? router.back() : router.replace('/(tabs)') }}
-        feature="Diagnostico IA"
+        feature={t('plantDiagnosis.paywall_feature')}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
@@ -129,17 +130,17 @@ export default function DiagnosisScreen() {
               <BackIcon size={20} color="#A78BFA" />
             </TouchableOpacity>
             <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Diagnostico IA</Text>
-              <Text style={{ color: '#6D4FB0', fontSize: 13, marginTop: 1 }}>Analisis visual por Claude</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{t('plantDiagnosis.header_title')}</Text>
+              <Text style={{ color: '#6D4FB0', fontSize: 13, marginTop: 1 }}>{t('plantDiagnosis.header_subtitle')}</Text>
             </View>
           </View>
 
           {/* Badge + quota */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 }}>BETA</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 }}>{t('plantDiagnosis.beta_badge')}</Text>
             </View>
-            <Text style={{ color: '#4A3070', fontSize: 13, flex: 1 }}>Detecta plagas, deficiencias y hongos</Text>
+            <Text style={{ color: '#4A3070', fontSize: 13, flex: 1 }}>{t('plantDiagnosis.header_desc')}</Text>
             {!quota.loading && isPro && (
               <View style={{
                 paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
@@ -173,7 +174,7 @@ export default function DiagnosisScreen() {
                   onPress={() => { setImageUri(null); setResult(null) }}
                   style={{ alignItems: 'center', paddingVertical: 8 }}
                 >
-                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>Cambiar foto</Text>
+                  <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '600' }}>{t('plantDiagnosis.change_photo')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -188,9 +189,9 @@ export default function DiagnosisScreen() {
                   <View style={{ width: 64, height: 64, borderRadius: 18, backgroundColor: 'rgba(167,139,250,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
                     <Text style={{ fontSize: 32 }}>📷</Text>
                   </View>
-                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Tomar foto</Text>
+                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>{t('plantDiagnosis.take_photo')}</Text>
                   <Text style={{ color: '#6D4FB0', fontSize: 13, textAlign: 'center' }}>
-                    Foto clara de hojas o planta completa
+                    {t('plantDiagnosis.take_photo_desc')}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -201,7 +202,7 @@ export default function DiagnosisScreen() {
                   style={{ borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
                 >
                   <Text style={{ fontSize: 20 }}>🖼️</Text>
-                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 15 }}>Elegir de galeria</Text>
+                  <Text style={{ color: '#728C74', fontWeight: '700', fontSize: 15 }}>{t('plantDiagnosis.choose_gallery')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -214,9 +215,9 @@ export default function DiagnosisScreen() {
               style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)', padding: 36, alignItems: 'center', gap: 14 }}
             >
               <ActivityIndicator color="#A78BFA" size="large" />
-              <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>Analizando...</Text>
+              <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17 }}>{t('plantDiagnosis.analyzing')}</Text>
               <Text style={{ color: '#6D4FB0', fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
-                Claude esta revisando tu planta{'\n'}en busca de problemas
+                {t('plantDiagnosis.analyzing_desc')}
               </Text>
             </LinearGradient>
           )}
@@ -230,7 +231,7 @@ export default function DiagnosisScreen() {
                 colors={['#131A10', '#0C1009']}
                 style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 20 }}
               >
-                <Text style={sectionLabel}>Salud detectada</Text>
+                <Text style={sectionLabel}>{t('plantDiagnosis.health_detected')}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                   <View style={{
                     width: 72, height: 72, borderRadius: 36,
@@ -253,7 +254,7 @@ export default function DiagnosisScreen() {
                   style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}
                 >
                   <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
-                    <Text style={sectionLabel}>Problemas detectados · {result.issues.length}</Text>
+                    <Text style={sectionLabel}>{t('plantDiagnosis.issues_detected', { count: result.issues.length })}</Text>
                   </View>
                   {result.issues.map((issue, i) => (
                     <View key={i} style={{ padding: 16, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#1A2A1A' }}>
@@ -261,7 +262,7 @@ export default function DiagnosisScreen() {
                         <Text style={{ color: '#E4F2E7', fontWeight: '800', fontSize: 15, flex: 1 }}>{issue.name}</Text>
                         <View style={{ backgroundColor: SEVERITY_BG[issue.severity], borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: SEVERITY_BORDER[issue.severity] }}>
                           <Text style={{ color: SEVERITY_COLOR[issue.severity], fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>
-                            {issue.severity}
+                            {t(`plantDiagnosis.severity_${issue.severity}`)}
                           </Text>
                         </View>
                       </View>
@@ -270,7 +271,7 @@ export default function DiagnosisScreen() {
                         colors={['#0F2010', '#0A1809']}
                         style={{ borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(82,204,100,0.15)' }}
                       >
-                        <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 }}>SOLUCION</Text>
+                        <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 }}>{t('plantDiagnosis.solution_label')}</Text>
                         <Text style={{ color: '#B0D4B8', fontSize: 13, lineHeight: 20 }}>{issue.solution}</Text>
                       </LinearGradient>
                     </View>
@@ -284,7 +285,7 @@ export default function DiagnosisScreen() {
                   colors={['#131A10', '#0C1009']}
                   style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', padding: 18 }}
                 >
-                  <Text style={sectionLabel}>Recomendaciones</Text>
+                  <Text style={sectionLabel}>{t('plantDiagnosis.recommendations')}</Text>
                   <View style={{ gap: 10 }}>
                     {result.recommendations.map((r, i) => (
                       <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
@@ -307,7 +308,7 @@ export default function DiagnosisScreen() {
               colors={['#0F0A1E', '#090613']}
               style={{ borderRadius: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', padding: 18 }}
             >
-              <Text style={sectionLabel}>Consejos para mejor diagnostico</Text>
+              <Text style={sectionLabel}>{t('plantDiagnosis.tips_title')}</Text>
               <View style={{ gap: 10 }}>
                 {TIPS.map((tip, i) => (
                   <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>

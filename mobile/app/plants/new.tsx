@@ -10,6 +10,7 @@ import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { generatePlantSchedule } from '@shared/lib/nutrition-engine'
 import { BackIcon } from '@/components/icons/AppIcons'
 import PaywallModal from '@/components/PaywallModal'
+import { useTranslation } from '@/i18n'
 import type { Plant } from '@shared/types/plant'
 
 type GeneticType = 'feminized' | 'autoflower' | 'regular'
@@ -19,20 +20,21 @@ type CropType = 'cannabis' | string
 // cannabis es el unico cultivo con tabla nutricional propia hoy, el
 // resto persiste el crop_type elegido pero sin schedule automatico
 // (Fase 4 = modelo, no tablas nuevas).
-const CROP_OPTIONS: { value: CropType; label: string }[] = [
-  { value: 'cannabis', label: 'Cannabis' },
-  { value: 'tomato',   label: 'Tomate' },
-  { value: 'basil',    label: 'Albahaca' },
-  { value: 'other',    label: 'Otro' },
+const CROP_OPTIONS: { value: CropType; labelKey: string }[] = [
+  { value: 'cannabis', labelKey: 'crop_cannabis' },
+  { value: 'tomato',   labelKey: 'crop_tomato' },
+  { value: 'basil',    labelKey: 'crop_basil' },
+  { value: 'other',    labelKey: 'crop_other' },
 ]
 
-const GENETIC_OPTIONS: { value: GeneticType; label: string; emoji: string; desc: string }[] = [
-  { value: 'feminized',  label: 'Feminizada',      emoji: '🌸', desc: 'Ciclo de flora manual' },
-  { value: 'autoflower', label: 'Autofloreciente',  emoji: '⚡', desc: '77 dias en total' },
-  { value: 'regular',    label: 'Regular',          emoji: '🌿', desc: 'Macho o hembra' },
+const GENETIC_OPTIONS: { value: GeneticType; labelKey: string; emoji: string; descKey: string }[] = [
+  { value: 'feminized',  labelKey: 'genetic_feminized_label',  emoji: '🌸', descKey: 'genetic_feminized_desc' },
+  { value: 'autoflower', labelKey: 'genetic_autoflower_label', emoji: '⚡', descKey: 'genetic_autoflower_desc' },
+  { value: 'regular',    labelKey: 'genetic_regular_label',    emoji: '🌿', descKey: 'genetic_regular_desc' },
 ]
 
 export default function NewPlantScreen() {
+  const { t } = useTranslation()
   const { tables } = useNutritionTables()
   const { isPro, loading: planLoading, canCreatePlant, refetch: refetchPlan } = usePlan()
 
@@ -49,6 +51,8 @@ export default function NewPlantScreen() {
   const [showPaywall, setShowPaywall] = useState(false)
 
   const isCannabis = cropType === 'cannabis'
+  const selectedCropOpt = CROP_OPTIONS.find(c => c.value === cropType)
+  const selectedCropLabel = selectedCropOpt ? t(`plantNew.${selectedCropOpt.labelKey}`).toLowerCase() : t('plantNew.this_crop')
 
   useEffect(() => {
     if (tables.length > 0 && !selectedTableId) setSelectedTableId(tables[0].id)
@@ -70,9 +74,9 @@ export default function NewPlantScreen() {
 
   function validateForm(): boolean {
     const errors: Record<string, string> = {}
-    if (!name.trim()) errors.name = 'El nombre es requerido'
-    else if (name.trim().length < 2) errors.name = 'Minimo 2 caracteres'
-    else if (name.trim().length > 50) errors.name = 'Maximo 50 caracteres'
+    if (!name.trim()) errors.name = t('plantNew.error_name_required')
+    else if (name.trim().length < 2) errors.name = t('plantNew.error_name_min')
+    else if (name.trim().length > 50) errors.name = t('plantNew.error_name_max')
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -81,7 +85,7 @@ export default function NewPlantScreen() {
     if (!validateForm()) return
     const { data: { session } } = await supabase.auth.getSession()
     const currentUser = session?.user ?? null
-    if (!currentUser) { Alert.alert('Sin sesion', 'Cerra y volve a iniciar sesion'); return }
+    if (!currentUser) { Alert.alert(t('plantNew.no_session_alert_title'), t('plantNew.no_session_alert_message')); return }
 
     setLoading(true); setError(null)
     try {
@@ -104,7 +108,7 @@ export default function NewPlantScreen() {
         })
         .select()
         .maybeSingle()
-      if (plantErr || !plantRow) throw plantErr || new Error('No se pudo crear la planta')
+      if (plantErr || !plantRow) throw plantErr || new Error(t('plantNew.error_create_failed'))
 
       const table = isCannabis ? (tables.find(t => t.id === plantRow.nutrition_table_id) || tables[0]) : undefined
       if (table) {
@@ -127,7 +131,7 @@ export default function NewPlantScreen() {
       setSuccess(true)
       setTimeout(() => router.replace('/(tabs)/plants'), 1500)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Error al crear la planta'
+      const msg = e instanceof Error ? e.message : t('plantNew.error_create_generic')
       setError(msg)
     } finally {
       setLoading(false)
@@ -149,9 +153,9 @@ export default function NewPlantScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         <LinearGradient colors={['#0F2010', '#080E09']} style={{ borderRadius: 28, borderWidth: 1, borderColor: '#1A4A20', padding: 40, alignItems: 'center', width: '100%' }}>
           <Text style={{ fontSize: 64, marginBottom: 18 }}>🌱</Text>
-          <Text style={{ color: '#52CC64', fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>Planta creada</Text>
+          <Text style={{ color: '#52CC64', fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>{t('plantNew.success_title')}</Text>
           <Text style={{ color: '#3D6642', fontSize: 14, textAlign: 'center', lineHeight: 22 }}>
-            Tu calendario nutricional{'\n'}se genero automaticamente
+            {t('plantNew.success_message')}
           </Text>
         </LinearGradient>
       </SafeAreaView>
@@ -164,7 +168,7 @@ export default function NewPlantScreen() {
       <PaywallModal
         visible={showPaywall}
         onClose={() => { setShowPaywall(false); router.canGoBack() ? router.back() : router.replace('/(tabs)') }}
-        feature="Plantas ilimitadas"
+        feature={t('plantNew.paywall_feature')}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
@@ -181,8 +185,8 @@ export default function NewPlantScreen() {
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Nueva planta</Text>
-              <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 1 }}>El calendario se genera automaticamente</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{t('plantNew.title')}</Text>
+              <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 1 }}>{t('plantNew.subtitle')}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -202,7 +206,7 @@ export default function NewPlantScreen() {
 
           {/* Nombre */}
           <View>
-            <Text style={sectionLabel}>Nombre</Text>
+            <Text style={sectionLabel}>{t('plantNew.label_name')}</Text>
             <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: fieldErrors.name ? '#EF4444' : '#1C2E1E', overflow: 'hidden' }}>
               <TextInput
                 value={name}
@@ -210,7 +214,7 @@ export default function NewPlantScreen() {
                   setName(text)
                   if (text.trim().length >= 2) setFieldErrors(p => { const n = { ...p }; delete n.name; return n })
                 }}
-                placeholder="Ej: White Widow #1"
+                placeholder={t('plantNew.name_placeholder')}
                 placeholderTextColor="#2D4A30"
                 style={{ color: '#E4F2E7', fontSize: 16, padding: 18 }}
                 editable={!loading}
@@ -222,7 +226,7 @@ export default function NewPlantScreen() {
 
           {/* Que vas a cultivar */}
           <View>
-            <Text style={sectionLabel}>¿Que vas a cultivar?</Text>
+            <Text style={sectionLabel}>{t('plantNew.label_crop_type')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {CROP_OPTIONS.map(opt => {
                 const isSelected = cropType === opt.value
@@ -242,7 +246,7 @@ export default function NewPlantScreen() {
                     }}
                   >
                     <Text style={{ color: isSelected ? '#52CC64' : '#728C74', fontSize: 14, fontWeight: isSelected ? '800' : '600' }}>
-                      {opt.label}
+                      {t(`plantNew.${opt.labelKey}`)}
                     </Text>
                   </TouchableOpacity>
                 )
@@ -250,7 +254,7 @@ export default function NewPlantScreen() {
             </View>
             {!isCannabis && (
               <Text style={{ color: '#728C74', fontSize: 12, marginTop: 8, lineHeight: 17 }}>
-                Todavia no tenemos calendario nutricional para este cultivo — vas a poder registrar tareas, riego y observaciones igual.
+                {t('plantNew.no_schedule_hint')}
               </Text>
             )}
           </View>
@@ -258,7 +262,7 @@ export default function NewPlantScreen() {
           {/* Tipo de genetica */}
           {isCannabis && (
           <View>
-            <Text style={sectionLabel}>Tipo de genetica</Text>
+            <Text style={sectionLabel}>{t('plantNew.label_genetic_type')}</Text>
             <View style={{ gap: 8 }}>
               {GENETIC_OPTIONS.map(opt => {
                 const isSelected = geneticType === opt.value
@@ -271,8 +275,8 @@ export default function NewPlantScreen() {
                       >
                         <Text style={{ fontSize: 24 }}>{opt.emoji}</Text>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '900' }}>{opt.label}</Text>
-                          <Text style={{ color: '#3D6642', fontSize: 12, marginTop: 2 }}>{opt.desc}</Text>
+                          <Text style={{ color: '#52CC64', fontSize: 15, fontWeight: '900' }}>{t(`plantNew.${opt.labelKey}`)}</Text>
+                          <Text style={{ color: '#3D6642', fontSize: 12, marginTop: 2 }}>{t(`plantNew.${opt.descKey}`)}</Text>
                         </View>
                         <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#52CC64', alignItems: 'center', justifyContent: 'center' }}>
                           <Text style={{ color: '#080E09', fontSize: 12, fontWeight: '900' }}>✓</Text>
@@ -285,8 +289,8 @@ export default function NewPlantScreen() {
                       >
                         <Text style={{ fontSize: 24, opacity: 0.5 }}>{opt.emoji}</Text>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ color: '#728C74', fontSize: 15, fontWeight: '700' }}>{opt.label}</Text>
-                          <Text style={{ color: '#2D4A30', fontSize: 12, marginTop: 2 }}>{opt.desc}</Text>
+                          <Text style={{ color: '#728C74', fontSize: 15, fontWeight: '700' }}>{t(`plantNew.${opt.labelKey}`)}</Text>
+                          <Text style={{ color: '#2D4A30', fontSize: 12, marginTop: 2 }}>{t(`plantNew.${opt.descKey}`)}</Text>
                         </View>
                       </LinearGradient>
                     )}
@@ -299,7 +303,7 @@ export default function NewPlantScreen() {
 
           {/* Fecha de inicio */}
           <View>
-            <Text style={sectionLabel}>Fecha de inicio</Text>
+            <Text style={sectionLabel}>{t('plantNew.label_start_date')}</Text>
             <TouchableOpacity onPress={() => setShowDatePicker(true)} disabled={loading} activeOpacity={0.8}>
               <LinearGradient
                 colors={['#131A10', '#0C1009']}
@@ -325,14 +329,14 @@ export default function NewPlantScreen() {
           {/* Tabla nutricional */}
           {!isCannabis ? (
             <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#1C2E1E', backgroundColor: '#0F1510', paddingHorizontal: 16, paddingVertical: 14 }}>
-              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', marginBottom: 4 }}>Sin tabla nutricional todavia</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700', marginBottom: 4 }}>{t('plantNew.no_schedule_card_title')}</Text>
               <Text style={{ color: '#728C74', fontSize: 12, lineHeight: 18 }}>
-                Para {CROP_OPTIONS.find(c => c.value === cropType)?.label.toLowerCase() ?? 'este cultivo'} todavia no tenemos un calendario de nutricion armado. Vas a poder registrar tareas, riego y observaciones igual.
+                {t('plantNew.no_schedule_card_desc', { crop: selectedCropLabel })}
               </Text>
             </View>
           ) : (
           <View>
-            <Text style={sectionLabel}>Tabla nutricional</Text>
+            <Text style={sectionLabel}>{t('plantNew.label_nutrition_table')}</Text>
             <View style={{ gap: 8 }}>
               {(tables.length > 0 ? tables : [{ id: 'revegetar-v1', name: 'REVEGETAR' }]).map(t => {
                 const isSelected = selectedTableId === t.id
@@ -367,7 +371,7 @@ export default function NewPlantScreen() {
                   style={{ borderRadius: 16, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)', borderStyle: 'dashed', paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}
                 >
                   <Text style={{ color: '#A78BFA', fontSize: 18 }}>+</Text>
-                  <Text style={{ color: '#A78BFA', fontSize: 14, fontWeight: '700' }}>Crear tabla personalizada</Text>
+                  <Text style={{ color: '#A78BFA', fontSize: 14, fontWeight: '700' }}>{t('plantNew.create_custom_table_button')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -382,7 +386,7 @@ export default function NewPlantScreen() {
             >
               {loading
                 ? <ActivityIndicator color="#52CC64" />
-                : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>Crear planta →</Text>
+                : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>{t('plantNew.create_button')}</Text>
               }
             </LinearGradient>
           </TouchableOpacity>

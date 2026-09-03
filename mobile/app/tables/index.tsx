@@ -13,21 +13,18 @@ import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { usePlan } from '@/hooks/usePlan'
 import PaywallModal from '@/components/PaywallModal'
 import { track } from '@/lib/analytics'
+import { useTranslation } from '@/i18n'
 import type { NutritionTable } from '@shared/types/plant'
 
-// Metadata de marca para mostrar en la tarjeta
-const BRAND_META: Record<string, { emoji: string; website: string; origin: string; description: string }> = {
+// Metadata de marca para mostrar en la tarjeta (emoji/website no se traducen — no son texto)
+const BRAND_META: Record<string, { emoji: string; website: string }> = {
   'revegetar': {
-    emoji:       '🌿',
-    website:     'https://revegetar.com.ar',
-    origin:      'Argentina',
-    description: 'Linea organica-mineral con 4 gammas (BIO, ECO, LIFE, FUEL). Tabla oficial incluida en el plan Free.',
+    emoji:   '🌿',
+    website: 'https://revegetar.com.ar',
   },
   'topcrop': {
-    emoji:       '🏆',
-    website:     'https://topcropfert.com',
-    origin:      'Espana',
-    description: 'Linea profesional europea con gamas Pro, Medio y Basica. Productos premium de alta concentracion.',
+    emoji:   '🏆',
+    website: 'https://topcropfert.com',
   },
 }
 
@@ -45,11 +42,14 @@ function TableCard({
   isPro:     boolean
   onUpgrade: () => void
 }) {
+  const { t }   = useTranslation()
   const meta    = BRAND_META[table.brandId ?? '']
   const colors  = BRAND_COLORS[table.brandId ?? ''] ?? ['#1a2e1c', '#0c1a10']
   const locked  = table.accessTier === 'pro' && !isPro
   const vege    = table.vegeWeeks?.length ?? 0
   const flora   = table.floraWeeks?.length ?? 0
+  const origin      = table.brandId ? t(`tablesIndex.${table.brandId}_origin`, { defaultValue: '' }) : ''
+  const description = table.brandId ? t(`tablesIndex.${table.brandId}_description`, { defaultValue: '' }) : ''
 
   function handleOpen() {
     if (locked) {
@@ -92,7 +92,7 @@ function TableCard({
               <Text style={{ color: '#E4F2E7', fontSize: 17, fontWeight: '800' }}>{table.name}</Text>
             </View>
             <Text style={{ color: '#6D8C74', fontSize: 12, marginTop: 2 }}>
-              {meta?.origin ?? ''} {table.isOfficial ? '· Oficial' : '· Personalizada'}
+              {origin} {table.isOfficial ? t('tablesIndex.official_suffix') : t('tablesIndex.custom_suffix')}
             </Text>
           </View>
           {/* Badge tier */}
@@ -110,9 +110,9 @@ function TableCard({
         </View>
 
         {/* Description */}
-        {meta?.description && (
+        {!!description && (
           <View style={{ paddingHorizontal: 18, paddingBottom: 12 }}>
-            <Text style={{ color: '#6D8C74', fontSize: 13, lineHeight: 18 }}>{meta.description}</Text>
+            <Text style={{ color: '#6D8C74', fontSize: 13, lineHeight: 18 }}>{description}</Text>
           </View>
         )}
 
@@ -121,19 +121,19 @@ function TableCard({
           {table.lines && table.lines.length > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ color: '#6D8C74', fontSize: 12 }}>💊</Text>
-              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{table.lines.length} lineas</Text>
+              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{t('tablesIndex.lines_count', { count: table.lines.length })}</Text>
             </View>
           )}
           {vege > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ color: '#6D8C74', fontSize: 12 }}>🌱</Text>
-              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{vege} sem. vege</Text>
+              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{t('tablesIndex.vege_weeks_count', { count: vege })}</Text>
             </View>
           )}
           {flora > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ color: '#6D8C74', fontSize: 12 }}>🌸</Text>
-              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{flora} sem. flora</Text>
+              <Text style={{ color: '#6D8C74', fontSize: 12 }}>{t('tablesIndex.flora_weeks_count', { count: flora })}</Text>
             </View>
           )}
         </View>
@@ -148,16 +148,16 @@ function TableCard({
             <TouchableOpacity onPress={handleWebsite} activeOpacity={0.7}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ color: '#3A5C3E', fontSize: 12 }}>🔗</Text>
-              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>Sitio oficial</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>{t('tablesIndex.official_site')}</Text>
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
           {locked ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Activar Pro →</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{t('tablesIndex.activate_pro')}</Text>
             </View>
           ) : (
-            <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>Ver tabla →</Text>
+            <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>{t('tablesIndex.view_table')}</Text>
           )}
         </View>
       </LinearGradient>
@@ -166,8 +166,9 @@ function TableCard({
 }
 
 export default function TablesMarketplaceScreen() {
-  const { tables, loading } = useNutritionTables()
-  const { isPro }           = usePlan()
+  const { t }                = useTranslation()
+  const { tables, loading }  = useNutritionTables()
+  const { isPro }            = usePlan()
   const [paywallVisible, setPaywallVisible] = useState(false)
 
   // Ordenar: free primero, pro al final
@@ -176,8 +177,8 @@ export default function TablesMarketplaceScreen() {
     return a.accessTier === 'free' ? -1 : 1
   })
 
-  const proCount  = tables.filter(t => t.accessTier === 'pro').length
-  const freeCount = tables.filter(t => t.accessTier === 'free').length
+  const proCount  = tables.filter(tbl => tbl.accessTier === 'pro').length
+  const freeCount = tables.filter(tbl => tbl.accessTier === 'free').length
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
@@ -188,17 +189,17 @@ export default function TablesMarketplaceScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900', letterSpacing: -0.5 }}>
-            Tablas Nutricionales
+            {t('tablesIndex.title')}
           </Text>
           <Text style={{ color: '#6D8C74', fontSize: 13, marginTop: 2 }}>
-            {freeCount} gratuita{freeCount !== 1 ? 's' : ''} · {proCount} Pro
+            {t('tablesIndex.free_count', { count: freeCount })} · {t('tablesIndex.pro_count', { count: proCount })}
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push('/tables/compare' as never)}
           style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(82,204,100,0.08)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}
         >
-          <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>Comparar</Text>
+          <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '700' }}>{t('tablesIndex.compare')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -221,20 +222,20 @@ export default function TablesMarketplaceScreen() {
               <Text style={{ fontSize: 28 }}>👑</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#C4B5FD', fontSize: 14, fontWeight: '800' }}>
-                  Accede a todas las tablas con Pro
+                  {t('tablesIndex.pro_banner_title')}
                 </Text>
                 <Text style={{ color: '#7C5FB5', fontSize: 12, marginTop: 2 }}>
-                  {proCount} tabla{proCount !== 1 ? 's' : ''} adicional{proCount !== 1 ? 'es' : ''} · USD 5/mes
+                  {t('tablesIndex.pro_banner_subtitle', { count: proCount })}
                 </Text>
               </View>
-              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>Ver →</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700' }}>{t('tablesIndex.view_arrow')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
 
         {loading ? (
           <View style={{ paddingTop: 40, alignItems: 'center' }}>
-            <Text style={{ color: '#6D8C74', fontSize: 14 }}>Cargando tablas...</Text>
+            <Text style={{ color: '#6D8C74', fontSize: 14 }}>{t('tablesIndex.loading')}</Text>
           </View>
         ) : (
           sorted.map(table => (
@@ -250,8 +251,7 @@ export default function TablesMarketplaceScreen() {
         {/* Footer informativo */}
         <View style={{ marginTop: 8, paddingHorizontal: 4 }}>
           <Text style={{ color: '#2C3E2E', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
-            Cada tabla fue adaptada al modelo Cultitrack (vege variable + flora 8 semanas).{'\n'}
-            Las marcas certificadas muestran su logo y enlace oficial.
+            {t('tablesIndex.footer_note')}
           </Text>
         </View>
       </ScrollView>

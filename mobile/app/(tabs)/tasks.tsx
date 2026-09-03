@@ -4,20 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { router, useFocusEffect } from 'expo-router'
+import { useTranslation } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { awardXP, recordDailyActivity, XP_VALUES } from '@/lib/xp'
 import { startOfDay, endOfDay, format, getDaysInMonth, startOfMonth } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import type { ScheduledTask } from '@shared/types/plant'
 
 const TYPE_COLOR: Record<string, string> = {
   nutrition: '#22C55E', irrigation: '#3B82F6',
   observation: '#F59E0B', foliar: '#A855F7', harvest: '#EF4444',
 }
-const TYPE_LABEL: Record<string, string> = {
-  nutrition: 'Nutricion', irrigation: 'Riego',
-  observation: 'Observacion', foliar: 'Foliar', harvest: 'Cosecha',
+const TYPE_LABEL_KEY: Record<string, string> = {
+  nutrition: 'type_nutrition', irrigation: 'type_irrigation',
+  observation: 'type_observation', foliar: 'type_foliar', harvest: 'type_harvest',
 }
 const TYPE_ICON: Record<string, string> = {
   nutrition: '🧪', irrigation: '💧', observation: '👁', foliar: '🌿', harvest: '✂️',
@@ -26,6 +27,8 @@ const TYPE_ICON: Record<string, string> = {
 type PlantMeta = { name: string; floraStartDate: Date | null }
 
 export default function CalendarScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { user, loading: authLoading } = useAuth()
   const [selected, setSelected] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [displayMonth, setDisplayMonth] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
@@ -219,7 +222,7 @@ export default function CalendarScreen() {
                 color: '#E8F5EA', fontSize: 17, fontWeight: '800', letterSpacing: 0.5, textTransform: 'capitalize',
                 transform: [{ scale: headerScaleAnim }], opacity: fadeAnim,
               }}>
-                {format(displayMonth, 'MMMM yyyy', { locale: es })}
+                {format(displayMonth, 'MMMM yyyy', { locale: dateLocale })}
               </Animated.Text>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -229,7 +232,7 @@ export default function CalendarScreen() {
                     hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
                     style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(82,204,100,0.12)', borderWidth: 1, borderColor: 'rgba(82,204,100,0.25)' }}
                   >
-                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800' }}>Hoy</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 12, fontWeight: '800' }}>{t('tasksTab.today')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -244,7 +247,7 @@ export default function CalendarScreen() {
 
             {/* Day-of-week labels */}
             <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-              {['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'].map(d => (
+              {(t('tasksTab.weekday_labels', { returnObjects: true }) as string[]).map(d => (
                 <Text key={d} style={{ color: '#2D4A30', fontSize: 11, fontWeight: '800', width: '14.28%', textAlign: 'center', letterSpacing: 0.5 }}>
                   {d}
                 </Text>
@@ -324,10 +327,10 @@ export default function CalendarScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <View>
                 <Text style={{ color: '#E8F5EA', fontSize: 20, fontWeight: '900', textTransform: 'capitalize' }}>
-                  {format(selected, "EEEE", { locale: es })}
+                  {format(selected, "EEEE", { locale: dateLocale })}
                 </Text>
                 <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '600', marginTop: 1 }}>
-                  {format(selected, "d 'de' MMMM, yyyy", { locale: es })}
+                  {format(selected, "d 'de' MMMM, yyyy", { locale: dateLocale })}
                 </Text>
               </View>
               {selectedTasks.length > 0 && (
@@ -337,12 +340,12 @@ export default function CalendarScreen() {
                     style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(82,204,100,0.3)', flexDirection: 'row', alignItems: 'center', gap: 6 }}
                   >
                     <Text style={{ fontSize: 14 }}>🎉</Text>
-                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>Todo listo</Text>
+                    <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800' }}>{t('tasksTab.all_done')}</Text>
                   </LinearGradient>
                 ) : (
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#1C2E1E', alignItems: 'center' }}>
                     <Text style={{ color: '#E4F2E7', fontSize: 18, fontWeight: '900', lineHeight: 20 }}>{pendingSelected.length}</Text>
-                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>pendiente{pendingSelected.length !== 1 ? 's' : ''}</Text>
+                    <Text style={{ color: '#3A5040', fontSize: 11, fontWeight: '700' }}>{t('tasksTab.pending_label', { count: pendingSelected.length })}</Text>
                   </View>
                 )
               )}
@@ -354,9 +357,9 @@ export default function CalendarScreen() {
                 style={{ borderRadius: 22, borderWidth: 1, borderColor: '#1A2E1A', paddingVertical: 52, alignItems: 'center', gap: 10 }}
               >
                 <Text style={{ fontSize: 40 }}>🌤️</Text>
-                <Text style={{ color: '#4A7A50', fontSize: 16, fontWeight: '700' }}>Dia libre</Text>
+                <Text style={{ color: '#4A7A50', fontSize: 16, fontWeight: '700' }}>{t('tasksTab.free_day_title')}</Text>
                 <Text style={{ color: '#2D4A30', fontSize: 13, textAlign: 'center', lineHeight: 19 }}>
-                  Sin tareas programadas{'\n'}para este dia
+                  {t('tasksTab.free_day_desc')}
                 </Text>
               </LinearGradient>
             ) : (
@@ -381,7 +384,7 @@ export default function CalendarScreen() {
                             {/* Text */}
                             <View style={{ flex: 1, gap: 3 }}>
                               <Text style={{ color: '#E4F2E7', fontSize: 16, fontWeight: '800', lineHeight: 18 }}>
-                                {TYPE_LABEL[task.type] ?? task.type}
+                                {TYPE_LABEL_KEY[task.type] ? t(`tasksTab.${TYPE_LABEL_KEY[task.type]}`) : task.type}
                               </Text>
                               <TouchableOpacity onPress={() => router.push(`/plants/${task.plantId}`)} activeOpacity={0.7}>
                                 <Text style={{ color: phaseColor, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
@@ -399,7 +402,7 @@ export default function CalendarScreen() {
                                 colors={['rgba(82,204,100,0.18)', 'rgba(82,204,100,0.08)']}
                                 style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9, borderWidth: 1, borderColor: 'rgba(82,204,100,0.3)', alignItems: 'center' }}
                               >
-                                <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>Hecho ✓</Text>
+                                <Text style={{ color: '#52CC64', fontWeight: '900', fontSize: 13 }}>{t('tasksTab.mark_done')}</Text>
                               </LinearGradient>
                             </TouchableOpacity>
                           </View>
@@ -415,7 +418,7 @@ export default function CalendarScreen() {
                     <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#141E14', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <View style={{ width: 3, height: 12, borderRadius: 1.5, backgroundColor: '#52CC64', opacity: 0.4 }} />
                       <Text style={{ color: '#2D5030', fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
-                        Completadas ({doneSelected.length})
+                        {t('tasksTab.completed_count', { count: doneSelected.length })}
                       </Text>
                     </View>
                     {doneSelected.map((task, i) => {
@@ -425,7 +428,7 @@ export default function CalendarScreen() {
                           <Text style={{ fontSize: 18 }}>{TYPE_ICON[task.type] ?? '📋'}</Text>
                           <View style={{ flex: 1 }}>
                             <Text style={{ color: '#4A6A50', fontSize: 14, fontWeight: '700', textDecorationLine: 'line-through' }}>
-                              {TYPE_LABEL[task.type] ?? task.type}
+                              {TYPE_LABEL_KEY[task.type] ? t(`tasksTab.${TYPE_LABEL_KEY[task.type]}`) : task.type}
                             </Text>
                             <Text style={{ color: '#2D4A30', fontSize: 12, marginTop: 1 }}>{meta?.name ?? '...'}</Text>
                           </View>

@@ -1,7 +1,8 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import { format, differenceInDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
+import { useTranslation } from '@/i18n'
 
 interface PlantCardProps {
   plant: Plant
@@ -11,14 +12,16 @@ interface PlantCardProps {
 }
 
 export function PlantCard({ plant, overdueTasks = 0, pendingTasks = 0, onPress }: PlantCardProps) {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const daysAlive = differenceInDays(new Date(), plant.startDate)
   const hasWarnings = overdueTasks > 0
   const statusColor = hasWarnings ? '#EF4444' : pendingTasks > 0 ? '#F59E0B' : '#52CC64'
   const statusText = hasWarnings
-    ? `${overdueTasks} vencida${overdueTasks > 1 ? 's' : ''}`
+    ? t('plantCard.status_overdue', { count: overdueTasks })
     : pendingTasks > 0
-      ? `${pendingTasks} pendiente${pendingTasks > 1 ? 's' : ''}`
-      : 'Al día'
+      ? t('plantCard.status_pending', { count: pendingTasks })
+      : t('plantCard.status_up_to_date')
 
   return (
     <TouchableOpacity
@@ -36,11 +39,11 @@ export function PlantCard({ plant, overdueTasks = 0, pendingTasks = 0, onPress }
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <View style={{ backgroundColor: '#0D2010', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
             <Text style={{ color: plant.status === 'active' ? '#52CC64' : '#728C74', fontSize: 10, fontWeight: '800' }}>
-              {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
+              {plant.geneticType === 'autoflower' ? t('plantCard.genetic_auto') : plant.geneticType === 'feminized' ? t('plantCard.genetic_fem') : t('plantCard.genetic_reg')}
             </Text>
           </View>
           <Text style={{ color: plant.status === 'active' ? '#6DC278' : '#728C74', fontSize: 11, fontWeight: '600' }}>
-            {plant.floraStartDate ? 'FLORA' : 'VEGE'}
+            {plant.floraStartDate ? t('plantCard.stage_flora') : t('plantCard.stage_vege')}
           </Text>
         </View>
         <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{plant.name}</Text>
@@ -53,7 +56,7 @@ export function PlantCard({ plant, overdueTasks = 0, pendingTasks = 0, onPress }
         {/* Plant info row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Text style={{ color: '#728C74', fontSize: 12 }}>
-            📅 {format(plant.startDate, 'd MMM', { locale: es })}
+            📅 {format(plant.startDate, 'd MMM', { locale: dateLocale })}
           </Text>
           <Text style={{ color: '#728C74', fontSize: 12 }}>
             {plant.location === 'indoor' ? '🏠' : '☀️'} {daysAlive}d

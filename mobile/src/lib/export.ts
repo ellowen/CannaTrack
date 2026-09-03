@@ -6,7 +6,7 @@
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { getDateLocale } from '@/lib/dateLocale'
 import type { Plant, ScheduledTask } from '@shared/types/plant'
 
 export interface ExportData {
@@ -50,7 +50,7 @@ export async function exportPlantHistory(data: ExportData): Promise<void> {
   const { plant, tasks, weekLogs, diagnoses } = data
   const lines: string[] = []
 
-  const fmt = (d: Date) => format(d, 'd MMM yyyy', { locale: es })
+  const fmt = (d: Date) => format(d, 'd MMM yyyy', { locale: getDateLocale() })
 
   // ── Informacion general ────────────────────────────────────────────────
   lines.push('INFORMACION GENERAL')

@@ -1,3 +1,15 @@
+import { authEn, onboardingEn } from './screens/auth'
+import { homeEn, tasksTabEn } from './screens/home'
+import { plantsTabEn, plantNewEn } from './screens/plants'
+import { plantDetailEn, plantEditEn } from './screens/plantDetail'
+import { plantDiaryEn, plantDiagnosisEn, plantMeasurementsEn, plantTimelineEn } from './screens/plantSub'
+import { tablesIndexEn, tablesNewEn, tablesDetailEn, tablesCompareEn } from './screens/tables'
+import { diagnoseTabEn, profileTabEn, achievementsEn } from './screens/misc'
+import { completeTaskSheetEn, harvestSheetEn, paywallModalEn } from './screens/components'
+import {
+  plantCardEn, tabBarEn, swipeableTaskItemEn, errorBoundaryEn, offlineIndicatorEn,
+} from './screens/sharedComponents'
+
 const en = {
   common: {
     save: 'Save',
@@ -41,6 +53,34 @@ const en = {
     delete_account_error_title: 'Could not delete account',
     delete_account_error_desc: 'Please try again later.',
   },
+
+  auth: authEn,
+  onboarding: onboardingEn,
+  home: homeEn,
+  tasksTab: tasksTabEn,
+  plantsTab: plantsTabEn,
+  plantNew: plantNewEn,
+  plantDetail: plantDetailEn,
+  plantEdit: plantEditEn,
+  plantDiary: plantDiaryEn,
+  plantDiagnosis: plantDiagnosisEn,
+  plantMeasurements: plantMeasurementsEn,
+  plantTimeline: plantTimelineEn,
+  tablesIndex: tablesIndexEn,
+  tablesNew: tablesNewEn,
+  tablesDetail: tablesDetailEn,
+  tablesCompare: tablesCompareEn,
+  diagnoseTab: diagnoseTabEn,
+  profileTab: profileTabEn,
+  achievements: achievementsEn,
+  completeTaskSheet: completeTaskSheetEn,
+  harvestSheet: harvestSheetEn,
+  paywallModal: paywallModalEn,
+  plantCard: plantCardEn,
+  tabBar: tabBarEn,
+  swipeableTaskItem: swipeableTaskItemEn,
+  errorBoundary: errorBoundaryEn,
+  offlineIndicator: offlineIndicatorEn,
 }
 
 export default en

@@ -13,6 +13,7 @@ import { differenceInDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { awardXP, XP_VALUES } from '@/lib/xp'
+import { useTranslation } from '@/i18n'
 
 const { width: screenWidth } = Dimensions.get('window')
 const PHOTO_SIZE = (screenWidth - 48) / 3
@@ -78,6 +79,7 @@ interface SheetProps {
 }
 
 function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, onDeleted, onClose }: SheetProps) {
+  const { t } = useTranslation()
   const [notes, setNotes]         = useState('')
   const [photoUri, setPhotoUri]   = useState<string | null>(null)
   const [photoBase64, setPhotoBase64] = useState<string | null>(null)
@@ -102,7 +104,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0]
       const validation = validatePhoto(asset)
-      if (!validation.ok) { Alert.alert('Foto invalida', validation.error); return }
+      if (!validation.ok) { Alert.alert(t('plantDiary.invalid_photo_title'), validation.error); return }
       setPhotoUri(asset.uri)
       setPhotoBase64(asset.base64 ?? null)
     }
@@ -110,7 +112,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
 
   async function uploadPhoto(uri: string, base64: string | null): Promise<string> {
     const fileName = `${userId}/${plantId}/${Date.now()}.jpg`
-    const data = await base64ToBytes(base64, uri)
+    const data = await base64ToBytes(base64, uri, t('plantDiary.read_file_error'))
     const { data: stored, error: uploadErr } = await supabase.storage
       .from('plant-photos')
       .upload(fileName, data, { contentType: 'image/jpeg', upsert: true })
@@ -157,7 +159,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
       }
       onClose()
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
+      Alert.alert(t('plantDiary.error_title'), e instanceof Error ? e.message : t('plantDiary.save_error'))
     } finally {
       setSaving(false)
     }
@@ -166,12 +168,12 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
   function confirmDelete() {
     if (!existing) return
     Alert.alert(
-      'Eliminar entrada',
-      'Esta accion no se puede deshacer.',
+      t('plantDiary.delete_entry'),
+      t('plantDiary.delete_confirm_desc'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -180,7 +182,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
               onDeleted(existing.id)
               onClose()
             } catch (e) {
-              Alert.alert('Error', e instanceof Error ? e.message : 'Error al eliminar')
+              Alert.alert(t('plantDiary.error_title'), e instanceof Error ? e.message : t('plantDiary.delete_error'))
             }
           },
         },
@@ -230,7 +232,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
                   colors={['transparent', 'rgba(0,0,0,0.6)']}
                   style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 64, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, justifyContent: 'flex-end', paddingHorizontal: 12, paddingBottom: 10 }}
                 >
-                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' }}>Toca para cambiar</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' }}>{t('plantDiary.tap_to_change')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ) : (
@@ -239,17 +241,17 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
                 style={{ borderRadius: 16, borderWidth: 1.5, borderColor: isFlora ? '#3A2800' : '#1C3A20', borderStyle: 'dashed', padding: 28, alignItems: 'center', marginBottom: 14, backgroundColor: isFlora ? 'rgba(245,158,11,0.04)' : 'rgba(82,204,100,0.04)' }}
               >
                 <Text style={{ fontSize: 32, marginBottom: 8 }}>📷</Text>
-                <Text style={{ color: accentColor, fontWeight: '700', fontSize: 14 }}>Agregar foto</Text>
-                <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 3 }}>JPG, cuadrada, max 5MB</Text>
+                <Text style={{ color: accentColor, fontWeight: '700', fontSize: 14 }}>{t('plantDiary.add_photo')}</Text>
+                <Text style={{ color: '#3A5040', fontSize: 11, marginTop: 3 }}>{t('plantDiary.photo_hint')}</Text>
               </TouchableOpacity>
             )}
 
             {/* Notes */}
             <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>Notas</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>{t('plantDiary.notes_label')}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: '#1C2E1E', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, color: '#E4F2E7', fontSize: 14, minHeight: 110, textAlignVertical: 'top' }}
-                placeholder="Que observas esta semana? Altura, aromas, color de hojas..."
+                placeholder={t('plantDiary.notes_placeholder')}
                 placeholderTextColor="#2D4030"
                 value={notes}
                 onChangeText={setNotes}
@@ -266,7 +268,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
                 {saving
                   ? <ActivityIndicator color={isFlora ? '#1A1200' : '#0C1410'} size="small" />
                   : <Text style={{ color: isFlora ? '#1A0F00' : '#0C1410', fontWeight: '900', fontSize: 15 }}>
-                      {existing ? 'Guardar cambios' : 'Guardar entrada'}
+                      {existing ? t('plantDiary.save_changes') : t('plantDiary.save_entry')}
                     </Text>
                 }
               </LinearGradient>
@@ -274,12 +276,12 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
 
             {existing && (
               <TouchableOpacity onPress={confirmDelete} style={{ paddingVertical: 14, alignItems: 'center', marginBottom: 6 }}>
-                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>Eliminar entrada</Text>
+                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>{t('plantDiary.delete_entry')}</Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity onPress={onClose} style={{ paddingVertical: 12, alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ color: '#3A5040', fontSize: 13 }}>Cancelar</Text>
+              <Text style={{ color: '#3A5040', fontSize: 13 }}>{t('common.cancel')}</Text>
             </TouchableOpacity>
 
           </ScrollView>
@@ -293,6 +295,7 @@ function WeekLogSheet({ visible, weekLabel, existing, plantId, userId, onSaved, 
 // Main screen
 // ---------------------------------------------------------------------------
 export default function DiaryScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
 
@@ -400,12 +403,12 @@ export default function DiaryScreen() {
               borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.25)' : 'rgba(82,204,100,0.25)',
             }}>
               <Text style={{ color: isFlora ? '#F59E0B' : '#52CC64', fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>
-                {isFlora ? 'FLORA' : 'VEGE'}
+                {isFlora ? t('plantDiary.cycle_flora') : t('plantDiary.cycle_vege')}
               </Text>
             </View>
           </View>
 
-          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Diario</Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{t('plantDiary.title')}</Text>
           {plantName ? (
             <Text style={{ color: isFlora ? '#B45309' : '#3DAA50', fontSize: 13, marginTop: 3, opacity: 0.9 }}>{plantName}</Text>
           ) : null}
@@ -414,11 +417,11 @@ export default function DiaryScreen() {
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: isFlora ? '#2A1E00' : '#1C2E1E', padding: 12, alignItems: 'center' }}>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{logs.length}</Text>
-              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>entradas</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>{t('plantDiary.stat_entries')}</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: isFlora ? '#2A1E00' : '#1C2E1E', padding: 12, alignItems: 'center' }}>
               <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{photosLogs.length}</Text>
-              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>fotos</Text>
+              <Text style={{ color: '#3A5040', fontSize: 12, fontWeight: '600', marginTop: 1 }}>{t('plantDiary.stat_photos')}</Text>
             </View>
             <TouchableOpacity
               onPress={openNewSheet}
@@ -430,7 +433,7 @@ export default function DiaryScreen() {
                 style={{ flex: 1, padding: 12, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Text style={{ color: isFlora ? '#1A0F00' : '#0C1410', fontSize: 22, fontWeight: '900', lineHeight: 26 }}>+</Text>
-                <Text style={{ color: isFlora ? '#1A0F00' : '#0C1410', fontSize: 10, fontWeight: '800', marginTop: 1 }}>nueva</Text>
+                <Text style={{ color: isFlora ? '#1A0F00' : '#0C1410', fontSize: 10, fontWeight: '800', marginTop: 1 }}>{t('plantDiary.new_entry_short')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -444,7 +447,7 @@ export default function DiaryScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: isFlora ? '#F59E0B' : '#52CC64' }} />
                 <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                  Galeria ({photosLogs.length})
+                  {t('plantDiary.gallery_title', { count: photosLogs.length })}
                 </Text>
               </View>
               <LinearGradient
@@ -485,7 +488,7 @@ export default function DiaryScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
               <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                Historial ({logs.length})
+                {t('plantDiary.history_title', { count: logs.length })}
               </Text>
             </View>
 
@@ -495,9 +498,9 @@ export default function DiaryScreen() {
                 style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', borderStyle: 'dashed', padding: 48, alignItems: 'center' }}
               >
                 <Text style={{ fontSize: 44, marginBottom: 14 }}>📖</Text>
-                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 16 }}>Sin entradas todavia</Text>
+                <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 16 }}>{t('plantDiary.empty_title')}</Text>
                 <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-                  Registra notas y fotos{'\n'}para seguir la evolucion
+                  {t('plantDiary.empty_desc')}
                 </Text>
               </LinearGradient>
             ) : (
@@ -578,7 +581,7 @@ export default function DiaryScreen() {
             style={{ position: 'absolute', top: 54, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
           >
             <Text style={{ fontSize: 14 }}>✏️</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600' }}>Editar</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600' }}>{t('plantDiary.edit')}</Text>
           </TouchableOpacity>
 
           {lightboxLog?.photoUrl ? (
@@ -620,7 +623,7 @@ export default function DiaryScreen() {
   )
 }
 
-async function base64ToBytes(base64: string | null, uriFallback: string): Promise<Uint8Array | Blob> {
+async function base64ToBytes(base64: string | null, uriFallback: string, readErrorMessage: string): Promise<Uint8Array | Blob> {
   if (base64) {
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
@@ -630,7 +633,7 @@ async function base64ToBytes(base64: string | null, uriFallback: string): Promis
   return new Promise<Blob>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.onload = () => resolve(xhr.response as Blob)
-    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'))
+    xhr.onerror = () => reject(new Error(readErrorMessage))
     xhr.responseType = 'blob'
     xhr.open('GET', uriFallback, true)
     xhr.send(null)

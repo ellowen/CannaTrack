@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Animated, Dimensions, Platform } from 're
 import { LinearGradient } from 'expo-linear-gradient'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { HomeIcon, PlantPotIcon, CalendarIcon, CameraIcon, ProfileIcon } from './icons/AppIcons'
+import { useTranslation } from '@/i18n'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const TAB_COUNT = 5
@@ -20,12 +21,12 @@ const TAB_ICON: Record<TabName, React.FC<{ size: number; color: string; filled: 
   profile:  ProfileIcon,
 }
 
-const TAB_LABEL: Record<TabName, string> = {
-  index:    'Inicio',
-  plants:   'Plantas',
-  tasks:    'Agenda',
-  diagnose: 'Camara',
-  profile:  'Perfil',
+const TAB_LABEL_KEY: Record<TabName, string> = {
+  index:    'tabBar.tab_home',
+  plants:   'tabBar.tab_plants',
+  tasks:    'tabBar.tab_tasks',
+  diagnose: 'tabBar.tab_diagnose',
+  profile:  'tabBar.tab_profile',
 }
 
 // Active color per tab
@@ -38,6 +39,7 @@ const TAB_COLOR: Record<TabName, string> = {
 }
 
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const { t } = useTranslation()
   const slideAnim = useRef(new Animated.Value(0)).current
   const scaleAnims = useRef(state.routes.map(() => new Animated.Value(1))).current
   const fadeAnims  = useRef(state.routes.map(() => new Animated.Value(0))).current
@@ -179,7 +181,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
                   opacity: fadeAnims[index],
                   textTransform: 'uppercase',
                 }}>
-                  {TAB_LABEL[tabName]}
+                  {t(TAB_LABEL_KEY[tabName])}
                 </Animated.Text>
               </Animated.View>
             </TouchableOpacity>

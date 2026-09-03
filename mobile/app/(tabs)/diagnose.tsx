@@ -10,8 +10,9 @@ import { supabase } from '@/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
 import { validatePhoto } from '@/lib/photoValidation'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import type { Plant } from '@shared/types/plant'
+import { useTranslation, i18n } from '@/i18n'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PHOTO_GRID_SIZE = (SCREEN_WIDTH - 48) / 2
@@ -38,6 +39,8 @@ type WeekLogRow = {
 }
 
 export default function DiagnoseScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { user } = useAuth()
   const { plants } = usePlants()
   const { isPro } = usePlan()
@@ -96,11 +99,11 @@ export default function DiagnoseScreen() {
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0]
         const validation = validatePhoto(asset)
-        if (!validation.ok) { Alert.alert('Foto invalida', validation.error); return }
+        if (!validation.ok) { Alert.alert(t('diagnoseTab.alert_invalid_photo_title'), validation.error); return }
         await uploadPhoto(asset.uri, asset.base64 ?? null, selectedPlant)
       }
     } catch (e) {
-      Alert.alert('Error', source === 'camera' ? 'No se pudo acceder a la camara' : 'No se pudo acceder a la galeria')
+      Alert.alert(t('diagnoseTab.alert_error'), source === 'camera' ? t('diagnoseTab.alert_camera_error') : t('diagnoseTab.alert_gallery_error'))
     }
   }
 
@@ -131,7 +134,7 @@ export default function DiagnoseScreen() {
       })
       await loadPhotos(plant.id)
     } catch (e) {
-      Alert.alert('Error al subir', e instanceof Error ? e.message : 'Intenta de nuevo')
+      Alert.alert(t('diagnoseTab.alert_upload_error_title'), e instanceof Error ? e.message : t('diagnoseTab.alert_generic_error'))
       console.error('Upload error:', e)
     } finally {
       setUploading(false)
@@ -143,9 +146,9 @@ export default function DiagnoseScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#080E09', alignItems: 'center', justifyContent: 'center' }}>
         <LinearGradient colors={['#0D0A1A', '#080E09']} style={{ borderRadius: 24, borderWidth: 1, borderColor: '#1A1530', padding: 40, alignItems: 'center', marginHorizontal: 32 }}>
           <Text style={{ fontSize: 48, marginBottom: 14 }}>📷</Text>
-          <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17, textAlign: 'center' }}>Sin plantas activas</Text>
+          <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 17, textAlign: 'center' }}>{t('diagnoseTab.no_plants_title')}</Text>
           <Text style={{ color: '#4A3070', fontSize: 13, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
-            Crea una planta para{'\n'}empezar a documentar
+            {t('diagnoseTab.no_plants_desc')}
           </Text>
         </LinearGradient>
       </SafeAreaView>
@@ -165,12 +168,12 @@ export default function DiagnoseScreen() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <View style={{ backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)' }}>
-              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>FOTOS</Text>
+              <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>{t('diagnoseTab.badge')}</Text>
             </View>
           </View>
-          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Diario visual</Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{t('diagnoseTab.title')}</Text>
           <Text style={{ color: '#6D4FB0', fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-            Documenta el crecimiento semana a semana
+            {t('diagnoseTab.subtitle')}
           </Text>
         </LinearGradient>
 
@@ -181,7 +184,7 @@ export default function DiagnoseScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#A78BFA' }} />
               <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                Planta
+                {t('diagnoseTab.plant_label')}
               </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
@@ -202,14 +205,14 @@ export default function DiagnoseScreen() {
                         >
                           <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>{plant.name}</Text>
                           <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 1 }}>
-                            {pFlora ? 'FLORA' : 'VEGE'}
+                            {pFlora ? t('diagnoseTab.stage_flora') : t('diagnoseTab.stage_vege')}
                           </Text>
                         </LinearGradient>
                       ) : (
                         <View style={{ borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1C2E1E' }}>
                           <Text style={{ color: '#8AAF8E', fontWeight: '700', fontSize: 13 }}>{plant.name}</Text>
                           <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 1 }}>
-                            {pFlora ? 'FLORA' : 'VEGE'}
+                            {pFlora ? t('diagnoseTab.stage_flora') : t('diagnoseTab.stage_vege')}
                           </Text>
                         </View>
                       )}
@@ -239,8 +242,8 @@ export default function DiagnoseScreen() {
                         <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(167,139,250,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
                           <Text style={{ fontSize: 24 }}>📷</Text>
                         </View>
-                        <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>Camara</Text>
-                        <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>Foto nueva</Text>
+                        <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>{t('diagnoseTab.camera_title')}</Text>
+                        <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>{t('diagnoseTab.camera_subtitle')}</Text>
                       </>
                   }
                 </LinearGradient>
@@ -259,8 +262,8 @@ export default function DiagnoseScreen() {
                   <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(167,139,250,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' }}>
                     <Text style={{ fontSize: 24 }}>🖼️</Text>
                   </View>
-                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>Galeria</Text>
-                  <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>Desde el rol</Text>
+                  <Text style={{ color: '#E4F2E7', fontWeight: '900', fontSize: 15 }}>{t('diagnoseTab.gallery_title')}</Text>
+                  <Text style={{ color: '#6D4FB0', fontSize: 12, textAlign: 'center' }}>{t('diagnoseTab.gallery_subtitle')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -272,7 +275,7 @@ export default function DiagnoseScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
                 <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                  Fotos ({photos.length})
+                  {t('diagnoseTab.photos_count', { count: photos.length })}
                 </Text>
               </View>
 
@@ -286,9 +289,9 @@ export default function DiagnoseScreen() {
                   style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1A1530', borderStyle: 'dashed', padding: 48, alignItems: 'center' }}
                 >
                   <Text style={{ fontSize: 44, marginBottom: 14 }}>📸</Text>
-                  <Text style={{ color: '#E8E4F5', fontWeight: '900', fontSize: 16 }}>Sin fotos todavia</Text>
+                  <Text style={{ color: '#E8E4F5', fontWeight: '900', fontSize: 16 }}>{t('diagnoseTab.no_photos_title')}</Text>
                   <Text style={{ color: '#4A3070', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-                    Sube tu primera foto{'\n'}para documentar el crecimiento
+                    {t('diagnoseTab.no_photos_desc')}
                   </Text>
                 </LinearGradient>
               ) : (
@@ -312,7 +315,7 @@ export default function DiagnoseScreen() {
                             <Text style={{ color: labelColor, fontSize: 11, fontWeight: '800' }}>{photo.weekLabel}</Text>
                           ) : null}
                           <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 1 }}>
-                            {format(photo.createdAt, "d MMM", { locale: es })}
+                            {format(photo.createdAt, "d MMM", { locale: dateLocale })}
                           </Text>
                         </LinearGradient>
                       </View>
@@ -328,7 +331,7 @@ export default function DiagnoseScreen() {
             activeOpacity={0.85}
             onPress={() => {
               if (!selectedPlant) {
-                Alert.alert('Sin planta seleccionada', 'Selecciona una planta activa para diagnosticar.')
+                Alert.alert(t('diagnoseTab.alert_no_plant_title'), t('diagnoseTab.alert_no_plant_desc'))
                 return
               }
               router.push(`/plants/${selectedPlant.id}/diagnosis` as never)
@@ -343,14 +346,14 @@ export default function DiagnoseScreen() {
                   <Text style={{ fontSize: 22 }}>🤖</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#C4B5FD', fontWeight: '900', fontSize: 15 }}>Diagnostico por IA</Text>
+                  <Text style={{ color: '#C4B5FD', fontWeight: '900', fontSize: 15 }}>{t('diagnoseTab.ai_title')}</Text>
                   <Text style={{ color: '#7C5FB5', fontSize: 12, marginTop: 2 }}>
-                    {selectedPlant ? `Analizar ${selectedPlant.name}` : 'Selecciona una planta'}
+                    {selectedPlant ? t('diagnoseTab.ai_analyze', { name: selectedPlant.name }) : t('diagnoseTab.ai_select_plant')}
                   </Text>
                 </View>
                 {!isPro && (
                   <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: 'rgba(124,58,237,0.2)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.4)' }}>
-                    <Text style={{ color: '#C4B5FD', fontSize: 11, fontWeight: '700' }}>✦ PRO</Text>
+                    <Text style={{ color: '#C4B5FD', fontSize: 11, fontWeight: '700' }}>{t('diagnoseTab.ai_pro_badge')}</Text>
                   </View>
                 )}
                 {isPro && (
@@ -358,7 +361,7 @@ export default function DiagnoseScreen() {
                 )}
               </View>
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                {['Plagas 🪲', 'Hongos 🍄', 'Deficiencias 🌿', 'pH stress 💧'].map(tag => (
+                {[t('diagnoseTab.tag_pests'), t('diagnoseTab.tag_fungi'), t('diagnoseTab.tag_deficiencies'), t('diagnoseTab.tag_ph_stress')].map(tag => (
                   <View key={tag} style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' }}>
                     <Text style={{ color: '#9D6FE8', fontSize: 11, fontWeight: '600' }}>{tag}</Text>
                   </View>
@@ -386,7 +389,7 @@ async function base64ToBytes(base64: string | null, uriFallback: string): Promis
   return new Promise<Blob>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.onload = () => resolve(xhr.response as Blob)
-    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'))
+    xhr.onerror = () => reject(new Error(i18n.t('diagnoseTab.file_read_error')))
     xhr.responseType = 'blob'
     xhr.open('GET', uriFallback, true)
     xhr.send(null)

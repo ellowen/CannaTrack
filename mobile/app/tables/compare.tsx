@@ -11,17 +11,18 @@ import { router } from 'expo-router'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
 import { usePlan } from '@/hooks/usePlan'
+import { useTranslation } from '@/i18n'
 import type { NutritionTable } from '@shared/types/plant'
 
-// Etapas canonicas en orden del ciclo completo
+// Etapas canonicas en orden del ciclo completo (el texto se traduce via tablesCompare.stage_<key>)
 const STAGES = [
-  { key: 'rooting',   label: 'Enraizamiento', cycle: 'vege' as const, emoji: '🌱' },
-  { key: 'growth',    label: 'Crecimiento',   cycle: 'vege' as const, emoji: '🌿' },
-  { key: 'preflower', label: 'Pre-floracion', cycle: 'vege' as const, emoji: '🌼' },
-  { key: 'stretch',   label: 'Estiramiento',  cycle: 'flora' as const, emoji: '📏' },
-  { key: 'bulking',   label: 'Engorde',       cycle: 'flora' as const, emoji: '💪' },
-  { key: 'ripening',  label: 'Maduracion',    cycle: 'flora' as const, emoji: '🍊' },
-  { key: 'flushing',  label: 'Limpieza',      cycle: 'flora' as const, emoji: '💧' },
+  { key: 'rooting',   cycle: 'vege' as const, emoji: '🌱' },
+  { key: 'growth',    cycle: 'vege' as const, emoji: '🌿' },
+  { key: 'preflower', cycle: 'vege' as const, emoji: '🌼' },
+  { key: 'stretch',   cycle: 'flora' as const, emoji: '📏' },
+  { key: 'bulking',   cycle: 'flora' as const, emoji: '💪' },
+  { key: 'ripening',  cycle: 'flora' as const, emoji: '🍊' },
+  { key: 'flushing',  cycle: 'flora' as const, emoji: '💧' },
 ]
 
 // Colores por tabla (primero libre, resto segun indice)
@@ -65,12 +66,13 @@ function RangeCell({
 }
 
 export default function TablesCompareScreen() {
+  const { t }        = useTranslation()
   const { tables }  = useNutritionTables()
   const { isPro }   = usePlan()
   const [cycle, setCycle] = useState<'vege' | 'flora' | 'all'>('all')
 
   // Incluir tablas accesibles (free siempre, pro solo si isPro)
-  const accessible = tables.filter(t => t.accessTier === 'free' || isPro)
+  const accessible = tables.filter(tbl => tbl.accessTier === 'free' || isPro)
   const filtered   = STAGES.filter(s => cycle === 'all' || s.cycle === cycle)
 
   return (
@@ -82,10 +84,10 @@ export default function TablesCompareScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900', letterSpacing: -0.5 }}>
-            Comparativa
+            {t('tablesCompare.title')}
           </Text>
           <Text style={{ color: '#6D8C74', fontSize: 12, marginTop: 1 }}>
-            EC · pH por etapa
+            {t('tablesCompare.subtitle')}
           </Text>
         </View>
       </View>
@@ -104,7 +106,7 @@ export default function TablesCompareScreen() {
             }}
           >
             <Text style={{ color: cycle === c ? '#52CC64' : '#3A5C3E', fontSize: 13, fontWeight: '700' }}>
-              {c === 'all' ? 'Ciclo completo' : c === 'vege' ? 'Vegetativo' : 'Floracion'}
+              {c === 'all' ? t('tablesCompare.filter_all') : c === 'vege' ? t('tablesCompare.filter_vege') : t('tablesCompare.filter_flora')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -114,11 +116,11 @@ export default function TablesCompareScreen() {
 
         {/* Leyenda de tablas */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, marginBottom: 14 }}>
-          {accessible.map((t, i) => (
-            <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' }}>
+          {accessible.map((tbl, i) => (
+            <View key={tbl.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TABLE_COLORS[i % TABLE_COLORS.length] }} />
-              <Text style={{ color: '#A3C4A8', fontSize: 12, fontWeight: '600' }} numberOfLines={1}>{t.name.split(' —')[0]}</Text>
-              {t.accessTier === 'pro' && (
+              <Text style={{ color: '#A3C4A8', fontSize: 12, fontWeight: '600' }} numberOfLines={1}>{tbl.name.split(' —')[0]}</Text>
+              {tbl.accessTier === 'pro' && (
                 <Text style={{ color: '#7C5FB5', fontSize: 10, fontWeight: '700' }}>PRO</Text>
               )}
             </View>
@@ -131,13 +133,13 @@ export default function TablesCompareScreen() {
           {/* Header de columnas */}
           <LinearGradient colors={['#1A2E1C', '#0F1E10']} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
             <View style={{ width: 110, paddingVertical: 10, paddingHorizontal: 10 }}>
-              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>Etapa</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('tablesCompare.column_stage')}</Text>
             </View>
-            {accessible.map((t, i) => (
-              <View key={t.id} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.05)' }}>
+            {accessible.map((tbl, i) => (
+              <View key={tbl.id} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.05)' }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TABLE_COLORS[i % TABLE_COLORS.length], marginBottom: 2 }} />
                 <Text style={{ color: TABLE_COLORS[i % TABLE_COLORS.length], fontSize: 10, fontWeight: '800' }} numberOfLines={1}>
-                  {t.name.split(' —')[0].split(' ')[0]}
+                  {tbl.name.split(' —')[0].split(' ')[0]}
                 </Text>
               </View>
             ))}
@@ -159,19 +161,19 @@ export default function TablesCompareScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Text style={{ fontSize: 13 }}>{stage.emoji}</Text>
                   <Text style={{ color: '#6D8C74', fontSize: 11, fontWeight: '600', flexShrink: 1 }} numberOfLines={2}>
-                    {stage.label}
+                    {t(`tablesCompare.stage_${stage.key}`)}
                   </Text>
                 </View>
                 <Text style={{ color: '#2C3E2E', fontSize: 10, marginTop: 2, marginLeft: 18 }}>
-                  {stage.cycle === 'vege' ? 'VEGE' : 'FLORA'}
+                  {stage.cycle === 'vege' ? t('tablesCompare.cycle_badge_vege') : t('tablesCompare.cycle_badge_flora')}
                 </Text>
               </View>
 
               {/* Celdas de datos por tabla */}
-              {accessible.map((t, i) => (
+              {accessible.map((tbl, i) => (
                 <RangeCell
-                  key={t.id}
-                  range={getStageRange(t, stage.key)}
+                  key={tbl.id}
+                  range={getStageRange(tbl, stage.key)}
                   color={TABLE_COLORS[i % TABLE_COLORS.length]}
                   isFirst={i === 0}
                 />
@@ -184,16 +186,16 @@ export default function TablesCompareScreen() {
         <View style={{ marginHorizontal: 16, marginTop: 14, flexDirection: 'row', gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#52CC64' }} />
-            <Text style={{ color: '#3A5C3E', fontSize: 12 }}>EC (mS/cm)</Text>
+            <Text style={{ color: '#3A5C3E', fontSize: 12 }}>{t('tablesCompare.legend_ec')}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#3B82F6' }} />
-            <Text style={{ color: '#3A5C3E', fontSize: 12 }}>pH</Text>
+            <Text style={{ color: '#3A5C3E', fontSize: 12 }}>{t('tablesCompare.legend_ph')}</Text>
           </View>
         </View>
 
         {/* Nota para tablas Pro bloqueadas */}
-        {!isPro && tables.some(t => t.accessTier === 'pro') && (
+        {!isPro && tables.some(tbl => tbl.accessTier === 'pro') && (
           <TouchableOpacity
             onPress={() => router.push('/tables/index' as never)}
             style={{ marginHorizontal: 16, marginTop: 14 }}
@@ -204,7 +206,7 @@ export default function TablesCompareScreen() {
             >
               <Text style={{ fontSize: 18 }}>👑</Text>
               <Text style={{ color: '#A78BFA', fontSize: 13, fontWeight: '700', flex: 1 }}>
-                Activa Pro para ver las tablas de todas las marcas
+                {t('tablesCompare.pro_cta')}
               </Text>
               <Text style={{ color: '#6B46C1', fontSize: 13 }}>›</Text>
             </LinearGradient>

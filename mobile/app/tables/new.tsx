@@ -8,8 +8,12 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlan } from '@/hooks/usePlan'
 import PaywallModal from '@/components/PaywallModal'
+import { useTranslation } from '@/i18n'
+import type { TFunction } from 'i18next'
 
 type ProductRow = { name: string; line: string; unit: 'ml' | 'gr'; minDose: string; maxDose: string }
+// `label` se mantiene en espanol (no se traduce) porque se usa para derivar el campo
+// `stage` que se guarda en Supabase — la traduccion visible se calcula aparte con weekLabel().
 type WeekRow    = { cycle: 'vege' | 'flora'; week: number; label: string; products: ProductRow[] }
 
 const VEGE_WEEKS: WeekRow[] = [
@@ -37,7 +41,28 @@ const DAY_MAP: Record<string, [number, number]> = {
 
 function weekKey(w: WeekRow) { return `${w.cycle}-${w.week}` }
 
+// Etapa (clave de traduccion) por semana — solo para el texto mostrado en pantalla.
+function stageKeyForWeek(w: WeekRow): string {
+  if (w.cycle === 'vege') {
+    if (w.week <= 1) return 'rooting'
+    if (w.week <= 3) return 'growth'
+    return 'preflower'
+  }
+  if (w.week <= 2) return 'stretch'
+  if (w.week <= 4) return 'bulking'
+  if (w.week <= 6) return 'ripening'
+  return 'flushing'
+}
+
+function weekLabel(t: TFunction, w: WeekRow) {
+  const stage = t(`tablesNew.stage_${stageKeyForWeek(w)}`)
+  return w.cycle === 'vege'
+    ? t('tablesNew.week_label', { week: w.week, stage })
+    : t('tablesNew.flora_week_label', { week: w.week, stage })
+}
+
 export default function NewTableScreen() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { isPro } = usePlan()
   const [tableName, setTableName]     = useState('')
@@ -76,10 +101,10 @@ export default function NewTableScreen() {
   }
 
   async function handleSave() {
-    if (!tableName.trim()) { Alert.alert('Error', 'Ingresa un nombre para la tabla'); return }
-    if (!user) { Alert.alert('Error', 'No hay usuario autenticado'); return }
+    if (!tableName.trim()) { Alert.alert(t('tablesNew.error_title'), t('tablesNew.error_name_required')); return }
+    if (!user) { Alert.alert(t('tablesNew.error_title'), t('tablesNew.error_no_user')); return }
     const totalProducts = weeks.reduce((sum, w) => sum + w.products.length, 0)
-    if (totalProducts === 0) { Alert.alert('Error', 'Agrega al menos un producto en alguna semana'); return }
+    if (totalProducts === 0) { Alert.alert(t('tablesNew.error_title'), t('tablesNew.error_no_products')); return }
 
     setLoading(true)
     try {
@@ -121,9 +146,9 @@ export default function NewTableScreen() {
         }
       }
 
-      Alert.alert('Listo', 'Tabla guardada correctamente', [{ text: 'OK', onPress: () => router.back() }])
+      Alert.alert(t('tablesNew.success_title'), t('tablesNew.success_message'), [{ text: t('tablesNew.ok'), onPress: () => router.back() }])
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar')
+      Alert.alert(t('tablesNew.error_title'), e instanceof Error ? e.message : t('tablesNew.error_save_failed'))
     } finally {
       setLoading(false)
     }
@@ -156,8 +181,8 @@ export default function NewTableScreen() {
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View>
-              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>Nueva tabla</Text>
-              <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 1 }}>Carga los productos semana a semana</Text>
+              <Text style={{ color: '#E4F2E7', fontSize: 22, fontWeight: '900' }}>{t('tablesNew.header_title')}</Text>
+              <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 1 }}>{t('tablesNew.header_subtitle')}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -166,12 +191,12 @@ export default function NewTableScreen() {
 
           {/* Nombre */}
           <View>
-            <Text style={sectionLabel}>Nombre de la tabla</Text>
+            <Text style={sectionLabel}>{t('tablesNew.table_name_label')}</Text>
             <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
               <TextInput
                 value={tableName}
                 onChangeText={setTableName}
-                placeholder="Ej: Mi mezcla casera"
+                placeholder={t('tablesNew.table_name_placeholder')}
                 placeholderTextColor="#2D4A30"
                 style={{ color: '#E4F2E7', fontSize: 16, padding: 18 }}
                 editable={!loading}
@@ -181,7 +206,7 @@ export default function NewTableScreen() {
 
           {/* Bloque VEGE */}
           <WeekSection
-            title="VEGETACION"
+            titleKey="vege"
             emoji="🌿"
             color="#52CC64"
             bg="rgba(82,204,100,0.08)"
@@ -197,7 +222,7 @@ export default function NewTableScreen() {
 
           {/* Bloque FLORA */}
           <WeekSection
-            title="FLORACION"
+            titleKey="flora"
             emoji="🌸"
             color="#F59E0B"
             bg="rgba(245,158,11,0.08)"
@@ -219,7 +244,7 @@ export default function NewTableScreen() {
             >
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#52CC64' }} />
               <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>
-                {totalProducts} producto{totalProducts > 1 ? 's' : ''} cargado{totalProducts > 1 ? 's' : ''}
+                {t('tablesNew.products_loaded', { count: totalProducts })}
               </Text>
             </LinearGradient>
           )}
@@ -232,7 +257,7 @@ export default function NewTableScreen() {
             >
               {loading
                 ? <ActivityIndicator color="#52CC64" />
-                : <Text style={{ color: canSave ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 17 }}>Guardar tabla →</Text>
+                : <Text style={{ color: canSave ? '#080E09' : '#3A5040', fontWeight: '900', fontSize: 17 }}>{t('tablesNew.save_button')}</Text>
               }
             </LinearGradient>
           </TouchableOpacity>
@@ -245,7 +270,7 @@ export default function NewTableScreen() {
 
 // ─── WeekSection ──────────────────────────────────────────────────────────────
 interface WeekSectionProps {
-  title: string; emoji: string; color: string; bg: string; border: string
+  titleKey: 'vege' | 'flora'; emoji: string; color: string; bg: string; border: string
   weeks: WeekRow[]; expandedKey: string | null
   onToggle: (k: string) => void
   onAddProduct: (w: WeekRow) => void
@@ -254,15 +279,16 @@ interface WeekSectionProps {
   loading: boolean
 }
 
-function WeekSection({ title, emoji, color, bg, border, weeks, expandedKey, onToggle, onAddProduct, onRemoveProduct, onUpdateProduct, loading }: WeekSectionProps) {
-  const isFlora = title === 'FLORACION'
+function WeekSection({ titleKey, emoji, color, bg, border, weeks, expandedKey, onToggle, onAddProduct, onRemoveProduct, onUpdateProduct, loading }: WeekSectionProps) {
+  const { t } = useTranslation()
+  const isFlora = titleKey === 'flora'
 
   return (
     <View>
       {/* Section header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <View style={{ backgroundColor: bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: border }}>
-          <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>{title}</Text>
+          <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>{t(`tablesNew.title_${titleKey}`)}</Text>
         </View>
         <View style={{ flex: 1, height: 1, backgroundColor: border }} />
       </View>
@@ -290,7 +316,7 @@ function WeekSection({ title, emoji, color, bg, border, weeks, expandedKey, onTo
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Text style={{ fontSize: 16 }}>{emoji}</Text>
                     <Text style={{ color: hasProds ? color : '#728C74', fontWeight: '700', fontSize: 14 }}>
-                      {wk.label}
+                      {weekLabel(t, wk)}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -320,7 +346,7 @@ function WeekSection({ title, emoji, color, bg, border, weeks, expandedKey, onTo
                           <TextInput
                             value={p.name}
                             onChangeText={v => onUpdateProduct(wk, idx, 'name', v)}
-                            placeholder="Nombre del producto"
+                            placeholder={t('tablesNew.product_name_placeholder')}
                             placeholderTextColor="#2D4A30"
                             style={{ color: '#E4F2E7', fontSize: 14, paddingHorizontal: 14, paddingVertical: 11 }}
                           />
@@ -359,8 +385,8 @@ function WeekSection({ title, emoji, color, bg, border, weeks, expandedKey, onTo
                       {/* Dosis */}
                       <View style={{ flexDirection: 'row', gap: 8 }}>
                         {[
-                          { field: 'minDose' as const, val: p.minDose, placeholder: 'Dosis min' },
-                          { field: 'maxDose' as const, val: p.maxDose, placeholder: 'Dosis max' },
+                          { field: 'minDose' as const, val: p.minDose, placeholder: t('tablesNew.min_dose_placeholder') },
+                          { field: 'maxDose' as const, val: p.maxDose, placeholder: t('tablesNew.max_dose_placeholder') },
                         ].map(({ field, val, placeholder }) => (
                           <LinearGradient key={field} colors={['#0F1A10', '#0A1009']} style={{ flex: 1, borderRadius: 12, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
                             <TextInput
@@ -390,7 +416,7 @@ function WeekSection({ title, emoji, color, bg, border, weeks, expandedKey, onTo
                       style={{ borderRadius: 12, borderWidth: 1, borderColor: border, borderStyle: 'dashed', paddingVertical: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
                     >
                       <Text style={{ color, fontSize: 18, lineHeight: 20 }}>+</Text>
-                      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>Agregar producto</Text>
+                      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{t('tablesNew.add_product')}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </LinearGradient>

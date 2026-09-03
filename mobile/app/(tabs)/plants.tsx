@@ -8,28 +8,30 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, addDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { usePlants } from '@/hooks/usePlants'
 import { usePlantStore } from '@/store/plantStore'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { loadPlantsFromSupabase } from '@/lib/sync'
+import { useTranslation } from '@/i18n'
 import type { Plant } from '@shared/types/plant'
 
 // pending tasks count per plant for today
 type TaskMap = Record<string, number>
 type FilterType = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartadas'
 
-const FILTERS: { key: FilterType; label: string; color: string; emptyIcon: string }[] = [
-  { key: 'todas',      label: 'Todas',      color: '#52CC64', emptyIcon: '🌱' },
-  { key: 'activas',    label: 'Activas',    color: '#52CC64', emptyIcon: '🌿' },
-  { key: 'vege',       label: 'Vege',       color: '#52CC64', emptyIcon: '🌿' },
-  { key: 'flora',      label: 'Flora',      color: '#F59E0B', emptyIcon: '🌸' },
-  { key: 'cosechadas', label: 'Cosechadas', color: '#A78BFA', emptyIcon: '✂️' },
-  { key: 'descartadas',label: 'Descartadas',color: '#EF4444', emptyIcon: '🗑️' },
+const FILTER_KEYS: { key: FilterType; labelKey: string; color: string; emptyIcon: string }[] = [
+  { key: 'todas',      labelKey: 'filter_all',       color: '#52CC64', emptyIcon: '🌱' },
+  { key: 'activas',    labelKey: 'filter_active',    color: '#52CC64', emptyIcon: '🌿' },
+  { key: 'vege',       labelKey: 'filter_vege',      color: '#52CC64', emptyIcon: '🌿' },
+  { key: 'flora',      labelKey: 'filter_flora',     color: '#F59E0B', emptyIcon: '🌸' },
+  { key: 'cosechadas', labelKey: 'filter_harvested', color: '#A78BFA', emptyIcon: '✂️' },
+  { key: 'descartadas',labelKey: 'filter_discarded', color: '#EF4444', emptyIcon: '🗑️' },
 ]
 
 export default function PlantsScreen() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { plants, updatePlant } = usePlants()
   const setPlants = usePlantStore(s => s.setPlants)
@@ -117,15 +119,15 @@ export default function PlantsScreen() {
         <LinearGradient colors={['#0F1F10', '#080E09']} style={{ paddingTop: 20, paddingBottom: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingHorizontal: 20 }}>
             <View>
-              <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Mis plantas</Text>
+              <Text style={{ color: '#E8F5EA', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{t('plantsTab.title')}</Text>
               <Text style={{ color: '#3A5040', fontSize: 12, marginTop: 2 }}>
-                {counts.activas + counts.flora} activa{counts.activas + counts.flora !== 1 ? 's' : ''}
-                {historyPlants.length > 0 ? ` · ${historyPlants.length} en historial` : ''}
+                {t('plantsTab.active_count', { count: counts.activas + counts.flora })}
+                {historyPlants.length > 0 ? t('plantsTab.history_count', { count: historyPlants.length }) : ''}
               </Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/plants/new' as never)} activeOpacity={0.85} style={{ borderRadius: 14, overflow: 'hidden' }}>
               <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ paddingHorizontal: 18, paddingVertical: 10 }}>
-                <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>+ Nueva</Text>
+                <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 13 }}>{t('plantsTab.new_plant_button')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -136,7 +138,7 @@ export default function PlantsScreen() {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Buscar planta..."
+              placeholder={t('plantsTab.search_placeholder')}
               placeholderTextColor="#2D4A30"
               style={{ flex: 1, color: '#E8F5EA', fontSize: 14 }}
             />
@@ -149,7 +151,7 @@ export default function PlantsScreen() {
 
           {/* Filter pills */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
-            {FILTERS.map(f => {
+            {FILTER_KEYS.map(f => {
               const isActive = activeFilter === f.key
               const count = counts[f.key]
               return (
@@ -164,7 +166,7 @@ export default function PlantsScreen() {
                       }
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: f.color + '50' }}
                     >
-                      <Text style={{ color: f.color, fontSize: 13, fontWeight: '800' }}>{f.label}</Text>
+                      <Text style={{ color: f.color, fontSize: 13, fontWeight: '800' }}>{t(`plantsTab.${f.labelKey}`)}</Text>
                       {count > 0 && (
                         <View style={{ backgroundColor: f.color + '30', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1 }}>
                           <Text style={{ color: f.color, fontSize: 11, fontWeight: '900' }}>{count}</Text>
@@ -173,7 +175,7 @@ export default function PlantsScreen() {
                     </LinearGradient>
                   ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#1A2A1A' }}>
-                      <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700' }}>{f.label}</Text>
+                      <Text style={{ color: '#3A5040', fontSize: 13, fontWeight: '700' }}>{t(`plantsTab.${f.labelKey}`)}</Text>
                       {count > 0 && (
                         <Text style={{ color: '#2D4A30', fontSize: 11, fontWeight: '700' }}>{count}</Text>
                       )}
@@ -197,19 +199,19 @@ export default function PlantsScreen() {
                 style={{ borderRadius: 22, padding: 48, alignItems: 'center', borderWidth: 1, borderColor: '#1A3020', borderStyle: 'dashed' }}
               >
                 <Text style={{ fontSize: 48, marginBottom: 14 }}>
-                  {FILTERS.find(f => f.key === activeFilter)?.emptyIcon ?? '🌱'}
+                  {FILTER_KEYS.find(f => f.key === activeFilter)?.emptyIcon ?? '🌱'}
                 </Text>
                 <Text style={{ color: '#E8F5EA', fontWeight: '900', fontSize: 17 }}>
-                  {activeFilter === 'todas'       ? 'Sin plantas' :
-                   activeFilter === 'activas'     ? 'Sin plantas activas' :
-                   activeFilter === 'vege'        ? 'Sin plantas en vege' :
-                   activeFilter === 'flora'       ? 'Sin plantas en flora' :
-                   activeFilter === 'cosechadas'  ? 'Sin cosechas aun' :
-                   'Sin plantas descartadas'}
+                  {activeFilter === 'todas'       ? t('plantsTab.empty_all') :
+                   activeFilter === 'activas'     ? t('plantsTab.empty_active') :
+                   activeFilter === 'vege'        ? t('plantsTab.empty_vege') :
+                   activeFilter === 'flora'       ? t('plantsTab.empty_flora') :
+                   activeFilter === 'cosechadas'  ? t('plantsTab.empty_harvested') :
+                   t('plantsTab.empty_discarded')}
                 </Text>
                 {(activeFilter === 'todas' || activeFilter === 'activas' || activeFilter === 'vege') && (
                   <Text style={{ color: '#3D6642', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
-                    Toca para crear tu primera planta
+                    {t('plantsTab.empty_cta_hint')}
                   </Text>
                 )}
               </LinearGradient>
@@ -223,11 +225,11 @@ export default function PlantsScreen() {
                   pendingToday={todayTaskMap[plant.id] ?? 0}
                   onDelete={() => {
                     Alert.alert(
-                      'Descartar planta',
-                      `¿Seguro que queres descartar "${plant.name}"?`,
+                      t('plantsTab.discard_alert_title'),
+                      t('plantsTab.discard_alert_message', { name: plant.name }),
                       [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Descartar', style: 'destructive', onPress: () => handleDeletePlant(plant.id) },
+                        { text: t('common.cancel'), style: 'cancel' },
+                        { text: t('plantsTab.discard_button'), style: 'destructive', onPress: () => handleDeletePlant(plant.id) },
                       ]
                     )
                   }}
@@ -247,6 +249,8 @@ export default function PlantsScreen() {
 // ─── Active Plant Card ──────────────────────────────────────────────────────
 
 function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pendingToday: number; onDelete: () => void }) {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const swipeRef = useRef<Swipeable>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const isFlora = !!plant.floraStartDate
@@ -283,7 +287,7 @@ function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pend
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }}
         >
           <Text style={{ fontSize: 22 }}>🗑️</Text>
-          <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 }}>DESCARTAR</Text>
+          <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 }}>{t('plantsTab.discard_label')}</Text>
         </LinearGradient>
       </TouchableOpacity>
     )
@@ -315,11 +319,11 @@ function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pend
               <Text style={{ color: isFlora ? '#8A5A20' : '#4A7A50', fontSize: 12, marginTop: 2 }} numberOfLines={1}>{plant.genetics}</Text>
               <View style={{ flexDirection: 'row', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
                 <View style={{ backgroundColor: isFlora ? 'rgba(245,158,11,0.15)' : 'rgba(82,204,100,0.12)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: isFlora ? 'rgba(245,158,11,0.25)' : 'rgba(82,204,100,0.2)' }}>
-                  <Text style={{ color: accentColor, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>{isFlora ? 'FLORA' : 'VEGE'}</Text>
+                  <Text style={{ color: accentColor, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>{isFlora ? t('plantsTab.badge_flora') : t('plantsTab.badge_vege')}</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 }}>
                   <Text style={{ color: '#4A6A50', fontSize: 9, fontWeight: '700' }}>
-                    {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
+                    {plant.geneticType === 'autoflower' ? t('plantsTab.genetic_auto') : plant.geneticType === 'feminized' ? t('plantsTab.genetic_fem') : t('plantsTab.genetic_reg')}
                   </Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 }}>
@@ -336,33 +340,33 @@ function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pend
                 {isFlora ? `F${phaseWeek}` : `V${phaseWeek}`}
               </Text>
               <Text style={{ color: isFlora ? '#5A3000' : '#2A5A2E', fontSize: 11, fontWeight: '700' }}>D{phaseDay}</Text>
-              <Text style={{ color: '#2A3A2C', fontSize: 9, marginTop: 2 }}>{totalDays}d total</Text>
+              <Text style={{ color: '#2A3A2C', fontSize: 9, marginTop: 2 }}>{t('plantsTab.total_days', { days: totalDays })}</Text>
             </View>
           </View>
 
           {/* Bottom stats bar */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: isFlora ? '#2D1800' : '#142214', gap: 8, flexWrap: 'wrap' }}>
             <Text style={{ color: isFlora ? '#5A3800' : '#2A5040', fontSize: 13 }}>
-              📅 {format(plant.startDate, 'd MMM yyyy', { locale: es })}
+              📅 {format(plant.startDate, 'd MMM yyyy', { locale: dateLocale })}
             </Text>
 
             {daysToHarvest != null && daysToHarvest > 0 && (
               <View style={{ backgroundColor: daysToHarvest <= 14 ? 'rgba(192,132,252,0.12)' : isFlora ? 'rgba(245,158,11,0.1)' : 'rgba(82,204,100,0.08)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: daysToHarvest <= 14 ? 'rgba(192,132,252,0.25)' : 'rgba(245,158,11,0.15)' }}>
                 <Text style={{ color: daysToHarvest <= 14 ? '#C084FC' : accentColor, fontSize: 10, fontWeight: '700' }}>
-                  🌾 {daysToHarvest}d cosecha
+                  {t('plantsTab.harvest_countdown', { days: daysToHarvest })}
                 </Text>
               </View>
             )}
             {daysToHarvest != null && daysToHarvest <= 0 && (
               <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800' }}>⚡ Lista para cosechar</Text>
+                <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800' }}>{t('plantsTab.ready_to_harvest')}</Text>
               </View>
             )}
 
             {pendingToday > 0 && (
               <View style={{ backgroundColor: 'rgba(82,204,100,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)', marginLeft: 'auto' }}>
                 <Text style={{ color: '#52CC64', fontSize: 10, fontWeight: '800' }}>
-                  {pendingToday} tarea{pendingToday > 1 ? 's' : ''} hoy
+                  {t('plantsTab.tasks_today', { count: pendingToday })}
                 </Text>
               </View>
             )}
@@ -377,6 +381,8 @@ function ActivePlantCard({ plant, pendingToday, onDelete }: { plant: Plant; pend
 // ─── History Plant Card ─────────────────────────────────────────────────────
 
 function HistoryPlantCard({ plant }: { plant: Plant }) {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const isHarvested = plant.status === 'harvested'
   const totalDays = differenceInDays(new Date(), plant.startDate)
   const accentColor = isHarvested ? '#F59E0B' : '#EF4444'
@@ -401,20 +407,20 @@ function HistoryPlantCard({ plant }: { plant: Plant }) {
               <Text style={{ color: '#B8B8B8', fontSize: 17, fontWeight: '800' }} numberOfLines={1}>{plant.name}</Text>
               <View style={{ backgroundColor: isHarvested ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.1)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 1 }}>
                 <Text style={{ color: accentColor, fontSize: 9, fontWeight: '900' }}>
-                  {isHarvested ? 'COSECHADA' : 'DESCARTADA'}
+                  {isHarvested ? t('plantsTab.status_harvested') : t('plantsTab.status_discarded')}
                 </Text>
               </View>
             </View>
             <Text style={{ color: '#555', fontSize: 13 }} numberOfLines={1}>{plant.genetics}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
               <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
-                📅 {format(plant.startDate, 'd MMM yy', { locale: es })}
+                📅 {format(plant.startDate, 'd MMM yy', { locale: dateLocale })}
               </Text>
               <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
-                {totalDays}d cultivada
+                {t('plantsTab.days_grown', { days: totalDays })}
               </Text>
               <Text style={{ color: '#3A3A3A', fontSize: 12 }}>
-                {plant.geneticType === 'autoflower' ? 'AUTO' : plant.geneticType === 'feminized' ? 'FEM' : 'REG'}
+                {plant.geneticType === 'autoflower' ? t('plantsTab.genetic_auto') : plant.geneticType === 'feminized' ? t('plantsTab.genetic_fem') : t('plantsTab.genetic_reg')}
               </Text>
             </View>
           </View>

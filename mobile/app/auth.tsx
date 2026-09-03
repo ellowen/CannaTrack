@@ -5,15 +5,17 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { signIn, signUp } from '@/lib/auth'
 import { track } from '@/lib/analytics'
 import { isBiometricAvailable, hasSavedSession, restoreSessionWithBiometric, getBiometricLabel } from '@/lib/biometric'
+import { useTranslation } from '@/i18n'
 
 export default function AuthScreen() {
+  const { t } = useTranslation()
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
   const [name, setName]           = useState('')
   const [loading, setLoading]     = useState(false)
   const [mode, setMode]           = useState<'login' | 'register'>('login')
   const [showBiometric, setShowBiometric] = useState(false)
-  const [biometricLabel, setBiometricLabel] = useState('Biometrico')
+  const [biometricLabel, setBiometricLabel] = useState(t('auth.biometric_default'))
 
   useEffect(() => {
     async function checkBiometric() {
@@ -39,9 +41,9 @@ export default function AuthScreen() {
         await signUp({ email: email.trim(), password, name: name.trim() })
         track('sign_up')
         Alert.alert(
-          'Revisa tu correo',
-          'Te enviamos un link de confirmacion. Una vez confirmado, ingresa con tu cuenta.',
-          [{ text: 'OK' }]
+          t('auth.confirm_email_title'),
+          t('auth.confirm_email_message'),
+          [{ text: t('auth.ok') }]
         )
         setMode('login')
         setEmail('')
@@ -49,7 +51,7 @@ export default function AuthScreen() {
         setName('')
       }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Ocurrio un error')
+      Alert.alert(t('auth.error_title'), error instanceof Error ? error.message : t('auth.generic_error'))
     } finally {
       setLoading(false)
     }
@@ -59,7 +61,7 @@ export default function AuthScreen() {
     setLoading(true)
     try {
       const ok = await restoreSessionWithBiometric()
-      if (!ok) Alert.alert('Error', 'No se pudo autenticar')
+      if (!ok) Alert.alert(t('auth.error_title'), t('auth.biometric_error'))
     } finally {
       setLoading(false)
     }
@@ -85,7 +87,7 @@ export default function AuthScreen() {
             </LinearGradient>
             <Text style={{ color: '#E4F2E7', fontSize: 32, fontWeight: '900' }}>Cultitrack</Text>
             <Text style={{ color: '#728C74', fontSize: 14, marginTop: 6 }}>
-              {mode === 'login' ? 'Ingresa a tu cuenta' : 'Crea tu cuenta gratis'}
+              {mode === 'login' ? t('auth.subtitle_login') : t('auth.subtitle_register')}
             </Text>
           </View>
 
@@ -99,7 +101,7 @@ export default function AuthScreen() {
                 <TextInput
                   value={name}
                   onChangeText={setName}
-                  placeholder="Nombre"
+                  placeholder={t('auth.name_placeholder')}
                   placeholderTextColor="#3A5040"
                   autoCapitalize="words"
                   style={{
@@ -121,7 +123,7 @@ export default function AuthScreen() {
               <TextInput
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Email"
+                placeholder={t('auth.email_placeholder')}
                 placeholderTextColor="#3A5040"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -144,7 +146,7 @@ export default function AuthScreen() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Contrasena"
+                placeholder={t('auth.password_placeholder')}
                 placeholderTextColor="#3A5040"
                 secureTextEntry
                 style={{
@@ -171,7 +173,7 @@ export default function AuthScreen() {
               {loading
                 ? <ActivityIndicator color="#080E09" />
                 : <Text style={{ color: '#080E09', fontWeight: '900', fontSize: 16 }}>
-                    {mode === 'login' ? 'Ingresar ->' : 'Crear cuenta ->'}
+                    {mode === 'login' ? t('auth.submit_login') : t('auth.submit_register')}
                   </Text>
               }
             </LinearGradient>
@@ -202,7 +204,7 @@ export default function AuthScreen() {
             style={{ paddingVertical: 12, alignItems: 'center' }}
           >
             <Text style={{ color: '#728C74', fontSize: 13 }}>
-              {mode === 'login' ? 'No tenes cuenta? Registrate' : 'Ya tenes cuenta? Ingresa'}
+              {mode === 'login' ? t('auth.toggle_to_register') : t('auth.toggle_to_login')}
             </Text>
           </TouchableOpacity>
 

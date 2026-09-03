@@ -1,3 +1,15 @@
+import { authEs, onboardingEs } from './screens/auth'
+import { homeEs, tasksTabEs } from './screens/home'
+import { plantsTabEs, plantNewEs } from './screens/plants'
+import { plantDetailEs, plantEditEs } from './screens/plantDetail'
+import { plantDiaryEs, plantDiagnosisEs, plantMeasurementsEs, plantTimelineEs } from './screens/plantSub'
+import { tablesIndexEs, tablesNewEs, tablesDetailEs, tablesCompareEs } from './screens/tables'
+import { diagnoseTabEs, profileTabEs, achievementsEs } from './screens/misc'
+import { completeTaskSheetEs, harvestSheetEs, paywallModalEs } from './screens/components'
+import {
+  plantCardEs, tabBarEs, swipeableTaskItemEs, errorBoundaryEs, offlineIndicatorEs,
+} from './screens/sharedComponents'
+
 const es = {
   common: {
     save: 'Guardar',
@@ -41,6 +53,34 @@ const es = {
     delete_account_error_title: 'No se pudo eliminar la cuenta',
     delete_account_error_desc: 'Intenta de nuevo mas tarde.',
   },
+
+  auth: authEs,
+  onboarding: onboardingEs,
+  home: homeEs,
+  tasksTab: tasksTabEs,
+  plantsTab: plantsTabEs,
+  plantNew: plantNewEs,
+  plantDetail: plantDetailEs,
+  plantEdit: plantEditEs,
+  plantDiary: plantDiaryEs,
+  plantDiagnosis: plantDiagnosisEs,
+  plantMeasurements: plantMeasurementsEs,
+  plantTimeline: plantTimelineEs,
+  tablesIndex: tablesIndexEs,
+  tablesNew: tablesNewEs,
+  tablesDetail: tablesDetailEs,
+  tablesCompare: tablesCompareEs,
+  diagnoseTab: diagnoseTabEs,
+  profileTab: profileTabEs,
+  achievements: achievementsEs,
+  completeTaskSheet: completeTaskSheetEs,
+  harvestSheet: harvestSheetEs,
+  paywallModal: paywallModalEs,
+  plantCard: plantCardEs,
+  tabBar: tabBarEs,
+  swipeableTaskItem: swipeableTaskItemEs,
+  errorBoundary: errorBoundaryEs,
+  offlineIndicator: offlineIndicatorEs,
 }
 
 export default es

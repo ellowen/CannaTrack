@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { onNetworkStateChange } from '@/lib/network'
 import { useSyncStore } from '@/store/syncStore'
 import { useSync } from '@/hooks/useSync'
+import { useTranslation } from '@/i18n'
 
 type IndicatorState = 'offline' | 'syncing' | 'none'
 
@@ -16,6 +17,7 @@ type IndicatorState = 'offline' | 'syncing' | 'none'
  * - Online + no pending: hidden
  */
 export function OfflineIndicator() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [isOnline, setIsOnline] = useState(true)
   const [state, setState] = useState<IndicatorState>('none')
@@ -61,11 +63,11 @@ export function OfflineIndicator() {
       const seconds = Math.floor((diff % 60000) / 1000)
 
       if (minutes > 0) {
-        setLastSyncTime(`hace ${minutes}m`)
+        setLastSyncTime(t('offlineIndicator.last_sync_minutes', { count: minutes }))
       } else if (seconds > 0) {
-        setLastSyncTime(`hace ${seconds}s`)
+        setLastSyncTime(t('offlineIndicator.last_sync_seconds', { count: seconds }))
       } else {
-        setLastSyncTime('justo ahora')
+        setLastSyncTime(t('offlineIndicator.last_sync_just_now'))
       }
     }
 
@@ -118,7 +120,7 @@ export function OfflineIndicator() {
               marginBottom: 4,
             }}
           >
-            {isOffline ? '📡 Sin conexión' : '🔄 Sincronizando cambios'}
+            {isOffline ? `📡 ${t('offlineIndicator.offline_title')}` : `🔄 ${t('offlineIndicator.syncing_title')}`}
           </Text>
 
           {/* Detalles: contador o último sync */}
@@ -131,12 +133,12 @@ export function OfflineIndicator() {
               }}
             >
               {isOffline
-                ? 'Los cambios se guardarán cuando vuelva'
+                ? t('offlineIndicator.offline_detail')
                 : isSyncing
-                  ? `Sincronizando ${pendingCount} cambios...`
+                  ? t('offlineIndicator.syncing_detail', { count: pendingCount })
                   : pendingCount > 0
-                    ? `${pendingCount} cambios pendientes`
-                    : 'Sincronizado'}
+                    ? t('offlineIndicator.pending_detail', { count: pendingCount })
+                    : t('offlineIndicator.synced_detail')}
             </Text>
 
             {/* Último sync time (solo si hay conexión y hay historial) */}
@@ -149,7 +151,7 @@ export function OfflineIndicator() {
                   marginTop: 2,
                 }}
               >
-                Último: {lastSyncTime}
+                {t('offlineIndicator.last_sync_label', { time: lastSyncTime })}
               </Text>
             )}
           </View>
@@ -193,7 +195,7 @@ export function OfflineIndicator() {
                     fontWeight: '600',
                   }}
                 >
-                  Ahora
+                  {t('offlineIndicator.sync_now_button')}
                 </Text>
               </TouchableOpacity>
             </>

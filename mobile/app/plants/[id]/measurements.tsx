@@ -6,9 +6,10 @@ import Svg, { Path, Rect, Circle, Line, Text as SvgText } from 'react-native-svg
 import { BackIcon } from '@/components/icons/AppIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useTranslation } from '@/i18n'
 
 interface Measurement {
   id: string
@@ -65,6 +66,7 @@ function LineChart({
   safeMin: number; safeMax: number; yMin: number; yMax: number
   label: string; unit: string; chartWidth: number
 }) {
+  const { t } = useTranslation()
   const last = points.slice(-20)
   if (last.length < 2) return null
 
@@ -114,7 +116,7 @@ function LineChart({
           {unit ? <Text style={{ color: '#728C74', fontSize: 12, fontWeight: '600' }}>{unit}</Text> : null}
           <View style={{ backgroundColor: STATUS_BG[lastStatus], borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, marginLeft: 4, borderWidth: 1, borderColor: STATUS_BORDER[lastStatus] }}>
             <Text style={{ color: lastColor, fontSize: 11, fontWeight: '800' }}>
-              {lastStatus === 'ok' ? 'OPTIMO' : lastStatus === 'warn' ? 'LIMITE' : 'FUERA'}
+              {lastStatus === 'ok' ? t('plantMeasurements.status_optimal') : lastStatus === 'warn' ? t('plantMeasurements.status_limit') : t('plantMeasurements.status_out')}
             </Text>
           </View>
         </View>
@@ -166,7 +168,7 @@ function LineChart({
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4, marginTop: 2 }}>
         <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: 'rgba(82,204,100,0.3)' }} />
         <Text style={{ color: '#2D4030', fontSize: 10 }}>
-          Optimo: {safeMin} – {safeMax} {unit}  ·  {last.length} registros
+          {t('plantMeasurements.range_legend', { min: safeMin, max: safeMax, unit, count: last.length })}
         </Text>
       </View>
     </View>
@@ -176,6 +178,7 @@ function LineChart({
 // ─── TempSparkline ────────────────────────────────────────────────────────────
 
 function TempSparkline({ values }: { values: number[] }) {
+  const { t } = useTranslation()
   const last8 = values.slice(-8)
   const minV = Math.min(...last8)
   const maxV = Math.max(...last8)
@@ -188,7 +191,7 @@ function TempSparkline({ values }: { values: number[] }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingTop: 12 }}>
       <View>
-        <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>Temp agua</Text>
+        <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>{t('plantMeasurements.water_temp')}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 4 }}>
           <Text style={{ color: tempColor, fontSize: 22, fontWeight: '900' }}>{lastVal.toFixed(1)}</Text>
           <Text style={{ color: '#728C74', fontSize: 12 }}>°C</Text>
@@ -196,7 +199,7 @@ function TempSparkline({ values }: { values: number[] }) {
             {trend > 0.3 ? '↑' : trend < -0.3 ? '↓' : '→'}
           </Text>
         </View>
-        <Text style={{ color: '#2D4030', fontSize: 10, marginTop: 2 }}>Optimo: 18–26°C</Text>
+        <Text style={{ color: '#2D4030', fontSize: 10, marginTop: 2 }}>{t('plantMeasurements.water_temp_optimal')}</Text>
       </View>
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 32 }}>
         {last8.map((v, i) => {
@@ -227,6 +230,8 @@ function overallStatus(m: Measurement): RangeStatus | null {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MeasurementsScreen() {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const { width: screenWidth } = useWindowDimensions()
@@ -268,7 +273,7 @@ export default function MeasurementsScreen() {
 
   async function handleSave() {
     if (!id || !user) return
-    if (!ec && !ph && !temp) { Alert.alert('Atencion', 'Ingresa al menos un valor'); return }
+    if (!ec && !ph && !temp) { Alert.alert(t('plantMeasurements.attention_title'), t('plantMeasurements.attention_message')); return }
     setSaving(true)
     try {
       await supabase.from('measurements').insert({
@@ -282,20 +287,20 @@ export default function MeasurementsScreen() {
       setEc(''); setPh(''); setTemp(''); setNotes('')
       await load()
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar')
+      Alert.alert(t('plantMeasurements.error_title'), e instanceof Error ? e.message : t('plantMeasurements.save_error'))
     } finally {
       setSaving(false)
     }
   }
 
   function handleDelete(measurementId: string) {
-    Alert.alert('Eliminar medicion', 'Esta accion no se puede deshacer.', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert(t('plantMeasurements.delete_title'), t('plantMeasurements.delete_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Eliminar', style: 'destructive',
+        text: t('common.delete'), style: 'destructive',
         onPress: async () => {
           const { error } = await supabase.from('measurements').delete().eq('id', measurementId)
-          if (error) Alert.alert('Error', error.message)
+          if (error) Alert.alert(t('plantMeasurements.error_title'), error.message)
           else setHistory(prev => prev.filter(m => m.id !== measurementId))
         },
       },
@@ -330,19 +335,19 @@ export default function MeasurementsScreen() {
               <BackIcon size={20} color="#52CC64" />
             </TouchableOpacity>
             <View style={{ backgroundColor: 'rgba(82,204,100,0.1)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(82,204,100,0.2)' }}>
-              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>EC · pH · TEMP</Text>
+              <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>{t('plantMeasurements.badge')}</Text>
             </View>
           </View>
 
-          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>Mediciones</Text>
+          <Text style={{ color: '#E4F2E7', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{t('plantMeasurements.title')}</Text>
           {plantName ? <Text style={{ color: '#3DAA50', fontSize: 13, marginTop: 3, opacity: 0.9 }}>{plantName}</Text> : null}
 
           {/* Stats */}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
             {[
-              { label: 'registros',  value: history.length },
-              { label: 'con EC',     value: ecPoints.length },
-              { label: 'con pH',     value: phPoints.length },
+              { label: t('plantMeasurements.stat_records'), value: history.length },
+              { label: t('plantMeasurements.stat_with_ec'), value: ecPoints.length },
+              { label: t('plantMeasurements.stat_with_ph'), value: phPoints.length },
             ].map(s => (
               <View key={s.label} style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, borderWidth: 1, borderColor: '#1C2E1E', padding: 12, alignItems: 'center' }}>
                 <Text style={{ color: '#E4F2E7', fontSize: 20, fontWeight: '900' }}>{s.value}</Text>
@@ -362,9 +367,9 @@ export default function MeasurementsScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 14, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: '#1A2A1A', marginBottom: 2 }}>
                 <Text style={{ fontSize: 14 }}>📈</Text>
-                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>Graficos</Text>
+                <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>{t('plantMeasurements.charts_title')}</Text>
                 <View style={{ marginLeft: 'auto' }}>
-                  <Text style={{ color: '#2D4030', fontSize: 11 }}>ultimos 20 registros</Text>
+                  <Text style={{ color: '#2D4030', fontSize: 11 }}>{t('plantMeasurements.charts_subtitle')}</Text>
                 </View>
               </View>
 
@@ -407,37 +412,37 @@ export default function MeasurementsScreen() {
           <LinearGradient colors={['#131A10', '#0C1009']} style={{ borderRadius: 20, borderWidth: 1, borderColor: '#1C2E1E', overflow: 'hidden' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1A2A1A' }}>
               <Text style={{ fontSize: 16 }}>🧪</Text>
-              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>Nueva medicion</Text>
+              <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>{t('plantMeasurements.new_measurement')}</Text>
             </View>
 
             <View style={{ padding: 16, gap: 12 }}>
               {/* EC + pH */}
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={fieldLabel}>EC (mS/cm)</Text>
+                  <Text style={fieldLabel}>{t('plantMeasurements.field_ec')}</Text>
                   <TextInput value={ec} onChangeText={setEc} keyboardType="decimal-pad" placeholder="1.2" placeholderTextColor="#2D4030" style={inputStyle} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={fieldLabel}>pH</Text>
+                  <Text style={fieldLabel}>{t('plantMeasurements.field_ph')}</Text>
                   <TextInput value={ph} onChangeText={setPh} keyboardType="decimal-pad" placeholder="6.2" placeholderTextColor="#2D4030" style={inputStyle} />
                 </View>
               </View>
               {/* Temp */}
               <View>
-                <Text style={fieldLabel}>Temp. agua (°C)</Text>
+                <Text style={fieldLabel}>{t('plantMeasurements.field_water_temp')}</Text>
                 <TextInput value={temp} onChangeText={setTemp} keyboardType="decimal-pad" placeholder="22" placeholderTextColor="#2D4030" style={inputStyle} />
               </View>
               {/* Notes */}
               <View>
-                <Text style={fieldLabel}>Notas (opcional)</Text>
-                <TextInput value={notes} onChangeText={setNotes} placeholder="Observaciones..." placeholderTextColor="#2D4030" style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]} multiline />
+                <Text style={fieldLabel}>{t('plantMeasurements.field_notes')}</Text>
+                <TextInput value={notes} onChangeText={setNotes} placeholder={t('plantMeasurements.notes_placeholder')} placeholderTextColor="#2D4030" style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]} multiline />
               </View>
               {/* Save */}
               <TouchableOpacity onPress={handleSave} disabled={!canSave} activeOpacity={0.85} style={{ borderRadius: 14, overflow: 'hidden', opacity: canSave ? 1 : 0.35 }}>
                 <LinearGradient colors={['#52CC64', '#3DAA50']} style={{ paddingVertical: 15, alignItems: 'center' }}>
                   {saving
                     ? <ActivityIndicator color="#0C1410" size="small" />
-                    : <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 15 }}>Registrar medicion</Text>
+                    : <Text style={{ color: '#0C1410', fontWeight: '900', fontSize: 15 }}>{t('plantMeasurements.save_button')}</Text>
                   }
                 </LinearGradient>
               </TouchableOpacity>
@@ -449,7 +454,7 @@ export default function MeasurementsScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: '#728C74' }} />
               <Text style={{ color: '#728C74', fontSize: 13, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                Historial ({history.length})
+                {t('plantMeasurements.history_title', { count: history.length })}
               </Text>
             </View>
 
@@ -462,7 +467,7 @@ export default function MeasurementsScreen() {
               >
                 <Text style={{ fontSize: 40, marginBottom: 12 }}>🧪</Text>
                 <Text style={{ color: '#728C74', fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
-                  Sin mediciones registradas{'\n'}Agrega tu primera arriba
+                  {t('plantMeasurements.empty_desc')}
                 </Text>
               </LinearGradient>
             ) : (
@@ -480,7 +485,7 @@ export default function MeasurementsScreen() {
                           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                             <View>
                               <Text style={{ color: '#8AAF8E', fontSize: 12, fontWeight: '600' }}>
-                                {format(m.measuredAt, "d MMM · HH:mm", { locale: es })}
+                                {format(m.measuredAt, "d MMM · HH:mm", { locale: dateLocale })}
                               </Text>
                               {m.tempCelsius != null && (
                                 <Text style={{ color: '#60A5FA', fontSize: 11, marginTop: 2 }}>🌡️ {m.tempCelsius}°C</Text>
@@ -508,7 +513,7 @@ export default function MeasurementsScreen() {
                 {history.length > 5 && (
                   <TouchableOpacity onPress={() => setShowAll(!showAll)} style={{ paddingVertical: 14, alignItems: 'center' }}>
                     <Text style={{ color: '#52CC64', fontSize: 13, fontWeight: '700' }}>
-                      {showAll ? 'Ver menos' : `Ver ${hiddenCount} mas`}
+                      {showAll ? t('plantMeasurements.show_less') : t('plantMeasurements.show_more', { count: hiddenCount })}
                     </Text>
                   </TouchableOpacity>
                 )}

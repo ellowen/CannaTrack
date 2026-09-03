@@ -8,17 +8,14 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
 import { BackIcon } from '@/components/icons/AppIcons'
 import { useNutritionTables } from '@/hooks/useNutritionTables'
+import { useTranslation } from '@/i18n'
+import type { TFunction } from 'i18next'
 import type { NutritionWeek } from '@shared/types/plant'
 
-const STAGE_LABEL: Record<string, string> = {
-  rooting:   'Enraizamiento',
-  growth:    'Crecimiento',
-  preflower: 'Pre-floracion',
-  stretch:   'Estiramiento',
-  bulking:   'Engorde',
-  ripening:  'Maduracion',
-  flushing:  'Limpieza',
-  harvested: 'Cosecha',
+function stageLabel(t: TFunction, stage: string) {
+  const key = `tablesDetail.stage_${stage}`
+  const translated = t(key, { defaultValue: '' })
+  return translated || stage
 }
 
 const STAGE_COLOR: Record<string, string> = {
@@ -33,6 +30,7 @@ const STAGE_COLOR: Record<string, string> = {
 }
 
 function WeekRow({ week, lines }: { week: NutritionWeek; lines: { id: string; name: string }[] }) {
+  const { t } = useTranslation()
   const stageColor = STAGE_COLOR[week.stage] ?? '#6D8C74'
   const isFlushing = week.stage === 'flushing'
 
@@ -57,22 +55,22 @@ function WeekRow({ week, lines }: { week: NutritionWeek; lines: { id: string; na
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#E4F2E7', fontSize: 14, fontWeight: '700' }}>
-            Semana {week.week} — {STAGE_LABEL[week.stage] ?? week.stage}
+            {t('tablesDetail.week_row_label', { week: week.week, stage: stageLabel(t, week.stage) })}
           </Text>
           <Text style={{ color: '#6D8C74', fontSize: 11, marginTop: 1 }}>
-            Dia {week.dayStart}–{week.dayEnd}
+            {t('tablesDetail.day_range', { start: week.dayStart, end: week.dayEnd })}
           </Text>
         </View>
         {/* EC / PH */}
         <View style={{ alignItems: 'flex-end', gap: 2 }}>
           {(week.ecMin != null && week.ecMax != null) && (
             <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700' }}>
-              EC {week.ecMin}–{week.ecMax}
+              {t('tablesDetail.ec_range', { min: week.ecMin, max: week.ecMax })}
             </Text>
           )}
           {(week.phMin != null && week.phMax != null) && (
             <Text style={{ color: '#3B82F6', fontSize: 11, fontWeight: '700' }}>
-              pH {week.phMin}–{week.phMax}
+              {t('tablesDetail.ph_range', { min: week.phMin, max: week.phMax })}
             </Text>
           )}
         </View>
@@ -107,7 +105,7 @@ function WeekRow({ week, lines }: { week: NutritionWeek; lines: { id: string; na
       )}
       {isFlushing && (
         <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
-          <Text style={{ color: '#3B82F6', fontSize: 12 }}>Solo agua — limpieza de sales</Text>
+          <Text style={{ color: '#3B82F6', fontSize: 12 }}>{t('tablesDetail.water_only')}</Text>
         </View>
       )}
     </View>
@@ -115,6 +113,7 @@ function WeekRow({ week, lines }: { week: NutritionWeek; lines: { id: string; na
 }
 
 export default function TableDetailScreen() {
+  const { t }                = useTranslation()
   const { id }               = useLocalSearchParams<{ id: string }>()
   const { getTableById }     = useNutritionTables()
   const table                = getTableById(id)
@@ -122,7 +121,7 @@ export default function TableDetailScreen() {
   if (!table) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: '#6D8C74' }}>Tabla no encontrada</Text>
+        <Text style={{ color: '#6D8C74' }}>{t('tablesDetail.not_found')}</Text>
       </SafeAreaView>
     )
   }
@@ -168,9 +167,9 @@ export default function TableDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#22C55E' }} />
               <Text style={{ color: '#22C55E', fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
-                Ciclo Vegetativo
+                {t('tablesDetail.vege_cycle_title')}
               </Text>
-              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>— {table.vegeWeeks.length} semanas</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>{t('tablesDetail.weeks_count', { count: table.vegeWeeks.length })}</Text>
             </View>
             {table.vegeWeeks.map((w, i) => (
               <WeekRow key={i} week={w} lines={table.lines} />
@@ -184,9 +183,9 @@ export default function TableDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#F59E0B' }} />
               <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
-                Ciclo de Floracion
+                {t('tablesDetail.flora_cycle_title')}
               </Text>
-              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>— {table.floraWeeks.length} semanas</Text>
+              <Text style={{ color: '#3A5C3E', fontSize: 12 }}>{t('tablesDetail.weeks_count', { count: table.floraWeeks.length })}</Text>
             </View>
             {table.floraWeeks.map((w, i) => (
               <WeekRow key={i} week={w} lines={table.lines} />
@@ -201,7 +200,7 @@ export default function TableDetailScreen() {
             borderWidth: 1, borderColor: 'rgba(82,204,100,0.1)',
             borderRadius: 12, padding: 14,
           }}>
-            <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>NOTA</Text>
+            <Text style={{ color: '#52CC64', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>{t('tablesDetail.note_label')}</Text>
             <Text style={{ color: '#6D8C74', fontSize: 12, lineHeight: 18 }}>{table.notes}</Text>
           </View>
         )}

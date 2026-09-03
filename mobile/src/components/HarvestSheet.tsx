@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Animated, PanResponder, Dimensions, Alert } from 'react-native'
 import { format, differenceInDays } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useDateLocale } from '@/lib/dateLocale'
 import * as Haptics from 'expo-haptics'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from '@/i18n'
 import type { Plant } from '@shared/types/plant'
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: Props) {
+  const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   const [tab, setTab]           = useState<'harvest' | 'discard'>('harvest')
   const [grams, setGrams]       = useState('')
   const [stats, setStats]       = useState<{ growDays: number; pct: number; avgEc: string | null; avgPh: string | null } | null>(null)
@@ -126,11 +129,11 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
   function handleDismiss() {
     if (grams.trim()) {
       Alert.alert(
-        'Descartar cambios',
-        'Tienes datos sin guardar. ¿Estás seguro?',
+        t('harvestSheet.discard_changes_title'),
+        t('harvestSheet.discard_changes_message'),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Descartar', style: 'destructive', onPress: () => {
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('harvestSheet.discard_button'), style: 'destructive', onPress: () => {
             onClose()
             panY.setValue(0)
             opacityAnim.setValue(1)
@@ -154,10 +157,10 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
   }
 
   const statsItems = stats ? [
-    { value: `${stats.growDays}d`, label: 'Grow total' },
-    { value: `${stats.pct}%`,      label: 'Tareas ✓' },
-    { value: stats.avgEc ?? '--',  label: 'EC media' },
-    { value: stats.avgPh ?? '--',  label: 'pH medio' },
+    { value: `${stats.growDays}d`, label: t('harvestSheet.stat_grow_total') },
+    { value: `${stats.pct}%`,      label: t('harvestSheet.stat_tasks_done') },
+    { value: stats.avgEc ?? '--',  label: t('harvestSheet.stat_avg_ec') },
+    { value: stats.avgPh ?? '--',  label: t('harvestSheet.stat_avg_ph') },
   ] : null
 
   return (
@@ -219,11 +222,11 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
           {/* Timeline */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 }}>
             <Text style={{ color: '#728C74', fontSize: 11 }}>
-              📅 {format(plant.startDate, "d MMM yyyy", { locale: es })}
+              📅 {format(plant.startDate, "d MMM yyyy", { locale: dateLocale })}
             </Text>
             <View style={{ flex: 1, height: 1, backgroundColor: '#1C2E1E' }} />
             <Text style={{ color: '#728C74', fontSize: 11 }}>
-              🌸 {format(today, "d MMM yyyy", { locale: es })}
+              🌸 {format(today, "d MMM yyyy", { locale: dateLocale })}
             </Text>
           </View>
 
@@ -241,7 +244,7 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
               <Text style={{
                 fontWeight: '800', fontSize: 13,
                 color: tab === 'harvest' ? '#0C1410' : '#728C74',
-              }}>✂️ Cosechar</Text>
+              }}>{t('harvestSheet.tab_harvest')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setTab('discard')}
@@ -255,18 +258,18 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
               <Text style={{
                 fontWeight: '800', fontSize: 13,
                 color: tab === 'discard' ? '#EF4444' : '#728C74',
-              }}>🗑️ Descartar</Text>
+              }}>{t('harvestSheet.tab_discard')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Grams input — solo en harvest */}
           {tab === 'harvest' && (
             <View style={{ marginBottom: 14 }}>
-              <Text style={lbl}>Gramos cosechados (opcional)</Text>
+              <Text style={lbl}>{t('harvestSheet.grams_label')}</Text>
               <TextInput
                 value={grams}
                 onChangeText={setGrams}
-                placeholder="ej: 45.5"
+                placeholder={t('harvestSheet.grams_placeholder')}
                 placeholderTextColor="#3A5040"
                 keyboardType="decimal-pad"
                 style={{
@@ -281,8 +284,8 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
           {/* Descripcion */}
           <Text style={{ color: '#728C74', fontSize: 12, lineHeight: 18, marginBottom: 16 }}>
             {tab === 'harvest'
-              ? '🎉 Excelente trabajo! La planta pasara al historial de cosechas.'
-              : '⚠️ La planta se marcara como descartada. No se puede deshacer.'}
+              ? t('harvestSheet.desc_harvest')
+              : t('harvestSheet.desc_discard')}
           </Text>
 
           {/* Confirmar */}
@@ -297,7 +300,7 @@ export function HarvestSheet({ visible, plant, onClose, onHarvest, onDiscard }: 
               fontWeight: '900', fontSize: 15,
               color: tab === 'harvest' ? '#0C1410' : '#EF4444',
             }}>
-              {tab === 'harvest' ? '✂️ Confirmar cosecha  +100 XP' : '🗑️ Confirmar descarte'}
+              {tab === 'harvest' ? t('harvestSheet.confirm_harvest') : t('harvestSheet.confirm_discard')}
             </Text>
           </TouchableOpacity>
 
