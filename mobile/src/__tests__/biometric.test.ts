@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import {
-  authenticateWithBiometric,
   saveSessionForBiometric,
   clearSavedSession,
   hasSavedSession,
@@ -12,17 +11,36 @@ import {
 } from '@/lib/biometric'
 import { supabase } from '@/lib/supabase'
 
-// Mock dependencies
-vi.mock('expo-local-authentication')
-vi.mock('expo-secure-store')
-vi.mock('@/lib/supabase')
+// Mocks explicitos (no vi.mock(id) automock) -- los paquetes reales de Expo
+// referencian globals de runtime nativo (globalThis.expo.EventEmitter, etc.)
+// que no existen bajo Node/Vitest, y con automock Vitest igual carga y
+// analiza el modulo real para inferir la forma del mock, lo cual explota
+// antes de llegar a reemplazar nada.
+vi.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: vi.fn(),
+  isEnrolledAsync: vi.fn(),
+  supportedAuthenticationTypesAsync: vi.fn(),
+  authenticateAsync: vi.fn(),
+  AuthenticationType: { FINGERPRINT: 1, FACIAL_RECOGNITION: 2, IRIS: 3 },
+}))
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn(),
+  setItemAsync: vi.fn(),
+  deleteItemAsync: vi.fn(),
+}))
+vi.mock('@/lib/supabase', () => ({
+  supabase: { auth: { setSession: vi.fn(), getSession: vi.fn() } },
+}))
 
 // Store failed attempts in a module-level variable (simulating real app behavior)
 let failedBiometricAttempts = 0
 
 // Create a wrapper for testing rate limiting
 async function authenticateWithBiometricTest(): Promise<boolean> {
-  if (failedBiometricAttempts >= 6) {
+  // >= 5, no 6 -- mismo umbral que BIOMETRIC_MAX_ATTEMPTS en el
+  // biometric.ts real. "Bloquear en el 6to intento" significa que ya
+  // hubo 5 fallos guardados y el 6to ni siquiera llega a autenticar.
+  if (failedBiometricAttempts >= 5) {
     throw new Error('Too many failed attempts. Please try again later.')
   }
 
@@ -31,6 +49,14 @@ async function authenticateWithBiometricTest(): Promise<boolean> {
       promptMessage: 'Confirma tu identidad',
       cancelLabel: 'Cancelar',
     })
+    // Un resultado { success: false } (usuario cancelo, no reconocido, etc.)
+    // es un intento fallido igual que una excepcion -- ambos cuentan para
+    // el rate limit. Antes solo el catch incrementaba, asi que un mock
+    // resuelto con success:false (el caso realista, authenticateAsync no
+    // tira excepcion por una huella no reconocida) nunca sumaba.
+    if (!result.success) {
+      failedBiometricAttempts++
+    }
     return result.success
   } catch (error) {
     failedBiometricAttempts++

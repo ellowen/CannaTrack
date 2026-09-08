@@ -5,6 +5,36 @@
 
 import { vi } from 'vitest'
 
+// react-native's own entry point (node_modules/react-native/index.js) re-exports
+// via Flow syntax (`import typeof * as X from '.../index.js.flow'`), which
+// Vitest's esbuild-based transform can't parse -- it's Flow, not TS/JS. Any
+// test whose import chain reaches the real package (even indirectly, e.g.
+// via @/lib/storage or @/lib/biometric importing `Platform` from
+// 'react-native') fails with a parse error, not a test failure. Mocked
+// globally here so no individual test file has to remember to do it --
+// covers the actual react-native exports used under src/lib and src/store
+// (Platform, AppState); extend if a future test needs more.
+vi.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: (spec: Record<string, unknown>) => ('ios' in spec ? spec.ios : spec.default),
+  },
+  AppState: {
+    currentState: 'active',
+    addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+    removeEventListener: vi.fn(),
+  },
+}))
+
+// Real @react-native-async-storage/async-storage falls back to a
+// window/localStorage-based implementation when it can't find the native
+// module -- which doesn't exist under Node either, so every call logs a
+// caught "window is not defined" to stderr (harmless -- src/lib/storage.ts
+// catches it -- but noisy on every store test run). In-memory mock instead.
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: createMockAsyncStorage(),
+}))
+
 /**
  * Mock console methods to reduce noise in test output.
  * Re-enable for debugging specific tests.
