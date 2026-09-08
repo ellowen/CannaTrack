@@ -5,6 +5,7 @@ export const plantsTabEs = {
   history_count: ' · {{count}} en historial',
   new_plant_button: '+ Nueva',
   search_placeholder: 'Buscar planta...',
+  clear_search: 'Borrar busqueda',
 
   filter_all: 'Todas',
   filter_active: 'Activas',
@@ -50,6 +51,7 @@ export const plantsTabEn = {
   history_count: ' · {{count}} in history',
   new_plant_button: '+ New',
   search_placeholder: 'Search plant...',
+  clear_search: 'Clear search',
 
   filter_all: 'All',
   filter_active: 'Active',

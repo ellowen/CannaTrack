@@ -175,6 +175,8 @@ export default function HomeScreen() {
               )}
               <TouchableOpacity
                 onPress={() => router.push('/settings')}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.title')}
                 style={{ width: 38, height: 38, backgroundColor: '#1A2E1C', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A4A2E' }}
               >
                 <GearIcon size={19} color="#3D6642" />
@@ -545,7 +547,14 @@ export default function HomeScreen() {
                   const hasTask = day.count > 0
                   const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6
                   return (
-                    <TouchableOpacity key={i} onPress={() => router.push('/(tabs)/tasks')} style={{ flex: 1 }} activeOpacity={0.8}>
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => router.push('/(tabs)/tasks')}
+                      style={{ flex: 1 }}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${format(day.date, "EEEE d 'de' MMMM", { locale: dateLocale })}, ${hasTask ? t('home.upcoming_day_tasks', { count: day.count }) : t('home.upcoming_day_free')}`}
+                    >
                       {hasTask ? (
                         <LinearGradient
                           colors={['#112016', '#090F0A']}

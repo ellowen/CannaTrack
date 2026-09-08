@@ -46,6 +46,9 @@ export const homeEs = {
   new_plant: 'Nueva',
   pending_today: '⚡ {{count}} hoy',
   upcoming: 'Proxima semana',
+  upcoming_day_tasks_one: '{{count}} tarea',
+  upcoming_day_tasks_other: '{{count}} tareas',
+  upcoming_day_free: 'sin tareas',
 }
 
 export const homeEn: typeof homeEs = {
@@ -92,6 +95,9 @@ export const homeEn: typeof homeEs = {
   new_plant: 'New',
   pending_today: '⚡ {{count}} today',
   upcoming: 'Next 7 days',
+  upcoming_day_tasks_one: '{{count}} task',
+  upcoming_day_tasks_other: '{{count}} tasks',
+  upcoming_day_free: 'no tasks',
 }
 
 export const tasksTabEs = {
@@ -105,6 +111,12 @@ export const tasksTabEs = {
   all_done: 'Todo listo',
   pending_label_one: 'pendiente',
   pending_label_other: 'pendientes',
+  prev_month: 'Mes anterior',
+  next_month: 'Mes siguiente',
+  day_pending_one: '{{count}} tarea pendiente',
+  day_pending_other: '{{count}} tareas pendientes',
+  day_all_done: 'todas completadas',
+  day_no_tasks: 'sin tareas',
   free_day_title: 'Dia libre',
   free_day_desc: 'Sin tareas programadas\npara este dia',
   mark_done: 'Hecho ✓',
@@ -122,6 +134,12 @@ export const tasksTabEn: typeof tasksTabEs = {
   all_done: 'All done',
   pending_label_one: 'pending',
   pending_label_other: 'pending',
+  prev_month: 'Previous month',
+  next_month: 'Next month',
+  day_pending_one: '{{count}} pending task',
+  day_pending_other: '{{count}} pending tasks',
+  day_all_done: 'all done',
+  day_no_tasks: 'no tasks',
   free_day_title: 'Day off',
   free_day_desc: 'No tasks scheduled\nfor this day',
   mark_done: 'Done ✓',

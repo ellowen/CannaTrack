@@ -158,6 +158,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               onPress={onPress}
               onLongPress={onLongPress}
               activeOpacity={0.7}
+              accessibilityRole="tab"
+              accessibilityLabel={t(TAB_LABEL_KEY[tabName])}
+              accessibilityState={{ selected: isFocused }}
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}
             >
               <Animated.View style={{

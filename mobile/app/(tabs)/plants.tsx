@@ -137,7 +137,11 @@ export default function PlantsScreen() {
               style={{ flex: 1, color: '#E8F5EA', fontSize: 14 }}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel={t('plantsTab.clear_search')}
+              >
                 <Text style={{ color: '#3A5040', fontSize: 16 }}>✕</Text>
               </TouchableOpacity>
             )}

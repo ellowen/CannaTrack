@@ -166,6 +166,8 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               onPress={() => router.push('/settings')}
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.title')}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 16 }}>⚙️</Text>

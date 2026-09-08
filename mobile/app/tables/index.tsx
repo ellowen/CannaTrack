@@ -184,7 +184,7 @@ export default function TablesMarketplaceScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0C1410' }}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.back')}>
           <BackIcon size={22} color='#52CC64' />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>

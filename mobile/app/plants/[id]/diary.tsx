@@ -391,6 +391,8 @@ export default function DiaryScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <TouchableOpacity
               onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back')}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
             >
               <BackIcon size={20} color={isFlora ? '#F59E0B' : '#52CC64'} />

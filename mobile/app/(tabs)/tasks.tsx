@@ -207,6 +207,8 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 onPress={prevMonth}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('tasksTab.prev_month')}
                 style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'‹'}</Text>
@@ -232,6 +234,8 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   onPress={nextMonth}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('tasksTab.next_month')}
                   style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Text style={{ color: '#52CC64', fontSize: 16, fontWeight: '700' }}>{'›'}</Text>
@@ -269,6 +273,12 @@ export default function CalendarScreen() {
                       void Haptics.selectionAsync()
                       setSelected(day)
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${format(day, "EEEE d 'de' MMMM", { locale: dateLocale })}, ${
+                      !hasTasks ? t('tasksTab.day_no_tasks')
+                        : allComplete ? t('tasksTab.day_all_done')
+                        : t('tasksTab.day_pending', { count: dayData!.pending })
+                    }`}
                     style={{ width: '14.28%', height: 54, alignItems: 'center', paddingTop: 6 }}
                   >
                     {isSelected ? (
