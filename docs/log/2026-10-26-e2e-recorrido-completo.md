@@ -29,4 +29,19 @@ Suite E2E que recorre la web completa con las 6 variedades reales (Dutch Passion
 
 ## Pendiente
 - Un E2E contra Supabase real con cuenta de testing propia (el usuario la crea).
-- Commitear (nada de esto esta commiteado).
+- (commiteado y pusheado, ver historial de git)
+
+## Segunda tanda: revision contra datos reales (cuenta pro@cannatrack.test)
+Con la base real conectada (DATABASE_URL en `.env.local`, ignorado por git) y la sesion Pro abierta en el navegador integrado, la revision pantalla por pantalla encontro:
+
+1. **Las autofloreciente se trataban como vegetativas para siempre.** Las autos no tienen `floraStartDate` (florecen solas al dia 35) y varias pantallas decidian "flora" solo con ese campo: la planta "Ww" (auto, dia 76) aparecia como `V11`, el filtro Flora la excluia y sus 33 tareas de floracion quedaban ocultas. Ahora `getFloraStart` / `getActiveCycle` (flora-cycle.ts) resuelven el ciclo y los usan useTasks, Home, listado, Dashboard e Inventario.
+2. **El listado mostraba la semana mal** (`F7` donde Home decia `F6`) y la etapa "Vegetativo" junto a una `F`. Corregido (semana = floor(dias/7)+1).
+3. **La fecha de cierre (cosecha/descarte) no se guardaba**: la tabla `plants` no tenia `end_date`. El Inventario mostraba "Ciclo prom. 0d". Migracion `20261026000000_plants_end_date.sql` (APLICADA) + guardado y lectura en `sync.ts`; ahora muestra 82d.
+4. Las tarjetas de historial calculaban el fin como floraStart + 56 dias fijos; ahora usan la fecha real o la cosecha estimada.
+
+Observaciones sin corregir:
+- Autos con `flora_days` sin definir (plantas anteriores a la migracion de ciclo): el cronograma de floracion sigue 56 dias aunque la cosecha sea al dia 75, asi que quedan tareas de riego posteriores a la cosecha. Las plantas nuevas desde el catalogo ya no tienen este problema.
+- La tarea de cosecha de una auto se etiqueta con la ultima semana de la tabla (F8) aunque la planta este en F6.
+- "Vegetativa / Pre-Flora" en el encabezado de Home es el nivel de gamificacion, no la fase de la planta (confunde por el nombre).
+
+Infra: `e2e/real/discard-active-plants.spec.ts` descarta desde la UI las plantas activas de la cuenta Pro real (se saltea sin `e2e/.auth/pro.json`). `run-migrations.js` ya no tiene la clave secreta hardcodeada (se roto la clave en Supabase).

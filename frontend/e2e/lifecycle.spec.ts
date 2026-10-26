@@ -248,6 +248,30 @@ test.describe('Floración, cosecha, descarte y edición', () => {
     await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
   })
 
+  test('cosechar guarda la fecha de cierre: el Inventario muestra el ciclo real tras recargar', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, SODA, 3)
+    await page.getByRole('button', { name: /Cosechar/ }).first().click()
+    await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect.poll(() => dbPlants(context).find((p) => p.id === id)!.end_date).toBeTruthy()
+
+    await gotoApp(page, '/inventory') // recarga completa: el dato viene "del servidor"
+    await page.getByRole('button', { name: 'Cosechadas' }).click()
+    await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
+    await expect(page.locator('div', { hasText: /^3dCiclo prom\.$/ }).first()).toBeVisible()
+  })
+
+  test('reactivar limpia la fecha de cierre', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, SODA, 3)
+    await page.getByRole('button', { name: /Cosechar/ }).first().click()
+    await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
+    await expect.poll(() => dbPlants(context).find((p) => p.id === id)!.end_date).toBeTruthy()
+    await gotoApp(page, `/plants/${id}`)
+    page.once('dialog', (d) => d.accept())
+    await page.getByRole('button', { name: /Reactivar planta/ }).click()
+    await expect.poll(() => dbPlants(context).find((p) => p.id === id)!.end_date ?? null).toBeNull()
+  })
+
   test('descartar desde el sheet (pestaña Descartar) y reactivar', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
     await page.getByRole('button', { name: /Cosechar/ }).click()

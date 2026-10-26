@@ -28,3 +28,4 @@ frontend/playwright-report/
 .claude/skills/vercel-react-native-skills/
 .claude/skills/vercel-react-view-transitions/
 .claude/skills/vitest/
+frontend/e2e/.auth/
