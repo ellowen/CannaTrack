@@ -36,6 +36,21 @@ export interface SeedPlantOptions {
   growMedium?: 'soil' | 'coco' | 'hydro'
   daysAgo?: number
   floraDaysAgo?: number
+  /** Default 'Northern Lights'. */
+  genetics?: string
+  /** Default 'feminized'. */
+  geneticType?: 'feminized' | 'autoflower' | 'regular'
+  /** Solo autoflorecientes. Si se omite, la planta usa el default de la app (75). */
+  autoFlowerTotalDays?: number
+  /** Duracion de floracion en dias. Si se omite, la planta usa el default de la app (56). */
+  floraDays?: number
+  /** Autos: dia de entrada en floracion. Si se omite, default de la app (35). */
+  autoFloraStartDay?: number
+  /** Default 2. */
+  potCount?: number
+  /** Default 11. */
+  potVolumeLiters?: number
+  notes?: string
 }
 
 export interface SeedOptions {
@@ -267,8 +282,8 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
   const plantRows = plants.map((p, i) => ({
     id: p.id ?? `e2e-plant-${i + 1}`,
     name: p.name ?? `Planta E2E ${i + 1}`,
-    genetics: 'Northern Lights',
-    geneticType: 'feminized',
+    genetics: p.genetics ?? 'Northern Lights',
+    geneticType: p.geneticType ?? 'feminized',
     sex: 'unknown',
     startDate: toDateOnly(now - (p.daysAgo ?? 20) * day),
     ...(p.floraDaysAgo != null
@@ -276,10 +291,14 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
       : {}),
     location: p.location ?? 'indoor',
     growMedium: p.growMedium ?? 'soil',
-    potCount: 2,
-    potVolumeLiters: 11,
+    potCount: p.potCount ?? 2,
+    potVolumeLiters: p.potVolumeLiters ?? 11,
     nutritionTableId: 'revegetar-v1',
     status: 'active',
+    ...(p.autoFlowerTotalDays != null ? { autoFlowerTotalDays: p.autoFlowerTotalDays } : {}),
+    ...(p.floraDays != null ? { floraDays: p.floraDays } : {}),
+    ...(p.autoFloraStartDay != null ? { autoFloraStartDay: p.autoFloraStartDay } : {}),
+    ...(p.notes != null ? { notes: p.notes } : {}),
   }))
 
   const taskRows = tasksToday
@@ -355,7 +374,9 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
     sex: p.sex,
     start_date: p.startDate,
     flora_start_date: (p as { floraStartDate?: string }).floraStartDate ?? null,
-    auto_flower_total_days: 75,
+    auto_flower_total_days: (p as { autoFlowerTotalDays?: number }).autoFlowerTotalDays ?? 75,
+    flora_days: (p as { floraDays?: number }).floraDays ?? null,
+    auto_flora_start_day: (p as { autoFloraStartDay?: number }).autoFloraStartDay ?? null,
     location: p.location,
     grow_medium: p.growMedium,
     pot_count: p.potCount,
@@ -363,7 +384,7 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
     nutrition_table_id: p.nutritionTableId,
     available_products: [],
     status: p.status,
-    notes: null,
+    notes: (p as { notes?: string }).notes ?? null,
     created_at: new Date(now).toISOString(),
     updated_at: new Date(now).toISOString(),
   }))
