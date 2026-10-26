@@ -61,6 +61,14 @@ export interface SeedOptions {
   plants?: SeedPlantOptions[]
   /** Tareas simples de nutricion para hoy, por planta */
   tasksToday?: boolean
+  /**
+   * Sembrar el almacenamiento local SOLO en la primera carga de la pestaña.
+   * Por defecto se vuelve a sembrar en cada navegacion (addInitScript corre
+   * en cada carga), lo que simula un dispositivo "recien limpiado". Con true,
+   * un reload conserva el estado local (plantas, cola de sync), como un
+   * usuario real que cierra y reabre la app.
+   */
+  keepLocalState?: boolean
 }
 
 export interface MockProfileOptions {
@@ -274,6 +282,7 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
     onboarded = true,
     plants = [],
     tasksToday = false,
+    keepLocalState = false,
   } = opts
 
   const now = Date.now()
@@ -438,7 +447,11 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
   }
 
   await page.addInitScript(
-    ({ ref, sess, user, plantsJson, tasksJson }) => {
+    ({ ref, sess, user, plantsJson, tasksJson, once }) => {
+      if (once) {
+        if (sessionStorage.getItem('__e2e_seeded')) return
+        sessionStorage.setItem('__e2e_seeded', '1')
+      }
       localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess))
       localStorage.setItem('cultitrack-user', JSON.stringify({ state: user, version: 0 }))
       localStorage.setItem(
@@ -450,7 +463,7 @@ export async function seedApp(page: Page, context: BrowserContext, opts: SeedOpt
         JSON.stringify({ state: { tasks: tasksJson, filter: 'all', loading: false }, version: 0 })
       )
     },
-    { ref: SUPABASE_REF, sess: session, user: userState, plantsJson: plantRows, tasksJson: taskRows }
+    { ref: SUPABASE_REF, sess: session, user: userState, plantsJson: plantRows, tasksJson: taskRows, once: keepLocalState }
   )
 }
 
