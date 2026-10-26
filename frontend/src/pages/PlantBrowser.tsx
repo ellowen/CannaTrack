@@ -31,7 +31,10 @@ function currentWeek(plant: Plant): { label: string; num: number } {
 function harvestEstimate(plant: Plant, t: (key: string) => string): string | null {
   const endDate = getEstimatedHarvestDate(plant) // autos: dia total; fotoperiodicas: floraStart + floraDays
   if (!endDate) return null
-  const daysLeft = differenceInDays(endDate, new Date())
+  // desde la medianoche de hoy, igual que el detalle de la planta (si no, cuenta 1 dia menos)
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const daysLeft = differenceInDays(endDate, startOfToday)
   if (daysLeft <= 0) return t('plants.harvest_ready')
   if (daysLeft === 1) return '1 dia para cosecha'
   return `${daysLeft} dias para cosecha`

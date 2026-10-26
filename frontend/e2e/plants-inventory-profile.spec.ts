@@ -70,6 +70,13 @@ test.describe('Listado de plantas: filtros y busqueda', () => {
     await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
   })
 
+  test('dias para cosecha del listado coinciden con el detalle', async ({ page }) => {
+    // las 6 plantas de este bloque: autos con inicio hace 10 dias
+    const soda = STRAINS.find((s) => s.slug === 'auto-strawberry-soda')!
+    const left = (soda.plant.autoFlowerTotalDays as number) - 10
+    await expect(page.getByRole('link', { name: new RegExp(soda.genetics) }).first()).toContainText(`${left} dias para cosecha`)
+  })
+
   test('abrir una planta desde el listado y el boton "+" crea una nueva', async ({ page }) => {
     await page.getByRole('link', { name: new RegExp(BLUE.name) }).first().click()
     await expect(page.getByRole('heading', { name: BLUE.name })).toBeVisible()
