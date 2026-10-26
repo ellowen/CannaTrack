@@ -1,7 +1,6 @@
--- NO APLICADA. Revisar y aplicar a mano antes de usar la duracion de floracion
--- personalizada desde la app (el sync solo envia estas columnas si la planta
--- las define, asi que la app sigue funcionando sin esta migracion mientras
--- nadie personalice el ciclo).
+-- APLICADA A PRODUCCION el 2026-10-26 (SQL editor de Supabase, "Success. No
+-- rows returned"). Con esto la app puede guardar y sincronizar una duracion
+-- de floracion personalizada por planta.
 --
 -- Objetivo: ciclo de floracion por planta (variedades reales como Blue Applez
 -- ~9 semanas o Citric Lime Pie 65 dias no calzan con las 8 semanas fijas).
