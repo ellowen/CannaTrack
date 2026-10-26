@@ -2,6 +2,7 @@ import { useTaskStore } from '@/store/taskStore'
 import { usePlants } from './usePlants'
 import { getTasksForDate, getUpcomingTasks, getOverdueTasks } from '@/lib/nutrition-utils'
 import type { ScheduledTask } from '@/types/plant'
+import { getActiveCycle } from '@/lib/flora-cycle'
 
 export function useTasks(plantId?: string) {
   // completeTask/uncompleteTask son SOLO locales (store) — el caller es
@@ -28,7 +29,8 @@ export function useTasks(plantId?: string) {
   const activeCycleTasks = filteredTasks.filter((t) => {
     const plant = plants.find((p) => p.id === t.plantId)
     if (!plant) return true
-    const currentCycle = plant.floraStartDate ? 'flora' : 'vege'
+    // Las autos no tienen floraStartDate: florecen solas, getActiveCycle lo resuelve
+    const currentCycle = getActiveCycle(plant, today)
     return t.cycle === currentCycle
   })
 

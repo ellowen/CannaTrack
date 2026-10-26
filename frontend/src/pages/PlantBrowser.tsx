@@ -10,6 +10,8 @@ import { useSubscription } from '@/hooks/useSubscription'
 import type { Plant } from '@/types/plant'
 import { useTranslation } from '@/i18n'
 import { useAuth } from '@/contexts/AuthContext'
+import { getActiveCycle, getFloraStart } from '@/lib/flora-cycle'
+import { getEstimatedHarvestDate } from '@/lib/nutrition-utils'
 
 const FREE_PLANT_LIMIT = 1
 
@@ -17,18 +19,18 @@ type Filter = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartad
 
 function currentWeek(plant: Plant): { label: string; num: number } {
   const today = new Date()
-  if (plant.floraStartDate) {
-    const num = Math.max(1, Math.ceil(differenceInDays(today, plant.floraStartDate) / 7) + 1)
+  const floraStart = getFloraStart(plant)
+  if (floraStart && getActiveCycle(plant, today) === 'flora') {
+    const num = Math.max(1, Math.floor(differenceInDays(today, floraStart) / 7) + 1)
     return { label: `F${num}`, num }
   }
-  const num = Math.max(1, Math.ceil(differenceInDays(today, plant.startDate) / 7) + 1)
+  const num = Math.max(1, Math.floor(differenceInDays(today, plant.startDate) / 7) + 1)
   return { label: `V${num}`, num }
 }
 
 function harvestEstimate(plant: Plant, t: (key: string) => string): string | null {
-  if (!plant.floraStartDate) return null
-  const endDate = new Date(plant.floraStartDate)
-  endDate.setDate(endDate.getDate() + 56) // 8 semanas flora
+  const endDate = getEstimatedHarvestDate(plant) // autos: dia total; fotoperiodicas: floraStart + floraDays
+  if (!endDate) return null
   const daysLeft = differenceInDays(endDate, new Date())
   if (daysLeft <= 0) return t('plants.harvest_ready')
   if (daysLeft === 1) return '1 dia para cosecha'
@@ -38,7 +40,7 @@ function harvestEstimate(plant: Plant, t: (key: string) => string): string | nul
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
 function ActivePlantCard({ plant, pendingCount, t }: { plant: Plant; pendingCount: number; t: (key: string) => string }) {
-  const isFlora  = !!plant.floraStartDate
+  const isFlora  = getActiveCycle(plant, new Date()) === 'flora'
   const { label } = currentWeek(plant)
   const harvest  = harvestEstimate(plant, t)
 
@@ -102,9 +104,9 @@ function ActivePlantCard({ plant, pendingCount, t }: { plant: Plant; pendingCoun
 
 function HistoryPlantCard({ plant, t }: { plant: Plant; t: (key: string) => string }) {
   const isHarvested = plant.status === 'harvested'
-  const endDate = plant.floraStartDate
-    ? format(new Date(plant.floraStartDate.getTime() + 56 * 24 * 60 * 60 * 1000), 'd MMM yyyy', { locale: es })
-    : null
+  // fecha real de cierre si existe; si no, la cosecha estimada (autos y fotoperiodicas)
+  const closing = plant.endDate ?? getEstimatedHarvestDate(plant)
+  const endDate = closing ? format(closing, 'd MMM yyyy', { locale: es }) : null
   const startStr = format(plant.startDate, 'd MMM yyyy', { locale: es })
 
   return (
@@ -171,8 +173,8 @@ export default function PlantBrowser() {
   const counts = useMemo(() => ({
     todas:       plants.length,
     activas:     plants.filter(p => p.status === 'active').length,
-    vege:        plants.filter(p => p.status === 'active' && !p.floraStartDate).length,
-    flora:       plants.filter(p => p.status === 'active' && !!p.floraStartDate).length,
+    vege:        plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'vege').length,
+    flora:       plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'flora').length,
     cosechadas:  plants.filter(p => p.status === 'harvested').length,
     descartadas: plants.filter(p => p.status === 'discarded').length,
   }), [plants])
@@ -180,8 +182,8 @@ export default function PlantBrowser() {
   const filtered = useMemo(() => {
     let result = plants
     if (filter === 'activas')     result = plants.filter(p => p.status === 'active')
-    if (filter === 'vege')        result = plants.filter(p => p.status === 'active' && !p.floraStartDate)
-    if (filter === 'flora')       result = plants.filter(p => p.status === 'active' && !!p.floraStartDate)
+    if (filter === 'vege')        result = plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'vege')
+    if (filter === 'flora')       result = plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'flora')
     if (filter === 'cosechadas')  result = plants.filter(p => p.status === 'harvested')
     if (filter === 'descartadas') result = plants.filter(p => p.status === 'discarded')
 

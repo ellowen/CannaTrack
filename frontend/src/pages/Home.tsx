@@ -20,6 +20,7 @@ import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
+import { getActiveCycle, getFloraStart } from '@/lib/flora-cycle'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutricion',
@@ -441,10 +442,11 @@ export default function Home() {
             {pending.map((task, i) => {
               const plant     = getPlant(task.plantId)
               const plantIsCannabis = plant ? isCannabisPlant(plant) : true
-              const isFlora   = !!plant?.floraStartDate
+              const floraStart = plant ? getFloraStart(plant) : undefined
+              const isFlora   = plant ? getActiveCycle(plant, today) === 'flora' : false
               const phaseDay  = plant
-                ? (isFlora && plant.floraStartDate
-                    ? differenceInDays(today, plant.floraStartDate) + 1
+                ? (isFlora && floraStart
+                    ? differenceInDays(today, floraStart) + 1
                     : differenceInDays(today, plant.startDate) + 1)
                 : 0
               const weekNum   = Math.ceil(phaseDay / 7)
@@ -612,9 +614,10 @@ export default function Home() {
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
             {plants.map((plant) => {
               const plantIsCannabis = isCannabisPlant(plant)
-              const isFlora  = !!plant.floraStartDate
-              const phaseDay = isFlora && plant.floraStartDate
-                ? differenceInDays(today, plant.floraStartDate) + 1
+              const floraStart = getFloraStart(plant)
+              const isFlora  = getActiveCycle(plant, today) === 'flora'
+              const phaseDay = isFlora && floraStart
+                ? differenceInDays(today, floraStart) + 1
                 : differenceInDays(today, plant.startDate) + 1
               const weekNum  = Math.ceil(phaseDay / 7)
               const plantPending = pending.filter((t) => t.plantId === plant.id).length

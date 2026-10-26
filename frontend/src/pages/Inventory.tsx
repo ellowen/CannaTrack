@@ -9,6 +9,7 @@ import { useSubscription } from '@/hooks/useSubscription'
 import Button from '@/components/ui/Button'
 import type { Plant, PlantStatus } from '@/types/plant'
 import { useTranslation } from '@/i18n'
+import { getFloraStart } from '@/lib/flora-cycle'
 
 type TabType = 'active' | 'harvested' | 'discarded' | 'all'
 
@@ -208,25 +209,22 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
       : new Date(plant.endDate)
     : null
 
+  const floraStartDate = getFloraStart(plant)
   let vegeDays = 0
   let floraDays = 0
   let totalDays = 0
 
   if (endDate) {
     totalDays = differenceInDays(endDate, startDate)
-    if (plant.floraStartDate) {
-      const floraStart = plant.floraStartDate instanceof Date
-        ? plant.floraStartDate
-        : new Date(plant.floraStartDate)
+    if (floraStartDate) {
+      const floraStart = floraStartDate
       vegeDays = differenceInDays(floraStart, startDate)
       floraDays = differenceInDays(endDate, floraStart)
     } else {
       vegeDays = totalDays
     }
-  } else if (plant.floraStartDate && plant.status === 'active') {
-    const floraStart = plant.floraStartDate instanceof Date
-      ? plant.floraStartDate
-      : new Date(plant.floraStartDate)
+  } else if (floraStartDate && plant.status === 'active') {
+    const floraStart = floraStartDate
     vegeDays = differenceInDays(floraStart, startDate)
     const today = new Date()
     floraDays = differenceInDays(today, floraStart)
@@ -245,7 +243,7 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
   const statusBadge = STATUS_BADGES[plant.status]
   const cycleText = endDate || plant.status !== 'active'
     ? `${vegeDays}d vege + ${floraDays}d flora = ${totalDays}d total`
-    : `${vegeDays}d vege${plant.floraStartDate ? ` + ${floraDays}d flora` : ''}`
+    : `${vegeDays}d vege${floraStartDate ? ` + ${floraDays}d flora` : ''}`
 
   return (
     <div

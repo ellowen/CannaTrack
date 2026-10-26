@@ -1,4 +1,5 @@
-import type { NutritionWeek, Plant, PlantStage } from '../types/plant'
+import { addDays } from 'date-fns'
+import type { CyclePhase, NutritionWeek, Plant, PlantStage } from '../types/plant'
 
 /** Floracion por defecto (8 semanas): la que asumen las tablas nutricionales. */
 export const DEFAULT_FLORA_DAYS = 56
@@ -60,4 +61,27 @@ export function scaleFloraWeeks(weeks: NutritionWeek[], floraDays: number): Nutr
       dayEnd: Math.min((i + 1) * 7, floraDays),
     }
   })
+}
+
+/**
+ * Fecha en que la planta entra en floracion. Las fotoperiodicas la registran a
+ * mano (floraStartDate); las autoflorecientes NO tienen floraStartDate: florecen
+ * solas a los autoFloraStartDay dias (35 por defecto) de la siembra.
+ */
+export function getFloraStart(
+  plant: Pick<Plant, 'floraStartDate' | 'geneticType' | 'startDate' | 'autoFloraStartDay'>,
+): Date | undefined {
+  if (plant.floraStartDate) return plant.floraStartDate
+  if (plant.geneticType === 'autoflower') return addDays(plant.startDate, getAutoFloraStartDay(plant))
+  return undefined
+}
+
+/** Ciclo en el que esta la planta en una fecha dada ('flora' o 'vege'). */
+export function getActiveCycle(
+  plant: Pick<Plant, 'floraStartDate' | 'geneticType' | 'startDate' | 'autoFloraStartDay'>,
+  date: Date,
+): CyclePhase {
+  if (plant.floraStartDate) return 'flora'
+  const start = getFloraStart(plant)
+  return start && date >= start ? 'flora' : 'vege'
 }

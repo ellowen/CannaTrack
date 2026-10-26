@@ -3,7 +3,9 @@ import { addDays } from 'date-fns'
 import {
   DEFAULT_FLORA_DAYS,
   floraWeekCount,
+  getActiveCycle,
   getAutoFloraStartDay,
+  getFloraStart,
   getFloraDays,
   scaleFloraWeeks,
   stageForFloraWeek,
@@ -169,5 +171,30 @@ describe('utilidades con floracion personalizada', () => {
     const r = getRangesForDate(p, REVEGETAR_TABLE, addDays(inicio, 30))
     expect(r).not.toBeNull()
     expect(REVEGETAR_TABLE.floraWeeks.some((w) => w.ecMax === r!.ecMax)).toBe(true)
+  })
+})
+
+describe('autofloreciente: ciclo activo sin floraStartDate', () => {
+  const auto = (diasDesdeSiembra: number) => {
+    const hoy = addDays(inicio, diasDesdeSiembra)
+    return { p: planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 }), hoy }
+  }
+
+  it('antes del dia 35 esta en vegetativo; desde el dia 35, en floracion', () => {
+    expect(getActiveCycle(auto(34).p, auto(34).hoy)).toBe('vege')
+    expect(getActiveCycle(auto(35).p, auto(35).hoy)).toBe('flora')
+    expect(getActiveCycle(auto(76).p, auto(76).hoy)).toBe('flora') // caso real: planta "Ww" a los 76 dias
+  })
+
+  it('getFloraStart: autos = siembra + autoFloraStartDay; fotoperiodica sin fecha = undefined', () => {
+    expect(getFloraStart(planta({ geneticType: 'autoflower' }))?.getTime()).toBe(addDays(inicio, 35).getTime())
+    expect(getFloraStart(planta({ geneticType: 'autoflower', autoFloraStartDay: 28 }))?.getTime()).toBe(addDays(inicio, 28).getTime())
+    expect(getFloraStart(planta({ geneticType: 'feminized' }))).toBeUndefined()
+  })
+
+  it('fotoperiodica: flora solo cuando se registro floraStartDate', () => {
+    const hoy = addDays(inicio, 80)
+    expect(getActiveCycle(planta({ geneticType: 'feminized' }), hoy)).toBe('vege')
+    expect(getActiveCycle(planta({ geneticType: 'feminized', floraStartDate: addDays(inicio, 50) }), hoy)).toBe('flora')
   })
 })

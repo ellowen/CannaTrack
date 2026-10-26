@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { differenceInHours, addDays } from 'date-fns'
+import { differenceInHours } from 'date-fns'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
 import { useInitSync } from '@/hooks/useInitSync'
@@ -16,6 +16,8 @@ import { completeTaskInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import type { ScheduledTask } from '@/types/plant'
+import { getActiveCycle } from '@/lib/flora-cycle'
+import { getEstimatedHarvestDate } from '@/lib/nutrition-utils'
 
 const taskTypeLabel: Record<string, string> = {
   nutrition: 'Nutrición',
@@ -104,16 +106,11 @@ export default function Dashboard() {
   const allDone = todayTasks.length > 0 && pendingTasks.length === 0
 
   // Plant stats
-  const vegePlants = plants.filter((p) => {
-    // Simple heuristic: check if floraStartDate is set and in past
-    return !p.floraStartDate || new Date(p.floraStartDate) > today
-  })
-  const floraPlants = plants.filter((p) => p.floraStartDate && new Date(p.floraStartDate) <= today)
+  const vegePlants = plants.filter((p) => getActiveCycle(p, today) === 'vege')
+  const floraPlants = plants.filter((p) => getActiveCycle(p, today) === 'flora')
   const readyToHarvest = plants.filter((p) => {
-    // Plants with estimated harvest in past
-    if (!p.floraStartDate) return false
-    const estimatedHarvest = addDays(new Date(p.floraStartDate), 56) // ~8 weeks
-    return estimatedHarvest <= today
+    const estimatedHarvest = getEstimatedHarvestDate(p)
+    return !!estimatedHarvest && estimatedHarvest <= today
   })
 
   // Archived plants

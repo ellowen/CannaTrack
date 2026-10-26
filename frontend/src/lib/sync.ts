@@ -29,6 +29,8 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       start_date: formatDateOnly(plant.startDate),
       flora_start_date: plant.floraStartDate ? formatDateOnly(plant.floraStartDate) : null,
       auto_flower_total_days: plant.autoFlowerTotalDays,
+      // Fecha de cierre (cosecha/descarte): sin esto se perdia al recargar
+      end_date: plant.endDate ? formatDateOnly(plant.endDate) : null,
       // Solo viajan si la planta los define: undefined se omite al serializar,
       // asi el sync no depende de que la migracion 20261025000000 ya este aplicada.
       flora_days: plant.floraDays,
@@ -74,6 +76,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | 
       sex: p.sex,
       startDate: parseDateOnly(p.start_date),
       floraStartDate: p.flora_start_date ? parseDateOnly(p.flora_start_date) : undefined,
+      endDate: p.end_date ? parseDateOnly(p.end_date) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
       floraDays: p.flora_days ?? undefined,
       autoFloraStartDay: p.auto_flora_start_day ?? undefined,
@@ -98,7 +101,12 @@ export async function updatePlantStatusInSupabase(plantId: string, status: 'acti
   try {
     const { error } = await supabase
       .from('plants')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({
+        status,
+        // al cerrar la planta se guarda el dia; al reactivarla se limpia
+        end_date: status === 'active' ? null : formatDateOnly(new Date()),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', plantId)
 
     if (error) throw error
