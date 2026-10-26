@@ -1,4 +1,5 @@
-import { Tabs } from 'expo-router'
+// SDK 57: `Tabs` en 'expo-router' quedo deprecado en favor de 'expo-router/js-tabs'
+import { Tabs } from 'expo-router/js-tabs'
 import { FloatingTabBar } from '@/components/FloatingTabBar'
 
 export default function TabsLayout() {

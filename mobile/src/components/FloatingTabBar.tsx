@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, TouchableOpacity, Animated, Dimensions, Platform } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
+// SDK 57: expo-router ya no depende de @react-navigation/bottom-tabs como paquete
+// aparte -- el tipo se re-exporta desde 'expo-router/js-tabs' (mismo shape: state/
+// descriptors/navigation/insets).
+import type { BottomTabBarProps } from 'expo-router/js-tabs'
 import { HomeIcon, PlantPotIcon, CalendarIcon, CameraIcon, ProfileIcon } from './icons/AppIcons'
 import { useTranslation } from '@/i18n'
 

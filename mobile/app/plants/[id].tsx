@@ -128,7 +128,7 @@ export default function PlantDetailScreen() {
       // Actualizar store global — plantas y tareas reflejan flora inmediatamente
       updateStoreP(plant.id, { floraStartDate })
       setStoreTasks(plant.id, newTasks)
-      track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType })
+      track('flora_phase_started', { plant_id: plant.id, genetic_type: plant.geneticType ?? null })
       void scheduleTaskNotificationsForPlant(updatedPlant, newTasks)
       setFloraDateModal(false)
     } catch (e) {

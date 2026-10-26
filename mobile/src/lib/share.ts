@@ -46,7 +46,7 @@ export async function sharePlantCard(
 
   track('plant_shared', {
     plant_id:     plant.id,
-    genetic_type: plant.geneticType,
+    genetic_type: plant.geneticType ?? null,
     days_growing: Math.floor((Date.now() - plant.startDate.getTime()) / 86_400_000),
   })
 
