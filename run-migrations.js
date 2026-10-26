@@ -3,12 +3,19 @@ const fs = require('fs')
 const path = require('path')
 const { Client } = require('pg')
 
-const PROJECT_REF = 'wpvvfroutebiwckrenmq'
-const ADMIN_KEY = 'sb_secret_zWReneWIc-p_tSMCe8iYYQ_X4rA_LuY'
 const MIGRATIONS_DIR = path.join(__dirname, 'backend/supabase/migrations')
 
-// Supabase connection string format - intenta con el host correcto
-const connectionString = `postgresql://postgres:${ADMIN_KEY}@${PROJECT_REF}.supabase.co:5432/postgres`
+// La cadena de conexion viene de una variable de entorno: NUNCA se escribe en
+// este archivo (el repo es publico). Se obtiene en Supabase > Project Settings >
+// Database > Connection string.
+//
+// OJO: aplica TODAS las migraciones en orden y sigue aunque alguna falle. Pensado
+// para un proyecto nuevo/vacio (por ejemplo uno de pruebas), no para produccion.
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) {
+  console.error('Falta DATABASE_URL (cadena de conexion de Postgres de Supabase).')
+  process.exit(1)
+}
 
 async function runMigrations() {
   const client = new Client({ connectionString })
