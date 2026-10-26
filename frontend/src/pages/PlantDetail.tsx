@@ -8,7 +8,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useNutritionTable } from '@/hooks/useNutritionTable'
 import { useUserStore } from '@/store/userStore'
 import { useTaskStore } from '@/store/taskStore'
-import { completeTaskInSupabase, updatePlantStatusInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, uncompleteTaskInSupabase, updatePlantStatusInSupabase } from '@/lib/sync'
 import { Button } from '@/components/ui'
 import { NutritionCard } from '@/components/nutrition'
 import { TaskItem, WeekView } from '@/components/calendar'
@@ -460,7 +460,7 @@ export default function PlantDetail() {
                         <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
                       )}
                       <button
-                        onClick={() => uncompleteTask(task.id)}
+                        onClick={() => { uncompleteTask(task.id); void uncompleteTaskInSupabase(task.id) }}
                         className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-elevated border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
@@ -493,7 +493,7 @@ export default function PlantDetail() {
                         <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
                       )}
                       <button
-                        onClick={() => uncompleteTask(task.id)}
+                        onClick={() => { uncompleteTask(task.id); void uncompleteTaskInSupabase(task.id) }}
                         className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">
@@ -526,7 +526,7 @@ export default function PlantDetail() {
                         <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
                       )}
                       <button
-                        onClick={() => uncompleteTask(task.id)}
+                        onClick={() => { uncompleteTask(task.id); void uncompleteTaskInSupabase(task.id) }}
                         className="flex items-center gap-1 text-[11px] font-bold text-ink-3 bg-app-card border border-app-border px-2.5 py-1 rounded-lg tap-highlight-none active:scale-90 transition-all"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="w-3 h-3">

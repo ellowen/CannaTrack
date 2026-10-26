@@ -26,12 +26,36 @@ import type { MeasurementLog } from '@/types/measurement'
 
 const SYNC_RETRY_DELAY_MS = 5000 // Reintentar cada 5s si falla
 
+/** Campos de fecha de los payloads encolados (plantas, tareas, mediciones). */
+const DATE_KEYS = new Set([
+  'startDate', 'floraStartDate', 'endDate',
+  'scheduledDate', 'completedAt',
+  'logDate', 'measuredAt', 'createdAt', 'updatedAt',
+])
+
+/**
+ * La cola se persiste como JSON: al volver a leerla, los Date quedan como
+ * strings ISO y los sync* (que llaman a date.getFullYear()) fallarian para
+ * siempre. Revive los campos de fecha conocidos, en cualquier nivel.
+ */
+export function reviveDates<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((v) => reviveDates(v)) as unknown as T
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = DATE_KEYS.has(k) && typeof v === 'string' ? new Date(v) : reviveDates(v)
+    }
+    return out as T
+  }
+  return value
+}
+
 /**
  * Ejecuta la accion de sync correspondiente segun su tipo.
  * Tira si falla -- el caller decide que hacer con la accion fallida.
  */
 async function runAction(action: SyncAction): Promise<void> {
-  const p = action.payload
+  const p = reviveDates(action.payload)
 
   switch (action.type) {
     case 'addPlant': {

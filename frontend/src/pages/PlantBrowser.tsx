@@ -216,6 +216,7 @@ export default function PlantBrowser() {
           {atFreeLimit ? (
             <button
               onClick={() => navigate('/plants/new')}
+              aria-label={t('plants.add')}
               className="w-9 h-9 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-ink-3 active:scale-90 transition-all tap-highlight-none relative"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
@@ -226,6 +227,7 @@ export default function PlantBrowser() {
           ) : (
             <Link
               to="/plants/new"
+              aria-label={t('plants.add')}
               className="w-9 h-9 rounded-xl bg-brand-400 flex items-center justify-center text-white shadow-glow-brand active:scale-90 transition-all tap-highlight-none"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
@@ -252,6 +254,7 @@ export default function PlantBrowser() {
             {search && (
               <button
                 onClick={() => setSearch('')}
+                aria-label="Limpiar búsqueda"
                 className="w-5 h-5 rounded-full bg-ink-4/20 flex items-center justify-center shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3 text-ink-3">

@@ -167,6 +167,7 @@ export default function MeasurementSection({ plantId, ecMin, ecMax, phMin, phMax
 
                   <button
                     onClick={() => deleteLog(log.id)}
+                    aria-label="Eliminar medición"
                     className="w-7 h-7 rounded-lg bg-app-elevated flex items-center justify-center text-ink-4 hover:text-red-400 transition-colors tap-highlight-none active:scale-90 shrink-0"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">

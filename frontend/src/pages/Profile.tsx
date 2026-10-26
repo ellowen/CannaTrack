@@ -11,6 +11,7 @@ import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, up
 import { Toggle } from '@/components/ui'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSubscription } from '@/hooks/useSubscription'
 import { clsx } from 'clsx'
 
 const REMINDER_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
@@ -29,6 +30,7 @@ export default function Profile() {
   const logs = useWeekLogStore((s) => s.logs)
 
   const { user } = useAuth()
+  const { plan } = useSubscription()
   const [activeTab, setActiveTab] = useState<Tab>('stats')
   const [dbStats, setDbStats] = useState<{
     totalTasksCompleted: number
@@ -509,10 +511,12 @@ export default function Profile() {
               <div className="px-4 py-3.5 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-bold text-ink-4 uppercase tracking-widest mb-1">Plan</p>
-                  <p className="text-sm font-bold text-ink-1">Free</p>
+                  <p className="text-sm font-bold text-ink-1">
+                    {plan === 'pro' ? 'Pro' : plan === 'trial' ? 'Trial Pro' : 'Free'}
+                  </p>
                 </div>
                 <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-subtle border border-brand-border text-brand-400">
-                  GRATIS
+                  {plan === 'pro' ? 'PRO' : plan === 'trial' ? 'PRUEBA' : 'GRATIS'}
                 </span>
               </div>
               <Link

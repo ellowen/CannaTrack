@@ -10,7 +10,7 @@ import { MonthCalendar, TaskTimeline } from '@/components/calendar'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { getTasksForDate } from '@/lib/nutrition-utils'
 import { hapticLight } from '@/lib/haptics'
-import { completeTaskInSupabase } from '@/lib/sync'
+import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import type { ScheduledTask } from '@/types/plant'
@@ -208,6 +208,7 @@ export default function Calendar() {
           onUncomplete={(id) => {
             hapticLight()
             uncompleteTask(id)
+            void uncompleteTaskInSupabase(id)
           }}
         />
       </div>

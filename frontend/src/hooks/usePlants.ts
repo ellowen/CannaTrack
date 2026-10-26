@@ -10,7 +10,7 @@ import {
   updatePlantInSupabase,
   updatePlantStatusInSupabase,
 } from '@/lib/sync'
-import type { Plant, NutritionTable } from '@/types/plant'
+import type { Plant, NutritionTable, ScheduledTask } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
 import { formatDateOnly } from '@/lib/date-utils'
 import { enqueueSyncAction } from '@/lib/syncQueue'
@@ -39,12 +39,13 @@ export function usePlants() {
     storeAdd(plant)
 
     const table = tables.find((t) => t.id === plant.nutritionTableId)
+    let tasks: ScheduledTask[] = []
     try {
       if (table) {
         const effective = plant.availableProducts
           ? applyProductFilter(table, plant.availableProducts)
           : table
-        const tasks = generatePlantSchedule(plant, effective)
+        tasks = generatePlantSchedule(plant, effective)
         setTasks(plant.id, tasks)
         // Persistir en Supabase
         await syncPlantToSupabase(plant)
@@ -55,7 +56,8 @@ export function usePlants() {
     } catch (error) {
       console.error('[addPlant] Error sincronizando:', error)
       showErrorToast('La planta se guardó en este dispositivo, pero no se pudo sincronizar. Revisá tu conexión.')
-      enqueueSyncAction('addPlant', { plant })
+      // Con las tareas: si no, al volver la red se subia la planta sin calendario
+      enqueueSyncAction('addPlant', { plant, tasks })
     }
 
     return plant
