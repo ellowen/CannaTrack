@@ -10,6 +10,8 @@ import { clsx } from 'clsx'
 import { normalizeFormValuesForSubmit } from './PlantForm.utils'
 import type { PlantFormValues } from './PlantForm.utils'
 import { formatDateOnly } from '@/lib/date-utils'
+import { STRAIN_PRESETS } from '@/data/strain-presets'
+import type { StrainPreset } from '@/data/strain-presets'
 
 export type { PlantFormValues }
 export { normalizeFormValuesForSubmit }
@@ -215,6 +217,29 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     }))
   }
 
+  // Precarga genetica, tipo y ciclo desde una variedad del catalogo. Todo queda
+  // editable; el nombre de la planta no se toca (es del usuario).
+  function applyPreset(presetId: string) {
+    const preset: StrainPreset | undefined = STRAIN_PRESETS.find((p) => p.id === presetId)
+    if (!preset) return
+    setValues((v) => ({
+      ...v,
+      genetics: preset.genetics,
+      geneticType: preset.geneticType,
+      autoFlowerTotalDays: preset.autoFlowerTotalDays ?? v.autoFlowerTotalDays,
+      autoFloraStartDay: preset.autoFloraStartDay,
+      floraDays: preset.floraDays,
+    }))
+    setErrors((e) => {
+      const next = { ...e }
+      delete next.genetics
+      delete next.floraDays
+      delete next.autoFloraStartDay
+      delete next.autoFlowerTotalDays
+      return next
+    })
+  }
+
   function validateField(field: keyof PlantFormValues, value: any): void {
     const newErrors = { ...errors }
 
@@ -264,6 +289,23 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       }
     }
 
+    // Opcionales: vacio (undefined) = valor por defecto de la app.
+    if (field === 'floraDays') {
+      if (value !== undefined && (!Number.isInteger(value) || value < 28 || value > 140)) {
+        newErrors.floraDays = 'La floración debe durar entre 28 y 140 días'
+      } else {
+        delete newErrors.floraDays
+      }
+    }
+
+    if (field === 'autoFloraStartDay') {
+      if (value !== undefined && (!Number.isInteger(value) || value < 14 || value > 90)) {
+        newErrors.autoFloraStartDay = 'El día de floración debe estar entre 14 y 90'
+      } else {
+        delete newErrors.autoFloraStartDay
+      }
+    }
+
     if (field === 'potCount') {
       if (value < 1 || value > 100) {
         newErrors.potCount = 'Debe tener entre 1 y 100 macetas'
@@ -288,7 +330,9 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       return values.name.trim().length > 0 &&
              values.genetics.trim().length > 0 &&
              !errors.name &&
-             !errors.genetics
+             !errors.genetics &&
+             !errors.floraDays &&
+             !errors.autoFloraStartDay
     }
     if (step === 2) {
       return !!values.startDate &&
@@ -371,6 +415,26 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
           )}
         </div>
 
+        {isCannabis && (
+          <div>
+            <label htmlFor="strain-preset" className={labelClass}>Variedad del catálogo (opcional)</label>
+            <select
+              id="strain-preset"
+              defaultValue=""
+              onChange={(e) => applyPreset(e.target.value)}
+              className={fieldClass}
+            >
+              <option value="">Elegir y precargar datos...</option>
+              {STRAIN_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}{p.breeder ? ` (${p.breeder})` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ink-4 mt-2">Precarga genética, tipo y duración del ciclo. Todo se puede editar.</p>
+          </div>
+        )}
+
         <div>
           <label className={labelClass}>{isCannabis ? 'Genética *' : 'Variedad *'}</label>
           <input
@@ -428,6 +492,46 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
               <p className="text-xs text-red-500 mt-2">{errors.autoFlowerTotalDays}</p>
             )}
             <p className="text-xs text-ink-4 mt-2">Típico: 70–80 días desde germinación</p>
+          </div>
+        )}
+
+        {isCannabis && values.geneticType === 'autoflower' && (
+          <div>
+            <label htmlFor="auto-flora-start-day" className={labelClass}>Día de inicio de floración</label>
+            <input
+              id="auto-flora-start-day"
+              type="number"
+              min={14}
+              max={90}
+              placeholder="35 (por defecto)"
+              value={values.autoFloraStartDay ?? ''}
+              onChange={(e) => set('autoFloraStartDay', e.target.value === '' ? undefined : Number(e.target.value))}
+              className={clsx(fieldClass, errors.autoFloraStartDay && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
+            />
+            {errors.autoFloraStartDay && <p className="text-xs text-red-500 mt-2">{errors.autoFloraStartDay}</p>}
+            <p className="text-xs text-ink-4 mt-2">Día desde la siembra en que la auto entra en floración</p>
+          </div>
+        )}
+
+        {isCannabis && (
+          <div>
+            <label htmlFor="flora-days" className={labelClass}>Días de floración</label>
+            <input
+              id="flora-days"
+              type="number"
+              min={28}
+              max={140}
+              placeholder="56 (por defecto, 8 semanas)"
+              value={values.floraDays ?? ''}
+              onChange={(e) => set('floraDays', e.target.value === '' ? undefined : Number(e.target.value))}
+              className={clsx(fieldClass, errors.floraDays && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
+            />
+            {errors.floraDays && <p className="text-xs text-red-500 mt-2">{errors.floraDays}</p>}
+            <p className="text-xs text-ink-4 mt-2">
+              {values.floraDays
+                ? `≈ ${Math.ceil(values.floraDays / 7)} semanas: el cronograma y la cosecha estimada se ajustan a este ciclo`
+                : 'Vacío: se usa el ciclo estándar de 8 semanas'}
+            </p>
           </div>
         )}
 
@@ -560,6 +664,14 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                   : 'Regular')
                 : (CROP_OPTIONS.find((c) => c.value === values.cropType)?.label ?? values.cropType)}
             </span>
+            {isCannabis && (
+              <>
+                <span className="text-ink-3">Floración</span>
+                <span className="text-ink-1 font-medium">
+                  {values.floraDays ? `${values.floraDays} días` : '56 días (estándar)'}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>

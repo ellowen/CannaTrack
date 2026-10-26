@@ -113,6 +113,10 @@ export interface Plant {
   floraStartDate?: Date
   endDate?: Date
   autoFlowerTotalDays?: number   // default 75
+  /** Duracion de la floracion en dias. Sin valor: 56 (8 semanas, la de las tablas). */
+  floraDays?: number
+  /** Autofloreciente: dia (desde la siembra) en que entra en floracion. Sin valor: 35. */
+  autoFloraStartDay?: number
   location: 'indoor' | 'outdoor'
   growMedium?: 'soil' | 'coco' | 'hydro'
   potCount: number

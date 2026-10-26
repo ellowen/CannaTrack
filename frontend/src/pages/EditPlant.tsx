@@ -41,6 +41,8 @@ export default function EditPlant() {
     potVolumeLiters:     plant.potVolumeLiters ?? 11,
     nutritionTableId:    plant.nutritionTableId,
     autoFlowerTotalDays: plant.autoFlowerTotalDays ?? 75,
+    floraDays:           plant.floraDays,
+    autoFloraStartDay:   plant.autoFloraStartDay,
     availableProducts:   plant.availableProducts,
     customProducts:      plant.customProducts ?? [],
     notes:               plant.notes ?? '',
@@ -48,6 +50,8 @@ export default function EditPlant() {
 
   const plantId = id!
   const savedFloraStart = plant.floraStartDate
+  const savedFloraDays = plant.floraDays
+  const savedAutoFloraStartDay = plant.autoFloraStartDay
 
   async function handleSubmit(values: PlantFormValues) {
     if (submitting) return
@@ -68,6 +72,13 @@ export default function EditPlant() {
         potVolumeLiters:     values.potVolumeLiters,
         nutritionTableId:    values.nutritionTableId,
         autoFlowerTotalDays: values.autoFlowerTotalDays,
+        // Solo si la planta ya los tenia o el usuario los fijo: incluir la clave
+        // (aunque sea undefined) hace que el PATCH mande la columna (null), y eso
+        // fallaria si la migracion de ciclo personalizado todavia no esta aplicada.
+        ...(values.floraDays !== undefined || savedFloraDays !== undefined
+          ? { floraDays: values.floraDays } : {}),
+        ...(values.autoFloraStartDay !== undefined || savedAutoFloraStartDay !== undefined
+          ? { autoFloraStartDay: values.autoFloraStartDay } : {}),
         availableProducts:   values.availableProducts,
         customProducts:      values.customProducts.length > 0 ? values.customProducts : undefined,
         notes:               values.notes || undefined,

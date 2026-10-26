@@ -11,6 +11,13 @@ import type {
   AccessTier,
 } from '../types/plant'
 import { isCannabisPlant } from '../types/plant'
+import {
+  floraWeekCount,
+  getAutoFloraStartDay,
+  getFloraDays,
+  scaleFloraWeeks,
+  stageForFloraWeek,
+} from './flora-cycle'
 
 // ─── Colores por línea ────────────────────────────────────────────────────────
 
@@ -142,25 +149,23 @@ export function getCurrentWeek(
   if (plant.floraStartDate && date >= plant.floraStartDate) {
     const diasFlora = diasEntre(plant.floraStartDate, date)
     const numSemana = Math.floor(diasFlora / 7) + 1
+    const totalSemanas = floraWeekCount(getFloraDays(plant))
 
-    if (numSemana <= 2) return { cycle: 'flora', week: numSemana, stage: 'stretch' }
-    if (numSemana <= 4) return { cycle: 'flora', week: numSemana, stage: 'bulking' }
-    if (numSemana <= 6) return { cycle: 'flora', week: numSemana, stage: 'ripening' }
-    if (numSemana <= 8) return { cycle: 'flora', week: numSemana, stage: 'flushing' }
+    if (numSemana <= totalSemanas) {
+      return { cycle: 'flora', week: numSemana, stage: stageForFloraWeek(numSemana, totalSemanas) }
+    }
     return null
   }
 
   // Autofloreciente: calcular floración automática
   if (plant.geneticType === 'autoflower') {
-    const floraAuto = addDays(plant.startDate, 35)
+    const floraAuto = addDays(plant.startDate, getAutoFloraStartDay(plant))
     if (date >= floraAuto) {
       const diasFlora = diasEntre(floraAuto, date)
       const numSemana = Math.floor(diasFlora / 7) + 1
-      if (numSemana <= 8) {
-        const stage: PlantStage =
-          numSemana <= 2 ? 'stretch' :
-          numSemana <= 4 ? 'bulking' :
-          numSemana <= 6 ? 'ripening' : 'flushing'
+      const totalSemanas = floraWeekCount(getFloraDays(plant))
+      if (numSemana <= totalSemanas) {
+        const stage: PlantStage = stageForFloraWeek(numSemana, totalSemanas)
         return { cycle: 'flora', week: numSemana, stage }
       }
       return null
@@ -189,8 +194,8 @@ export function getEstimatedHarvestDate(plant: Plant): Date | null {
   }
 
   if (plant.floraStartDate) {
-    // Feminizada/regular con floración iniciada: 8 semanas de flora (56 días)
-    return addDays(plant.floraStartDate, 56)
+    // Feminizada/regular con floración iniciada: floraDays (por defecto 8 semanas = 56 días)
+    return addDays(plant.floraStartDate, getFloraDays(plant))
   }
 
   // Sin floraStartDate no se puede calcular aún
@@ -209,11 +214,11 @@ export function getRangesForDate(
   // Evaluar semanas de floración primero
   const floraBase =
     plant.geneticType === 'autoflower'
-      ? addDays(plant.startDate, 35)
+      ? addDays(plant.startDate, getAutoFloraStartDay(plant))
       : plant.floraStartDate
 
   if (floraBase && date >= floraBase) {
-    for (const semana of table.floraWeeks) {
+    for (const semana of scaleFloraWeeks(table.floraWeeks, getFloraDays(plant))) {
       const inicio = addDays(floraBase, semana.dayStart)
       const fin = addDays(floraBase, semana.dayEnd)
       if (date >= inicio && date < fin) {
@@ -261,7 +266,7 @@ export function awaitingFloraStart(plant: Plant): boolean {
 
 /**
  * Devuelve el porcentaje de avance en el ciclo actual (0–1).
- * Vege: días desde inicio / 42 (6 semanas). Flora: días desde floraStart / 56 (8 semanas).
+ * Vege: días desde inicio / 42 (6 semanas; autos: hasta su día de floración). Flora: días desde floraStart / floraDays (por defecto 56).
  * Retorna null si no hay información suficiente.
  */
 export function getCycleProgress(
@@ -273,15 +278,15 @@ export function getCycleProgress(
 
   const floraBase =
     plant.floraStartDate ??
-    (plant.geneticType === 'autoflower' ? addDays(plant.startDate, 35) : null)
+    (plant.geneticType === 'autoflower' ? addDays(plant.startDate, getAutoFloraStartDay(plant)) : null)
 
   if (floraBase && date >= floraBase) {
     const days = differenceInDays(date, floraBase)
-    return { progress: Math.min(days / 56, 1), phase: 'flora' }
+    return { progress: Math.min(days / getFloraDays(plant), 1), phase: 'flora' }
   }
 
   const days = differenceInDays(date, plant.startDate)
-  const maxDays = plant.geneticType === 'autoflower' ? 35 : 42
+  const maxDays = plant.geneticType === 'autoflower' ? getAutoFloraStartDay(plant) : 42
   return { progress: Math.min(days / maxDays, 0.97), phase: 'vege' }
 }
 

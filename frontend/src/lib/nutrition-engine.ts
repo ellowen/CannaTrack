@@ -6,6 +6,7 @@ import type {
   ScheduledTask,
   CyclePhase,
 } from '../types/plant'
+import { getAutoFloraStartDay, getFloraDays, scaleFloraWeeks } from './flora-cycle'
 
 // ─── Generadores de ID ───────────────────────────────────────────────────────
 
@@ -154,12 +155,14 @@ function crearTareaCosecha(
  * Genera las tareas de una semana del cronograma.
  * - Semanas normales: nutrición + observación (día 0) + 2 riegos (días 2 y 4)
  * - Semanas de limpieza (flushing): solo riego (días 0, 2 y 4)
+ * - `limite`: si se indica, se descartan las tareas en o después de esa fecha
  */
 function generarTareasSemana(
   plant: Plant,
   week: NutritionWeek,
   inicioSemana: Date,
   ciclo: CyclePhase,
+  limite?: Date,
 ): ScheduledTask[] {
   const tareas: ScheduledTask[] = []
   const esFlushing = week.stage === 'flushing'
@@ -185,7 +188,9 @@ function generarTareasSemana(
     tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 4), ciclo))
   }
 
-  return tareas
+  // Semana final parcial (floracion que no es multiplo de 7 dias): no agendar
+  // nada en o despues de la cosecha.
+  return limite ? tareas.filter((t) => t.scheduledDate < limite) : tareas
 }
 
 // ─── API pública ──────────────────────────────────────────────────────────────
@@ -197,7 +202,10 @@ function generarTareasSemana(
  * Lógica por tipo de genética:
  * - feminized/regular: genera VEGE; agrega FLORA si existe floraStartDate
  * - regular + sex === 'male': devuelve []
- * - autoflower: genera VEGE + FLORA completo (floraStartDate = startDate + 35 días)
+ * - autoflower: genera VEGE + FLORA completo (floraStartDate = startDate + 35 días, configurable)
+ *
+ * La floración se adapta a `plant.floraDays` (por defecto 56 = 8 semanas): las
+ * semanas de la tabla se reparten de forma proporcional, ver scaleFloraWeeks.
  */
 export function generatePlantSchedule(
   plant: Plant,
@@ -214,8 +222,8 @@ export function generatePlantSchedule(
   // Calcular inicio de floración según genética
   let inicioFlora: Date | undefined
   if (plant.geneticType === 'autoflower') {
-    // Autofloreciente: floración automática a los 35 días
-    inicioFlora = addDays(inicioVege, 35)
+    // Autofloreciente: floración automática (por defecto a los 35 días)
+    inicioFlora = addDays(inicioVege, getAutoFloraStartDay(plant))
   } else {
     // Feminizada/regular: floración manual registrada por el usuario
     inicioFlora = plant.floraStartDate
@@ -230,18 +238,22 @@ export function generatePlantSchedule(
   // Generar tareas del ciclo de floración (si corresponde)
   if (inicioFlora !== undefined) {
     const floraBase = inicioFlora
+    const floraDays = getFloraDays(plant)
+    const semanasFlora = scaleFloraWeeks(table.floraWeeks, floraDays)
 
-    for (const semana of table.floraWeeks) {
+    for (const semana of semanasFlora) {
       const inicioSemana = addDays(floraBase, semana.dayStart)
-      tareas.push(...generarTareasSemana(plant, semana, inicioSemana, 'flora'))
+      const esParcial = semana.dayEnd - semana.dayStart < 7
+      const limite = esParcial ? addDays(floraBase, semana.dayEnd) : undefined
+      tareas.push(...generarTareasSemana(plant, semana, inicioSemana, 'flora', limite))
     }
 
     // Tarea de cosecha al final del ciclo
-    const ultimaSemana = table.floraWeeks[table.floraWeeks.length - 1]
+    const ultimaSemana = semanasFlora[semanasFlora.length - 1]
     const fechaCosecha =
       plant.geneticType === 'autoflower'
         ? addDays(inicioVege, plant.autoFlowerTotalDays ?? 75)
-        : addDays(floraBase, ultimaSemana.dayEnd)
+        : addDays(floraBase, floraDays)
 
     tareas.push(crearTareaCosecha(plant, ultimaSemana, fechaCosecha, 'flora'))
   }

@@ -13,6 +13,10 @@ export interface PlantFormValues {
   potVolumeLiters: number
   nutritionTableId: string
   autoFlowerTotalDays: number
+  /** Duracion de floracion en dias. undefined = por defecto (56). */
+  floraDays?: number
+  /** Autos: dia de entrada en floracion. undefined = por defecto (35). */
+  autoFloraStartDay?: number
   availableProducts: string[] | undefined
   customProducts: ProductDose[]
   notes: string
@@ -38,5 +42,10 @@ export function normalizeFormValuesForSubmit(values: PlantFormValues): PlantForm
     ...values,
     geneticType: isCannabis ? (values.geneticType ?? 'feminized') : undefined,
     sex: isCannabis ? (values.sex ?? 'unknown') : undefined,
+    // El ciclo de floracion es biologia de cannabis; el dia de floracion
+    // automatica solo aplica a autoflorecientes.
+    floraDays: isCannabis ? values.floraDays : undefined,
+    autoFloraStartDay:
+      isCannabis && (values.geneticType ?? 'feminized') === 'autoflower' ? values.autoFloraStartDay : undefined,
   }
 }

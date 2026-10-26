@@ -29,6 +29,10 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       start_date: formatDateOnly(plant.startDate),
       flora_start_date: plant.floraStartDate ? formatDateOnly(plant.floraStartDate) : null,
       auto_flower_total_days: plant.autoFlowerTotalDays,
+      // Solo viajan si la planta los define: undefined se omite al serializar,
+      // asi el sync no depende de que la migracion 20261025000000 ya este aplicada.
+      flora_days: plant.floraDays,
+      auto_flora_start_day: plant.autoFloraStartDay,
       location: plant.location,
       grow_medium: plant.growMedium ?? 'soil',
       pot_count: plant.potCount,
@@ -71,6 +75,8 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | 
       startDate: parseDateOnly(p.start_date),
       floraStartDate: p.flora_start_date ? parseDateOnly(p.flora_start_date) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
+      floraDays: p.flora_days ?? undefined,
+      autoFloraStartDay: p.auto_flora_start_day ?? undefined,
       location: p.location,
       growMedium: p.grow_medium ?? 'soil',
       potCount: p.pot_count,
@@ -125,6 +131,11 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     if ('potCount' in changes)           row.pot_count = changes.potCount
     if ('potVolumeLiters' in changes)    row.pot_volume_liters = changes.potVolumeLiters
     if ('availableProducts' in changes)  row.available_products = changes.availableProducts
+    if ('autoFlowerTotalDays' in changes) row.auto_flower_total_days = changes.autoFlowerTotalDays
+    // ?? null: volver al valor por defecto debe LIMPIAR la columna (undefined no se envia).
+    // Solo se tocan si el cambio las trae, ver comentario en syncPlantToSupabase.
+    if ('floraDays' in changes)          row.flora_days = changes.floraDays ?? null
+    if ('autoFloraStartDay' in changes)  row.auto_flora_start_day = changes.autoFloraStartDay ?? null
 
     const { error } = await supabase.from('plants').update(row).eq('id', plantId)
     if (error) throw error

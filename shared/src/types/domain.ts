@@ -100,6 +100,8 @@ export interface Plant {
   startDate: Date;
   floraStartDate?: Date;
   autoFlowerTotalDays?: number;
+  floraDays?: number;
+  autoFloraStartDay?: number;
   location: "indoor" | "outdoor";
   potCount: number;
   potVolumeLiters?: number;

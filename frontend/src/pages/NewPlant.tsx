@@ -41,6 +41,8 @@ export default function NewPlant() {
         potVolumeLiters: values.potVolumeLiters,
         nutritionTableId: values.nutritionTableId,
         autoFlowerTotalDays: values.autoFlowerTotalDays,
+        floraDays: values.floraDays,
+        autoFloraStartDay: values.autoFloraStartDay,
         availableProducts: values.availableProducts,
         customProducts: values.customProducts.length > 0 ? values.customProducts : undefined,
         status: 'active',
