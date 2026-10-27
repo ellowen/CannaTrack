@@ -74,9 +74,9 @@
     --ink-3: #82957A;
     --ink-4: #4D5E47;
 
-    --flora-bg: #261500;
-    --flora-text: #FF9B30;
-    --flora-border: #4A2D00;
+    --flora-bg: #1F180B;
+    --flora-text: #E0A94E;
+    --flora-border: #43341A;
     --vege-bg: #0D2010;
     --vege-text: #6DC278;
     --vege-border: #1A3D1E;
@@ -88,19 +88,19 @@
     --shadow-glow-amber: 0 0 20px rgba(255,149,0,0.25);
 
     /* Liquid Glass dark */
-    --glass-bg:            rgba(255, 255, 255, 0.13);
-    --glass-border:        rgba(255, 255, 255, 0.22);
-    --glass-border-strong: rgba(255, 255, 255, 0.35);
-    --glass-shine:         rgba(255, 255, 255, 0.22);
-    --glass-shadow:        0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22);
-    --glass-shadow-lg:     0 8px 40px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.22);
+    --glass-bg:            rgba(236, 240, 230, 0.045);
+    --glass-border:        rgba(236, 240, 230, 0.09);
+    --glass-border-strong: rgba(236, 240, 230, 0.16);
+    --glass-shine:         rgba(236, 240, 230, 0.07);
+    --glass-shadow:        0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(236,240,230,0.06);
+    --glass-shadow-lg:     0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(236,240,230,0.06);
 
     --gradient-vege: linear-gradient(135deg, #2D7A38 0%, #1A4A22 100%);
-    --gradient-flora: linear-gradient(135deg, #CC7700 0%, #994000 100%);
+    --gradient-flora: linear-gradient(135deg, #B5832F 0%, #7A5420 100%);
     --gradient-vege-bar: linear-gradient(90deg, #2D7A38, #1A4A22);
-    --gradient-flora-bar: linear-gradient(90deg, #CC7700, #994000);
+    --gradient-flora-bar: linear-gradient(90deg, #C99A3E, #8A6425);
     --gradient-vege-card: linear-gradient(135deg, #0D2010 0%, #0F2412 100%);
-    --gradient-flora-card: linear-gradient(135deg, #261500 0%, #2A1A00 100%);
+    --gradient-flora-card: linear-gradient(135deg, #1F180B 0%, #261C0C 100%);
   }
 
   html { overflow-x: hidden; }

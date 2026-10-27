@@ -42,11 +42,11 @@ export default {
           border: 'var(--vege-border)',
         },
         task: {
-          nutrition:   '#22C55E',
-          irrigation:  '#3B82F6',
-          observation: '#F59E0B',
-          foliar:      '#A855F7',
-          harvest:     '#EF4444',
+          nutrition:   '#6BBF78',
+          irrigation:  '#6BA3D6',
+          observation: '#D9A441',
+          foliar:      '#A98BD0',
+          harvest:     '#D8715C',
         },
       },
       fontFamily: {

@@ -65,6 +65,7 @@ test.describe('Home con las plantas reales', () => {
     await expect(page.getByText(/completada ✓/)).toBeVisible()
     await page.getByRole('button', { name: /^Ahora no$/ }).click()
     await page.getByRole('button', { name: /^Todas$/ }).click()
+    await page.getByRole('button', { name: 'Sí, marcar todas' }).click()
     await expect(page.getByText(/3 tareas vencidas/)).not.toBeVisible({ timeout: 8_000 })
     const blueId = dbPlants(context).find((p) => p.name === BLUE.name)!.id
     await expect.poll(() =>
@@ -87,7 +88,15 @@ test.describe('Home con las plantas reales', () => {
     await page.getByRole('button', { name: /Deshacer/ }).first().click()
     await expect.poll(() => todays().filter((t) => t.completed === true).length).toBe(0)
 
+    // la accion masiva pide confirmacion: cancelar no completa nada
     await page.getByRole('button', { name: /✓ Todo/ }).click()
+    await expect(page.getByRole('alertdialog')).toContainText('¿Marcar las')
+    await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
+    await expect(page.getByRole('alertdialog')).toHaveCount(0)
+    await expect.poll(() => todays().every((t) => t.completed === true)).toBe(false)
+
+    await page.getByRole('button', { name: /✓ Todo/ }).click()
+    await page.getByRole('button', { name: 'Sí, marcar todas' }).click()
     await expect.poll(() => todays().every((t) => t.completed === true)).toBe(true)
     await expect(page.getByText('Todo al dia!')).toBeVisible({ timeout: 8_000 })
   })

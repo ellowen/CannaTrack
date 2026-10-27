@@ -16,7 +16,7 @@ import { TaskItem, WeekView } from '@/components/calendar'
 import { CompleteTaskSheet, IrrigationCard, FoliarCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
 import { MeasurementSection } from '@/components/measurements'
-import { HarvestSheet, ProgressRing } from '@/components/plant'
+import { CycleStrip, HarvestSheet, ProgressRing } from '@/components/plant'
 import { calculatePlantHealth, healthColor } from '@/lib/gamification'
 import { getCurrentWeek, getEstimatedHarvestDate, awaitingFloraStart, getCycleProgress, getTasksForDate } from '@/lib/nutrition-utils'
 import { STAGE_LABELS, STAGE_EMOJIS, isCannabisPlant } from '@/types/plant'
@@ -106,29 +106,19 @@ export default function PlantDetail() {
 
   return (
     <div className="pb-8">
-      {/* Hero header con gradient */}
+      {/* Hero: tarjeta sobria con el color de la fase como unico acento */}
       <div
-        className="px-4 pt-8 pb-6 relative overflow-hidden"
+        className="px-4 pt-6 pb-5 relative overflow-hidden border-b border-app-border"
         style={{
-          background: isFlora ? 'var(--gradient-flora)' : 'var(--gradient-vege)',
+          background: `radial-gradient(ellipse 70% 90% at 100% 0%, ${isFlora ? 'rgba(217,164,65,0.20)' : 'rgba(92,199,108,0.16)'} 0%, transparent 70%), linear-gradient(180deg, var(--app-elevated) 0%, var(--app-bg) 100%)`,
         }}
       >
-        {/* Noise */}
-        <div className="absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }}
-        />
-
-        {/* Big emoji background */}
-        <div className="absolute right-4 top-6 text-8xl opacity-20 select-none pointer-events-none">
-          {stageEmoji}
-        </div>
-
         {/* Barra de navegación: volver + editar */}
-        <div className="relative flex items-center justify-between mb-5">
+        <div className="relative flex items-center justify-between mb-6">
           <button
             onClick={() => navigate(-1)}
             aria-label="Volver"
-            className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white tap-highlight-none active:scale-95 transition-all"
+            className="w-9 h-9 rounded-full bg-app-card border border-app-border flex items-center justify-center text-ink-2 tap-highlight-none active:scale-95 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
               <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -136,7 +126,7 @@ export default function PlantDetail() {
           </button>
           <Link
             to={`/plants/${plant.id}/edit`}
-            className="flex items-center gap-1.5 text-[13px] font-bold text-white bg-white/20 backdrop-blur-sm border border-white/20 px-3.5 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+            className="flex items-center gap-1.5 text-[13px] font-bold text-ink-2 bg-app-card border border-app-border px-3.5 py-1.5 rounded-full tap-highlight-none active:scale-95 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
               <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round" />
@@ -147,173 +137,68 @@ export default function PlantDetail() {
 
         <div className="relative">
           {cycleTag && (
-            <span className={`inline-flex items-center text-[11px] font-black px-3 py-1 rounded-full mb-2 tracking-widest uppercase border ${
-              isFlora
-                ? 'bg-amber-500/30 text-amber-200 border-amber-400/40'
-                : 'bg-brand-400/30 text-green-200 border-green-400/40'
-            }`}>
+            <span
+              className="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-2 tracking-[0.18em] uppercase border"
+              style={{
+                color: isFlora ? 'var(--flora-text)' : 'var(--vege-text)',
+                borderColor: isFlora ? 'rgba(217,164,65,0.35)' : 'rgba(92,199,108,0.35)',
+              }}
+            >
               {cycleTag}
             </span>
           )}
-          <h1 className="text-2xl font-black text-white leading-tight">{plant.name}</h1>
-          <p className="text-sm text-white/70 mt-0.5">{plant.genetics}</p>
+          <h1 className="text-3xl text-ink-1 leading-tight">{plant.name}</h1>
+          <p className="text-sm text-ink-3 mt-0.5">{plant.genetics}</p>
 
-          {planned && (
-            <div className="mt-4 mr-2 inline-flex items-baseline gap-1 bg-white/15 rounded-2xl px-4 py-2">
-              <span className="text-3xl font-black text-white">{sowingIn}</span>
-              <span className="text-sm text-white/80">{sowingIn === 1 ? 'dia para la siembra' : 'dias para la siembra'} 🌱</span>
+          {/* Cuenta regresiva: el numero es el protagonista */}
+          {(planned || (daysToHarvest !== null && daysToHarvest > 0)) && (
+            <div className="mt-5 flex items-baseline gap-2">
+              <span className="font-display text-5xl leading-none tabular" style={{ color: isFlora ? 'var(--flora-text)' : 'var(--vege-text)', fontWeight: 600 }}>
+                {planned ? sowingIn : daysToHarvest}
+              </span>
+              <span className="text-sm text-ink-3">
+                {planned
+                  ? (sowingIn === 1 ? 'dia para la siembra' : 'dias para la siembra')
+                  : t('plantDetail.days_to_harvest')}
+              </span>
             </div>
           )}
-
-          {/* Harvest countdown */}
-          {daysToHarvest !== null && daysToHarvest > 0 && (
-            <div className="mt-4 inline-flex items-baseline gap-1 bg-white/15 rounded-2xl px-4 py-2">
-              <span className="text-3xl font-black text-white">{daysToHarvest}</span>
-              <span className="text-sm text-white/80">{t('plantDetail.days_to_harvest')} 🌸</span>
-            </div>
+          {planned && daysToHarvest !== null && daysToHarvest > 0 && (
+            <p className="text-xs text-ink-4 mt-1">y {daysToHarvest} {t('plantDetail.days_to_harvest')} desde hoy</p>
           )}
-          {daysToHarvest !== null && daysToHarvest <= 0 && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-white/15 rounded-2xl px-4 py-2">
+          {!planned && daysToHarvest !== null && daysToHarvest <= 0 && (
+            <div className="mt-5 inline-flex items-center gap-2 bg-app-card border border-app-border rounded-2xl px-4 py-2">
               <span className="text-xl">✂️</span>
-              <span className="text-sm font-bold text-white">{t('plantDetail.ready_harvest')}</span>
+              <span className="text-sm font-bold text-ink-1">{t('plantDetail.ready_harvest')}</span>
             </div>
           )}
+
+          {/* Ciclo completo, semana a semana */}
+          <div className="mt-5">
+            <CycleStrip plant={plant} />
+            <div className="flex justify-between text-[10px] text-ink-4 mt-1.5 tracking-wide">
+              <span>{format(plant.startDate, "d MMM", { locale: es })}</span>
+              {harvestDate && <span>{format(harvestDate, "d MMM", { locale: es })}</span>}
+            </div>
+          </div>
+
+          {/* Datos de la planta */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 text-xs text-ink-3">
+            {[
+              { icon: '📅', label: format(plant.startDate, "d MMM yyyy", { locale: es }) },
+              { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor') },
+              { icon: '🪴', label: `${plant.potCount} ${plant.potCount > 1 ? t('plantDetail.pots_plural') : t('plantDetail.pots')} · ${potLiters}L` },
+            ].map(({ icon, label }) => (
+              <span key={label} className="inline-flex items-center gap-1.5">
+                <span>{icon}</span>
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="px-4 space-y-4 mt-4">
-
-        {/* Info chips */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            { icon: '📅', label: format(plant.startDate, "d MMM yyyy", { locale: es }) },
-            { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor') },
-            { icon: '🪴', label: `${plant.potCount} ${plant.potCount > 1 ? t('plantDetail.pots_plural') : t('plantDetail.pots')} · ${potLiters}L` },
-          ].map(({ icon, label }) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-ink-2 glass px-3 py-1.5 rounded-xl font-medium">
-              <span>{icon}</span>
-              {label}
-            </span>
-          ))}
-        </div>
-
-        {/* Badges: fotoperiodo (indoor, solo cannabis) + sustrato */}
-        {((plant.location === 'indoor' && plantIsCannabis) || (plant.growMedium && plant.growMedium !== 'soil')) && (
-          <div className="flex flex-wrap gap-2">
-            {plant.location === 'indoor' && plantIsCannabis && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
-                {isFlora ? '🌙 12/12' : '☀️ 18/6'}
-              </span>
-            )}
-            {plant.growMedium === 'coco' && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 glass px-3 py-1.5 rounded-xl">
-                🥥 Coco
-              </span>
-            )}
-            {plant.growMedium === 'hydro' && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 glass px-3 py-1.5 rounded-xl">
-                💧 Hidro
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Callout hidroponia */}
-        {plant.growMedium === 'hydro' && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl px-4 py-3 flex gap-3 items-start">
-            <span className="text-base shrink-0">💧</span>
-            <p className="text-xs text-blue-300 leading-relaxed">
-              Monitoreá EC y pH diariamente. Cambiá el reservorio cada 7-10 dias.
-            </p>
-          </div>
-        )}
-
-        {/* Notas de la planta */}
-        {plant.notes && (
-          <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
-            <span className="text-base shrink-0">📝</span>
-            <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
-          </div>
-        )}
-
-        {/* Progress Ring + salud */}
-        {cycleProgress && (
-          <div className="glass-card rounded-2xl p-5">
-            <div className="flex items-center gap-5">
-              {/* Ring */}
-              <ProgressRing
-                progress={cycleProgress.progress}
-                size={120}
-                strokeWidth={9}
-                color={isFlora ? '#FF9500' : '#4ADE80'}
-                bgColor="var(--app-elevated)"
-                centerEmoji={stageEmoji}
-                label={`${Math.round(cycleProgress.progress * 100)}%`}
-              />
-
-              {/* Info lateral */}
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-black text-ink-1">{stageLabel}</p>
-                <p className="text-xs text-ink-3 mb-3">{planned ? 'Siembra planificada' : isFlora ? 'Floración' : 'Vegetativo'}</p>
-
-                {/* Salud */}
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-semibold text-ink-3">Salud</span>
-                    <span className={`text-[11px] font-black tabular ${
-                      hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
-                    }`}>{health}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${health}%`, background: healthGradient }}
-                    />
-                  </div>
-                </div>
-
-                {harvestDate && (
-                  <div className="text-xs text-ink-3">
-                    <span className="text-ink-4">Cosecha est.</span>
-                    <br />
-                    <span className="font-semibold text-ink-2">
-                      {format(harvestDate, "d 'de' MMMM", { locale: es })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Salud (sin ProgressRing) -- para cultivos no-cannabis, que no
-            tienen ciclo vege/flora pero si tienen tareas cuya finalizacion
-            calculatePlantHealth() ya mide de forma agnostica al cultivo. */}
-        {!cycleProgress && !plantIsCannabis && plant.status === 'active' && (
-          <div className="glass-card rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-semibold text-ink-3">Salud</span>
-              <span className={`text-[11px] font-black tabular ${
-                hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
-              }`}>{health}%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${health}%`, background: healthGradient }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Mediciones EC / pH */}
-        <MeasurementSection
-          plantId={plant.id}
-          ecMin={refTask?.ecMin}
-          ecMax={refTask?.ecMax}
-          phMin={refTask?.phMin}
-          phMax={refTask?.phMax}
-        />
 
         {/* Alerta floración */}
         {needsFlora && (
@@ -577,6 +462,124 @@ export default function PlantDetail() {
             <p className="text-sm text-ink-3">
               {isSelectedToday ? t('plantDetail.no_tasks_today') : t('plantDetail.no_tasks_day')}
             </p>
+          </div>
+        )}
+
+        {/* Progress Ring + salud */}
+        {cycleProgress && (
+          <div className="glass-card rounded-2xl p-5">
+            <div className="flex items-center gap-5">
+              {/* Ring */}
+              <ProgressRing
+                progress={cycleProgress.progress}
+                size={120}
+                strokeWidth={9}
+                color={isFlora ? '#FF9500' : '#4ADE80'}
+                bgColor="var(--app-elevated)"
+                centerEmoji={stageEmoji}
+                label={`${Math.round(cycleProgress.progress * 100)}%`}
+              />
+
+              {/* Info lateral */}
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-black text-ink-1">{stageLabel}</p>
+                <p className="text-xs text-ink-3 mb-3">{planned ? 'Siembra planificada' : isFlora ? 'Floración' : 'Vegetativo'}</p>
+
+                {/* Salud */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-ink-3">Salud</span>
+                    <span className={`text-[11px] font-black tabular ${
+                      hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
+                    }`}>{health}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${health}%`, background: healthGradient }}
+                    />
+                  </div>
+                </div>
+
+                {harvestDate && (
+                  <div className="text-xs text-ink-3">
+                    <span className="text-ink-4">Cosecha est.</span>
+                    <br />
+                    <span className="font-semibold text-ink-2">
+                      {format(harvestDate, "d 'de' MMMM", { locale: es })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Salud (sin ProgressRing) -- para cultivos no-cannabis, que no
+            tienen ciclo vege/flora pero si tienen tareas cuya finalizacion
+            calculatePlantHealth() ya mide de forma agnostica al cultivo. */}
+        {!cycleProgress && !plantIsCannabis && plant.status === 'active' && (
+          <div className="glass-card rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-semibold text-ink-3">Salud</span>
+              <span className={`text-[11px] font-black tabular ${
+                hColor === 'green' ? 'text-green-500' : hColor === 'yellow' ? 'text-amber-500' : 'text-red-500'
+              }`}>{health}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-app-elevated overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${health}%`, background: healthGradient }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mediciones EC / pH */}
+        <MeasurementSection
+          plantId={plant.id}
+          ecMin={refTask?.ecMin}
+          ecMax={refTask?.ecMax}
+          phMin={refTask?.phMin}
+          phMax={refTask?.phMax}
+        />
+
+        {/* Badges: fotoperiodo (indoor, solo cannabis) + sustrato */}
+        {((plant.location === 'indoor' && plantIsCannabis) || (plant.growMedium && plant.growMedium !== 'soil')) && (
+          <div className="flex flex-wrap gap-2">
+            {plant.location === 'indoor' && plantIsCannabis && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
+                {isFlora ? '🌙 12/12' : '☀️ 18/6'}
+              </span>
+            )}
+            {plant.growMedium === 'coco' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 glass px-3 py-1.5 rounded-xl">
+                🥥 Coco
+              </span>
+            )}
+            {plant.growMedium === 'hydro' && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 glass px-3 py-1.5 rounded-xl">
+                💧 Hidro
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Callout hidroponia */}
+        {plant.growMedium === 'hydro' && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl px-4 py-3 flex gap-3 items-start">
+            <span className="text-base shrink-0">💧</span>
+            <p className="text-xs text-blue-300 leading-relaxed">
+              Monitoreá EC y pH diariamente. Cambiá el reservorio cada 7-10 dias.
+            </p>
+          </div>
+        )}
+
+        {/* Notas de la planta */}
+        {plant.notes && (
+          <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
+            <span className="text-base shrink-0">📝</span>
+            <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
           </div>
         )}
 

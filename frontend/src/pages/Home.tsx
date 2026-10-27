@@ -18,6 +18,7 @@ import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import PlantTaskGroup from '@/components/tasks/PlantTaskGroup'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -31,18 +32,18 @@ const TYPE_LABEL: Record<string, string> = {
   harvest:     'Cosecha',
 }
 const TYPE_COLOR: Record<string, string> = {
-  nutrition:   '#22C55E',
-  irrigation:  '#3B82F6',
-  observation: '#F59E0B',
-  foliar:      '#A855F7',
-  harvest:     '#EF4444',
+  nutrition:   '#6BBF78',
+  irrigation:  '#6BA3D6',
+  observation: '#D9A441',
+  foliar:      '#A98BD0',
+  harvest:     '#D8715C',
 }
 const TYPE_BG: Record<string, string> = {
-  nutrition:   'linear-gradient(135deg,#22C55E,#15803D)',
-  irrigation:  'linear-gradient(135deg,#60A5FA,#1D4ED8)',
-  observation: 'linear-gradient(135deg,#FCD34D,#B45309)',
-  foliar:      'linear-gradient(135deg,#C084FC,#7E22CE)',
-  harvest:     'linear-gradient(135deg,#F87171,#B91C1C)',
+  nutrition:   'linear-gradient(135deg,#6BBF78,#3F8A4E)',
+  irrigation:  'linear-gradient(135deg,#7FB0DC,#3F6FA3)',
+  observation: 'linear-gradient(135deg,#E3B65A,#A97A25)',
+  foliar:      'linear-gradient(135deg,#B79BDA,#7A5BA6)',
+  harvest:     'linear-gradient(135deg,#E08A74,#A84A38)',
 }
 
 function TaskIcon({ type, size = 'md' }: { type: string; size?: 'sm' | 'md' }) {
@@ -89,6 +90,8 @@ export default function Home() {
   const [refreshKey, setRefreshKey]           = useState(0)
   const [completingTask, setCompletingTask]   = useState<ScheduledTask | null>(null)
   const [resolvedAll, setResolvedAll]         = useState(false)
+  // las acciones masivas piden confirmacion (un toque de mas evita marcar como hecho lo que no se hizo)
+  const [bulkConfirm, setBulkConfirm]         = useState<'today' | 'overdue' | null>(null)
   const [completingIds, setCompletingIds]     = useState<Set<string>>(new Set())
 
   const { tasks: allActiveTasks, todayTasks, overdueTasks, completeTask, uncompleteTask } = useTasks()
@@ -289,7 +292,7 @@ export default function Home() {
               <div className="flex items-center gap-2 shrink-0">
                 {overdueTasks.length > 1 && (
                   <button
-                    onClick={handleResolveAll}
+                    onClick={() => setBulkConfirm('overdue')}
                     className="text-xs font-black text-red-300 border border-red-700/60 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
                   >
                     {resolvedAll ? '✓ Listo' : 'Todas'}
@@ -435,7 +438,7 @@ export default function Home() {
                   <p className="text-base font-black text-ink-1 leading-tight">{t('home.pending_title')}</p>
                   {pending.length > 1 && (
                     <button
-                      onClick={() => { hapticSuccess(); void handleCompleteAll() }}
+                      onClick={() => setBulkConfirm('today')}
                       className="shrink-0 text-xs font-black text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                     >
                       ✓ {t('home.complete_all')}
@@ -538,22 +541,22 @@ export default function Home() {
         <section className="mb-6">
           <Link
             to={`/plants/${nearestHarvest.plant.id}`}
-            className="flex items-center gap-4 bg-gradient-to-r from-amber-950/50 to-orange-950/30 rounded-3xl border border-amber-700/30 px-5 py-4 tap-highlight-none active:scale-[0.98] transition-all"
+            className="flex items-center gap-4 bg-flora-bg rounded-3xl border border-flora-border px-5 py-4 tap-highlight-none active:scale-[0.98] transition-all"
           >
             <ProgressRing
               progress={nearestHarvest.progress?.progress ?? 0}
               size={64}
               strokeWidth={5}
-              color="#F59E0B"
+              color="#D9A441"
               label={String(nearestHarvest.days)}
               sublabel={nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{t('home.next_harvest')}</p>
-              <p className="text-xl font-black text-amber-300 leading-tight">
+              <p className="text-[10px] font-black text-flora-text opacity-70 uppercase tracking-widest mb-0.5">{t('home.next_harvest')}</p>
+              <p className="text-xl font-black text-flora-text leading-tight">
                 {nearestHarvest.days} {nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
               </p>
-              <p className="text-sm text-amber-500/70 truncate mt-0.5">{nearestHarvest.plant.name}</p>
+              <p className="text-sm text-flora-text opacity-70 truncate mt-0.5">{nearestHarvest.plant.name}</p>
               {nearestHarvest.progress && (
                 <div className="mt-2 h-1 rounded-full bg-amber-900/40 overflow-hidden">
                   <div
@@ -738,6 +741,21 @@ export default function Home() {
       )}
     </div>
 
+    {bulkConfirm && (
+      <ConfirmDialog
+        title={bulkConfirm === 'today' ? `¿Marcar las ${pending.length} tareas como hechas?` : `¿Resolver las ${overdueTasks.length} tareas vencidas?`}
+        message={bulkConfirm === 'today'
+          ? 'Se completan todas las pendientes de hoy, de todas tus plantas, y suman XP. Si alguna no la hiciste, tocala para cancelarla o moverla.'
+          : 'Se marcan como hechas todas las vencidas. Si no las hiciste (por ejemplo, llovió), mejor tocalas de a una para cancelarlas o moverlas de día.'}
+        confirmLabel="Sí, marcar todas"
+        onCancel={() => setBulkConfirm(null)}
+        onConfirm={() => {
+          const kind = bulkConfirm
+          setBulkConfirm(null)
+          if (kind === 'today') { hapticSuccess(); void handleCompleteAll() } else void handleResolveAll()
+        }}
+      />
+    )}
     <CompleteTaskSheet
       task={completingTask}
       onConfirm={async (taskId, notes) => {

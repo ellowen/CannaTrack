@@ -2,11 +2,11 @@ import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
 
 const TYPE_CONFIG: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-  nutrition:   { icon: '🍃', label: 'Nutrición',   color: '#22C55E', bg: 'rgba(34,197,94,0.1)'  },
-  irrigation:  { icon: '💧', label: 'Riego',        color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
-  observation: { icon: '🔍', label: 'Observación',  color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-  foliar:      { icon: '🌫️', label: 'Foliar',       color: '#A855F7', bg: 'rgba(168,85,247,0.1)' },
-  harvest:     { icon: '✂️', label: 'Cosecha',      color: '#EF4444', bg: 'rgba(239,68,68,0.1)'  },
+  nutrition:   { icon: '🍃', label: 'Nutrición',   color: '#6BBF78', bg: 'rgba(107,191,120,0.12)'  },
+  irrigation:  { icon: '💧', label: 'Riego',        color: '#6BA3D6', bg: 'rgba(107,163,214,0.12)' },
+  observation: { icon: '🔍', label: 'Observación',  color: '#D9A441', bg: 'rgba(217,164,65,0.12)' },
+  foliar:      { icon: '🌫️', label: 'Foliar',       color: '#A98BD0', bg: 'rgba(169,139,208,0.12)' },
+  harvest:     { icon: '✂️', label: 'Cosecha',      color: '#D8715C', bg: 'rgba(216,113,92,0.12)'  },
 }
 const FALLBACK = { icon: '📌', label: 'Tarea', color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)' }
 

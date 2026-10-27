@@ -28,11 +28,11 @@ const taskTypeLabel: Record<string, string> = {
 }
 
 const taskTypeBg: Record<string, string> = {
-  nutrition:   'linear-gradient(135deg,#22C55E,#15803D)',
-  irrigation:  'linear-gradient(135deg,#60A5FA,#1D4ED8)',
-  observation: 'linear-gradient(135deg,#FCD34D,#B45309)',
-  foliar:      'linear-gradient(135deg,#C084FC,#7E22CE)',
-  harvest:     'linear-gradient(135deg,#F87171,#B91C1C)',
+  nutrition:   'linear-gradient(135deg,#6BBF78,#3F8A4E)',
+  irrigation:  'linear-gradient(135deg,#7FB0DC,#3F6FA3)',
+  observation: 'linear-gradient(135deg,#E3B65A,#A97A25)',
+  foliar:      'linear-gradient(135deg,#B79BDA,#7A5BA6)',
+  harvest:     'linear-gradient(135deg,#E08A74,#A84A38)',
 }
 
 function TaskIcon({ type }: { type: string }) {
