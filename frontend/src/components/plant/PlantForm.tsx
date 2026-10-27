@@ -109,7 +109,7 @@ function ToggleGroup<T extends string>({
 
 const STEPS = ['Planta', 'Setup', 'Nutrición'] as const
 
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({ current, onSelect }: { current: number; onSelect?: (step: number) => void }) {
   return (
     <div className="flex items-center justify-center gap-0 mb-8">
       {STEPS.map((label, i) => {
@@ -119,8 +119,18 @@ function StepIndicator({ current }: { current: number }) {
 
         return (
           <div key={label} className="flex items-center">
-            {/* Step circle */}
-            <div className="flex flex-col items-center gap-1.5">
+            {/* Step circle (en edicion se puede saltar directo a cualquier paso) */}
+            <div
+              className={clsx('flex flex-col items-center gap-1.5', onSelect && 'cursor-pointer')}
+              {...(onSelect ? {
+                role: 'button' as const,
+                tabIndex: 0,
+                'aria-label': `Ir al paso ${num}: ${label}`,
+                'aria-current': active ? ('step' as const) : undefined,
+                onClick: () => onSelect(num),
+                onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(num) } },
+              } : {})}
+            >
               <div className={clsx(
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border transition-all duration-300',
                 done
@@ -189,6 +199,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
   const today = formatDateOnly(new Date())
   const [step, setStep] = useState(1)
+  const editing = !!initialValues
   const [showSchedule, setShowSchedule] = useState(false)
   const [showProducts, setShowProducts] = useState(false)
 
@@ -400,7 +411,10 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
   function handleNext(e: React.FormEvent) {
     e.preventDefault()
+    goNext()
+  }
 
+  function goNext() {
     // Marcar todos los campos del paso actual como tocados
     if (step === 1) {
       setTouched((t) => ({ ...t, name: true, genetics: true }))
@@ -424,8 +438,18 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     }
   }
 
+  /** Edicion: saltar a otro paso. Para avanzar, el paso actual tiene que estar valido. */
+  function jumpTo(target: number) {
+    if (target === step) return
+    if (target > step && !isStepValid()) {
+      handleNext({ preventDefault() {} } as React.FormEvent)
+      return
+    }
+    setStep(target)
+  }
+
   function submitNow() {
-    if (!initialValues) saveLastSetup(values)
+    if (!editing) saveLastSetup(values)
     onSubmit(normalizeFormValuesForSubmit(values))
   }
 
@@ -1121,7 +1145,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
 
   return (
     <form onSubmit={handleNext} className="flex flex-col min-h-0">
-      <StepIndicator current={step} />
+      <StepIndicator current={step} onSelect={editing ? jumpTo : undefined} />
 
       <div className="flex-1">
         {step === 1 && renderStep1()}
@@ -1130,7 +1154,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       </div>
 
       {/* Navegación entre pasos */}
-      <div className={clsx('flex gap-3 pt-8', step === 1 ? 'justify-end' : 'justify-between')}>
+      <div className={clsx('flex items-center gap-3 pt-8', step === 1 && !editing ? 'justify-end' : 'justify-between')}>
         {step > 1 && (
           <button
             type="button"
@@ -1143,23 +1167,33 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             Volver
           </button>
         )}
-        {step === 2 && (
+        {step === 2 && !editing && (
           <button
             type="button"
             disabled={!isStepValid() || loading}
             onClick={submitNow}
             className="shrink-0 text-sm font-bold text-brand-400 px-3 tap-highlight-none disabled:opacity-40"
           >
-            Omitir nutrición y {submitLabel ? 'guardar' : 'crear'}
+            Omitir nutrición y crear
+          </button>
+        )}
+        {/* Edicion: guardar es la accion principal en cualquier paso; seguir es secundario */}
+        {editing && step < 3 && (
+          <button
+            type="submit"
+            className="shrink-0 text-sm font-semibold text-ink-2 hover:text-ink-1 px-3 tap-highlight-none transition-colors"
+          >
+            Continuar →
           </button>
         )}
         <Button
-          type="submit"
+          type={editing && step < 3 ? 'button' : 'submit'}
+          onClick={editing && step < 3 ? submitNow : undefined}
           size="lg"
           disabled={!isStepValid() || loading}
-          className={clsx(step === 1 ? 'w-full' : 'flex-1')}
+          className={clsx(step === 1 && !editing ? 'w-full' : 'flex-1')}
         >
-          {step < 3 ? (
+          {editing && step < 3 ? (loading ? 'Guardando...' : (submitLabel ?? 'Guardar')) : step < 3 ? (
             <>
               Continuar
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">

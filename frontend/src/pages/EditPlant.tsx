@@ -114,15 +114,17 @@ export default function EditPlant() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-ink-1 leading-tight">{t('editPlant.title')}</h1>
+          <h1 className="text-2xl text-ink-1 leading-tight">{t('editPlant.title')}</h1>
           <p className="text-xs text-ink-3 mt-0.5 truncate max-w-[220px]">{plant.name}</p>
         </div>
       </div>
 
       {/* Aviso: cambiar fecha o tabla regenera el calendario */}
-      <div className="mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl px-4 py-3 flex items-start gap-3">
-        <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
-        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+      <div className="mb-6 bg-flora-bg border border-flora-border rounded-2xl px-4 py-3 flex items-start gap-3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-flora-text shrink-0 mt-0.5" aria-hidden="true">
+          <path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+        </svg>
+        <p className="text-xs text-flora-text leading-relaxed">
           {t('editPlant.warning')}
         </p>
       </div>

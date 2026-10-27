@@ -138,3 +138,9 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - Abre en "Hoy" para plantas activas y en "Ficha" para cosechadas/descartadas. La ultima tab se recuerda por planta (`localStorage`, clave `cultitrack-plant-tab-<id>`; si no hay storage, no se recuerda).
 - Perfil ya tenia tabs (Stats, Logros, Cuenta): no se toco.
 - Tests: 43 E2E se adaptaron (el contenido paso a otra tab; helper `plantTab` en `e2e/helpers/journey.ts`) y hay un spec nuevo, `plant-tabs.spec.ts`. Un test de peso cosechado leia la base sin esperar la sincronizacion (flake latente): ahora usa `expect.poll`.
+
+## Dieciseisava tanda (2026-10-27): editar planta
+- Editar compartia el asistente de 3 pasos del alta: cambiar solo el nombre exigia tres "Continuar". Ahora, en edicion, **"Guardar cambios" esta disponible en cualquier paso** (es el boton principal; "Continuar" queda como accion secundaria) y los **pasos del indicador son clickeables** para ir directo al que se quiere. El alta no cambia.
+- El aviso de "regenera el calendario" pasa de amarillo con emoji a los tokens de flora, con icono de linea; titulo en serif.
+- "Omitir nutricion y crear" solo se muestra en el alta (en edicion ya hay guardado directo).
+- Tests: `edit-plant.spec.ts` (guardar desde el paso 1, saltar entre pasos, nombre vacio); los E2E de edicion existentes siguen igual.
