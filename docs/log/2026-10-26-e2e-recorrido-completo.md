@@ -53,3 +53,10 @@ Infra: `e2e/real/discard-active-plants.spec.ts` descarta desde la UI las plantas
 - Test de solo lectura contra la cuenta Pro real (`e2e/real/pro-account-smoke.spec.ts`, se saltea sin sesion guardada).
 
 Sigue pendiente (decision de producto): el diagnostico por IA esta apagado por flag.
+
+## Cuarta tanda (2026-10-27): editar una planta borraba las tareas completadas
+Hallazgo al revisar si se pueden "ajustar parametros": `usePlants.editPlant` regeneraba el calendario ENTERO ante cualquier edicion (aunque fuera solo el nombre) y lo guardaba con `replaceTasksForPlantInSupabase`, que borra todo. Se perdian las tareas completadas (y su `xp_awarded`), por lo que se podia volver a ganar XP por la misma tarea. Ajustes > Regenerar ya lo hacia bien, y su comentario decia que editPlant tambien, asi que fue una regresion.
+
+Arreglo: `lib/schedule-merge.ts` (`mergeRegeneratedSchedule`, `scheduleAffectingChange`). editPlant solo regenera si cambia algo que afecta el calendario (fechas, ciclo, tipo, tabla, productos), conserva las completadas con su id/xp y reemplaza solo las pendientes. Tambien se corrigio el criterio de Ajustes: antes completar UN riego de una semana descartaba los DOS riegos nuevos de esa semana (la clave era ciclo|semana|tipo); ahora se descarta uno por cada completada.
+
+Otros hallazgos sin corregir (ver respuesta al usuario): no existe cancelar/saltar/reprogramar una tarea (removeTask/updateTask existen en el store pero ninguna pantalla los usa); una planta con fecha de inicio futura se muestra como "V-4 D-28" en Home; el diario/cosecha no registra el peso cosechado.

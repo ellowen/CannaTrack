@@ -297,6 +297,49 @@ test.describe('Floración, cosecha, descarte y edición', () => {
     await expect.poll(() => dbPlants(context).find((p) => p.id === id)!.status).toBe('discarded')
   })
 
+  test('editar una planta NO borra las tareas completadas ni vuelve a dar XP (solo el nombre)', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, SODA, 2) // hoy toca un riego
+    await page.getByRole('button', { name: /Riego completado/ }).first().click()
+    await page.getByRole('button', { name: /Confirmar/ }).click()
+    await expect.poll(() => dbTasks(context).filter((t) => t.plant_id === id && t.completed === true).length).toBe(1)
+    const total = dbTasks(context).filter((t) => t.plant_id === id).length
+    const hecha = dbTasks(context).find((t) => t.plant_id === id && t.completed === true)!
+
+    await gotoApp(page, `/plants/${id}/edit`)
+    await page.getByPlaceholder('Ej: White Widow #1').fill('Soda renombrada')
+    await page.getByRole('button', { name: /Continuar/ }).click()
+    await page.getByRole('button', { name: /Continuar/ }).click()
+    await page.getByRole('button', { name: /Guardar cambios/ }).click()
+    await expect(page.getByRole('heading', { name: 'Soda renombrada' })).toBeVisible({ timeout: 10_000 })
+
+    const mine = dbTasks(context).filter((t) => t.plant_id === id)
+    expect(mine).toHaveLength(total)
+    const sigue = mine.find((t) => t.id === hecha.id)!
+    expect(sigue.completed).toBe(true)
+    expect(sigue.xp_awarded).toBe(true)
+  })
+
+  test('cambiar la duracion de floracion regenera lo pendiente y conserva lo completado', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, SODA, 2)
+    await page.getByRole('button', { name: /Riego completado/ }).first().click()
+    await page.getByRole('button', { name: /Confirmar/ }).click()
+    await expect.poll(() => dbTasks(context).filter((t) => t.plant_id === id && t.completed === true).length).toBe(1)
+    const hecha = dbTasks(context).find((t) => t.plant_id === id && t.completed === true)!
+    const floraAntes = Math.max(...dbTasks(context).filter((t) => t.plant_id === id && t.cycle === 'flora' && t.type !== 'harvest').map((t) => Number(t.week)))
+
+    await gotoApp(page, `/plants/${id}/edit`)
+    await page.getByLabel('Días de floración').fill('28')
+    await page.getByRole('button', { name: /Continuar/ }).click()
+    await page.getByRole('button', { name: /Continuar/ }).click()
+    await page.getByRole('button', { name: /Guardar cambios/ }).click()
+    await expect(page).toHaveURL(new RegExp(`/plants/${id}$`), { timeout: 10_000 })
+
+    await expect.poll(() => Math.max(...dbTasks(context).filter((t) => t.plant_id === id && t.cycle === 'flora' && t.type !== 'harvest').map((t) => Number(t.week)))).toBeLessThan(floraAntes)
+    const sigue = dbTasks(context).find((t) => t.id === hecha.id)!
+    expect(sigue.completed).toBe(true)
+    expect(sigue.xp_awarded).toBe(true)
+  })
+
   test('editar: nombre, notas y duracion de floracion; el calendario se regenera', async ({ page, context }) => {
     const id = await createPlantViaUi(page, BLUE, 5)
     await page.getByRole('link', { name: 'Editar' }).first().click()
