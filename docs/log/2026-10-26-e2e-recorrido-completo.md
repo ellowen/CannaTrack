@@ -45,3 +45,11 @@ Observaciones sin corregir:
 - "Vegetativa / Pre-Flora" en el encabezado de Home es el nivel de gamificacion, no la fase de la planta (confunde por el nombre).
 
 Infra: `e2e/real/discard-active-plants.spec.ts` descarta desde la UI las plantas activas de la cuenta Pro real (se saltea sin `e2e/.auth/pro.json`). `run-migrations.js` ya no tiene la clave secreta hardcodeada (se roto la clave en Supabase).
+
+## Tercera tanda (2026-10-27): observaciones que quedaban, corregidas
+- **Autos con tareas despues de la cosecha:** una auto (cosecha dia 75, floracion por defecto 56 dias desde el dia 35 = hasta el 91) agendaba riegos pasada la cosecha. Ahora `generatePlantSchedule` corta todo lo posterior al dia de cosecha. El test que contaba 61 tareas codificaba ese defecto: ahora 55 y hay un test de "nada despues de la cosecha". Las plantas ya creadas conservan sus tareas guardadas hasta que se regeneren (Ajustes > Regenerar).
+- **Etiqueta de la tarea de cosecha de una auto:** decia F8 (ultima semana de la tabla); ahora lleva la semana de floracion real en que cae.
+- **/dashboard:** una tarea de hoy se marcaba "Vencida"; ahora dice "Hoy" y solo las de dias anteriores dicen "Vencida".
+- Test de solo lectura contra la cuenta Pro real (`e2e/real/pro-account-smoke.spec.ts`, se saltea sin sesion guardada).
+
+Sigue pendiente (decision de producto): el diagnostico por IA esta apagado por flag.

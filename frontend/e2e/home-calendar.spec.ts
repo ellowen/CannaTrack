@@ -157,3 +157,17 @@ test.describe('Calendario', () => {
     })
   })
 })
+
+test.describe('Dashboard (/dashboard)', () => {
+  test('una tarea de hoy dice "Hoy" y solo las de dias anteriores dicen "Vencida"', async ({ page, context }) => {
+    await setup(page, context)
+    await createPlantViaUi(page, SODA, 0)  // tareas de hoy
+    await createPlantViaUi(page, BLUE, 3)  // tareas atrasadas
+    await gotoApp(page, '/dashboard')
+    const todayCard = page.locator('div', { hasText: SODA.name }).filter({ hasText: 'Hoy' }).first()
+    await expect(todayCard).toBeVisible()
+    await expect(todayCard).not.toContainText('Vencida')
+    const overdue = page.locator('div', { hasText: BLUE.name }).filter({ hasText: 'Vencida' }).first()
+    await expect(overdue).toBeVisible()
+  })
+})

@@ -105,7 +105,7 @@ test.describe('Motor: autoflorecientes reales', () => {
       const tareas = generatePlantSchedule(plant, REVEGETAR_TABLE)
       const cosecha = tareas.find((t) => t.type === 'harvest')!.scheduledDate.getTime()
       for (const t of tareas) expect(t.scheduledDate.getTime()).toBeLessThanOrEqual(cosecha)
-      expect(Math.max(...tareas.filter((t) => t.cycle === 'flora').map((t) => t.week))).toBe(Math.ceil(cycleFloraDays(s) / 7))
+      expect(Math.max(...tareas.filter((t) => t.cycle === 'flora' && t.type !== 'harvest').map((t) => t.week))).toBe(Math.ceil(cycleFloraDays(s) / 7))
     })
 
     test(`${s.name}: sigue en floracion el dia anterior a la cosecha (${total - 1})`, () => {
