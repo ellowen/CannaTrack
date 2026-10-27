@@ -129,3 +129,6 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 ## Treceava tanda (2026-10-27): onboarding y dashboard
 - **Onboarding:** el logo real reemplaza al emoji que rebotaba, los emojis de las tarjetas pasan a iconos de linea en verde, titulos en serif, resplandor de marca de fondo, puntos de progreso (3 pasos) y checks de linea en el ultimo paso. Mismos textos y pasos; los E2E del wizard no cambiaron.
 - **Dashboard (`/dashboard`, no esta en la navegacion; duplica a Home):** sin emojis (👋 🔥 🎉 🌱 ✂️ 🗑️), titulos en serif, "Vencida" en terracota de la paleta en vez de rojo, boton "Nueva planta" con borde fino.
+
+## Catorceava tanda (2026-10-27): landing
+- La landing tenia su propia identidad (negro verdoso `#050E07`, verde `#3DCC63`, Inter 900, texto en degradado y un boton que pulsaba sin parar). Ahora usa la paleta de la app (`#0D110C`, `#5CC76C`), titulos en serif (Fraunces), segunda linea del hero en verde plano, y los botones con una sombra suave fija (sube un poco al pasar el mouse) en vez de la animacion de pulso. La tipografia del cuerpo no cargaba Inter autoalojada (caia a la del sistema); ahora si. Textos y estructura sin cambios.

@@ -10,7 +10,7 @@ interface GrowthLinesProps {
   opacity?: number
 }
 
-const GREEN = '#3DCC63'
+const GREEN = '#5CC76C'
 
 export function GrowthLines({ variant = 'hero', className, opacity }: GrowthLinesProps) {
   if (variant === 'divider') {

@@ -16,12 +16,12 @@ function prefersReducedMotion() {
 
 // ─── Colores de la landing (siempre dark) ────────────────────────────────────
 const C = {
-  bg:       '#050E07',
+  bg:       '#0D110C',
   card:     'rgba(255,255,255,0.03)',
   border:   'rgba(255,255,255,0.07)',
-  green:    '#3DCC63',
-  greenDim: 'rgba(61,204,99,0.12)',
-  greenGlow:'rgba(61,204,99,0.25)',
+  green:    '#5CC76C',
+  greenDim: 'rgba(92,199,108,0.12)',
+  greenGlow:'rgba(92,199,108,0.25)',
   white:    '#FFFFFF',
   ink1:     'rgba(255,255,255,0.92)',
   ink2:     'rgba(255,255,255,0.60)',
@@ -61,7 +61,7 @@ function LogoMark({ size = 36 }: { size?: number }) {
       <defs>
         <radialGradient id="lp-bg" cx="50%" cy="35%" r="70%">
           <stop offset="0%" stopColor="#142B18" />
-          <stop offset="100%" stopColor="#050E07" />
+          <stop offset="100%" stopColor="#0D110C" />
         </radialGradient>
         <linearGradient id="lp-leaf" x1="50%" y1="0%" x2="50%" y2="100%">
           <stop offset="0%" stopColor="#FFFFFF" />
@@ -70,8 +70,8 @@ function LogoMark({ size = 36 }: { size?: number }) {
       </defs>
       <rect width="180" height="180" rx="42" fill="url(#lp-bg)" />
       <ellipse cx="90" cy="88" rx="62" ry="55" fill="#2EBD52" opacity="0.07" />
-      <path d="M 90 28 A 62 62 0 1 1 28 90" fill="none" stroke="#3DCC63" strokeWidth="2.5" strokeLinecap="round" opacity="0.38" />
-      <circle cx="28" cy="90" r="4" fill="#3DCC63" opacity="0.6" />
+      <path d="M 90 28 A 62 62 0 1 1 28 90" fill="none" stroke="#5CC76C" strokeWidth="2.5" strokeLinecap="round" opacity="0.38" />
+      <circle cx="28" cy="90" r="4" fill="#5CC76C" opacity="0.6" />
       <g transform="translate(90,108)" fill="url(#lp-leaf)">
         <path d="M 0 0 C -7.5 -10, -7.5 -33, 0 -44 C 7.5 -33, 7.5 -10, 0 0 Z" />
         <path transform="rotate(27)" d="M 0 0 C -6.5 -9, -6.5 -28, 0 -37 C 6.5 -28, 6.5 -9, 0 0 Z" />
@@ -80,7 +80,7 @@ function LogoMark({ size = 36 }: { size?: number }) {
         <path transform="rotate(-56)" d="M 0 0 C -5 -6.5, -5 -19, 0 -26 C 5 -19, 5 -6.5, 0 0 Z" />
         <path transform="rotate(82)" d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
         <path transform="rotate(-82)" d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
-        <line x1="0" y1="-2" x2="0" y2="-38" stroke="rgba(5,14,7,0.18)" strokeWidth="1.2" strokeLinecap="round" />
+        <line x1="0" y1="-2" x2="0" y2="-38" stroke="rgba(13,17,12,0.18)" strokeWidth="1.2" strokeLinecap="round" />
         <rect x="-2.8" y="0" width="5.6" height="12" rx="2.8" />
       </g>
     </svg>
@@ -197,19 +197,20 @@ export default function Landing() {
   ]
 
   return (
-    <div className="lp-root" style={{ background: C.bg, color: C.ink1, fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
+    <div className="lp-root" style={{ background: C.bg, color: C.ink1, fontFamily: "'Inter Variable', Inter, system-ui, sans-serif", overflowX: 'hidden' }}>
 
       <style>{`
-        .lp-glow { animation: lp-glow 2.5s ease-in-out infinite; }
-        @keyframes lp-glow { 0%, 100% { box-shadow: 0 0 20px rgba(61,204,99,0.3); } 50% { box-shadow: 0 0 40px rgba(61,204,99,0.55); } }
+        .lp-glow { box-shadow: 0 6px 24px rgba(92,199,108,0.18); transition: box-shadow 0.2s, transform 0.2s; }
+        .lp-glow:hover { box-shadow: 0 8px 30px rgba(92,199,108,0.3); transform: translateY(-1px); }
+        .lp-root h1, .lp-root h2, .lp-root h3 { font-family: 'Fraunces Variable', Fraunces, 'Iowan Old Style', Georgia, serif !important; font-weight: 600 !important; letter-spacing: -0.01em !important; }
         .lp-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
         .lp-link:hover { color: #fff; }
         .lp-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; transition: all 0.2s; }
-        .lp-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(61,204,99,0.2); transform: translateY(-2px); }
+        .lp-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(92,199,108,0.2); transform: translateY(-2px); }
         .faq-content { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; }
 
         .lp-root :focus-visible {
-          outline: 2px solid rgba(61,204,99,0.65);
+          outline: 2px solid rgba(92,199,108,0.65);
           outline-offset: 3px;
           border-radius: 4px;
         }
@@ -227,7 +228,7 @@ export default function Landing() {
       {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(5,14,7,0.82)', backdropFilter: 'blur(20px)',
+        background: 'rgba(13,17,12,0.82)', backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -253,7 +254,7 @@ export default function Landing() {
             <Link to="/login" style={{ color: C.ink2, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }} className="hidden md:block">
               {t('landing.nav_login')}
             </Link>
-            <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '13px', padding: '8px 18px', borderRadius: '10px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
+            <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '13px', padding: '8px 18px', borderRadius: '10px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
               {t('landing.nav_cta')}
             </Link>
             <button onClick={() => setMenuOpen(v => !v)}
@@ -272,7 +273,7 @@ export default function Landing() {
 
         {/* Menu mobile — compacto */}
         {menuOpen && (
-          <div style={{ background: 'rgba(5,14,7,0.97)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 20px 12px' }}>
+          <div style={{ background: 'rgba(13,17,12,0.97)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 20px 12px' }}>
             {NAV_LINKS.map(l => (
               <a key={l.href} href={l.href} className="lp-link"
                 style={{ display: 'block', padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '13px' }}
@@ -280,7 +281,7 @@ export default function Landing() {
             ))}
             <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Link to="/login" style={{ color: C.ink2, fontSize: '13px', textDecoration: 'none', flex: 1 }}>{t('landing.nav_login')}</Link>
-              <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '13px', padding: '9px 16px', borderRadius: '10px', textDecoration: 'none' }}>
+              <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '13px', padding: '9px 16px', borderRadius: '10px', textDecoration: 'none' }}>
                 {t('landing.nav_cta')}
               </Link>
             </div>
@@ -290,11 +291,11 @@ export default function Landing() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 60px', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '600px', background: 'radial-gradient(ellipse, rgba(61,204,99,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '600px', background: 'radial-gradient(ellipse, rgba(92,199,108,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1120px', margin: '0 auto', width: '100%' }}>
           <div ref={heroRef} style={{ display: 'flex', gap: '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <div style={{ flex: '1', minWidth: '280px', maxWidth: '560px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: C.greenDim, border: '1px solid rgba(61,204,99,0.25)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: C.greenDim, border: '1px solid rgba(92,199,108,0.25)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.green }} />
                 <span style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>{t('landing.badge')}</span>
               </div>
@@ -302,7 +303,7 @@ export default function Landing() {
               <h1 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-1.5px', color: C.white, marginBottom: '20px' }}>
                 {t('landing.hero_h1_line1')}
                 <br />
-                <span style={{ background: 'linear-gradient(135deg, #3DCC63 0%, #6EE090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <span style={{ color: C.green }}>
                   {t('landing.hero_h1_line2')}
                 </span>
               </h1>
@@ -313,7 +314,7 @@ export default function Landing() {
               </p>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '36px' }}>
-                <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '15px', padding: '14px 28px', borderRadius: '14px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
+                <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 28px', borderRadius: '14px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
                   {t('landing.hero_cta')}
                 </Link>
                 <a href="#como-funciona" style={{ background: 'rgba(255,255,255,0.06)', color: C.ink1, fontWeight: 600, fontSize: '15px', padding: '14px 24px', borderRadius: '14px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -385,11 +386,11 @@ export default function Landing() {
             {STEPS.map((step, i) => (
               <div key={step.num} style={{ display: 'flex', gap: '24px', position: 'relative' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `rgba(61,204,99,${step.opacity * 0.16})`, border: `2px solid rgba(61,204,99,${step.opacity * 0.55})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: C.green, opacity: 0.5 + step.opacity * 0.5, flexShrink: 0 }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `rgba(92,199,108,${step.opacity * 0.16})`, border: `2px solid rgba(92,199,108,${step.opacity * 0.55})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: C.green, opacity: 0.5 + step.opacity * 0.5, flexShrink: 0 }}>
                     {step.num}
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div style={{ flex: 1, width: '1px', background: `linear-gradient(to bottom, rgba(61,204,99,${step.opacity * 0.5}), transparent)`, marginTop: '4px', minHeight: '48px' }} />
+                    <div style={{ flex: 1, width: '1px', background: `linear-gradient(to bottom, rgba(92,199,108,${step.opacity * 0.5}), transparent)`, marginTop: '4px', minHeight: '48px' }} />
                   )}
                 </div>
                 <div style={{ paddingBottom: i < STEPS.length - 1 ? '40px' : '0', paddingTop: '10px' }}>
@@ -400,7 +401,7 @@ export default function Landing() {
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: '60px' }}>
-            <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }}>
+            <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }}>
               {t('landing.how_cta')}
             </Link>
           </div>
@@ -430,7 +431,7 @@ export default function Landing() {
       {/* ── B2B ───────────────────────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={b2bRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, rgba(61,204,99,0.07) 0%, rgba(61,204,99,0.02) 100%)', border: '1px solid rgba(61,204,99,0.15)', borderRadius: '28px', padding: '56px 48px', display: 'flex', gap: '48px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(92,199,108,0.07) 0%, rgba(92,199,108,0.02) 100%)', border: '1px solid rgba(92,199,108,0.15)', borderRadius: '28px', padding: '56px 48px', display: 'flex', gap: '48px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: '280px' }}>
               <span style={{ background: C.greenDim, color: C.green, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>
                 {t('landing.b2b_badge')}
@@ -445,7 +446,7 @@ export default function Landing() {
                 ))}
               </ul>
               <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi tabla en CultiTrack"
-                style={{ display: 'inline-block', background: C.greenDim, color: C.green, border: '1px solid rgba(61,204,99,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
+                style={{ display: 'inline-block', background: C.greenDim, color: C.green, border: '1px solid rgba(92,199,108,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
                 {t('landing.b2b_cta')}
               </a>
             </div>
@@ -495,11 +496,11 @@ export default function Landing() {
                 ))}
               </ul>
             </div>
-            <div style={{ background: 'linear-gradient(145deg, rgba(61,204,99,0.08), rgba(61,204,99,0.03))', border: '1px solid rgba(61,204,99,0.3)', borderRadius: '24px', padding: '36px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: '20px', right: '20px', background: C.green, color: '#050E07', fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', padding: '4px 10px', borderRadius: '100px', textTransform: 'uppercase' }}>
+            <div style={{ background: 'linear-gradient(145deg, rgba(92,199,108,0.08), rgba(92,199,108,0.03))', border: '1px solid rgba(92,199,108,0.3)', borderRadius: '24px', padding: '36px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '20px', right: '20px', background: C.green, color: '#0D110C', fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', padding: '4px 10px', borderRadius: '100px', textTransform: 'uppercase' }}>
                 {t('landing.pro_badge')}
               </div>
-              <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(61,204,99,0.12), transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(92,199,108,0.12), transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ marginBottom: '24px' }}>
                 <p style={{ color: C.green, fontSize: '13px', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('landing.pro_label')}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
@@ -508,7 +509,7 @@ export default function Landing() {
                 </div>
                 <p style={{ color: C.ink3, fontSize: '13px', margin: '8px 0 0' }}>{t('landing.pro_note')}</p>
               </div>
-              <button disabled style={{ display: 'block', width: '100%', background: 'rgba(61,204,99,0.2)', color: C.green, border: '1px solid rgba(61,204,99,0.3)', fontWeight: 700, fontSize: '14px', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', marginBottom: '28px' }}>
+              <button disabled style={{ display: 'block', width: '100%', background: 'rgba(92,199,108,0.2)', color: C.green, border: '1px solid rgba(92,199,108,0.3)', fontWeight: 700, fontSize: '14px', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', marginBottom: '28px' }}>
                 {t('landing.pro_cta')}
               </button>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px' }}>
@@ -551,7 +552,7 @@ export default function Landing() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {FAQS.map((faq, i) => (
-              <div key={i} style={{ background: openFaq === i ? 'rgba(61,204,99,0.04)' : C.card, border: `1px solid ${openFaq === i ? 'rgba(61,204,99,0.2)' : C.border}`, borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
+              <div key={i} style={{ background: openFaq === i ? 'rgba(92,199,108,0.04)' : C.card, border: `1px solid ${openFaq === i ? 'rgba(92,199,108,0.2)' : C.border}`, borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                   aria-controls={`faq-answer-${i}`}
@@ -571,8 +572,8 @@ export default function Landing() {
       {/* ── CTA FINAL ─────────────────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px 100px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={ctaRef} style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ width: '200px', height: '200px', margin: '0 auto -140px', background: 'radial-gradient(circle, rgba(61,204,99,0.18), transparent 70%)' }} />
-          <div style={{ background: 'linear-gradient(145deg, rgba(61,204,99,0.07), rgba(10,26,13,0.8))', border: '1px solid rgba(61,204,99,0.2)', borderRadius: '28px', padding: '56px 36px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ width: '200px', height: '200px', margin: '0 auto -140px', background: 'radial-gradient(circle, rgba(92,199,108,0.18), transparent 70%)' }} />
+          <div style={{ background: 'linear-gradient(145deg, rgba(92,199,108,0.07), rgba(10,26,13,0.8))', border: '1px solid rgba(92,199,108,0.2)', borderRadius: '28px', padding: '56px 36px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, right: 0, width: '160px', height: '160px', opacity: 0.5, pointerEvents: 'none' }}>
               <GrowthLines variant="hero" opacity={0.3} />
             </div>
@@ -581,7 +582,7 @@ export default function Landing() {
             <p style={{ color: C.ink2, fontSize: '16px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '480px', display: 'inline-block', position: 'relative' }}>{t('landing.cta_desc')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', position: 'relative' }}>
-              <Link to="/signup" style={{ background: C.green, color: '#050E07', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }} className="lp-glow">
+              <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }} className="lp-glow">
                 {t('landing.cta_main')}
               </Link>
               <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>{t('landing.cta_disclaimer')}</p>
