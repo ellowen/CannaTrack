@@ -19,6 +19,7 @@ import { replacePendingTasksForPlantInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useSubscription } from '@/hooks/useSubscription'
+import { mergeRegeneratedSchedule } from '@/lib/schedule-merge'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -85,17 +86,14 @@ export default function Settings() {
       const candidateTasks = generatePlantSchedule(plant, table)
 
       // Las tareas ya completadas son historial: nunca se borran ni se
-      // regeneran (mismo criterio que usePlants.editPlant -- antes esta
+      // regeneran (mismo criterio que usePlants.editPlant, via mergeRegeneratedSchedule -- antes esta
       // funcion usaba replaceTasksForPlantInSupabase, que borraba TODO,
       // incluidas las completadas, perdiendo completed_at/xp_awarded y
       // habilitando re-otorgar XP por la misma tarea).
       const existingForPlant = tasks.filter((t) => t.plantId === plant.id)
-      const completedExisting = existingForPlant.filter((t) => t.completed)
-      const slotKey = (t: { cycle: string; week: number; type: string }) => `${t.cycle}|${t.week}|${t.type}`
-      const completedSlots = new Set(completedExisting.map(slotKey))
-      const newPending = candidateTasks.filter((t) => !completedSlots.has(slotKey(t)))
+      const { pending: newPending, all: merged } = mergeRegeneratedSchedule(existingForPlant, candidateTasks)
 
-      setTasks(plant.id, [...completedExisting, ...newPending])
+      setTasks(plant.id, merged)
       // Persistir en la DB: reemplaza solo las tareas pendientes.
       // Cada planta se intenta de forma independiente -- que una falle no
       // debe frenar la regeneracion del resto.

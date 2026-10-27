@@ -2,11 +2,12 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { generatePlantSchedule, startFloraPhase } from '@/lib/nutrition-engine'
+import { mergeRegeneratedSchedule, scheduleAffectingChange } from '@/lib/schedule-merge'
 import { supabase } from '@/lib/auth'
 import {
   syncPlantToSupabase,
   syncTasksToSupabase,
-  replaceTasksForPlantInSupabase,
+  replacePendingTasksForPlantInSupabase,
   updatePlantInSupabase,
   updatePlantStatusInSupabase,
 } from '@/lib/sync'
@@ -163,25 +164,31 @@ export function usePlants() {
     updatePlant(id, data)
     const table = tables.find((t) => t.id === updated.nutritionTableId)
 
+    // Solo se regenera si cambio algo de lo que depende el calendario (tabla, genetica,
+    // fechas, ciclo, productos). Editar nombre, notas o macetas no lo toca.
+    const regenerate = !!table && scheduleAffectingChange(existing, updated)
+    let pendingToSave: ScheduledTask[] = []
+
     try {
-      // Regenerar tareas si cambia tabla o genetica
-      if (table) {
+      if (table && regenerate) {
         const effective = updated.availableProducts
           ? applyProductFilter(table, updated.availableProducts)
           : table
-        const tasks = generatePlantSchedule(updated, effective)
-        setTasks(id, tasks)
-        // Reemplazo atomico: si solo insertaramos, las tareas viejas quedan en la DB
-        await replaceTasksForPlantInSupabase(id, tasks)
+        const current = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
+        // Las completadas son historial (y guardan xp_awarded): se conservan siempre
+        const merged = mergeRegeneratedSchedule(current, generatePlantSchedule(updated, effective))
+        pendingToSave = merged.pending
+        setTasks(id, merged.all)
+        // Reemplaza solo las pendientes en la DB; borrar todo perdia completed_at/xp_awarded
+        await replacePendingTasksForPlantInSupabase(id, merged.pending)
       }
 
       await updatePlantInSupabase(id, data as Record<string, unknown>)
     } catch (error) {
       console.error('[editPlant] Error sincronizando:', error)
       showErrorToast('Los cambios se guardaron en este dispositivo, pero no se pudieron sincronizar. Revisá tu conexión.')
-      if (table) {
-        const currentTasks = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
-        enqueueSyncAction('replaceTasks', { plantId: id, tasks: currentTasks })
+      if (table && regenerate) {
+        enqueueSyncAction('replacePendingTasks', { plantId: id, tasks: pendingToSave })
       }
       enqueueSyncAction('updatePlantData', { plantId: id, changes: data })
     }
