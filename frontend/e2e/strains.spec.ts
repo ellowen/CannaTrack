@@ -161,6 +161,7 @@ test.describe('Catalogo de variedades de la app', () => {
       expect(preset.genetics).toBe(s.genetics)
       expect(preset.breeder).toBe(s.breeder)
       expect(preset.geneticType).toBe(s.plant.geneticType)
+      expect(preset.notes).toBe(s.plant.notes)
       expect(preset.floraDays).toBe(cycleFloraDays(s))
       if (s.plant.geneticType === 'autoflower') {
         expect(preset.autoFlowerTotalDays).toBe(s.plant.autoFlowerTotalDays)

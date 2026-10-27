@@ -23,6 +23,8 @@ export interface StrainPreset {
   /** Solo autoflorecientes. */
   autoFloraStartDay?: number
   floraDays: number
+  /** Notas de cuidado de la ficha; precargan el campo Notas (editable). */
+  notes: string
 }
 
 export const STRAIN_PRESETS: StrainPreset[] = [
@@ -35,6 +37,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     autoFlowerTotalDays: 75,
     autoFloraStartDay: 35,
     floraDays: 40,
+    notes: 'Auto Strawberry Soda (Dutch Passion). Compacta, indica. Mantener humedad < 50% en flora.',
   },
   {
     id: 'auto-critical-orange-punch',
@@ -45,6 +48,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     autoFlowerTotalDays: 75,
     autoFloraStartDay: 35,
     floraDays: 40,
+    notes: 'Auto Critical Orange Punch (Dutch Passion). 50/50. Maceta >= 30 L. Soportar ramas en las ultimas semanas.',
   },
   {
     id: 'blue-applez',
@@ -53,6 +57,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     genetics: 'Apples & Bananas x Purple OG Punch',
     geneticType: 'feminized',
     floraDays: 63,
+    notes: 'Blue Applez (fotoperiodica). Floracion ~9 semanas. Dar soporte en flora tardia.',
   },
   {
     id: 'flat-white-auto',
@@ -63,6 +68,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     autoFlowerTotalDays: 70,
     autoFloraStartDay: 35,
     floraDays: 35,
+    notes: 'Flat White Auto (Mountain Seeds). Ciclo rapido, compacta, resina muy alta.',
   },
   {
     id: 'citric-lime-pie',
@@ -71,6 +77,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     genetics: 'Citric Latte x Gummy Buns',
     geneticType: 'feminized',
     floraDays: 65,
+    notes: 'Citric Lime Pie (Mountain Seeds). Fotoperiodica, floracion 65 dias. THC 28% declarado.',
   },
   {
     id: 'therian-auto',
@@ -81,5 +88,6 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     autoFlowerTotalDays: 84,
     autoFloraStartDay: 35,
     floraDays: 49,
+    notes: 'Therian Auto (Mountain Seeds). Ciclo largo para auto (12 semanas), resina alta.',
   },
 ]

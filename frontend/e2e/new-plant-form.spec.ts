@@ -294,3 +294,31 @@ test.describe('Formulario: vegetativo y riegos por semana', () => {
     ).toBe(4)
   })
 })
+
+test.describe('Formulario: notas del catalogo', () => {
+  test.beforeEach(async ({ page, context }) => setup(page, context))
+
+  const notasInput = (page: Page) => page.getByPlaceholder('Observaciones sobre esta planta...')
+  const preset = (page: Page) => page.getByLabel('Variedad del catálogo (opcional)')
+
+  test('elegir una variedad precarga las notas de cuidado y llegan al detalle de la planta', async ({ page }) => {
+    await preset(page).selectOption({ label: 'Auto Strawberry Soda (Dutch Passion)' })
+    await expect(notasInput(page)).toHaveValue(/Dutch Passion.*humedad < 50% en flora/)
+    await nameInput(page).fill('Soda 1')
+    await next(page).click()
+    await next(page).click()
+    await page.getByRole('button', { name: /Crear planta/i }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+    await expect(page.getByText(/Mantener humedad < 50% en flora/)).toBeVisible()
+  })
+
+  test('cambiar de variedad reemplaza las notas del catalogo, pero no lo que escribio el usuario', async ({ page }) => {
+    await preset(page).selectOption({ label: 'Auto Strawberry Soda (Dutch Passion)' })
+    await preset(page).selectOption({ label: 'Flat White Auto (Mountain Seeds)' })
+    await expect(notasInput(page)).toHaveValue(/Flat White Auto \(Mountain Seeds\)/)
+
+    await notasInput(page).fill('Germinada en jiffy, maceta definitiva el 5/12')
+    await preset(page).selectOption({ label: 'Therian Auto (Mountain Seeds)' })
+    await expect(notasInput(page)).toHaveValue('Germinada en jiffy, maceta definitiva el 5/12')
+  })
+})

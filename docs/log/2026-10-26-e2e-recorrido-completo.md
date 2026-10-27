@@ -74,7 +74,7 @@ Pedido: poder ajustar los parametros de cada semilla y cancelar riegos (p.ej. po
 
 Migracion `20261027000000_task_skip_and_plant_cycle.sql` (APLICADA): scheduled_tasks.skipped/skip_reason/rescheduled_from; plants.vege_days/irrigation_per_week.
 
-Pendiente de la lista original: catalogo que precargue breeder y notas de cuidado, registrar el peso cosechado.
+Pendiente de la lista original: registrar el peso cosechado.
 
 ## Sexta tanda (2026-10-27): siembras planificadas
 Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D-28`, con semana negativa y dias de cosecha como si ya creciera.
@@ -84,3 +84,7 @@ Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D
 - El calendario ya arrancaba en la fecha de siembra: no hay tareas vencidas ni de hoy. El formulario aclara que se puede poner la fecha prevista.
 - Una planta planificada cuenta como activa para el limite del plan Free (1).
 - Tests: 4 unit (flora-cycle) y `e2e/planned-sowing.spec.ts` (4).
+
+## Septima tanda (2026-10-27): el catalogo precarga las notas de cuidado
+`STRAIN_PRESETS` ahora trae `notes` (las de la ficha en `e2e/fixtures/strains.ts`: humedad, maceta minima, soporte en flora tardia, etc.) y el formulario las carga en "Notas" al elegir la variedad. El breeder va dentro de ese texto ("Auto Strawberry Soda (Dutch Passion)...") porque la planta no tiene columna de breeder; Blue Applez no lo lleva porque la pagina no lo declara. Cambiar de variedad reemplaza las notas del catalogo, pero nunca lo que escribio el usuario. Las notas se guardan en `plants.notes` (ya existia) y se ven en el detalle.
+- Tests: el spec de strains exige que preset.notes == ficha; 2 E2E nuevos en `new-plant-form.spec.ts`.

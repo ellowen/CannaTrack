@@ -217,7 +217,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     }))
   }
 
-  // Precarga genetica, tipo y ciclo desde una variedad del catalogo. Todo queda
+  // Precarga genetica, tipo, ciclo y notas de cuidado desde una variedad del catalogo. Todo queda
   // editable; el nombre de la planta no se toca (es del usuario).
   function applyPreset(presetId: string) {
     const preset: StrainPreset | undefined = STRAIN_PRESETS.find((p) => p.id === presetId)
@@ -229,6 +229,8 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       autoFlowerTotalDays: preset.autoFlowerTotalDays ?? v.autoFlowerTotalDays,
       autoFloraStartDay: preset.autoFloraStartDay,
       floraDays: preset.floraDays,
+      // las notas del catalogo no pisan lo que escribio el usuario (si solo hay notas de otra variedad, se reemplazan)
+      notes: !v.notes || STRAIN_PRESETS.some((p) => p.notes === v.notes) ? preset.notes : v.notes,
       // el catalogo no define vegetativo ni riegos: se conserva lo que ya hubiera cargado
       vegeDays: preset.geneticType === 'autoflower' ? undefined : v.vegeDays,
     }))
