@@ -23,7 +23,7 @@ import type { ScheduledTask } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { formatDateOnly } from '@/lib/date-utils'
-import { getVegeDays, vegeWeekCount } from '@/lib/flora-cycle'
+import { daysUntilSowing, getVegeDays, isPlanned, vegeWeekCount } from '@/lib/flora-cycle'
 import { useTaskActions } from '@/hooks/useTaskActions'
 
 export default function PlantDetail() {
@@ -68,12 +68,15 @@ export default function PlantDetail() {
   const isFlora = currentWeek?.cycle === 'flora'
   const plantIsCannabis = isCannabisPlant(plant)
 
+  const planned = isPlanned(plant, today)
+  const sowingIn = daysUntilSowing(plant, today)
+
   const stageEmoji = currentWeek ? (STAGE_EMOJIS[currentWeek.stage] ?? '🌱') : (plantIsCannabis ? '✂️' : '🌱')
-  const stageLabel = currentWeek ? (STAGE_LABELS[currentWeek.stage] ?? '') : (plantIsCannabis ? 'Completada' : '')
+  const stageLabel = planned ? `Se siembra el ${format(plant.startDate, "d 'de' MMM", { locale: es })}` : currentWeek ? (STAGE_LABELS[currentWeek.stage] ?? '') : (plantIsCannabis ? 'Completada' : '')
   // Sin currentWeek (planta no-cannabis, o cannabis fuera de rango de
   // seguimiento) no mostramos etiqueta VEGE/FLORA -- no tiene sentido
   // asumir esas fases para un cultivo que no las tiene.
-  const cycleTag = currentWeek
+  const cycleTag = planned ? 'PLANIFICADA' : currentWeek
     ? currentWeek.cycle === 'vege' ? `VEGE S${currentWeek.week}` : `FLORA F${currentWeek.week}`
     : (plantIsCannabis ? 'Completada' : '')
 
@@ -152,6 +155,13 @@ export default function PlantDetail() {
           )}
           <h1 className="text-2xl font-black text-white leading-tight">{plant.name}</h1>
           <p className="text-sm text-white/70 mt-0.5">{plant.genetics}</p>
+
+          {planned && (
+            <div className="mt-4 mr-2 inline-flex items-baseline gap-1 bg-white/15 rounded-2xl px-4 py-2">
+              <span className="text-3xl font-black text-white">{sowingIn}</span>
+              <span className="text-sm text-white/80">{sowingIn === 1 ? 'dia para la siembra' : 'dias para la siembra'} 🌱</span>
+            </div>
+          )}
 
           {/* Harvest countdown */}
           {daysToHarvest !== null && daysToHarvest > 0 && (
@@ -242,7 +252,7 @@ export default function PlantDetail() {
               {/* Info lateral */}
               <div className="flex-1 min-w-0">
                 <p className="text-base font-black text-ink-1">{stageLabel}</p>
-                <p className="text-xs text-ink-3 mb-3">{isFlora ? 'Floración' : 'Vegetativo'}</p>
+                <p className="text-xs text-ink-3 mb-3">{planned ? 'Siembra planificada' : isFlora ? 'Floración' : 'Vegetativo'}</p>
 
                 {/* Salud */}
                 <div className="mb-3">
@@ -612,7 +622,7 @@ export default function PlantDetail() {
         )}
 
         {/* Diario de cultivo */}
-        <DiarySection plantId={plant.id} currentWeekLabel={cycleTag} />
+        <DiarySection plantId={plant.id} currentWeekLabel={planned ? '' : cycleTag} />
 
         {/* Iniciar floracion — visible desde el primer dia de vege, solo cannabis */}
         {plantIsCannabis && !plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (

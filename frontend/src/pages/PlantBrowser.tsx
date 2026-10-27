@@ -10,7 +10,7 @@ import { useSubscription } from '@/hooks/useSubscription'
 import type { Plant } from '@/types/plant'
 import { useTranslation } from '@/i18n'
 import { useAuth } from '@/contexts/AuthContext'
-import { getActiveCycle, getFloraStart } from '@/lib/flora-cycle'
+import { daysUntilSowing, getActiveCycle, getFloraStart, isPlanned } from '@/lib/flora-cycle'
 import { getEstimatedHarvestDate } from '@/lib/nutrition-utils'
 
 const FREE_PLANT_LIMIT = 1
@@ -19,6 +19,7 @@ type Filter = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartad
 
 function currentWeek(plant: Plant): { label: string; num: number } {
   const today = new Date()
+  if (isPlanned(plant, today)) return { label: `En ${daysUntilSowing(plant, today)}d`, num: 0 }
   const floraStart = getFloraStart(plant)
   if (floraStart && getActiveCycle(plant, today) === 'flora') {
     const num = Math.max(1, Math.floor(differenceInDays(today, floraStart) / 7) + 1)
@@ -85,7 +86,9 @@ function ActivePlantCard({ plant, pendingCount, t }: { plant: Plant; pendingCoun
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className={clsx('text-xs font-bold', accentText)}>
-              {isFlora ? 'Flora' : 'Vegetativo'}
+              {isPlanned(plant)
+                ? `Se siembra el ${format(plant.startDate, 'd MMM', { locale: es })}`
+                : isFlora ? 'Flora' : 'Vegetativo'}
             </p>
             {harvest && (
               <p className="text-[11px] text-ink-3 mt-0.5 leading-tight">{harvest}</p>

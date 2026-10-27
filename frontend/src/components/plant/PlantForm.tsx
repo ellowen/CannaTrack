@@ -646,7 +646,8 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             <p className="text-xs text-red-500 mt-2">{errors.startDate}</p>
           )}
           <p className="text-xs text-ink-4 mt-2">
-            Fecha en que germinó o se trasplantó
+            Fecha en que germinó o se trasplantó. Si todavía no sembraste, poné la fecha prevista
+            y el calendario arranca ese día.
           </p>
         </div>
 

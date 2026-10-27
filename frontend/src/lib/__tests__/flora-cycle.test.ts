@@ -3,10 +3,12 @@ import { addDays } from 'date-fns'
 import {
   DEFAULT_FLORA_DAYS,
   floraWeekCount,
+  daysUntilSowing,
   getActiveCycle,
   getAutoFloraStartDay,
   getFloraStart,
   getFloraDays,
+  isPlanned,
   scaleFloraWeeks,
   stageForFloraWeek,
 } from '../flora-cycle'
@@ -212,5 +214,36 @@ describe('autofloreciente: el cronograma termina el dia de cosecha', () => {
     const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })
     const cosecha = generatePlantSchedule(p, REVEGETAR_TABLE).find((t) => t.type === 'harvest')!
     expect(cosecha.week).toBe(6)
+  })
+})
+
+describe('siembra planificada', () => {
+  const hoy = new Date(2026, 0, 1, 15, 30) // a media tarde: la comparacion es por dia, no por hora
+
+  it('daysUntilSowing cuenta dias de calendario y nunca es negativo', () => {
+    expect(daysUntilSowing(planta({ startDate: new Date(2026, 0, 1) }), hoy)).toBe(0)
+    expect(daysUntilSowing(planta({ startDate: new Date(2026, 0, 2) }), hoy)).toBe(1)
+    expect(daysUntilSowing(planta({ startDate: new Date(2026, 0, 31) }), hoy)).toBe(30)
+    expect(daysUntilSowing(planta({ startDate: new Date(2025, 11, 1) }), hoy)).toBe(0)
+  })
+
+  it('isPlanned: solo plantas activas con inicio futuro', () => {
+    expect(isPlanned(planta({ startDate: new Date(2026, 0, 2) }), hoy)).toBe(true)
+    expect(isPlanned(planta({ startDate: new Date(2026, 0, 1) }), hoy)).toBe(false)
+    expect(isPlanned(planta({ startDate: new Date(2026, 0, 2), status: 'discarded' }), hoy)).toBe(false)
+  })
+
+  it('antes de sembrar no hay semana ni etapa, y el progreso es 0', () => {
+    const p = planta({ startDate: addDays(hoy, 10) })
+    expect(getCurrentWeek(p, hoy)).toBeNull()
+    expect(getCycleProgress(p, hoy)).toEqual({ progress: 0, phase: 'vege' })
+  })
+
+  it('el cronograma arranca el dia de la siembra y la cosecha cuenta desde esa fecha', () => {
+    const siembra = addDays(hoy, 30)
+    const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75, startDate: siembra })
+    const tareas = generatePlantSchedule(p, REVEGETAR_TABLE)
+    expect(Math.min(...tareas.map((t) => t.scheduledDate.getTime()))).toBe(siembra.getTime())
+    expect(getEstimatedHarvestDate(p)?.getTime()).toBe(addDays(siembra, 75).getTime())
   })
 })

@@ -1,4 +1,4 @@
-import { addDays } from 'date-fns'
+import { addDays, differenceInDays, startOfDay } from 'date-fns'
 import type { CyclePhase, NutritionWeek, Plant, PlantStage } from '../types/plant'
 
 /** Floracion por defecto (8 semanas): la que asumen las tablas nutricionales. */
@@ -146,4 +146,17 @@ export function getActiveCycle(
   if (plant.floraStartDate) return 'flora'
   const start = getFloraStart(plant)
   return start && date >= start ? 'flora' : 'vege'
+}
+
+/**
+ * Dias que faltan para la siembra (0 si ya se sembro). Compara por dia de
+ * calendario, no por horas: una siembra de hoy nunca esta "por venir".
+ */
+export function daysUntilSowing(plant: Pick<Plant, 'startDate'>, today: Date = new Date()): number {
+  return Math.max(0, differenceInDays(startOfDay(plant.startDate), startOfDay(today)))
+}
+
+/** Siembra planificada: planta activa cuya fecha de inicio todavia no llego. */
+export function isPlanned(plant: Pick<Plant, 'startDate' | 'status'>, today: Date = new Date()): boolean {
+  return plant.status === 'active' && daysUntilSowing(plant, today) > 0
 }

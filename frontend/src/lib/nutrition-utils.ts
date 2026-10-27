@@ -138,7 +138,8 @@ export function getUpcomingTasks(
 
 /**
  * Devuelve la semana y etapa actual de la planta en una fecha dada.
- * Retorna null si la planta ya fue cosechada o el ciclo finalizó.
+ * Retorna null si la planta ya fue cosechada, el ciclo finalizó o la siembra
+ * todavía no llegó (siembra planificada).
  */
 export function getCurrentWeek(
   plant: Plant,
@@ -148,6 +149,7 @@ export function getCurrentWeek(
   // generica (tomate, albahaca, etc.) heredaria semanas/etapas de cannabis
   // solo por el paso de los dias, sin tener esa metadata en absoluto.
   if (!isCannabisPlant(plant)) return null
+  if (diasEntre(plant.startDate, date) < 0) return null
 
   // Si estamos en floración
   if (plant.floraStartDate && date >= plant.floraStartDate) {
@@ -290,7 +292,7 @@ export function getCycleProgress(
     return { progress: Math.min(days / getFloraDays(plant), 1), phase: 'flora' }
   }
 
-  const days = differenceInDays(date, plant.startDate)
+  const days = Math.max(0, differenceInDays(date, plant.startDate)) // siembra planificada: 0%
   const maxDays = plant.geneticType === 'autoflower' ? getAutoFloraStartDay(plant) : getVegeDays(plant)
   return { progress: Math.min(days / maxDays, 0.97), phase: 'vege' }
 }

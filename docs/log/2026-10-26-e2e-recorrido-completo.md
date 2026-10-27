@@ -74,4 +74,13 @@ Pedido: poder ajustar los parametros de cada semilla y cancelar riegos (p.ej. po
 
 Migracion `20261027000000_task_skip_and_plant_cycle.sql` (APLICADA): scheduled_tasks.skipped/skip_reason/rescheduled_from; plants.vege_days/irrigation_per_week.
 
-Pendiente de la lista original: siembras planificadas (hoy una fecha futura se ve como "V-4 D-28"), catalogo que precargue breeder y notas de cuidado, registrar el peso cosechado.
+Pendiente de la lista original: catalogo que precargue breeder y notas de cuidado, registrar el peso cosechado.
+
+## Sexta tanda (2026-10-27): siembras planificadas
+Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D-28`, con semana negativa y dias de cosecha como si ya creciera.
+- `flora-cycle.ts`: `daysUntilSowing` e `isPlanned` (por dia de calendario; solo plantas activas).
+- Home: la tarjeta dice "En Nd" en vez de V/F + dia. Listado: "En Nd" y "Se siembra el d MMM". Detalle: etiqueta PLANIFICADA, cuenta regresiva "N dias para la siembra", "Siembra planificada" en el anillo; el diario no guarda la etiqueta. Inventario: dias de cultivo 0.
+- `getCurrentWeek` devuelve null antes de la siembra y `getCycleProgress` marca 0% (antes negativo).
+- El calendario ya arrancaba en la fecha de siembra: no hay tareas vencidas ni de hoy. El formulario aclara que se puede poner la fecha prevista.
+- Una planta planificada cuenta como activa para el limite del plan Free (1).
+- Tests: 4 unit (flora-cycle) y `e2e/planned-sowing.spec.ts` (4).

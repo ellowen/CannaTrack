@@ -231,7 +231,7 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
     totalDays = vegeDays + floraDays
   } else if (plant.status === 'active') {
     const today = new Date()
-    totalDays = differenceInDays(today, startDate)
+    totalDays = Math.max(0, differenceInDays(today, startDate)) // siembra planificada: 0 dias
     vegeDays = totalDays
   }
 

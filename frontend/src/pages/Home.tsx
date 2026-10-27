@@ -20,7 +20,7 @@ import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
-import { getActiveCycle, getFloraStart } from '@/lib/flora-cycle'
+import { daysUntilSowing, getActiveCycle, getFloraStart, isPlanned } from '@/lib/flora-cycle'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutricion',
@@ -620,6 +620,7 @@ export default function Home() {
                 ? differenceInDays(today, floraStart) + 1
                 : differenceInDays(today, plant.startDate) + 1
               const weekNum  = Math.ceil(phaseDay / 7)
+              const planned  = isPlanned(plant, today)
               const plantPending = pending.filter((t) => t.plantId === plant.id).length
               const accent = isFlora ? 'text-amber-500' : 'text-brand-400'
               const borderColor = isFlora && plantIsCannabis ? 'border-amber-500/20' : 'border-app-border'
@@ -635,10 +636,16 @@ export default function Home() {
                   <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg mb-2.5 ${
                     isFlora && plantIsCannabis ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-brand-subtle border border-brand-border'
                   }`}>
-                    {plantIsCannabis && (
-                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
+                    {planned ? (
+                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>🌱 En {daysUntilSowing(plant, today)}d</span>
+                    ) : (
+                      <>
+                        {plantIsCannabis && (
+                          <span className={`text-[10px] font-black tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
+                        )}
+                        <span className="text-[10px] text-ink-4">D{phaseDay}</span>
+                      </>
                     )}
-                    <span className="text-[10px] text-ink-4">D{phaseDay}</span>
                   </div>
                   <p className="text-sm font-black text-ink-1 truncate">{plant.name}</p>
                   <p className="text-xs text-ink-3 mt-0.5 truncate">{plant.genetics}</p>
