@@ -26,6 +26,11 @@ interface TaskStore {
   addTask: (task: ScheduledTask) => void
   completeTask: (id: string, notes?: string) => void
   uncompleteTask: (id: string) => void
+  /** Cancela una tarea (queda como historial, no cuenta como pendiente). */
+  skipTask: (id: string, reason?: string) => void
+  restoreTask: (id: string) => void
+  /** Mueve la tarea a otra fecha guardando la original. */
+  rescheduleTask: (id: string, newDate: Date) => void
   updateTask: (id: string, changes: Partial<ScheduledTask>) => void
   removeTask: (id: string) => void
   setTasks: (plantId: string, tasks: ScheduledTask[]) => void
@@ -78,6 +83,20 @@ export const useTaskStore = create<TaskStore>()(
               : t
           ),
         })),
+      skipTask: (id, reason) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) => (t.id === id ? { ...t, skipped: true, skipReason: reason } : t)),
+        })),
+      restoreTask: (id) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) => (t.id === id ? { ...t, skipped: false, skipReason: undefined } : t)),
+        })),
+      rescheduleTask: (id, newDate) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === id ? { ...t, scheduledDate: newDate, rescheduledFrom: t.rescheduledFrom ?? t.scheduledDate } : t
+          ),
+        })),
       updateTask: (id, changes) =>
         set((s) => ({
           tasks: s.tasks.map((t) =>
@@ -113,11 +132,11 @@ export const useTaskStore = create<TaskStore>()(
         const now = new Date()
         return get().tasks.filter((t) => {
           const scheduled = toLocalDate(t.scheduledDate)
-          return scheduled < now && !t.completed
+          return scheduled < now && !t.completed && !t.skipped
         })
       },
       getCompletedCount: () => get().tasks.filter((t) => t.completed).length,
-      getPendingCount: () => get().tasks.filter((t) => !t.completed).length,
+      getPendingCount: () => get().tasks.filter((t) => !t.completed && !t.skipped).length,
     }),
     {
       name: 'cultitrack-tasks',

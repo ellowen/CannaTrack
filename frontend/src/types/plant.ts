@@ -115,6 +115,10 @@ export interface Plant {
   autoFlowerTotalDays?: number   // default 75
   /** Duracion de la floracion en dias. Sin valor: 56 (8 semanas, la de las tablas). */
   floraDays?: number
+  /** Duracion del vegetativo en dias (fotoperiodicas). Sin valor: 42 (6 semanas, la de las tablas). */
+  vegeDays?: number
+  /** Riegos por semana (1-7). Sin valor: el patron historico (2 por semana, 3 en limpieza). */
+  irrigationPerWeek?: number
   /** Autofloreciente: dia (desde la siembra) en que entra en floracion. Sin valor: 35. */
   autoFloraStartDay?: number
   location: 'indoor' | 'outdoor'
@@ -164,4 +168,9 @@ export interface ScheduledTask {
   completedAt?: Date
   completionNotes?: string
   xpAwarded?: boolean   // true si esta tarea ya otorgo XP alguna vez (evita re-farmear con deshacer)
+  /** Cancelada por el usuario (p.ej. llovio): no cuenta como pendiente ni como hecha. */
+  skipped?: boolean
+  skipReason?: string
+  /** Fecha original si la tarea se reprogramo (scheduledDate es la nueva). */
+  rescheduledFrom?: Date
 }

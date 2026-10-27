@@ -62,7 +62,9 @@ export function calculatePlantHealth(tasks: ScheduledTask[]): number {
   const todayStart = new Date(now)
   todayStart.setHours(0, 0, 0, 0)
 
+  // Las canceladas (p.ej. llovio) no penalizan la salud: no son tareas incumplidas
   const recent = tasks.filter((t) => {
+    if (t.skipped) return false
     const d = new Date(t.scheduledDate)
     return d >= cutoff && d < todayStart
   })

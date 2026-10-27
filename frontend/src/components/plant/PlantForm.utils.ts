@@ -17,6 +17,10 @@ export interface PlantFormValues {
   floraDays?: number
   /** Autos: dia de entrada en floracion. undefined = por defecto (35). */
   autoFloraStartDay?: number
+  /** Fotoperiodicas: duracion del vegetativo en dias. undefined = por defecto (42). */
+  vegeDays?: number
+  /** Riegos por semana (1-7). undefined = patron por defecto (2). */
+  irrigationPerWeek?: number
   availableProducts: string[] | undefined
   customProducts: ProductDose[]
   notes: string
@@ -47,5 +51,8 @@ export function normalizeFormValuesForSubmit(values: PlantFormValues): PlantForm
     floraDays: isCannabis ? values.floraDays : undefined,
     autoFloraStartDay:
       isCannabis && (values.geneticType ?? 'feminized') === 'autoflower' ? values.autoFloraStartDay : undefined,
+    // las autos florecen solas (autoFloraStartDay): no tienen un vegetativo configurable
+    vegeDays: isCannabis && (values.geneticType ?? 'feminized') !== 'autoflower' ? values.vegeDays : undefined,
+    irrigationPerWeek: isCannabis ? values.irrigationPerWeek : undefined,
   }
 }

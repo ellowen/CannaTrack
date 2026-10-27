@@ -23,6 +23,8 @@ import type { ScheduledTask } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { formatDateOnly } from '@/lib/date-utils'
+import { getVegeDays, vegeWeekCount } from '@/lib/flora-cycle'
+import { useTaskActions } from '@/hooks/useTaskActions'
 
 export default function PlantDetail() {
   const { t } = useTranslation()
@@ -35,7 +37,8 @@ export default function PlantDetail() {
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
-  const { tasks, todayTasks, upcomingTasks, overdueTasks, uncompleteTask } = useTasks(id)
+  const { tasks, todayTasks, upcomingTasks, overdueTasks, skippedTasks, uncompleteTask } = useTasks(id)
+  const taskActions = useTaskActions()
   const { getTableById } = useNutritionTable()
   const { potVolumeLiters } = useUserStore()
 
@@ -310,7 +313,7 @@ export default function PlantDetail() {
                 <p className="text-sm text-ink-3">
                   {floraPickerOpen
                     ? 'Elegí la fecha en que cambiaste el fotoperiodo.'
-                    : 'Ya pasaron las 6 semanas. ¿Cuándo iniciaste la floración?'}
+                    : `Ya pasaron las ${vegeWeekCount(getVegeDays(plant))} semanas de vegetativo. ¿Cuándo iniciaste la floración?`}
                 </p>
               </div>
             </div>
@@ -573,6 +576,37 @@ export default function PlantDetail() {
               {upcoming.map((task) => (
                 <TaskItem key={task.id} task={task} showDate />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Tareas canceladas: historial con su motivo y opcion de restaurar */}
+        {skippedTasks.length > 0 && (
+          <section data-testid="skipped-tasks">
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">🚫 Canceladas · {skippedTasks.length}</p>
+            <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
+              {[...skippedTasks]
+                .sort((a, b) => b.scheduledDate.getTime() - a.scheduledDate.getTime())
+                .map((task) => {
+                  const nombre = ({ nutrition: 'Nutrición', irrigation: 'Riego', observation: 'Observación', foliar: 'Foliar', harvest: 'Cosecha' } as Record<string, string>)[task.type] ?? task.type
+                  return (
+                    <div key={task.id} className="flex items-center justify-between gap-3 px-2 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ink-3 line-through">
+                          {nombre} · {format(task.scheduledDate, "EEE d 'de' MMM", { locale: es })}
+                        </p>
+                        <p className="text-xs text-ink-4 truncate">{task.skipReason ?? 'Sin motivo'}</p>
+                      </div>
+                      <button
+                        onClick={() => taskActions.restore(task)}
+                        aria-label={`Restaurar ${nombre} del ${format(task.scheduledDate, 'd MMM', { locale: es })}`}
+                        className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-lg tap-highlight-none active:scale-95 transition-all"
+                      >
+                        Restaurar
+                      </button>
+                    </div>
+                  )
+                })}
             </div>
           </section>
         )}

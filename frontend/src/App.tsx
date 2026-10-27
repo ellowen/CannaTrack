@@ -49,7 +49,7 @@ export default function App() {
     tomorrow.setDate(tomorrow.getDate() + 1)
 
     const pending = tasks.filter(
-      (t) => !t.completed && t.scheduledDate >= today && t.scheduledDate < tomorrow
+      (t) => !t.completed && !t.skipped && t.scheduledDate >= today && t.scheduledDate < tomorrow
     )
     if (pending.length === 0) return
 

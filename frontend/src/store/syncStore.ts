@@ -9,6 +9,9 @@ export type SyncActionType =
   | 'replaceTasks'
   | 'replacePendingTasks'
   | 'completeTask'
+  | 'skipTask'
+  | 'restoreTask'
+  | 'rescheduleTask'
   | 'syncMeasurement'
   | 'deleteMeasurement'
 

@@ -15,8 +15,12 @@ import {
   floraWeekCount,
   getAutoFloraStartDay,
   getFloraDays,
+  getVegeDays,
   scaleFloraWeeks,
+  scaleVegeWeeks,
   stageForFloraWeek,
+  stageForVegeWeek,
+  vegeWeekCount,
 } from './flora-cycle'
 
 // ─── Colores por línea ────────────────────────────────────────────────────────
@@ -176,9 +180,10 @@ export function getCurrentWeek(
   const diasVege = diasEntre(plant.startDate, date)
   const numSemana = Math.floor(diasVege / 7)
 
-  if (numSemana < 2) return { cycle: 'vege', week: numSemana, stage: 'rooting' }
-  if (numSemana < 4) return { cycle: 'vege', week: numSemana, stage: 'growth' }
-  if (numSemana < 6) return { cycle: 'vege', week: numSemana, stage: 'preflower' }
+  const totalSemanasVege = vegeWeekCount(getVegeDays(plant))
+  if (numSemana < totalSemanasVege) {
+    return { cycle: 'vege', week: numSemana, stage: stageForVegeWeek(numSemana, totalSemanasVege) }
+  }
 
   return null
 }
@@ -233,7 +238,7 @@ export function getRangesForDate(
   }
 
   // Evaluar semanas vegetativas
-  for (const semana of table.vegeWeeks) {
+  for (const semana of scaleVegeWeeks(table.vegeWeeks, getVegeDays(plant))) {
     const inicio = addDays(plant.startDate, semana.dayStart)
     const fin = addDays(plant.startDate, semana.dayEnd)
     if (date >= inicio && date < fin) {
@@ -261,7 +266,7 @@ export function awaitingFloraStart(plant: Plant): boolean {
   if (plant.status === 'harvested' || plant.status === 'discarded') return false
 
   const diasDesdeInicio = diasEntre(plant.startDate, new Date())
-  return diasDesdeInicio >= 42 // 6 semanas × 7 días
+  return diasDesdeInicio >= getVegeDays(plant) // por defecto 6 semanas × 7 días
 }
 
 /**
@@ -286,7 +291,7 @@ export function getCycleProgress(
   }
 
   const days = differenceInDays(date, plant.startDate)
-  const maxDays = plant.geneticType === 'autoflower' ? getAutoFloraStartDay(plant) : 42
+  const maxDays = plant.geneticType === 'autoflower' ? getAutoFloraStartDay(plant) : getVegeDays(plant)
   return { progress: Math.min(days / maxDays, 0.97), phase: 'vege' }
 }
 

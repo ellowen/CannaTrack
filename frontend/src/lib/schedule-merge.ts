@@ -12,7 +12,9 @@ export function mergeRegeneratedSchedule(
   existing: ScheduledTask[],
   generated: ScheduledTask[],
 ): { completed: ScheduledTask[]; pending: ScheduledTask[]; all: ScheduledTask[] } {
-  const completed = existing.filter((t) => t.completed)
+  // Historial que no se regenera: completadas, canceladas y reprogramadas (si no, una
+  // tarea cancelada o movida reaparecia sola en su fecha original al editar la planta)
+  const completed = existing.filter((t) => t.completed || t.skipped || t.rescheduledFrom)
   const pending = [...generated].sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
 
   for (const done of completed) {
@@ -27,7 +29,8 @@ export function mergeRegeneratedSchedule(
 /** Campos de la planta que cambian el calendario. Nombre, notas, macetas, etc. no. */
 const SCHEDULE_FIELDS: (keyof Plant)[] = [
   'geneticType', 'sex', 'startDate', 'floraStartDate', 'nutritionTableId',
-  'autoFlowerTotalDays', 'floraDays', 'autoFloraStartDay', 'availableProducts', 'customProducts',
+  'autoFlowerTotalDays', 'floraDays', 'autoFloraStartDay', 'vegeDays', 'irrigationPerWeek',
+  'availableProducts', 'customProducts',
 ]
 
 const same = (a: unknown, b: unknown): boolean =>

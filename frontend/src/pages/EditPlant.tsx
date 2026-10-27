@@ -43,6 +43,8 @@ export default function EditPlant() {
     autoFlowerTotalDays: plant.autoFlowerTotalDays ?? 75,
     floraDays:           plant.floraDays,
     autoFloraStartDay:   plant.autoFloraStartDay,
+    vegeDays:            plant.vegeDays,
+    irrigationPerWeek:   plant.irrigationPerWeek,
     availableProducts:   plant.availableProducts,
     customProducts:      plant.customProducts ?? [],
     notes:               plant.notes ?? '',
@@ -52,6 +54,8 @@ export default function EditPlant() {
   const savedFloraStart = plant.floraStartDate
   const savedFloraDays = plant.floraDays
   const savedAutoFloraStartDay = plant.autoFloraStartDay
+  const savedVegeDays = plant.vegeDays
+  const savedIrrigationPerWeek = plant.irrigationPerWeek
 
   async function handleSubmit(values: PlantFormValues) {
     if (submitting) return
@@ -79,6 +83,10 @@ export default function EditPlant() {
           ? { floraDays: values.floraDays } : {}),
         ...(values.autoFloraStartDay !== undefined || savedAutoFloraStartDay !== undefined
           ? { autoFloraStartDay: values.autoFloraStartDay } : {}),
+        ...(values.vegeDays !== undefined || savedVegeDays !== undefined
+          ? { vegeDays: values.vegeDays } : {}),
+        ...(values.irrigationPerWeek !== undefined || savedIrrigationPerWeek !== undefined
+          ? { irrigationPerWeek: values.irrigationPerWeek } : {}),
         availableProducts:   values.availableProducts,
         customProducts:      values.customProducts.length > 0 ? values.customProducts : undefined,
         notes:               values.notes || undefined,

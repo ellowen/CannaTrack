@@ -28,7 +28,7 @@ export default function HarvestSheet({
   const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } =
     useSwipeToDismiss({ onDismiss: onClose })
 
-  const plantTasks = tasks.filter((t) => t.plantId === plant.id)
+  const plantTasks = tasks.filter((t) => t.plantId === plant.id && !t.skipped)
   const completed  = plantTasks.filter((t) => t.completed).length
   const total      = plantTasks.length
   const pct        = total > 0 ? Math.round((completed / total) * 100) : 0

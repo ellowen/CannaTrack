@@ -165,7 +165,7 @@ export default function PlantBrowser() {
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
     const map: Record<string, number> = {}
     for (const t of tasks) {
-      if (!t.completed && t.scheduledDate >= today && t.scheduledDate < tomorrow) {
+      if (!t.completed && !t.skipped && t.scheduledDate >= today && t.scheduledDate < tomorrow) {
         map[t.plantId] = (map[t.plantId] ?? 0) + 1
       }
     }

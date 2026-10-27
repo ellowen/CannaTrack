@@ -229,12 +229,15 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       autoFlowerTotalDays: preset.autoFlowerTotalDays ?? v.autoFlowerTotalDays,
       autoFloraStartDay: preset.autoFloraStartDay,
       floraDays: preset.floraDays,
+      // el catalogo no define vegetativo ni riegos: se conserva lo que ya hubiera cargado
+      vegeDays: preset.geneticType === 'autoflower' ? undefined : v.vegeDays,
     }))
     setErrors((e) => {
       const next = { ...e }
       delete next.genetics
       delete next.floraDays
       delete next.autoFloraStartDay
+      delete next.vegeDays
       delete next.autoFlowerTotalDays
       return next
     })
@@ -298,6 +301,22 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       }
     }
 
+    if (field === 'vegeDays') {
+      if (value !== undefined && (!Number.isInteger(value) || value < 14 || value > 180)) {
+        newErrors.vegeDays = 'El vegetativo debe durar entre 14 y 180 días'
+      } else {
+        delete newErrors.vegeDays
+      }
+    }
+
+    if (field === 'irrigationPerWeek') {
+      if (value !== undefined && (!Number.isInteger(value) || value < 1 || value > 7)) {
+        newErrors.irrigationPerWeek = 'Los riegos por semana deben estar entre 1 y 7'
+      } else {
+        delete newErrors.irrigationPerWeek
+      }
+    }
+
     if (field === 'autoFloraStartDay') {
       if (value !== undefined && (!Number.isInteger(value) || value < 14 || value > 90)) {
         newErrors.autoFloraStartDay = 'El día de floración debe estar entre 14 y 90'
@@ -332,6 +351,8 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
              !errors.name &&
              !errors.genetics &&
              !errors.floraDays &&
+             !errors.vegeDays &&
+             !errors.irrigationPerWeek &&
              !errors.autoFloraStartDay
     }
     if (step === 2) {
@@ -513,6 +534,46 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
           </div>
         )}
 
+        {isCannabis && values.geneticType !== 'autoflower' && (
+          <div>
+            <label htmlFor="vege-days" className={labelClass}>Días de vegetativo</label>
+            <input
+              id="vege-days"
+              type="number"
+              min={14}
+              max={180}
+              placeholder="42 (por defecto, 6 semanas)"
+              value={values.vegeDays ?? ''}
+              onChange={(e) => set('vegeDays', e.target.value === '' ? undefined : Number(e.target.value))}
+              className={clsx(fieldClass, errors.vegeDays && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
+            />
+            {errors.vegeDays && <p className="text-xs text-red-500 mt-2">{errors.vegeDays}</p>}
+            <p className="text-xs text-ink-4 mt-2">
+              {values.vegeDays
+                ? `≈ ${Math.ceil(values.vegeDays / 7)} semanas de vegetativo antes de pasar a floración`
+                : 'Vacío: se usa el vegetativo estándar de 6 semanas'}
+            </p>
+          </div>
+        )}
+
+        {isCannabis && (
+          <div>
+            <label htmlFor="irrigation-per-week" className={labelClass}>Riegos por semana</label>
+            <input
+              id="irrigation-per-week"
+              type="number"
+              min={1}
+              max={7}
+              placeholder="2 (por defecto)"
+              value={values.irrigationPerWeek ?? ''}
+              onChange={(e) => set('irrigationPerWeek', e.target.value === '' ? undefined : Number(e.target.value))}
+              className={clsx(fieldClass, errors.irrigationPerWeek && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
+            />
+            {errors.irrigationPerWeek && <p className="text-xs text-red-500 mt-2">{errors.irrigationPerWeek}</p>}
+            <p className="text-xs text-ink-4 mt-2">Outdoor: bajalo en semanas de lluvia, o cancelá un riego puntual desde la tarea</p>
+          </div>
+        )}
+
         {isCannabis && (
           <div>
             <label htmlFor="flora-days" className={labelClass}>Días de floración</label>
@@ -666,6 +727,11 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             </span>
             {isCannabis && (
               <>
+                <span className="text-ink-3">Vegetativo / riegos</span>
+                <span className="text-ink-1 font-medium">
+                  {values.geneticType === 'autoflower' ? 'automático' : (values.vegeDays ? `${values.vegeDays} días` : '42 días')}
+                  {' · '}{values.irrigationPerWeek ?? 2}/sem
+                </span>
                 <span className="text-ink-3">Floración</span>
                 <span className="text-ink-1 font-medium">
                   {values.floraDays ? `${values.floraDays} días` : '56 días (estándar)'}

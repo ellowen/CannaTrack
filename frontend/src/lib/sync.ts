@@ -34,6 +34,8 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       // Solo viajan si la planta los define: undefined se omite al serializar,
       // asi el sync no depende de que la migracion 20261025000000 ya este aplicada.
       flora_days: plant.floraDays,
+      vege_days: plant.vegeDays,
+      irrigation_per_week: plant.irrigationPerWeek,
       auto_flora_start_day: plant.autoFloraStartDay,
       location: plant.location,
       grow_medium: plant.growMedium ?? 'soil',
@@ -79,6 +81,8 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | 
       endDate: p.end_date ? parseDateOnly(p.end_date) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
       floraDays: p.flora_days ?? undefined,
+      vegeDays: p.vege_days ?? undefined,
+      irrigationPerWeek: p.irrigation_per_week ?? undefined,
       autoFloraStartDay: p.auto_flora_start_day ?? undefined,
       location: p.location,
       growMedium: p.grow_medium ?? 'soil',
@@ -143,6 +147,8 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     // ?? null: volver al valor por defecto debe LIMPIAR la columna (undefined no se envia).
     // Solo se tocan si el cambio las trae, ver comentario en syncPlantToSupabase.
     if ('floraDays' in changes)          row.flora_days = changes.floraDays ?? null
+    if ('vegeDays' in changes)           row.vege_days = changes.vegeDays ?? null
+    if ('irrigationPerWeek' in changes)  row.irrigation_per_week = changes.irrigationPerWeek ?? null
     if ('autoFloraStartDay' in changes)  row.auto_flora_start_day = changes.autoFloraStartDay ?? null
 
     const { error } = await supabase.from('plants').update(row).eq('id', plantId)
@@ -184,6 +190,9 @@ export async function syncTasksToSupabase(tasks: ScheduledTask[]): Promise<void>
       completed_at: t.completedAt?.toISOString(),
       completion_notes: t.completionNotes,
       xp_awarded: t.xpAwarded ?? false,
+      // solo si aplican: el resto usa los defaults de la columna
+      ...(t.skipped ? { skipped: true, skip_reason: t.skipReason ?? null } : {}),
+      ...(t.rescheduledFrom ? { rescheduled_from: formatDateOnly(t.rescheduledFrom) } : {}),
     }))
 
     const { error } = await supabase.from('scheduled_tasks').insert(tasksToInsert)
@@ -230,6 +239,9 @@ export async function replacePendingTasksForPlantInSupabase(plantId: string, pen
       .delete()
       .eq('plant_id', plantId)
       .eq('completed', false)
+      // las canceladas y las movidas son historial del usuario: no se regeneran
+      .eq('skipped', false)
+      .is('rescheduled_from', null)
     if (error) throw error
     if (pendingTasks.length > 0) await syncTasksToSupabase(pendingTasks)
   } catch (error) {
@@ -265,6 +277,9 @@ export async function loadTasksFromSupabase(userId: string): Promise<ScheduledTa
       completedAt: t.completed_at ? new Date(t.completed_at) : undefined,
       completionNotes: t.completion_notes,
       xpAwarded: t.xp_awarded ?? false,
+      skipped: t.skipped ?? false,
+      skipReason: t.skip_reason ?? undefined,
+      rescheduledFrom: t.rescheduled_from ? parseDateOnly(t.rescheduled_from) : undefined,
       createdAt: new Date(t.created_at),
     })) as ScheduledTask[]
   } catch (error) {
@@ -323,6 +338,37 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
     console.error('Error completando tarea:', error)
     throw error
   }
+}
+
+/** Cancela una tarea (no la borra: queda como historial con su motivo). Tira si falla, para encolarla. */
+export async function skipTaskInSupabase(taskId: string, reason?: string): Promise<void> {
+  const { error } = await supabase
+    .from('scheduled_tasks')
+    .update({ skipped: true, skip_reason: reason ?? null, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+  if (error) throw error
+}
+
+/** Deshace la cancelacion de una tarea. */
+export async function restoreTaskInSupabase(taskId: string): Promise<void> {
+  const { error } = await supabase
+    .from('scheduled_tasks')
+    .update({ skipped: false, skip_reason: null, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+  if (error) throw error
+}
+
+/** Mueve una tarea a otra fecha; guarda la original (la primera vez) para poder mostrar "movida". */
+export async function rescheduleTaskInSupabase(taskId: string, newDate: Date, originalDate: Date): Promise<void> {
+  const { error } = await supabase
+    .from('scheduled_tasks')
+    .update({
+      scheduled_date: formatDateOnly(newDate),
+      rescheduled_from: formatDateOnly(originalDate),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', taskId)
+  if (error) throw error
 }
 
 export async function uncompleteTaskInSupabase(taskId: string): Promise<void> {

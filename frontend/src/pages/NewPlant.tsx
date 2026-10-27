@@ -43,6 +43,8 @@ export default function NewPlant() {
         autoFlowerTotalDays: values.autoFlowerTotalDays,
         floraDays: values.floraDays,
         autoFloraStartDay: values.autoFloraStartDay,
+        vegeDays: values.vegeDays,
+        irrigationPerWeek: values.irrigationPerWeek,
         availableProducts: values.availableProducts,
         customProducts: values.customProducts.length > 0 ? values.customProducts : undefined,
         status: 'active',

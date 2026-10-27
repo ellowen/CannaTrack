@@ -6,7 +6,7 @@ import type {
   ScheduledTask,
   CyclePhase,
 } from '../types/plant'
-import { getAutoFloraStartDay, getFloraDays, scaleFloraWeeks } from './flora-cycle'
+import { getAutoFloraStartDay, getFloraDays, getVegeDays, irrigationOffsets, scaleFloraWeeks, scaleVegeWeeks } from './flora-cycle'
 
 // ─── Generadores de ID ───────────────────────────────────────────────────────
 
@@ -171,11 +171,12 @@ function generarTareasSemana(
   const ETAPAS_FOLIAR = new Set(['growth', 'preflower', 'stretch'])
   const aplicarFoliar = ETAPAS_FOLIAR.has(week.stage)
 
+  // Dias de riego de la semana: por defecto 2 (3 en limpieza); configurable por planta
+  const diasRiego = irrigationOffsets(plant.irrigationPerWeek, esFlushing)
+
   if (esFlushing) {
-    // Semanas F7/F8: solo agua — tres riegos simples
-    tareas.push(crearTareaRiego(plant, week, inicioSemana, ciclo))
-    tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 2), ciclo))
-    tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 4), ciclo))
+    // Semanas de limpieza (flushing): solo agua, sin nutricion ni observacion
+    for (const dia of diasRiego) tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, dia), ciclo))
   } else {
     // Semana normal: nutrición + observación el día 0, riegos en días 2 y 4
     tareas.push(crearTareaNutricion(plant, week, inicioSemana, ciclo))
@@ -184,8 +185,7 @@ function generarTareasSemana(
     if (aplicarFoliar) {
       tareas.push(crearTareaFoliar(plant, week, addDays(inicioSemana, 1), ciclo))
     }
-    tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 2), ciclo))
-    tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, 4), ciclo))
+    for (const dia of diasRiego) tareas.push(crearTareaRiego(plant, week, addDays(inicioSemana, dia), ciclo))
   }
 
   // Semana final parcial (floracion que no es multiplo de 7 dias): no agendar
@@ -230,7 +230,8 @@ export function generatePlantSchedule(
   }
 
   // Generar tareas del ciclo vegetativo
-  for (const semana of table.vegeWeeks) {
+  // El vegetativo se adapta a plant.vegeDays (por defecto 42 = las 6 semanas de la tabla)
+  for (const semana of scaleVegeWeeks(table.vegeWeeks, getVegeDays(plant))) {
     const inicioSemana = addDays(inicioVege, semana.dayStart)
     tareas.push(...generarTareasSemana(plant, semana, inicioSemana, 'vege'))
   }

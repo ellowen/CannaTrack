@@ -20,10 +20,14 @@ export function useTasks(plantId?: string) {
 
   const activePlantIds = new Set(plants.filter((p) => p.status === 'active').map((p) => p.id))
 
-  const filteredTasks = tasks.filter((t) => {
+  const scopedTasks = tasks.filter((t) => {
     if (plantId && t.plantId !== plantId) return false
     return activePlantIds.has(t.plantId)
   })
+  // Las canceladas salen de TODAS las listas (hoy, vencidas, proximas, calendario);
+  // se exponen aparte para poder mostrarlas y restaurarlas.
+  const filteredTasks = scopedTasks.filter((t) => !t.skipped)
+  const skippedTasks = scopedTasks.filter((t) => t.skipped)
 
   // Solo mostrar tareas del ciclo activo de cada planta
   const activeCycleTasks = filteredTasks.filter((t) => {
@@ -47,6 +51,7 @@ export function useTasks(plantId?: string) {
     todayTasks,
     upcomingTasks,
     overdueTasks,
+    skippedTasks,
     completeTask,
     uncompleteTask,
     resetTasksForPlant,

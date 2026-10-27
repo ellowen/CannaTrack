@@ -18,6 +18,9 @@ import {
   replaceTasksForPlantInSupabase,
   replacePendingTasksForPlantInSupabase,
   completeTaskInSupabase,
+  skipTaskInSupabase,
+  restoreTaskInSupabase,
+  rescheduleTaskInSupabase,
   syncMeasurementToSupabase,
   deleteMeasurementFromSupabase,
 } from '@/lib/sync'
@@ -28,7 +31,7 @@ const SYNC_RETRY_DELAY_MS = 5000 // Reintentar cada 5s si falla
 
 /** Campos de fecha de los payloads encolados (plantas, tareas, mediciones). */
 const DATE_KEYS = new Set([
-  'startDate', 'floraStartDate', 'endDate',
+  'startDate', 'floraStartDate', 'endDate', 'newDate', 'originalDate',
   'scheduledDate', 'completedAt',
   'logDate', 'measuredAt', 'createdAt', 'updatedAt',
 ])
@@ -81,6 +84,15 @@ async function runAction(action: SyncAction): Promise<void> {
       return
     case 'completeTask':
       await completeTaskInSupabase(p.taskId as string, p.notes as string | undefined)
+      return
+    case 'skipTask':
+      await skipTaskInSupabase(p.taskId as string, p.reason as string | undefined)
+      return
+    case 'restoreTask':
+      await restoreTaskInSupabase(p.taskId as string)
+      return
+    case 'rescheduleTask':
+      await rescheduleTaskInSupabase(p.taskId as string, p.newDate as Date, p.originalDate as Date)
       return
     case 'syncMeasurement':
       await syncMeasurementToSupabase(p.log as MeasurementLog, p.userId as string)

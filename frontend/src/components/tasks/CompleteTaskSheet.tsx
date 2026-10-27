@@ -13,6 +13,7 @@ import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { getLineColor, getLineName } from '@/lib/nutrition-utils'
+import { SKIP_REASONS, parseLocalDate, useTaskActions } from '@/hooks/useTaskActions'
 
 const TYPE_LABEL: Record<string, string> = {
   nutrition:   'Nutrición',
@@ -54,6 +55,11 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   const [xpReward, setXpReward]   = useState<{ xpGained: number; newStreak: number | null } | null>(null)
   const [confirming, setConfirming] = useState(false)
   const textareaRef               = useRef<HTMLTextAreaElement>(null)
+  // 'complete' (por defecto) | 'skip' (cancelar con motivo) | 'move' (reprogramar)
+  const [mode, setMode]           = useState<'complete' | 'skip' | 'move'>('complete')
+  const [reason, setReason]       = useState('')
+  const [moveTo, setMoveTo]       = useState('')
+  const taskActions               = useTaskActions()
   const addMeasurement            = useMeasurementStore((s) => s.addLog)
   const applyTaskReward           = useUserStore((s) => s.applyTaskReward)
   const userId                    = useUserStore((s) => s.userId)
@@ -76,6 +82,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
   useEffect(() => {
     if (task) {
       setNotes(''); setEc(''); setPh('')
+      setMode('complete'); setReason(''); setMoveTo('')
       setRecipeOpen(false)
       setXpReward(null)
       setTimeout(() => textareaRef.current?.focus(), 250)
@@ -118,7 +125,29 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
     }
   }
 
-  /** "Saltar" no marca la tarea como completada ni otorga XP — es un cierre sin accion. */
+  async function handleSkipConfirm() {
+    if (!task || confirming) return
+    setConfirming(true)
+    await taskActions.skip(task, reason)
+    setConfirming(false)
+    onClose()
+  }
+
+  async function handleMoveConfirm() {
+    if (!task || confirming || !moveTo) return
+    setConfirming(true)
+    await taskActions.reschedule(task, parseLocalDate(moveTo))
+    setConfirming(false)
+    onClose()
+  }
+
+  function pickDays(days: number) {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    setMoveTo(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+  }
+
+  /** "Ahora no" no marca la tarea como completada ni otorga XP — es un cierre sin accion. */
   function handleSkip() {
     hapticLight()
     onClose()
@@ -316,16 +345,127 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
               rows={2}
               className="w-full rounded-2xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-border focus:border-brand-border placeholder:text-ink-4 transition-colors"
             />
+
+            {/* Otras acciones: cancelar o mover la tarea */}
+            {mode === 'complete' && (
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setMode('skip')}
+                  className="flex-1 py-2.5 rounded-xl border border-app-border text-xs font-semibold text-ink-3 bg-app-card tap-highlight-none active:scale-95 transition-all"
+                >
+                  🌧️ Cancelar tarea
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode('move'); pickDays(1) }}
+                  className="flex-1 py-2.5 rounded-xl border border-app-border text-xs font-semibold text-ink-3 bg-app-card tap-highlight-none active:scale-95 transition-all"
+                >
+                  📅 Mover a otro día
+                </button>
+              </div>
+            )}
+
+            {mode === 'skip' && (
+              <div className="mt-3 rounded-2xl border border-app-border bg-app-elevated p-3 space-y-2.5">
+                <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Motivo de la cancelación</p>
+                <div className="flex flex-wrap gap-2">
+                  {SKIP_REASONS.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setReason(r)}
+                      aria-pressed={reason === r}
+                      className={clsx(
+                        'px-3 py-1.5 rounded-full border text-xs font-semibold tap-highlight-none active:scale-95 transition-all',
+                        reason === r ? 'bg-brand-subtle border-brand-border text-brand-500' : 'bg-app-card border-app-border text-ink-3',
+                      )}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  maxLength={80}
+                  placeholder="Otro motivo (opcional)"
+                  className="w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-border placeholder:text-ink-4"
+                />
+                <p className="text-[11px] text-ink-4">No suma XP ni cuenta como incumplida. Queda en el historial de la planta y la podés restaurar.</p>
+              </div>
+            )}
+
+            {mode === 'move' && (
+              <div className="mt-3 rounded-2xl border border-app-border bg-app-elevated p-3 space-y-2.5">
+                <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">Mover a</p>
+                <div className="flex flex-wrap gap-2">
+                  {[['Mañana', 1], ['En 2 días', 2], ['En 3 días', 3]].map(([label, days]) => (
+                    <button
+                      key={label as string}
+                      type="button"
+                      onClick={() => pickDays(days as number)}
+                      className="px-3 py-1.5 rounded-full border border-app-border bg-app-card text-xs font-semibold text-ink-3 tap-highlight-none active:scale-95 transition-all"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="date"
+                  value={moveTo}
+                  onChange={(e) => setMoveTo(e.target.value)}
+                  aria-label="Nueva fecha"
+                  className="w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-border"
+                />
+              </div>
+            )}
           </div>
 
           {/* Botones — siempre visibles, fuera del scroll */}
           <div className="px-5 pt-3 pb-5 border-t border-app-border">
+            {mode === 'skip' && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMode('complete')}
+                  className="flex-1 py-3.5 rounded-2xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
+                >
+                  Volver
+                </button>
+                <button
+                  onClick={handleSkipConfirm}
+                  disabled={confirming}
+                  className="flex-[2] py-3.5 rounded-2xl bg-red-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  Confirmar cancelación
+                </button>
+              </div>
+            )}
+            {mode === 'move' && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMode('complete')}
+                  className="flex-1 py-3.5 rounded-2xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
+                >
+                  Volver
+                </button>
+                <button
+                  onClick={handleMoveConfirm}
+                  disabled={confirming || !moveTo}
+                  className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  Mover tarea
+                </button>
+              </div>
+            )}
+            {mode === 'complete' && (
             <div className="flex gap-3">
               <button
                 onClick={handleSkip}
                 className="flex-1 py-3.5 rounded-2xl border border-app-border text-sm font-semibold text-ink-3 bg-app-elevated tap-highlight-none active:scale-95 transition-all"
               >
-                Saltar
+                Ahora no
               </button>
               <button
                 onClick={handleConfirm}
@@ -334,6 +474,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
                 {hasMeasure ? 'Guardar EC/pH ✓' : notes.trim() ? 'Guardar nota ✓' : 'Confirmar ✓'}
               </button>
             </div>
+            )}
           </div>
 
         </div>
