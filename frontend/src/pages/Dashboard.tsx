@@ -204,8 +204,8 @@ export default function Dashboard() {
         <section className="mb-8">
           {/* Greeting */}
           <div className="mb-6">
-            <h1 className="text-3xl font-black text-ink-1">
-              Hola, {displayName} 👋
+            <h1 className="text-3xl text-ink-1">
+              Hola, {displayName}
             </h1>
           </div>
 
@@ -214,10 +214,10 @@ export default function Dashboard() {
             {/* Streak Card */}
             <Card variant="outlined" padding="md" className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">🔥</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-flora-text" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.5 8 11 5.5 12 3z" /></svg>
                 <div>
                   <p className="text-xs text-ink-3 font-semibold uppercase tracking-wide">Racha</p>
-                  <p className="text-xl font-black text-ink-1">{streak} días</p>
+                  <p className="text-xl font-bold text-ink-1">{streak} días</p>
                 </div>
               </div>
             </Card>
@@ -251,11 +251,10 @@ export default function Dashboard() {
         {/* ═══ TODAY TASKS ═══ */}
         {todayTasks.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-ink-1 mb-4">Tareas de hoy</h2>
+            <h2 className="text-xl text-ink-1 mb-4">Tareas de hoy</h2>
 
             {allDone ? (
               <Card padding="lg" className="text-center">
-                <div className="text-4xl mb-2">🎉</div>
                 <p className="text-sm font-semibold text-ink-2">¡Todas las tareas completadas!</p>
               </Card>
             ) : (
@@ -290,7 +289,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       {isOverdue && (
-                        <span className="text-xs text-red-500 font-bold">Vencida</span>
+                        <span className="text-xs text-task-harvest font-bold">Vencida</span>
                       )}
                       {isToday && (
                         <span className="text-xs text-brand-400 font-bold">Hoy</span>
@@ -314,7 +313,7 @@ export default function Dashboard() {
                         key={task.id}
                         className="flex items-center gap-2 py-2 text-ink-4"
                       >
-                        <span className="text-lg">✓</span>
+                        <span className="text-sm">✓</span>
                         <span className="text-xs line-through">
                           {taskTypeLabel[task.type]}
                         </span>
@@ -332,19 +331,19 @@ export default function Dashboard() {
           <section className="mb-8">
             <div className="grid grid-cols-3 gap-2">
               <Card padding="md" className="text-center">
-                <p className="text-2xl font-black text-brand-500">{vegePlants.length}</p>
+                <p className="text-2xl font-display text-brand-500">{vegePlants.length}</p>
                 <p className="text-[10px] text-ink-3 font-semibold mt-1">
                   planta{vegePlants.length !== 1 ? 's' : ''} en vege
                 </p>
               </Card>
               <Card padding="md" className="text-center">
-                <p className="text-2xl font-black text-flora-text">{floraPlants.length}</p>
+                <p className="text-2xl font-display text-flora-text">{floraPlants.length}</p>
                 <p className="text-[10px] text-ink-3 font-semibold mt-1">
                   en floración
                 </p>
               </Card>
               <Card padding="md" className="text-center">
-                <p className="text-2xl font-black text-task-harvest">{readyToHarvest.length}</p>
+                <p className="text-2xl font-display text-task-harvest">{readyToHarvest.length}</p>
                 <p className="text-[10px] text-ink-3 font-semibold mt-1">
                   lista{readyToHarvest.length !== 1 ? 's' : ''} cosechar
                 </p>
@@ -356,7 +355,7 @@ export default function Dashboard() {
         {/* ═══ PLANTS GRID ═══ */}
         {plants.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-ink-1 mb-4">Mis plantas</h2>
+            <h2 className="text-xl text-ink-1 mb-4">Mis plantas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {plants.map((plant) => (
                 <PlantCard key={plant.id} plant={plant} />
@@ -364,7 +363,7 @@ export default function Dashboard() {
               {/* New Plant Button */}
               <button
                 onClick={handleNewPlant}
-                className="rounded-3xl border-2 border-dashed border-app-border hover:border-brand-400 hover:bg-brand-subtle/20 transition-all flex items-center justify-center h-full min-h-[200px] tap-highlight-none active:scale-[0.987]"
+                className="rounded-2xl border border-dashed border-app-border hover:border-brand-400 hover:bg-brand-subtle/20 transition-all flex items-center justify-center h-full min-h-[200px] tap-highlight-none active:scale-[0.987]"
               >
                 <div className="text-center">
                   <div className="text-4xl mb-2">+</div>
@@ -378,8 +377,7 @@ export default function Dashboard() {
         {/* Empty State */}
         {plants.length === 0 && (
           <section className="mb-8 text-center py-12">
-            <div className="text-6xl mb-4">🌱</div>
-            <h2 className="text-xl font-bold text-ink-1 mb-2">Aún no tienes plantas</h2>
+            <h2 className="text-2xl text-ink-1 mb-2">Aún no tienes plantas</h2>
             <p className="text-sm text-ink-3 mb-6">
               Comienza agregando tu primera planta para
               <br />
@@ -412,7 +410,6 @@ export default function Dashboard() {
                   .filter((p) => p.status === 'harvested')
                   .map((p) => (
                     <Card key={p.id} padding="md" className="flex items-center gap-3">
-                      <span className="text-xl">✂️</span>
                       <div>
                         <p className="text-sm font-semibold text-ink-1">{p.name}</p>
                         <p className="text-xs text-ink-3">Cosechada</p>
@@ -423,7 +420,6 @@ export default function Dashboard() {
                   .filter((p) => p.status === 'discarded')
                   .map((p) => (
                     <Card key={p.id} padding="md" className="flex items-center gap-3">
-                      <span className="text-xl">🗑️</span>
                       <div>
                         <p className="text-sm font-semibold text-ink-1">{p.name}</p>
                         <p className="text-xs text-ink-3">Descartada</p>

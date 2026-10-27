@@ -3,6 +3,31 @@ import { useUserStore } from '@/store/userStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { hapticSuccess, hapticLight } from '@/lib/haptics'
 import { supabase } from '@/lib/auth'
+import { LogoMark } from '@/components/ui'
+
+const STEPS: Step[] = ['welcome', 'name', 'ready']
+
+const iconProps = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className: 'w-5 h-5' }
+
+const FEATURES = [
+  { text: 'Calendario nutricional automático', icon: <svg {...iconProps}><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></svg> },
+  { text: 'Recordatorios de riego y nutrición', icon: <svg {...iconProps}><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z" /></svg> },
+  { text: 'Registro de EC y pH con tendencias', icon: <svg {...iconProps}><path d="M3 17l5-6 4 4 8-9" /></svg> },
+  { text: 'Diario fotográfico semana a semana', icon: <svg {...iconProps}><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg> },
+]
+
+function StepDots({ step }: { step: Step }) {
+  return (
+    <div className="flex justify-center gap-1.5 mb-10" aria-hidden="true">
+      {STEPS.map((s) => (
+        <span
+          key={s}
+          className={`h-1.5 rounded-full transition-all ${s === step ? 'w-6 bg-brand-400' : 'w-1.5 bg-app-border-strong'}`}
+        />
+      ))}
+    </div>
+  )
+}
 
 type Step = 'welcome' | 'name' | 'ready'
 
@@ -34,15 +59,22 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col items-center justify-center px-6 py-12">
+    <div className="relative overflow-hidden min-h-screen min-h-dvh bg-app-bg flex flex-col items-center justify-center px-6 py-12">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[640px] h-[420px] rounded-full opacity-60"
+        style={{ background: 'radial-gradient(closest-side, var(--brand-400) 0%, transparent 70%)', filter: 'blur(60px)', opacity: 0.16 }}
+      />
+      <div className="relative w-full max-w-sm">
+        <StepDots step={step} />
 
       {/* ── Step: Welcome ──────────────────────────────────────────────── */}
       {step === 'welcome' && (
         <div className="w-full max-w-sm text-center page-enter-up">
-          <div className="text-8xl mb-6 select-none animate-bounce" style={{ animationDuration: '2s' }}>
-            🌿
+          <div className="flex justify-center mb-6">
+            <LogoMark size={72} />
           </div>
-          <h1 className="text-3xl font-black text-ink-1 mb-3 leading-tight">
+          <h1 className="text-4xl text-ink-1 mb-3 leading-tight">
             Bienvenido a<br />CultiTrack
           </h1>
           <p className="text-sm text-ink-3 leading-relaxed mb-10 max-w-[280px] mx-auto">
@@ -51,15 +83,10 @@ export default function Onboarding() {
           </p>
 
           {/* Features rápidos */}
-          <div className="space-y-3 mb-10 text-left">
-            {[
-              { icon: '📅', text: 'Calendario nutricional automático' },
-              { icon: '💧', text: 'Recordatorios de riego y nutrición' },
-              { icon: '🔬', text: 'Registro de EC y pH con tendencias' },
-              { icon: '📷', text: 'Diario fotográfico semana a semana' },
-            ].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-3 bg-app-card border border-app-border rounded-2xl px-4 py-3 shadow-card">
-                <span className="text-xl shrink-0">{icon}</span>
+          <div className="space-y-2 mb-10 text-left">
+            {FEATURES.map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-3 bg-app-card border border-app-border rounded-2xl px-4 py-3">
+                <span className="shrink-0 text-brand-400">{icon}</span>
                 <span className="text-sm text-ink-2 font-medium">{text}</span>
               </div>
             ))}
@@ -67,7 +94,7 @@ export default function Onboarding() {
 
           <button
             onClick={() => goStep('name')}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
           >
             Empezar →
           </button>
@@ -87,8 +114,7 @@ export default function Onboarding() {
             Atrás
           </button>
 
-          <div className="text-5xl mb-5 select-none">👤</div>
-          <h2 className="text-2xl font-black text-ink-1 mb-2">¿Cómo te llamás?</h2>
+          <h2 className="text-3xl text-ink-1 mb-2">¿Cómo te llamás?</h2>
           <p className="text-sm text-ink-3 mb-8">
             Solo tu nombre o apodo — podés cambiarlo después.
           </p>
@@ -107,7 +133,7 @@ export default function Onboarding() {
           <button
             onClick={() => goStep('ready')}
             disabled={!nameInput.trim()}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
           >
             Continuar →
           </button>
@@ -124,8 +150,10 @@ export default function Onboarding() {
       {/* ── Step: Ready ────────────────────────────────────────────────── */}
       {step === 'ready' && (
         <div className="w-full max-w-sm text-center page-enter-up">
-          <div className="text-7xl mb-6 select-none">🚀</div>
-          <h2 className="text-2xl font-black text-ink-1 mb-3">
+          <div className="flex justify-center mb-6">
+            <LogoMark size={72} />
+          </div>
+          <h2 className="text-3xl text-ink-1 mb-3">
             ¡Listo{nameInput.trim() ? `, ${nameInput.trim()}` : ''}!
           </h2>
           <p className="text-sm text-ink-3 leading-relaxed mb-10 max-w-[260px] mx-auto">
@@ -133,25 +161,29 @@ export default function Onboarding() {
             automáticamente.
           </p>
 
-          <div className="bg-app-card border border-app-border rounded-2xl p-5 mb-8 text-left space-y-3 shadow-card">
+          <div className="bg-app-card border border-app-border rounded-2xl p-5 mb-8 text-left space-y-3">
             <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">En 30 segundos podés</p>
             {[
-              '✓ Elegir tu genética y tabla nutricional',
-              '✓ Ver el plan de riego semana a semana',
-              '✓ Registrar EC y pH de cada riego',
+              'Elegir tu genética y tabla nutricional',
+              'Ver el plan de riego semana a semana',
+              'Registrar EC y pH de cada riego',
             ].map((item) => (
-              <p key={item} className="text-sm text-ink-2 font-medium">{item}</p>
+              <p key={item} className="text-sm text-ink-2 font-medium flex items-center gap-2.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-400" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {item}
+              </p>
             ))}
           </div>
 
           <button
             onClick={handleFinish}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
           >
-            🌱 Crear primera planta
+            Crear primera planta
           </button>
         </div>
       )}
+      </div>
     </div>
   )
 }

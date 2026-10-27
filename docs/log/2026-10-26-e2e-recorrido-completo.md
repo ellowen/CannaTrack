@@ -125,3 +125,7 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - **Ajustes:** habia DOS campos de nombre (uno con su Guardar propio y otro dentro de "Tu perfil") que escribian lo mismo; ahora es uno solo, con el volumen de maceta y un unico "Guardar cambios". Orden por uso: perfil, plan, apariencia (tema e idioma en una tarjeta), notificaciones, tablas, herramientas, acerca de y zona de peligro. Plan en dorado apagado (el chip PRO era un blanco claro sobre fondo oscuro).
 - **Mis plantas: filtro por tipo** (pedido del usuario): segunda fila "Todos los tipos / Autoflorecientes N / Feminizadas N / Regulares N". Se combina con el estado (activas, flora, cosechadas...) y la busqueda; los numeros cuentan dentro del estado elegido; solo se muestra si hay mas de un tipo para separar.
 - Tests: 2 E2E del filtro; los de Ajustes se adaptaron al guardado unico.
+
+## Treceava tanda (2026-10-27): onboarding y dashboard
+- **Onboarding:** el logo real reemplaza al emoji que rebotaba, los emojis de las tarjetas pasan a iconos de linea en verde, titulos en serif, resplandor de marca de fondo, puntos de progreso (3 pasos) y checks de linea en el ultimo paso. Mismos textos y pasos; los E2E del wizard no cambiaron.
+- **Dashboard (`/dashboard`, no esta en la navegacion; duplica a Home):** sin emojis (👋 🔥 🎉 🌱 ✂️ 🗑️), titulos en serif, "Vencida" en terracota de la paleta en vez de rojo, boton "Nueva planta" con borde fino.
