@@ -48,10 +48,10 @@ test.describe('Tareas: completar, nota, EC/pH, saltar y deshacer', () => {
     expect(dbTasks(context).some((t) => t.plant_id === plantId && t.completed === true)).toBe(true)
   })
 
-  test('Saltar cierra el sheet sin completar ni dar XP', async ({ page, context }) => {
+  test('Ahora no cierra el sheet sin completar ni dar XP', async ({ page, context }) => {
     await markDone(page).first().click()
-    await page.getByRole('button', { name: /^Saltar$/i }).click()
-    await expect(page.getByRole('button', { name: /^Saltar$/i })).not.toBeVisible()
+    await page.getByRole('button', { name: /^Ahora no$/i }).click()
+    await expect(page.getByRole('button', { name: /^Ahora no$/i })).not.toBeVisible()
     await expect(markDone(page).first()).toBeVisible()
     expect(getXpAwardedCalls(context)).toHaveLength(0)
     expect(dbTasks(context).some((t) => t.completed === true)).toBe(false)

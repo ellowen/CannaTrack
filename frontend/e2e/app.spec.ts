@@ -82,11 +82,11 @@ test.describe('Tareas: completar, XP y deshacer', () => {
     expect(getXpAwardedCalls(context).length).toBe(1)
   })
 
-  test('Saltar cierra el sheet sin completar la tarea', async ({ page, context }) => {
+  test('Ahora no cierra el sheet sin completar la tarea', async ({ page, context }) => {
     await seedApp(page, context, { plants: [{ id: 'p1' }], tasksToday: true })
     await gotoApp(page, '/plants/p1')
     await page.getByRole('button', { name: /Marcar como completada/i }).first().click()
-    await page.getByRole('button', { name: /^Saltar$/i }).click()
+    await page.getByRole('button', { name: /^Ahora no$/i }).click()
     // El boton de completar sigue ahi: la tarea NO se completo
     await expect(page.getByRole('button', { name: /Marcar como completada/i }).first()).toBeVisible()
   })

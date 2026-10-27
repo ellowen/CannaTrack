@@ -58,12 +58,12 @@ test.describe('Home con las plantas reales', () => {
     await expect(page.getByText(/3 tareas vencidas/)).toBeVisible()
     await page.getByRole('button', { name: /Marcar hecho/ }).first().click()
     await expect(page.getByText(/completada ✓/)).toBeVisible()
-    await page.getByRole('button', { name: /^Saltar$/ }).click()
+    await page.getByRole('button', { name: /^Ahora no$/ }).click()
 
     // "Resolver" abre el sheet de la primera atrasada; "Todas" las resuelve juntas
     await page.getByRole('button', { name: /^Resolver$/ }).click()
     await expect(page.getByText(/completada ✓/)).toBeVisible()
-    await page.getByRole('button', { name: /^Saltar$/ }).click()
+    await page.getByRole('button', { name: /^Ahora no$/ }).click()
     await page.getByRole('button', { name: /^Todas$/ }).click()
     await expect(page.getByText(/3 tareas vencidas/)).not.toBeVisible({ timeout: 8_000 })
     const blueId = dbPlants(context).find((p) => p.name === BLUE.name)!.id

@@ -243,7 +243,9 @@ export async function installFakeBackend(context: BrowserContext): Promise<FakeB
           Object.assign(existing, item, { updated_at: now })
           saved.push(existing)
         } else {
-          const row = { id: crypto.randomUUID(), created_at: now, ...item }
+          // defaults de columna de la base real (el cliente solo manda skipped cuando es true)
+          const defaults = name === 'scheduled_tasks' ? { skipped: false, skip_reason: null, rescheduled_from: null } : {}
+          const row = { id: crypto.randomUUID(), created_at: now, ...defaults, ...item }
           rows.push(row)
           saved.push(row)
         }

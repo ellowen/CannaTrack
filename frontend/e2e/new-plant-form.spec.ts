@@ -210,3 +210,87 @@ test.describe('Formulario: opciones que quedan guardadas', () => {
     await expect(page.getByText('Temporal')).not.toBeVisible()
   })
 })
+
+test.describe('Formulario: vegetativo y riegos por semana', () => {
+  test.beforeEach(async ({ page, context }) => setup(page, context))
+
+  test('el vegetativo solo se puede configurar en fotoperiodicas; los riegos en todas', async ({ page }) => {
+    await expect(page.getByLabel('Días de vegetativo')).toBeVisible()
+    await expect(page.getByLabel('Riegos por semana')).toBeVisible()
+    await page.getByRole('button', { name: 'Auto', exact: true }).click()
+    await expect(page.getByLabel('Días de vegetativo')).not.toBeVisible() // las autos florecen solas
+    await expect(page.getByLabel('Riegos por semana')).toBeVisible()
+    await page.getByRole('button', { name: 'Tomate' }).click()
+    await expect(page.getByLabel('Riegos por semana')).not.toBeVisible() // sin calendario cannabis
+  })
+
+  test('rangos validos: vegetativo 14-180 y riegos 1-7', async ({ page }) => {
+    await page.getByLabel('Días de vegetativo').fill('5')
+    await expect(page.getByText('El vegetativo debe durar entre 14 y 180 días')).toBeVisible()
+    await page.getByLabel('Días de vegetativo').fill('90')
+    await expect(page.getByText('El vegetativo debe durar entre 14 y 180 días')).not.toBeVisible()
+    await expect(page.getByText(/≈ 13 semanas de vegetativo/)).toBeVisible()
+
+    await page.getByLabel('Riegos por semana').fill('9')
+    await expect(page.getByText('Los riegos por semana deben estar entre 1 y 7')).toBeVisible()
+    await page.getByLabel('Riegos por semana').fill('3')
+    await expect(page.getByText('Los riegos por semana deben estar entre 1 y 7')).not.toBeVisible()
+  })
+
+  test('Blue Applez con 12 semanas de vegetativo y 3 riegos por semana: el calendario lo refleja', async ({ page, context }) => {
+    await page.getByLabel('Variedad del catálogo (opcional)').selectOption({ label: 'Blue Applez' })
+    await page.getByPlaceholder('Ej: White Widow #1').fill('Blue Applez larga')
+    await page.getByLabel('Días de vegetativo').fill('84')
+    await page.getByLabel('Riegos por semana').fill('3')
+    await next(page).click()
+    await expect(page.getByText(/84 días · 3\/sem/)).toBeVisible() // resumen del paso 2
+    await next(page).click()
+    await page.getByRole('button', { name: /Crear planta/ }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+
+    const row = dbPlants(context)[0]
+    expect(row.vege_days).toBe(84)
+    expect(row.irrigation_per_week).toBe(3)
+    const vege = dbTasks(context).filter((t) => t.cycle === 'vege')
+    expect(Math.max(...vege.map((t) => Number(t.week)))).toBe(11) // 12 semanas: V0..V11
+    for (const semana of [0, 5, 11]) {
+      expect(vege.filter((t) => t.type === 'irrigation' && Number(t.week) === semana)).toHaveLength(3)
+    }
+  })
+
+  test('por defecto (sin tocar los campos) el calendario es el de siempre', async ({ page, context }) => {
+    await nameInput(page).fill('Defecto')
+    await geneticsInput(page).fill('Mix')
+    await next(page).click()
+    await next(page).click()
+    await page.getByRole('button', { name: /Crear planta/ }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+    expect(dbPlants(context)[0].vege_days ?? null).toBeNull()
+    expect(dbPlants(context)[0].irrigation_per_week ?? null).toBeNull()
+    const vege = dbTasks(context).filter((t) => t.cycle === 'vege')
+    expect(Math.max(...vege.map((t) => Number(t.week)))).toBe(5)
+    expect(vege.filter((t) => t.type === 'irrigation' && Number(t.week) === 1)).toHaveLength(2)
+  })
+
+  test('editar los riegos por semana regenera lo pendiente', async ({ page, context }) => {
+    await nameInput(page).fill('Editar riegos')
+    await geneticsInput(page).fill('Mix')
+    await next(page).click()
+    await next(page).click()
+    await page.getByRole('button', { name: /Crear planta/ }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+    const id = String(dbPlants(context)[0].id)
+
+    await gotoApp(page, `/plants/${id}/edit`)
+    await page.getByLabel('Riegos por semana').fill('4')
+    await next(page).click()
+    await next(page).click()
+    await page.getByRole('button', { name: /Guardar cambios/ }).click()
+    await expect(page).toHaveURL(new RegExp(`/plants/${id}$`), { timeout: 10_000 })
+
+    expect(dbPlants(context)[0].irrigation_per_week).toBe(4)
+    await expect.poll(
+      () => dbTasks(context).filter((t) => t.plant_id === id && t.cycle === 'vege' && t.type === 'irrigation' && Number(t.week) === 3).length,
+    ).toBe(4)
+  })
+})

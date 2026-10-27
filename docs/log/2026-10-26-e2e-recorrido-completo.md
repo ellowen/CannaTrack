@@ -60,3 +60,18 @@ Hallazgo al revisar si se pueden "ajustar parametros": `usePlants.editPlant` reg
 Arreglo: `lib/schedule-merge.ts` (`mergeRegeneratedSchedule`, `scheduleAffectingChange`). editPlant solo regenera si cambia algo que afecta el calendario (fechas, ciclo, tipo, tabla, productos), conserva las completadas con su id/xp y reemplaza solo las pendientes. Tambien se corrigio el criterio de Ajustes: antes completar UN riego de una semana descartaba los DOS riegos nuevos de esa semana (la clave era ciclo|semana|tipo); ahora se descarta uno por cada completada.
 
 Otros hallazgos sin corregir (ver respuesta al usuario): no existe cancelar/saltar/reprogramar una tarea (removeTask/updateTask existen en el store pero ninguna pantalla los usa); una planta con fecha de inicio futura se muestra como "V-4 D-28" en Home; el diario/cosecha no registra el peso cosechado.
+
+## Quinta tanda (2026-10-27): cancelar/mover tareas, vegetativo y riegos por semana
+Pedido: poder ajustar los parametros de cada semilla y cancelar riegos (p.ej. por lluvia).
+
+**Cancelar / restaurar / mover una tarea.** Antes solo existia "hecha" y "deshacer" (el boton "Saltar" solo cerraba la ventana; `removeTask`/`updateTask` del store no se usaban). Ahora la hoja de la tarea tiene "Cancelar tarea" (con motivo: Llovio / No hacia falta / Ya la hice por fuera / texto libre) y "Mover a otro dia" (Manana / En 2-3 dias / selector). "Saltar" se renombro a "Ahora no".
+- Cancelada: sale de Home, Dashboard, Calendario, vencidas y notificaciones; no da XP, no cuenta como incumplida (no baja la salud); queda en "Canceladas" del detalle con su motivo y boton Restaurar.
+- Movida: cambia `scheduled_date` y guarda `rescheduled_from` (la fecha ORIGINAL, aunque se mueva varias veces).
+- Funciona sin conexion (cola de sync: skipTask/restoreTask/rescheduleTask).
+- Regenerar el calendario (editar la planta, Ajustes > Regenerar) conserva canceladas y movidas. Un test lo atajo: `replacePendingTasksForPlantInSupabase` las borraba porque en la base siguen como "no completadas"; ahora excluye `skipped` y `rescheduled_from`.
+
+**Por planta:** `vegeDays` (duracion del vegetativo de fotoperiodicas, por defecto 42) y `irrigationPerWeek` (1-7, por defecto el patron historico de 2 por semana y 3 en limpieza). El vegetativo se escala de forma proporcional como la floracion; el aviso de "registra la floracion", el progreso, la etapa actual y los rangos EC/pH usan la duracion configurada. Las autos no tienen vegetativo configurable (florecen solas al dia `autoFloraStartDay`).
+
+Migracion `20261027000000_task_skip_and_plant_cycle.sql` (APLICADA): scheduled_tasks.skipped/skip_reason/rescheduled_from; plants.vege_days/irrigation_per_week.
+
+Pendiente de la lista original: siembras planificadas (hoy una fecha futura se ve como "V-4 D-28"), catalogo que precargue breeder y notas de cuidado, registrar el peso cosechado.
