@@ -112,6 +112,8 @@ export interface Plant {
   startDate: Date
   floraStartDate?: Date
   endDate?: Date
+  /** Peso cosechado en gramos (se puede cargar despues de cosechar). */
+  harvestWeightG?: number
   autoFlowerTotalDays?: number   // default 75
   /** Duracion de la floracion en dias. Sin valor: 56 (8 semanas, la de las tablas). */
   floraDays?: number

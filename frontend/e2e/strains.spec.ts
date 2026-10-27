@@ -162,6 +162,8 @@ test.describe('Catalogo de variedades de la app', () => {
       expect(preset.breeder).toBe(s.breeder)
       expect(preset.geneticType).toBe(s.plant.geneticType)
       expect(preset.notes).toBe(s.plant.notes)
+      // solo se compara contra la ficha si esta da cifra por planta (el resto da g/m2)
+      expect(preset.yieldGPerPlant !== undefined).toBe(s.facts.yield.outdoorGPerPlant !== null)
       expect(preset.floraDays).toBe(cycleFloraDays(s))
       if (s.plant.geneticType === 'autoflower') {
         expect(preset.autoFlowerTotalDays).toBe(s.plant.autoFlowerTotalDays)

@@ -75,7 +75,7 @@ export function usePlants() {
     }
   }
 
-  async function harvestPlant(id: string) {
+  async function harvestPlant(id: string, weightG?: number) {
     updatePlant(id, { status: 'harvested', endDate: new Date() })
     try {
       await updatePlantStatusInSupabase(id, 'harvested')
@@ -83,6 +83,19 @@ export function usePlants() {
       console.error('[harvestPlant] Error sincronizando:', error)
       showErrorToast('No se pudo sincronizar la cosecha. Revisá tu conexión.')
       enqueueSyncAction('updatePlantStatus', { plantId: id, status: 'harvested' })
+    }
+    if (weightG !== undefined) await setHarvestWeight(id, weightG)
+  }
+
+  /** Guarda (o borra, con undefined) el peso cosechado en gramos. */
+  async function setHarvestWeight(id: string, weightG: number | undefined) {
+    updatePlant(id, { harvestWeightG: weightG })
+    try {
+      await updatePlantInSupabase(id, { harvestWeightG: weightG })
+    } catch (error) {
+      console.error('[setHarvestWeight] Error sincronizando:', error)
+      showErrorToast('No se pudo sincronizar el peso. Revisá tu conexión.')
+      enqueueSyncAction('updatePlantData', { plantId: id, changes: { harvestWeightG: weightG ?? null } })
     }
   }
 
@@ -203,6 +216,7 @@ export function usePlants() {
     removePlant,
     discardPlant,
     harvestPlant,
+    setHarvestWeight,
     reactivatePlant,
     startFlora,
     getPlantById,

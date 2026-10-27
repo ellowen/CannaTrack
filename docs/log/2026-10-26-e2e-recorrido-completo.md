@@ -74,7 +74,6 @@ Pedido: poder ajustar los parametros de cada semilla y cancelar riegos (p.ej. po
 
 Migracion `20261027000000_task_skip_and_plant_cycle.sql` (APLICADA): scheduled_tasks.skipped/skip_reason/rescheduled_from; plants.vege_days/irrigation_per_week.
 
-Pendiente de la lista original: registrar el peso cosechado.
 
 ## Sexta tanda (2026-10-27): siembras planificadas
 Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D-28`, con semana negativa y dias de cosecha como si ya creciera.
@@ -88,3 +87,10 @@ Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D
 ## Septima tanda (2026-10-27): el catalogo precarga las notas de cuidado
 `STRAIN_PRESETS` ahora trae `notes` (las de la ficha en `e2e/fixtures/strains.ts`: humedad, maceta minima, soporte en flora tardia, etc.) y el formulario las carga en "Notas" al elegir la variedad. El breeder va dentro de ese texto ("Auto Strawberry Soda (Dutch Passion)...") porque la planta no tiene columna de breeder; Blue Applez no lo lleva porque la pagina no lo declara. Cambiar de variedad reemplaza las notas del catalogo, pero nunca lo que escribio el usuario. Las notas se guardan en `plants.notes` (ya existia) y se ven en el detalle.
 - Tests: el spec de strains exige que preset.notes == ficha; 2 E2E nuevos en `new-plant-form.spec.ts`.
+
+## Octava tanda (2026-10-27): peso cosechado
+- Columna `plants.harvest_weight_g numeric(8,1)` (migracion `20261028000000_plants_harvest_weight.sql`, APLICADA a la base de pruebas; check 0 < g <= 10000). Mapeada en `sync.ts` (alta, carga, update) y en `Plant.harvestWeightG`.
+- La hoja de cosecha tiene "Peso cosechado (g, opcional)" (acepta coma, valida 1-10000). Tambien se puede cargar o editar despues desde el detalle de la planta cosechada (el peso seco se conoce dias despues). Offline: usa la cola (`updatePlantData`).
+- El detalle muestra g, g por dia de cultivo (siembra -> cierre) y g por litro de maceta (suma de macetas).
+- Comparacion con la ficha: SOLO Auto Strawberry Soda, la unica cuya pagina da cifra por planta (20-75 g outdoor). Las demas dan g/m2, que no se compara con una planta suelta, asi que muestran el peso sin veredicto. El match es por genetica del catalogo (la planta no guarda el id de la variedad); si la planta se edita a otra genetica, deja de compararse.
+- Tests: 5 unit (`harvest-stats`), el spec de strains verifica que `yieldGPerPlant` coincida con la ficha, y `e2e/harvest-weight.spec.ts` (4).

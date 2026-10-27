@@ -6,11 +6,12 @@ import { useTaskStore } from '@/store/taskStore'
 import { useMeasurements } from '@/hooks/useMeasurements'
 import { hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
+import { isValidHarvestWeight, sheetYieldFor } from '@/lib/harvest-stats'
 import type { Plant } from '@/types/plant'
 
 interface HarvestSheetProps {
   plant: Plant
-  onConfirmHarvest: () => void
+  onConfirmHarvest: (weightG?: number) => void
   onConfirmDiscard: () => void
   onClose: () => void
 }
@@ -22,6 +23,10 @@ export default function HarvestSheet({
   onClose,
 }: HarvestSheetProps) {
   const [tab, setTab] = useState<'harvest' | 'discard'>('harvest')
+  const [weight, setWeight] = useState('')
+  const sheetYield = sheetYieldFor(plant)
+  const weightG = weight.trim() === '' ? undefined : Number(weight.replace(',', '.'))
+  const weightInvalid = weightG !== undefined && !isValidHarvestWeight(weightG)
   const { tasks } = useTaskStore()
   const { logs } = useMeasurements(plant.id)
 
@@ -45,8 +50,9 @@ export default function HarvestSheet({
 
   function confirm() {
     if (tab === 'harvest') {
+      if (weightInvalid) return
       hapticSuccess()
-      onConfirmHarvest()
+      onConfirmHarvest(weightG)
     } else {
       hapticWarning()
       onConfirmDiscard()
@@ -152,6 +158,27 @@ export default function HarvestSheet({
               ? '🎉 ¡Excelente trabajo! La planta pasará al historial de cosechas.'
               : '⚠️ La planta se marcará como descartada. No se puede deshacer.'}
           </p>
+
+          {tab === 'harvest' && (
+            <div className="mb-4">
+              <label htmlFor="harvest-weight" className="text-xs font-bold text-ink-3 block mb-1.5">
+                Peso cosechado (g, opcional)
+              </label>
+              <input
+                id="harvest-weight"
+                type="text"
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="Ej: 45 (podés cargarlo después)"
+                className="w-full px-3 py-2.5 rounded-xl bg-app-elevated border border-app-border text-sm text-ink-1 outline-none focus:border-brand-400"
+              />
+              {weightInvalid && <p className="text-xs text-red-500 mt-1.5">Ingresá un peso entre 1 y 10000 g</p>}
+              {sheetYield && !weightInvalid && (
+                <p className="text-[11px] text-ink-4 mt-1.5">Ficha de la variedad: {sheetYield.min}-{sheetYield.max} g por planta</p>
+              )}
+            </div>
+          )}
 
           {/* Confirmar */}
           <button

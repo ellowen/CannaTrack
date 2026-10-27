@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { compareToSheet, harvestStats, isValidHarvestWeight, sheetYieldFor } from '@/lib/harvest-stats'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { format, differenceInDays, startOfWeek } from 'date-fns'
@@ -30,12 +31,13 @@ export default function PlantDetail() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getPlantById, startFlora, harvestPlant, discardPlant, reactivatePlant } = usePlants()
+  const { getPlantById, startFlora, harvestPlant, setHarvestWeight, discardPlant, reactivatePlant } = usePlants()
   const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
   const [floraDateInput, setFloraDateInput] = useState(() => formatDateOnly(new Date()))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
+  const [weightInput, setWeightInput] = useState<string | null>(null) // null = no se esta editando
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
   const { tasks, todayTasks, upcomingTasks, overdueTasks, skippedTasks, uncompleteTask } = useTasks(id)
   const taskActions = useTaskActions()
@@ -748,6 +750,76 @@ export default function PlantDetail() {
           </section>
         )}
 
+        {/* Peso cosechado y comparacion con la ficha */}
+        {plant.status === 'harvested' && (() => {
+          const stats = harvestStats(plant)
+          const sheet = sheetYieldFor(plant)
+          const verdict = plant.harvestWeightG != null && sheet ? compareToSheet(plant.harvestWeightG, sheet) : null
+          const parsed = weightInput === null ? undefined : Number(weightInput.replace(',', '.'))
+          const invalid = weightInput !== null && !isValidHarvestWeight(parsed as number)
+          return (
+            <section className="glass-card rounded-2xl p-4" data-testid="harvest-weight">
+              <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-2">⚖️ Peso cosechado</p>
+              {weightInput === null ? (
+                <>
+                  {plant.harvestWeightG != null ? (
+                    <>
+                      <p className="text-2xl font-black text-ink-1">{plant.harvestWeightG} g</p>
+                      {stats && (
+                        <p className="text-xs text-ink-3 mt-1">
+                          {[stats.gramsPerDay != null && `${stats.gramsPerDay.toFixed(1)} g por día de cultivo`,
+                            stats.gramsPerLiter != null && `${stats.gramsPerLiter.toFixed(1)} g por litro de maceta`]
+                            .filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      {sheet && verdict && (
+                        <p className={`text-xs font-bold mt-2 ${verdict === 'below' ? 'text-amber-400' : 'text-brand-400'}`}>
+                          {verdict === 'within' && `Dentro del rango de la ficha (${sheet.min}-${sheet.max} g por planta)`}
+                          {verdict === 'below' && `Por debajo de la ficha (${sheet.min}-${sheet.max} g por planta)`}
+                          {verdict === 'above' && `Por encima de la ficha (${sheet.min}-${sheet.max} g por planta)`}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-ink-3">Todavía no cargaste el peso{sheet ? ` (ficha: ${sheet.min}-${sheet.max} g por planta)` : ''}.</p>
+                  )}
+                  <button
+                    onClick={() => setWeightInput(plant.harvestWeightG != null ? String(plant.harvestWeightG) : '')}
+                    className="mt-3 text-xs font-bold text-brand-400 tap-highlight-none"
+                  >
+                    {plant.harvestWeightG != null ? 'Editar peso' : 'Registrar peso'}
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    aria-label="Peso cosechado (g)"
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)}
+                    placeholder="Gramos"
+                    className="w-full px-3 py-2.5 rounded-xl bg-app-elevated border border-app-border text-sm text-ink-1 outline-none focus:border-brand-400"
+                  />
+                  {invalid && <p className="text-xs text-red-500">Ingresá un peso entre 1 y 10000 g</p>}
+                  <div className="flex gap-2">
+                    <button
+                      disabled={invalid}
+                      onClick={() => { setHarvestWeight(plant.id, parsed); setWeightInput(null) }}
+                      className="flex-1 py-2 rounded-xl bg-brand-400 text-white text-sm font-bold disabled:opacity-40"
+                    >
+                      Guardar peso
+                    </button>
+                    <button onClick={() => setWeightInput(null)} className="px-4 py-2 rounded-xl bg-app-elevated border border-app-border text-sm font-bold text-ink-3">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          )
+        })()}
+
         {/* Reactivar planta cosechada o descartada */}
         {(plant.status === 'harvested' || plant.status === 'discarded') && (
           <section className="pt-2 border-t border-app-border">
@@ -794,9 +866,9 @@ export default function PlantDetail() {
       {harvestSheetOpen && (
         <HarvestSheet
           plant={plant}
-          onConfirmHarvest={() => {
+          onConfirmHarvest={(weightG) => {
             // harvestPlant() ya sincroniza con Supabase internamente
-            harvestPlant(plant.id)
+            harvestPlant(plant.id, weightG)
             navigate('/')
           }}
           onConfirmDiscard={() => {

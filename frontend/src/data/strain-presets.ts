@@ -23,6 +23,8 @@ export interface StrainPreset {
   /** Solo autoflorecientes. */
   autoFloraStartDay?: number
   floraDays: number
+  /** Rendimiento por planta (g) que declara la ficha; solo si da cifra por planta (no por m2). */
+  yieldGPerPlant?: { min: number; max: number }
   /** Notas de cuidado de la ficha; precargan el campo Notas (editable). */
   notes: string
 }
@@ -37,6 +39,7 @@ export const STRAIN_PRESETS: StrainPreset[] = [
     autoFlowerTotalDays: 75,
     autoFloraStartDay: 35,
     floraDays: 40,
+    yieldGPerPlant: { min: 20, max: 75 },
     notes: 'Auto Strawberry Soda (Dutch Passion). Compacta, indica. Mantener humedad < 50% en flora.',
   },
   {

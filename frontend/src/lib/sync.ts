@@ -31,6 +31,7 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       auto_flower_total_days: plant.autoFlowerTotalDays,
       // Fecha de cierre (cosecha/descarte): sin esto se perdia al recargar
       end_date: plant.endDate ? formatDateOnly(plant.endDate) : null,
+      harvest_weight_g: plant.harvestWeightG ?? null,
       // Solo viajan si la planta los define: undefined se omite al serializar,
       // asi el sync no depende de que la migracion 20261025000000 ya este aplicada.
       flora_days: plant.floraDays,
@@ -79,6 +80,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | 
       startDate: parseDateOnly(p.start_date),
       floraStartDate: p.flora_start_date ? parseDateOnly(p.flora_start_date) : undefined,
       endDate: p.end_date ? parseDateOnly(p.end_date) : undefined,
+      harvestWeightG: p.harvest_weight_g != null ? Number(p.harvest_weight_g) : undefined,
       autoFlowerTotalDays: p.auto_flower_total_days,
       floraDays: p.flora_days ?? undefined,
       vegeDays: p.vege_days ?? undefined,
@@ -150,6 +152,7 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     if ('vegeDays' in changes)           row.vege_days = changes.vegeDays ?? null
     if ('irrigationPerWeek' in changes)  row.irrigation_per_week = changes.irrigationPerWeek ?? null
     if ('autoFloraStartDay' in changes)  row.auto_flora_start_day = changes.autoFloraStartDay ?? null
+    if ('harvestWeightG' in changes)     row.harvest_weight_g = changes.harvestWeightG ?? null
 
     const { error } = await supabase.from('plants').update(row).eq('id', plantId)
     if (error) throw error
