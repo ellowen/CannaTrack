@@ -76,7 +76,7 @@ test.describe('Home con las plantas reales', () => {
     const sodaId = dbPlants(context).find((p) => p.name === SODA.name)!.id
     const todays = () => dbTasks(context).filter((t) => t.plant_id === sodaId && t.scheduled_date === new Date().toLocaleDateString('sv-SE'))
 
-    await page.getByRole('button', { name: /✓ Hecho/ }).first().click()
+    await page.getByRole('button', { name: /: ver detalle/ }).first().click()
     await page.getByRole('button', { name: /Confirmar/ }).click()
     await expect(page.getByText(/\+\d+ XP/)).toBeVisible()
     await expect.poll(() => todays().filter((t) => t.completed === true).length).toBe(1)
@@ -169,5 +169,39 @@ test.describe('Dashboard (/dashboard)', () => {
     await expect(todayCard).not.toContainText('Vencida')
     const overdue = page.locator('div', { hasText: BLUE.name }).filter({ hasText: 'Vencida' }).first()
     await expect(overdue).toBeVisible()
+  })
+})
+
+test.describe('Home: tareas agrupadas por planta', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+    await createPlantViaUi(page, SODA, 0)
+    await gotoApp(page, '/')
+  })
+
+  const todays = (context: BrowserContext) => {
+    const id = dbPlants(context).find((p) => p.name === SODA.name)!.id
+    return dbTasks(context).filter((t) => t.plant_id === id && t.scheduled_date === new Date().toLocaleDateString('sv-SE'))
+  }
+
+  test('la planta se nombra una vez; el check completa sin abrir la hoja; tocar la fila abre el detalle', async ({ page, context }) => {
+    expect(todays(context).length).toBe(2) // nutricion + observacion el dia 0
+
+    const group = page.getByTestId('plant-task-group')
+    await expect(group).toHaveCount(1)
+    await expect(group.getByRole('heading', { name: SODA.name })).toHaveCount(1)
+
+    await group.getByRole('button', { name: /marcar hecha/ }).first().click()
+    await expect(page.getByRole('button', { name: /Confirmar/ })).toHaveCount(0)
+    await expect.poll(() => todays(context).filter((t) => t.completed === true).length).toBe(1)
+
+    await group.getByRole('button', { name: /ver detalle/ }).click()
+    await expect(page.getByRole('button', { name: /Cancelar tarea/ })).toBeVisible()
+  })
+
+  test('"Todo" de la planta resuelve todas sus tareas de una vez', async ({ page, context }) => {
+    await page.getByRole('button', { name: /Marcar todo hecho en/ }).click()
+    await expect.poll(() => todays(context).every((t) => t.completed === true)).toBe(true)
+    await expect(page.getByText('Todo al dia!')).toBeVisible({ timeout: 8_000 })
   })
 })

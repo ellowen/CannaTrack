@@ -158,7 +158,7 @@ test.describe('Perfil', () => {
 
   test('completar una tarea suma XP y desbloquea logros', async ({ page }) => {
     await gotoApp(page, '/')
-    await page.getByRole('button', { name: /✓ Hecho/ }).first().click()
+    await page.getByRole('button', { name: /: ver detalle/ }).first().click()
     await page.getByRole('button', { name: /Confirmar/ }).click()
     await expect(page.getByText(/\+15 XP/)).toBeVisible()
     await page.waitForTimeout(1_600)

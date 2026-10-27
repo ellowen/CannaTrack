@@ -322,3 +322,42 @@ test.describe('Formulario: notas del catalogo', () => {
     await expect(notasInput(page)).toHaveValue('Germinada en jiffy, maceta definitiva el 5/12')
   })
 })
+
+test.describe('Formulario: menos pasos', () => {
+  test.beforeEach(async ({ page, context }) => setup(page, context))
+
+  test('elegir variedad sugiere el nombre y se puede crear desde el paso 2 sin tocar la nutricion', async ({ page, context }) => {
+    await page.getByLabel('Variedad del catálogo (opcional)').selectOption({ label: 'Therian Auto (Mountain Seeds)' })
+    await expect(nameInput(page)).toHaveValue('Therian Auto')
+    await next(page).click()
+    await page.getByRole('button', { name: /Omitir nutrición y crear/ }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+    expect(dbPlants(context).some((p) => p.name === 'Therian Auto')).toBe(true)
+    expect(dbTasks(context).length).toBeGreaterThan(10)
+  })
+
+  test('el nombre sugerido no pisa uno escrito a mano', async ({ page }) => {
+    await nameInput(page).fill('Mi planta #1')
+    await page.getByLabel('Variedad del catálogo (opcional)').selectOption({ label: 'Flat White Auto (Mountain Seeds)' })
+    await expect(nameInput(page)).toHaveValue('Mi planta #1')
+  })
+
+  test('la planta siguiente arranca con la ubicacion, sustrato y cantidad de macetas de la anterior (los litros salen de Ajustes)', async ({ page }) => {
+    await nameInput(page).fill('Primera')
+    await geneticsInput(page).fill('Northern Lights')
+    await next(page).click()
+    await page.getByRole('button', { name: /Outdoor/ }).click()
+    await page.getByRole('button', { name: /Coco/ }).click()
+    await page.locator('label:has-text("Macetas") + input').fill('3')
+    await page.locator('label:has-text("Litros c/u") + input').fill('15')
+    await page.getByRole('button', { name: /Omitir nutrición y crear/ }).click()
+    await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+
+    await gotoApp(page, '/plants/new')
+    await nameInput(page).fill('Segunda')
+    await geneticsInput(page).fill('Northern Lights')
+    await next(page).click()
+    await expect(page.locator('label:has-text("Macetas") + input')).toHaveValue('3')
+    await expect(page.getByRole('button', { name: /Outdoor/ })).toHaveClass(/brand/)
+  })
+})

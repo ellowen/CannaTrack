@@ -6,6 +6,7 @@ import {
   daysUntilSowing,
   getActiveCycle,
   getAutoFloraStartDay,
+  getCycleStrip,
   getFloraStart,
   getFloraDays,
   isPlanned,
@@ -245,5 +246,29 @@ describe('siembra planificada', () => {
     const tareas = generatePlantSchedule(p, REVEGETAR_TABLE)
     expect(Math.min(...tareas.map((t) => t.scheduledDate.getTime()))).toBe(siembra.getTime())
     expect(getEstimatedHarvestDate(p)?.getTime()).toBe(addDays(siembra, 75).getTime())
+  })
+})
+
+describe('getCycleStrip', () => {
+  it('auto de 75 dias: 5 semanas de vege (hasta el dia 35) y 6 de flora; la actual sale de los dias', () => {
+    const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })
+    expect(getCycleStrip(p, addDays(inicio, 16))).toEqual({ vegeWeeks: 5, floraWeeks: 6, currentIndex: 2 })
+    expect(getCycleStrip(p, addDays(inicio, 40))?.currentIndex).toBe(5)
+  })
+
+  it('fotoperiodica sin floracion registrada proyecta 6 semanas de vege + 8 de flora', () => {
+    expect(getCycleStrip(planta({}), inicio)).toEqual({ vegeWeeks: 6, floraWeeks: 8, currentIndex: 0 })
+  })
+
+  it('con vege y flora personalizadas', () => {
+    const p = planta({ vegeDays: 84, floraDays: 63 })
+    expect(getCycleStrip(p, inicio)).toMatchObject({ vegeWeeks: 12, floraWeeks: 9 })
+  })
+
+  it('antes de sembrar es -1, pasado el ciclo no se pasa del total, y no-cannabis no tiene tira', () => {
+    const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })
+    expect(getCycleStrip(p, addDays(inicio, -3))?.currentIndex).toBe(-1)
+    expect(getCycleStrip(p, addDays(inicio, 400))?.currentIndex).toBe(11)
+    expect(getCycleStrip(planta({ cropType: 'tomato' }), inicio)).toBeNull()
   })
 })

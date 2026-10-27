@@ -160,3 +160,32 @@ export function daysUntilSowing(plant: Pick<Plant, 'startDate'>, today: Date = n
 export function isPlanned(plant: Pick<Plant, 'startDate' | 'status'>, today: Date = new Date()): boolean {
   return plant.status === 'active' && daysUntilSowing(plant, today) > 0
 }
+
+export interface CycleStrip {
+  /** Semanas de vegetativo y de floracion del ciclo completo (la floracion de una fotoperiodica sin registrar es proyectada). */
+  vegeWeeks: number
+  floraWeeks: number
+  /** Indice (desde 0) de la semana actual; las anteriores estan hechas. Antes de sembrar es -1, despues del ciclo es el total. */
+  currentIndex: number
+}
+
+/**
+ * Forma del ciclo completo en semanas, para dibujar el avance de la planta.
+ * Null para cultivos sin ciclo vege/flora (no-cannabis).
+ */
+export function getCycleStrip(
+  plant: Pick<Plant, 'startDate' | 'floraStartDate' | 'geneticType' | 'autoFloraStartDay' | 'autoFlowerTotalDays' | 'floraDays' | 'vegeDays' | 'cropType'>,
+  today: Date = new Date(),
+): CycleStrip | null {
+  if (plant.cropType && plant.cropType !== 'cannabis') return null
+  const start = startOfDay(plant.startDate)
+  const floraStart = getFloraStart(plant) ?? addDays(start, getVegeDays(plant))
+  const harvest = plant.geneticType === 'autoflower'
+    ? addDays(start, plant.autoFlowerTotalDays ?? 75)
+    : addDays(floraStart, getFloraDays(plant))
+  const vegeWeeks = Math.max(1, Math.ceil(differenceInDays(startOfDay(floraStart), start) / 7))
+  const floraWeeks = Math.max(1, Math.ceil(differenceInDays(startOfDay(harvest), startOfDay(floraStart)) / 7))
+  const elapsed = differenceInDays(startOfDay(today), start)
+  const currentIndex = elapsed < 0 ? -1 : Math.min(Math.floor(elapsed / 7), vegeWeeks + floraWeeks)
+  return { vegeWeeks, floraWeeks, currentIndex }
+}

@@ -156,6 +156,30 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
+const LAST_SETUP_KEY = 'cultitrack-last-setup'
+
+function readLastSetup(): Partial<PlantFormValues> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LAST_SETUP_KEY) ?? 'null') as Partial<PlantFormValues> | null
+    if (!raw) return {}
+    return {
+      ...(raw.location === 'indoor' || raw.location === 'outdoor' ? { location: raw.location } : {}),
+      ...(raw.growMedium === 'soil' || raw.growMedium === 'coco' || raw.growMedium === 'hydro' ? { growMedium: raw.growMedium } : {}),
+      ...(typeof raw.potCount === 'number' && raw.potCount >= 1 ? { potCount: raw.potCount } : {}),
+    }
+  } catch {
+    return {}
+  }
+}
+
+function saveLastSetup(v: PlantFormValues) {
+  try {
+    localStorage.setItem(LAST_SETUP_KEY, JSON.stringify({
+      location: v.location, growMedium: v.growMedium, potCount: v.potCount,
+    }))
+  } catch { /* sin almacenamiento: simplemente no se recuerda */ }
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function PlantForm({ onSubmit, initialValues, submitLabel, loading }: PlantFormProps) {
@@ -168,6 +192,9 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
   const [showSchedule, setShowSchedule] = useState(false)
   const [showProducts, setShowProducts] = useState(false)
 
+  // Una planta nueva arranca con el setup de la ultima (ubicacion, sustrato, macetas); los litros
+  // los define el usuario en Ajustes
+  const lastSetup = initialValues ? {} : readLastSetup()
   const [values, setValues] = useState<PlantFormValues>({
     name: '',
     cropType: 'cannabis',
@@ -184,6 +211,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     availableProducts: undefined,
     customProducts: [],
     notes: '',
+    ...lastSetup,
     ...initialValues,
   })
   const isCannabis = values.cropType === 'cannabis'
@@ -224,6 +252,8 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     if (!preset) return
     setValues((v) => ({
       ...v,
+      // nombre sugerido (editable): no pisa uno escrito por el usuario
+      name: !v.name.trim() || STRAIN_PRESETS.some((p) => p.name === v.name) ? preset.name : v.name,
       genetics: preset.genetics,
       geneticType: preset.geneticType,
       autoFlowerTotalDays: preset.autoFlowerTotalDays ?? v.autoFlowerTotalDays,
@@ -236,6 +266,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     }))
     setErrors((e) => {
       const next = { ...e }
+      delete next.name
       delete next.genetics
       delete next.floraDays
       delete next.autoFloraStartDay
@@ -389,8 +420,13 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
     if (step < 3 && isStepValid()) {
       setStep((s) => s + 1)
     } else if (step === 3) {
-      onSubmit(normalizeFormValuesForSubmit(values))
+      submitNow()
     }
+  }
+
+  function submitNow() {
+    if (!initialValues) saveLastSetup(values)
+    onSubmit(normalizeFormValuesForSubmit(values))
   }
 
   // ─── Paso 1: Identificación ──────────────────────────────────────────────
@@ -412,6 +448,26 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             </p>
           )}
         </div>
+
+        {isCannabis && (
+          <div>
+            <label htmlFor="strain-preset" className={labelClass}>Variedad del catálogo (opcional)</label>
+            <select
+              id="strain-preset"
+              defaultValue=""
+              onChange={(e) => applyPreset(e.target.value)}
+              className={fieldClass}
+            >
+              <option value="">Elegir y precargar datos...</option>
+              {STRAIN_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}{p.breeder ? ` (${p.breeder})` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ink-4 mt-2">Precarga nombre, genética, ciclo y notas de cuidado. Todo se puede editar.</p>
+          </div>
+        )}
 
         <div>
           <label className={labelClass}>Nombre de la planta *</label>
@@ -437,26 +493,6 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             </p>
           )}
         </div>
-
-        {isCannabis && (
-          <div>
-            <label htmlFor="strain-preset" className={labelClass}>Variedad del catálogo (opcional)</label>
-            <select
-              id="strain-preset"
-              defaultValue=""
-              onChange={(e) => applyPreset(e.target.value)}
-              className={fieldClass}
-            >
-              <option value="">Elegir y precargar datos...</option>
-              {STRAIN_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}{p.breeder ? ` (${p.breeder})` : ''}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-ink-4 mt-2">Precarga genética, tipo y duración del ciclo. Todo se puede editar.</p>
-          </div>
-        )}
 
         <div>
           <label className={labelClass}>{isCannabis ? 'Genética *' : 'Variedad *'}</label>
@@ -1105,6 +1141,16 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
               <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Volver
+          </button>
+        )}
+        {step === 2 && (
+          <button
+            type="button"
+            disabled={!isStepValid() || loading}
+            onClick={submitNow}
+            className="shrink-0 text-sm font-bold text-brand-400 px-3 tap-highlight-none disabled:opacity-40"
+          >
+            Omitir nutrición y {submitLabel ? 'guardar' : 'crear'}
           </button>
         )}
         <Button

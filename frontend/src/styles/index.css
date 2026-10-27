@@ -57,22 +57,22 @@
   .dark {
     color-scheme: dark;
 
-    --brand-400: #52CC64;
-    --brand-subtle: #0D2010;
-    --brand-border: #1A3D1E;
+    --brand-400: #5CC76C;
+    --brand-subtle: #0F1D11;
+    --brand-border: #1E3A21;
     --brand-dim: rgba(82, 204, 100, 0.12);
 
-    --app-bg: #0C1410;
-    --app-card: #131D14;
-    --app-elevated: #192318;
-    --app-overlay: rgba(12, 20, 16, 0.92);
-    --app-border: #1C2E1E;
-    --app-border-strong: #274529;
+    --app-bg: #0D110C;
+    --app-card: #141A12;
+    --app-elevated: #1A2118;
+    --app-overlay: rgba(13, 17, 12, 0.92);
+    --app-border: #232C1F;
+    --app-border-strong: #31402B;
 
-    --ink-1: #E4F2E7;
-    --ink-2: #B5CFB8;
-    --ink-3: #728C74;
-    --ink-4: #3A5040;
+    --ink-1: #ECF0E6;
+    --ink-2: #BBC9B3;
+    --ink-3: #82957A;
+    --ink-4: #4D5E47;
 
     --flora-bg: #261500;
     --flora-text: #FF9B30;
@@ -106,7 +106,7 @@
   html { overflow-x: hidden; }
 
   html, body, #root {
-    font-family: Inter, system-ui, sans-serif;
+    font-family: 'Inter Variable', Inter, system-ui, sans-serif;
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -120,16 +120,33 @@
   /* Profundidad organica — da algo que los paneles glass puedan difuminar */
   body {
     background-image:
-      radial-gradient(ellipse 90% 60% at 10% 0%,   rgba(58,175,74,0.18)  0%, transparent 60%),
-      radial-gradient(ellipse 70% 80% at 90% 100%, rgba(58,175,74,0.12)  0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 50% 55%,  rgba(120,230,130,0.08) 0%, transparent 65%);
+      radial-gradient(ellipse 80% 45% at 10% 0%,   rgba(58,175,74,0.12)  0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 95% 100%, rgba(217,180,91,0.10) 0%, transparent 60%);
+  }
+
+  /* Grano de papel: textura sutil que quita lo "plano de app" */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .light body::after, :root:not(.dark) body::after { opacity: 0.06; filter: invert(1); }
+
+  /* Titulos con serif suave: la voz propia de la app (el cuerpo sigue en Inter).
+     El peso se fija: font-black (900) en una serif queda pesado. */
+  h1, h2, h3 {
+    font-family: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
   }
   .dark body {
     background-image:
-      radial-gradient(ellipse 90% 60% at 10% 0%,   rgba(82,204,100,0.40) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 80% at 90% 100%, rgba(58,175,74,0.30)  0%, transparent 55%),
-      radial-gradient(ellipse 50% 40% at 50% 55%,  rgba(120,230,130,0.20) 0%, transparent 65%),
-      radial-gradient(ellipse 30% 25% at 80% 20%,  rgba(100,220,110,0.15) 0%, transparent 60%);
+      radial-gradient(ellipse 80% 45% at 10% 0%,   rgba(92,199,108,0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 95% 100%, rgba(217,180,91,0.06) 0%, transparent 60%);
   }
 
   input, textarea, select {

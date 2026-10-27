@@ -50,7 +50,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Georgia', 'serif'],
       },
       borderRadius: {
         '2xl': '1rem',

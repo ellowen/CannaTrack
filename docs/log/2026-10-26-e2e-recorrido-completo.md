@@ -94,3 +94,16 @@ Una planta con fecha de inicio futura ("se siembra el 1/12") se veia como `V-4 D
 - El detalle muestra g, g por dia de cultivo (siembra -> cierre) y g por litro de maceta (suma de macetas).
 - Comparacion con la ficha: SOLO Auto Strawberry Soda, la unica cuya pagina da cifra por planta (20-75 g outdoor). Las demas dan g/m2, que no se compara con una planta suelta, asi que muestran el peso sin veredicto. El match es por genetica del catalogo (la planta no guarda el id de la variedad); si la planta se edita a otra genetica, deja de compararse.
 - Tests: 5 unit (`harvest-stats`), el spec de strains verifica que `yieldGPerPlant` coincida con la ficha, y `e2e/harvest-weight.spec.ts` (4).
+
+## Novena tanda (2026-10-27): rediseno de la webapp (fase 1)
+Pedido: vistas mas user-friendly, rapidas, con menos vueltas, y un estilo propio sin ser agresivo.
+
+**Identidad visual.** Tipografia: titulos (h1-h3) en Fraunces (serif suave, peso fijo 600), cuerpo en Inter; ambas autoalojadas con `@fontsource-variable` (funcionan offline y se sacaron los links a Google Fonts). Paleta oscura mas calida y menos neon (fondo `#0D110C`, tinta crema-verdosa), brillos de fondo reducidos a menos de la mitad (antes 0.40 de verde), un toque dorado en la esquina, y grano de papel sutil sobre todo el fondo.
+
+**Menos toques.**
+- Home agrupa lo pendiente POR PLANTA (`components/tasks/PlantTaskGroup.tsx`): la planta se nombra una vez, cada tarea es una fila con check de un toque (completa sin abrir la hoja), tocar la fila abre el detalle (receta con dosis por litros, EC/pH, notas, cancelar/mover) y "Todo" resuelve la planta entera. Antes eran 2 toques por tarea (Hecho + Confirmar) y la planta se repetia en cada tarjeta: 10 tareas ocupaban ~5 pantallas, ahora ~2.
+- Alta de planta: el catalogo va primero, elegir una variedad sugiere tambien el nombre (no pisa uno escrito a mano), la planta nueva arranca con ubicacion/sustrato/cantidad de macetas de la ultima (los litros siguen saliendo de Ajustes), y el paso 2 tiene "Omitir nutricion y crear" (de 3 pantallas a 2).
+
+**Elemento propio:** tira de ciclo (`CycleStrip`, `getCycleStrip`): una marca por semana del ciclo completo, verde en vegetativo y ambar en floracion, la actual resaltada. Esta en las tarjetas del listado.
+
+Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3); los tests que buscaban "Hecho" en Home ahora usan "ver detalle". Un test de Ajustes encontro un conflicto real: recordar los litros de la ultima planta pisaba el valor por defecto de Ajustes (ya no se recuerdan).

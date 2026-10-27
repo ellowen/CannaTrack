@@ -17,6 +17,7 @@ import { LogoMark } from '@/components/ui'
 import { completeTaskInSupabase, uncompleteTaskInSupabase } from '@/lib/sync'
 import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
+import PlantTaskGroup from '@/components/tasks/PlantTaskGroup'
 import { useTranslation } from '@/i18n'
 import { isCannabisPlant } from '@/types/plant'
 import type { ScheduledTask } from '@/types/plant'
@@ -166,9 +167,30 @@ export default function Home() {
     return plants.find((p) => p.id === plantId)
   }
 
+  /** Agrupa lo pendiente por planta (orden de primera aparicion). */
+  const pendingByPlant = useMemo(() => {
+    const groups = new Map<string, ScheduledTask[]>()
+    for (const t of pending) groups.set(t.plantId, [...(groups.get(t.plantId) ?? []), t])
+    return [...groups].map(([plantId, tasks]) => ({ plantId, tasks }))
+  }, [pending])
+
+  /** Completa sin abrir la hoja (check de la fila o "Todo" de la planta). */
+  function handleQuickComplete(tasks: ScheduledTask[]) {
+    hapticSuccess()
+    const ids = tasks.map((t) => t.id)
+    setCompletingIds((prev) => new Set([...prev, ...ids]))
+    setTimeout(() => {
+      void completeMany(ids)
+      setCompletingIds((prev) => { const s = new Set(prev); ids.forEach((id) => s.delete(id)); return s })
+    }, 240)
+  }
+
   async function handleCompleteAll() {
     hapticSuccess()
-    const ids = pending.map((t) => t.id)
+    await completeMany(pending.map((t) => t.id))
+  }
+
+  async function completeMany(ids: string[]) {
     ids.forEach((id) => completeTask(id))
     let hadError = false
     const rewards = await Promise.all(ids.map((id) => completeTaskInSupabase(id).catch(() => { hadError = true; return null })))
@@ -439,88 +461,35 @@ export default function Home() {
 
           {/* Lista de tareas */}
           <div className="bg-app-card rounded-3xl border border-app-border overflow-hidden">
-            {pending.map((task, i) => {
-              const plant     = getPlant(task.plantId)
+            {pendingByPlant.map(({ plantId, tasks }, i) => {
+              const plant = getPlant(plantId)
               const plantIsCannabis = plant ? isCannabisPlant(plant) : true
               const floraStart = plant ? getFloraStart(plant) : undefined
-              const isFlora   = plant ? getActiveCycle(plant, today) === 'flora' : false
-              const phaseDay  = plant
+              const isFlora = plant ? getActiveCycle(plant, today) === 'flora' : false
+              const phaseDay = plant
                 ? (isFlora && floraStart
                     ? differenceInDays(today, floraStart) + 1
                     : differenceInDays(today, plant.startDate) + 1)
                 : 0
-              const weekNum   = Math.ceil(phaseDay / 7)
-              const typeColor = TYPE_COLOR[task.type] ?? '#52CC64'
-              const phaseColor = isFlora ? '#F59E0B' : '#52CC64'
-
+              const phaseLabel = plant
+                ? `${plantIsCannabis ? `${isFlora ? 'Flora' : 'Vege'} S${Math.ceil(phaseDay / 7)} · ` : ''}D${phaseDay}`
+                : ''
               return (
-                <div key={task.id} className={`${i > 0 ? 'border-t border-app-border' : ''}${completingIds.has(task.id) ? ' task-completing' : ''}`}>
-                  <div className="flex">
-                    {/* Left accent — fase */}
-                    <div className="w-1 shrink-0 rounded-l-none" style={{ backgroundColor: phaseColor, opacity: 0.8 }} />
-
-                    <div className="flex-1 px-4 py-3 min-w-0">
-                      {/* Planta — prominente */}
-                      <div className="flex items-center justify-between gap-3 mb-1.5">
-                        <button
-                          onClick={() => { hapticLight(); navigate(`/plants/${task.plantId}`) }}
-                          className="flex-1 flex items-center text-left tap-highlight-none min-w-0 min-h-[40px] -my-2 py-2"
-                        >
-                          <p className="text-base font-black text-ink-1 leading-tight truncate">
-                            {plant?.name ?? '—'}
-                          </p>
-                        </button>
-                        <button
-                          onClick={() => handleComplete(task)}
-                          className="shrink-0 text-sm font-black text-brand-400 bg-brand-subtle border border-brand-border px-4 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
-                        >
-                          ✓ Hecho
-                        </button>
-                      </div>
-
-                      {/* Tipo + fase */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <TaskIcon type={task.type} size="sm" />
-                        <span className="text-sm font-bold" style={{ color: typeColor }}>{TYPE_LABEL[task.type]}</span>
-                        <span className="w-1 h-1 rounded-full bg-ink-4 shrink-0" />
-                        <span className="text-xs text-ink-3">
-                          {plantIsCannabis ? `${isFlora ? 'Flora' : 'Vege'} S${weekNum} · ` : ''}D{phaseDay}
-                        </span>
-                      </div>
-
-                      {/* EC / pH chips */}
-                      {(task.ecMin != null || task.phMin != null) && (
-                        <div className="flex gap-2 mb-2">
-                          {task.ecMin != null && (
-                            <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-brand-subtle border border-brand-border text-brand-400">
-                              EC {task.ecMin}{task.ecMax && task.ecMax !== task.ecMin ? `-${task.ecMax}` : ''}
-                            </span>
-                          )}
-                          {task.phMin != null && (
-                            <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                              pH {task.phMin}{task.phMax && task.phMax !== task.phMin ? `-${task.phMax}` : ''}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Productos */}
-                      {task.products && task.products.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {task.products.slice(0, 3).map((prod, pi) => (
-                            <span key={pi} className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-app-elevated border border-app-border text-ink-3">
-                              {prod.name}{prod.minDose != null ? ` ${prod.minDose}${prod.maxDose && prod.maxDose !== prod.minDose ? `-${prod.maxDose}` : ''}${prod.unit ?? 'ml'}/L` : ''}
-                            </span>
-                          ))}
-                          {task.products.length > 3 && (
-                            <span className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-app-elevated border border-app-border text-ink-4">
-                              +{task.products.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div key={plantId} className={i > 0 ? 'border-t border-app-border' : ''}>
+                  <PlantTaskGroup
+                    plant={plant}
+                    tasks={tasks}
+                    phaseLabel={phaseLabel}
+                    isFlora={isFlora}
+                    completingIds={completingIds}
+                    onOpen={handleComplete}
+                    onQuickComplete={(task) => handleQuickComplete([task])}
+                    onCompleteAll={handleQuickComplete}
+                    onOpenPlant={() => { hapticLight(); navigate(`/plants/${plantId}`) }}
+                    renderIcon={(type) => <TaskIcon type={type} size="sm" />}
+                    typeLabel={TYPE_LABEL}
+                    typeColor={TYPE_COLOR}
+                  />
                 </div>
               )
             })}

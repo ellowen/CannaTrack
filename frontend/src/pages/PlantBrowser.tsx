@@ -9,6 +9,7 @@ import { hasProAccess } from '@/lib/plan'
 import { useSubscription } from '@/hooks/useSubscription'
 import type { Plant } from '@/types/plant'
 import { useTranslation } from '@/i18n'
+import CycleStrip from '@/components/plant/CycleStrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { daysUntilSowing, getActiveCycle, getFloraStart, isPlanned } from '@/lib/flora-cycle'
 import { getEstimatedHarvestDate } from '@/lib/nutrition-utils'
@@ -81,6 +82,8 @@ function ActivePlantCard({ plant, pendingCount, t }: { plant: Plant; pendingCoun
             {label}
           </span>
         </div>
+
+        <CycleStrip plant={plant} />
 
         {/* Stats row */}
         <div className="flex items-center gap-3">
