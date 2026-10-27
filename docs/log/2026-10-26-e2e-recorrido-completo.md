@@ -132,3 +132,9 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 
 ## Catorceava tanda (2026-10-27): landing
 - La landing tenia su propia identidad (negro verdoso `#050E07`, verde `#3DCC63`, Inter 900, texto en degradado y un boton que pulsaba sin parar). Ahora usa la paleta de la app (`#0D110C`, `#5CC76C`), titulos en serif (Fraunces), segunda linea del hero en verde plano, y los botones con una sombra suave fija (sube un poco al pasar el mouse) en vez de la animacion de pulso. La tipografia del cuerpo no cargaba Inter autoalojada (caia a la del sistema); ahora si. Textos y estructura sin cambios.
+
+## Quinceava tanda (2026-10-27): detalle de planta en tabs
+- El detalle tenia ~15 secciones en una sola columna. Ahora el hero queda fijo y debajo hay tres tabs: **Hoy** (alerta de floracion, semana, tareas vencidas y del dia, anillo de progreso/salud, proximas; con el numero de pendientes), **Seguimiento** (mediciones EC/pH, tareas canceladas, diario) y **Ficha** (chips de fotoperiodo/sustrato, notas, iniciar floracion, Descartar/Cosechar/Editar, peso cosechado, reactivar).
+- Abre en "Hoy" para plantas activas y en "Ficha" para cosechadas/descartadas. La ultima tab se recuerda por planta (`localStorage`, clave `cultitrack-plant-tab-<id>`; si no hay storage, no se recuerda).
+- Perfil ya tenia tabs (Stats, Logros, Cuenta): no se toco.
+- Tests: 43 E2E se adaptaron (el contenido paso a otra tab; helper `plantTab` en `e2e/helpers/journey.ts`) y hay un spec nuevo, `plant-tabs.spec.ts`. Un test de peso cosechado leia la base sin esperar la sincronizacion (flake latente): ahora usa `expect.poll`.

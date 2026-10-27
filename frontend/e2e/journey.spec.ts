@@ -4,7 +4,7 @@ import { es } from 'date-fns/locale'
 import { blockSupabase, seedApp, gotoApp } from './helpers/seed'
 import { installFakeBackend, dbPlants, dbTasks } from './helpers/fakeBackend'
 import { STRAINS } from './fixtures/strains'
-import { POT_LITERS, createPlantViaUi, localDaysAgo, presetLabel } from './helpers/journey'
+import { POT_LITERS, createPlantViaUi, localDaysAgo, presetLabel, plantTab } from './helpers/journey'
 
 /**
  * Recorrido de punta a punta con las 6 variedades reales, como las va a
@@ -106,6 +106,7 @@ test.describe('Recorrido completo: las 6 variedades reales (usuario Pro simulado
           await expect(page.getByText(expected).first()).toBeVisible()
         } else {
           await expect(page.getByText('Cosecha est.')).not.toBeVisible()
+          await plantTab(page, 'Ficha')
           await expect(page.getByRole('button', { name: /Iniciar floraci/i })).toBeVisible()
         }
       }

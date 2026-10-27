@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { plantTab } from './helpers/journey'
 import { seedApp, blockSupabase, gotoApp, getXpAwardedCalls } from './helpers/seed'
 
 test.beforeEach(async ({ context }) => {
@@ -33,6 +34,7 @@ test.describe('Detalle de planta: badges y features', () => {
   test('indoor + hidro en vege: 18/6, Hidro y callout de reservorio', async ({ page, context }) => {
     await seedApp(page, context, { plants: [{ id: 'p1', location: 'indoor', growMedium: 'hydro' }] })
     await gotoApp(page, '/plants/p1')
+    await plantTab(page, 'Ficha')
     await expect(page.getByText('18/6')).toBeVisible()
     await expect(page.getByText('Hidro')).toBeVisible()
     await expect(page.getByText(/reservorio/i)).toBeVisible()
@@ -41,6 +43,7 @@ test.describe('Detalle de planta: badges y features', () => {
   test('indoor en flora: badge 12/12', async ({ page, context }) => {
     await seedApp(page, context, { plants: [{ id: 'p2', location: 'indoor', growMedium: 'coco', daysAgo: 70, floraDaysAgo: 10 }] })
     await gotoApp(page, '/plants/p2')
+    await plantTab(page, 'Ficha')
     await expect(page.getByText('12/12')).toBeVisible()
     await expect(page.getByText('Coco')).toBeVisible()
   })
@@ -110,6 +113,7 @@ test.describe('Gates del plan Free vs Pro', () => {
   test('free: subir fotos bloqueado en galeria y Fotos', async ({ page, context }) => {
     await seedApp(page, context, { plan: 'free', plants: [{ id: 'p1' }] })
     await gotoApp(page, '/plants/p1')
+    await plantTab(page, 'Seguimiento')
     await expect(page.getByText(/Fotos del cultivo — Plan Pro/).first()).toBeVisible()
     await gotoApp(page, '/diagnose')
     await expect(page.getByText(/Plan Pro/).first()).toBeVisible()
@@ -187,6 +191,7 @@ test.describe('Crear planta (formulario completo)', () => {
 
     // Detalle: nombre + badges de la config elegida
     await expect(page.getByText('Mi Planta E2E')).toBeVisible({ timeout: 10_000 })
+    await plantTab(page, 'Ficha')
     await expect(page.getByText('Hidro')).toBeVisible()
     await expect(page.getByText('18/6')).toBeVisible()
   })
@@ -212,6 +217,7 @@ test.describe('CRUD completo de plantas (update / lifecycle)', () => {
 
     // Verificar que persistio en el detalle
     await expect(page.getByText('Nombre Editado E2E')).toBeVisible({ timeout: 10_000 })
+    await plantTab(page, 'Ficha')
     await expect(page.getByText('Hidro')).toBeVisible()
     await expect(page.getByText('Nombre Original')).not.toBeVisible()
   })
@@ -223,6 +229,7 @@ test.describe('CRUD completo de plantas (update / lifecycle)', () => {
     // Boton "Zona de peligro": icono + label + hint son 3 spans dentro del
     // mismo <button>, el nombre accesible concatena los 3 (no es "Cosechar"
     // exacto) — por eso el match es sin anclar, igual que el de Descartar.
+    await plantTab(page, 'Ficha')
     await page.getByRole('button', { name: /Cosechar/i }).click()
     await page.getByRole('button', { name: /Confirmar cosecha/i }).click()
     // El flujo navega a Home
@@ -234,6 +241,7 @@ test.describe('CRUD completo de plantas (update / lifecycle)', () => {
   test('descartar planta: confirma el dialogo nativo y la saca de la lista', async ({ page, context }) => {
     await seedApp(page, context, { plants: [{ id: 'p1', name: 'Para Descartar' }] })
     await gotoApp(page, '/plants/p1')
+    await plantTab(page, 'Ficha')
     page.once('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: /Descartar/i }).click()
     await expect(page).toHaveURL(/\/$/, { timeout: 10_000 })

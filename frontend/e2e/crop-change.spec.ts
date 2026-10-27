@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { plantTab } from './helpers/journey'
 import { seedApp, blockSupabase, gotoApp } from './helpers/seed'
 
 /**
@@ -85,7 +86,9 @@ test('Cannabis -> Tomate: fecha de inicio no cambia, Cosechar y Salud quedan vis
   // Sin floraStartDate (nunca tuvo fase de flora), un cultivo no-cannabis
   // igual debe poder cosecharse y mostrar su salud -- regresion del bug
   // donde isCannabisPlant() se chequeaba inconsistentemente en PlantDetail.
+  await plantTab(page, 'Ficha')
   await expect(page.getByRole('button', { name: /Cosechar/i })).toBeVisible({ timeout: 10_000 })
+  await plantTab(page, 'Hoy')
   await expect(page.getByText('Salud')).toBeVisible()
   // Sin badge de fotoperiodo (18/6, 12/12): eso es exclusivo de cannabis indoor.
   await expect(page.getByText('18/6')).not.toBeVisible()
@@ -121,5 +124,6 @@ test('Tomate -> Cannabis: no arrastra un genetica cannabis inventada, pide datos
   // De vuelta a cannabis: el badge de fotoperiodo cannabis-only reaparece
   // (planta indoor por defecto en el seed). Locator especifico al badge
   // (no al texto de ayuda "Cambia a ciclo 12/12..." del CTA de floracion).
+  await plantTab(page, 'Ficha')
   await expect(page.getByText('☀️ 18/6', { exact: true })).toBeVisible({ timeout: 10_000 })
 })

@@ -3,7 +3,7 @@ import { addDays } from 'date-fns'
 import { blockSupabase, seedApp, gotoApp } from './helpers/seed'
 import { installFakeBackend, getFakeBackend, dbTasks, setOffline } from './helpers/fakeBackend'
 import { STRAIN_BY_SLUG } from './fixtures/strains'
-import { createPlantViaUi, localISO } from './helpers/journey'
+import { createPlantViaUi, localISO, plantTab } from './helpers/journey'
 
 /**
  * Cancelar, restaurar y mover tareas (p.ej. un riego que no hace falta porque llovio).
@@ -52,6 +52,7 @@ test.describe('Cancelar una tarea', () => {
 
     // detalle: el boton del riego ya no esta y aparece en "Canceladas" con su motivo
     await expect(page.getByRole('button', { name: /Riego completado/ })).toHaveCount(0)
+    await plantTab(page, 'Seguimiento')
     const canceladas = page.getByTestId('skipped-tasks')
     await expect(canceladas).toContainText('Canceladas · 1')
     await expect(canceladas).toContainText('Llovió')
@@ -86,12 +87,14 @@ test.describe('Cancelar una tarea', () => {
     await openRiegoSheet(page)
     await page.getByRole('button', { name: '🌧️ Cancelar tarea' }).click()
     await page.getByRole('button', { name: 'Confirmar cancelación' }).click()
+    await plantTab(page, 'Seguimiento')
     await expect(page.getByTestId('skipped-tasks')).toBeVisible()
 
     await page.getByRole('button', { name: /Restaurar Riego/ }).click()
     await expect.poll(() => dbTasks(context).find((t) => t.id === riego.id)!.skipped).toBe(false)
     expect(dbTasks(context).find((t) => t.id === riego.id)!.skip_reason ?? null).toBeNull()
     await expect(page.getByTestId('skipped-tasks')).toHaveCount(0)
+    await plantTab(page, 'Hoy')
     await expect(page.getByRole('button', { name: /Riego completado/ })).toBeVisible()
 
     await gotoApp(page, '/')
@@ -173,6 +176,7 @@ test.describe('Sin conexion', () => {
     await page.getByRole('button', { name: '🌧️ Cancelar tarea' }).click()
     await page.getByRole('button', { name: 'Llovió', exact: true }).click()
     await page.getByRole('button', { name: 'Confirmar cancelación' }).click()
+    await plantTab(page, 'Seguimiento')
     await expect(page.getByTestId('skipped-tasks')).toContainText('Llovió')
     expect(dbTasks(context).find((t) => t.id === riego.id)!.skipped).toBe(false)
 

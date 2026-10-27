@@ -27,6 +27,25 @@ import { formatDateOnly } from '@/lib/date-utils'
 import { daysUntilSowing, getVegeDays, isPlanned, vegeWeekCount } from '@/lib/flora-cycle'
 import { useTaskActions } from '@/hooks/useTaskActions'
 
+type PlantTab = 'hoy' | 'seg' | 'ficha'
+
+const TABS: { key: PlantTab; label: string }[] = [
+  { key: 'hoy', label: 'Hoy' },
+  { key: 'seg', label: 'Seguimiento' },
+  { key: 'ficha', label: 'Ficha' },
+]
+
+const tabKey = (id?: string) => `cultitrack-plant-tab-${id}`
+
+function readTab(id?: string): PlantTab | null {
+  try {
+    const v = localStorage.getItem(tabKey(id))
+    return v === 'hoy' || v === 'seg' || v === 'ficha' ? v : null
+  } catch {
+    return null
+  }
+}
+
 export default function PlantDetail() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
@@ -39,6 +58,7 @@ export default function PlantDetail() {
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
   const [weightInput, setWeightInput] = useState<string | null>(null) // null = no se esta editando
   const [selectedDay, setSelectedDay] = useState<Date>(new Date())
+  const [tabState, setTabState] = useState<PlantTab | null>(() => readTab(id))
   const { tasks, todayTasks, upcomingTasks, overdueTasks, skippedTasks, uncompleteTask } = useTasks(id)
   const taskActions = useTaskActions()
   const { getTableById } = useNutritionTable()
@@ -69,6 +89,13 @@ export default function PlantDetail() {
   const cycleProgress = getCycleProgress(plant, today)
   const isFlora = currentWeek?.cycle === 'flora'
   const plantIsCannabis = isCannabisPlant(plant)
+
+  // Sin tab guardada: las plantas activas abren en "Hoy"; las cosechadas o descartadas, en "Ficha"
+  const tab: PlantTab = tabState ?? (plant.status === 'active' ? 'hoy' : 'ficha')
+  const setTab = (next: PlantTab) => {
+    setTabState(next)
+    try { localStorage.setItem(tabKey(id), next) } catch { /* sin storage: la tab no se recuerda */ }
+  }
 
   const planned = isPlanned(plant, today)
   const sowingIn = daysUntilSowing(plant, today)
@@ -198,8 +225,31 @@ export default function PlantDetail() {
         </div>
       </div>
 
-      <div className="px-4 space-y-4 mt-4">
+      <div role="tablist" aria-label="Secciones de la planta" className="px-4 mt-3 flex gap-1 border-b border-app-border">
+        {TABS.map(({ key, label }) => {
+          const active = tab === key
+          const pending = key === 'hoy' && plant.status === 'active' ? overdueTasks.length + todayTasks.filter((x) => !x.completed).length : 0
+          return (
+            <button
+              key={key}
+              role="tab"
+              id={`plant-tab-${key}`}
+              aria-selected={active}
+              aria-controls="plant-tabpanel"
+              onClick={() => setTab(key)}
+              className={`relative flex-1 py-3 text-sm font-semibold tap-highlight-none transition-colors ${active ? 'text-ink-1' : 'text-ink-4 hover:text-ink-2'}`}
+            >
+              {label}
+              {pending > 0 && <span className="ml-1.5 text-[11px] font-bold text-brand-400 tabular">{pending}</span>}
+              {active && <span className="absolute left-3 right-3 -bottom-px h-0.5 rounded-full bg-brand-400" />}
+            </button>
+          )
+        })}
+      </div>
 
+      <div role="tabpanel" id="plant-tabpanel" aria-labelledby={`plant-tab-${tab}`} className="px-4 space-y-4 mt-4">
+
+        {tab === 'hoy' && (<>
         {/* Alerta floración */}
         {needsFlora && (
           <div className="bg-flora-bg rounded-2xl border border-flora-border p-4">
@@ -534,7 +584,9 @@ export default function PlantDetail() {
             </div>
           </div>
         )}
+        </>)}
 
+        {tab === 'seg' && (<>
         {/* Mediciones EC / pH */}
         <MeasurementSection
           plantId={plant.id}
@@ -543,7 +595,9 @@ export default function PlantDetail() {
           phMin={refTask?.phMin}
           phMax={refTask?.phMax}
         />
+        </>)}
 
+        {tab === 'ficha' && (<>
         {/* Badges: fotoperiodo (indoor, solo cannabis) + sustrato */}
         {((plant.location === 'indoor' && plantIsCannabis) || (plant.growMedium && plant.growMedium !== 'soil')) && (
           <div className="flex flex-wrap gap-2">
@@ -582,7 +636,9 @@ export default function PlantDetail() {
             <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
           </div>
         )}
+        </>)}
 
+        {tab === 'hoy' && (<>
         {/* Próximas */}
         {upcoming.length > 0 && (
           <section>
@@ -594,7 +650,9 @@ export default function PlantDetail() {
             </div>
           </section>
         )}
+        </>)}
 
+        {tab === 'seg' && (<>
         {/* Tareas canceladas: historial con su motivo y opcion de restaurar */}
         {skippedTasks.length > 0 && (
           <section data-testid="skipped-tasks">
@@ -625,10 +683,14 @@ export default function PlantDetail() {
             </div>
           </section>
         )}
+        </>)}
 
+        {tab === 'seg' && (<>
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={planned ? '' : cycleTag} />
+        </>)}
 
+        {tab === 'ficha' && (<>
         {/* Iniciar floracion — visible desde el primer dia de vege, solo cannabis */}
         {plantIsCannabis && !plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && !needsFlora && !floraPickerOpen && (
           <button
@@ -846,6 +908,7 @@ export default function PlantDetail() {
             📊 {table.name.split('—')[0].trim()} · {potLiters}L por maceta
           </p>
         )}
+        </>)}
       </div>
 
       {/* Sheet de completado con nota */}

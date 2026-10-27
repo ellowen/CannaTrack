@@ -2,7 +2,7 @@ import { test, expect, type Page, type BrowserContext } from '@playwright/test'
 import { blockSupabase, seedApp, gotoApp } from './helpers/seed'
 import { installFakeBackend, dbTasks, dbPlants } from './helpers/fakeBackend'
 import { STRAIN_BY_SLUG } from './fixtures/strains'
-import { createPlantViaUi } from './helpers/journey'
+import { createPlantViaUi, plantTab } from './helpers/journey'
 
 /**
  * Home y Calendario con plantas reales: Auto Strawberry Soda (hoy) y
@@ -103,6 +103,7 @@ test.describe('Home con las plantas reales', () => {
 
   test('historial: una planta cosechada aparece en el archivo de Home', async ({ page, context }) => {
     await page.getByRole('link', { name: new RegExp(SODA.name) }).first().click()
+    await plantTab(page, 'Ficha')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect(page).toHaveURL(/\/$/)

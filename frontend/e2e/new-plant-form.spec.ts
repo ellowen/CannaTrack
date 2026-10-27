@@ -1,4 +1,5 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { plantTab } from './helpers/journey'
 import { blockSupabase, seedApp, gotoApp } from './helpers/seed'
 import { installFakeBackend, dbPlants, dbTasks } from './helpers/fakeBackend'
 
@@ -117,6 +118,7 @@ test.describe('Formulario: opciones que quedan guardadas', () => {
       grow_medium: 'coco', pot_count: 4, pot_volume_liters: 7,
     })
     await expect(page.getByText('4 macetas · 7L')).toBeVisible()
+    await plantTab(page, 'Ficha')
     await expect(page.getByText('🥥 Coco')).toBeVisible()
   })
 
@@ -309,6 +311,7 @@ test.describe('Formulario: notas del catalogo', () => {
     await next(page).click()
     await page.getByRole('button', { name: /Crear planta/i }).click()
     await expect(page).toHaveURL(/\/plants\/(?!new)[^/]+$/, { timeout: 10_000 })
+    await plantTab(page, 'Ficha')
     await expect(page.getByText(/Mantener humedad < 50% en flora/)).toBeVisible()
   })
 

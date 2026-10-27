@@ -58,3 +58,8 @@ export async function createPlantViaUi(page: Page, s: StrainFixture, daysAgo: nu
   return new URL(page.url()).pathname.split('/').pop() as string
 }
 
+
+/** El detalle de planta organiza su contenido en tres tabs (Hoy, Seguimiento, Ficha). */
+export async function plantTab(page: Page, name: 'Hoy' | 'Seguimiento' | 'Ficha') {
+  await page.getByRole('tab', { name }).click()
+}
