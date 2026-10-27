@@ -1154,54 +1154,56 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       </div>
 
       {/* Navegación entre pasos */}
-      <div className={clsx('flex items-center gap-3 pt-8', step === 1 && !editing ? 'justify-end' : 'justify-between')}>
-        {step > 1 && (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            className="flex items-center gap-2 text-sm font-medium text-ink-2 hover:text-ink-1 tap-highlight-none transition-colors"
+      <div className="pt-8 space-y-3">
+        <div className={clsx('flex items-center gap-3', step === 1 && !editing ? 'justify-end' : 'justify-between')}>
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s - 1)}
+              className="flex items-center gap-2 text-sm font-medium text-ink-2 hover:text-ink-1 tap-highlight-none transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Volver
+            </button>
+          )}
+          {/* Edicion: guardar es la accion principal en cualquier paso; seguir es secundario */}
+          {editing && step < 3 && (
+            <button
+              type="submit"
+              className="shrink-0 text-sm font-semibold text-ink-2 hover:text-ink-1 px-3 tap-highlight-none transition-colors"
+            >
+              Continuar →
+            </button>
+          )}
+          <Button
+            type={editing && step < 3 ? 'button' : 'submit'}
+            onClick={editing && step < 3 ? submitNow : undefined}
+            size="lg"
+            disabled={!isStepValid() || loading}
+            className={clsx(step === 1 && !editing ? 'w-full' : 'flex-1')}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Volver
-          </button>
-        )}
+            {editing && step < 3 ? (loading ? 'Guardando...' : (submitLabel ?? 'Guardar')) : step < 3 ? (
+              <>
+                Continuar
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            ) : loading ? 'Guardando...' : (submitLabel ?? 'Crear planta')}
+          </Button>
+        </div>
         {step === 2 && !editing && (
           <button
             type="button"
             disabled={!isStepValid() || loading}
             onClick={submitNow}
-            className="shrink-0 text-sm font-bold text-brand-400 px-3 tap-highlight-none disabled:opacity-40"
+            className="block mx-auto text-sm font-bold text-brand-400 tap-highlight-none disabled:opacity-40"
           >
             Omitir nutrición y crear
           </button>
         )}
-        {/* Edicion: guardar es la accion principal en cualquier paso; seguir es secundario */}
-        {editing && step < 3 && (
-          <button
-            type="submit"
-            className="shrink-0 text-sm font-semibold text-ink-2 hover:text-ink-1 px-3 tap-highlight-none transition-colors"
-          >
-            Continuar →
-          </button>
-        )}
-        <Button
-          type={editing && step < 3 ? 'button' : 'submit'}
-          onClick={editing && step < 3 ? submitNow : undefined}
-          size="lg"
-          disabled={!isStepValid() || loading}
-          className={clsx(step === 1 && !editing ? 'w-full' : 'flex-1')}
-        >
-          {editing && step < 3 ? (loading ? 'Guardando...' : (submitLabel ?? 'Guardar')) : step < 3 ? (
-            <>
-              Continuar
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
-                <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </>
-          ) : loading ? 'Guardando...' : (submitLabel ?? 'Crear planta')}
-        </Button>
       </div>
     </form>
   )

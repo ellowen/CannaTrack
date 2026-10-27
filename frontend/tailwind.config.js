@@ -6,7 +6,8 @@ export default {
       colors: {
         // Tokens semánticos — cambian con el tema via CSS vars
         brand: {
-          400:    'var(--brand-400)',
+          // color-mix para que funcionen las variantes con opacidad (bg-brand-400/90): con un var() pelado Tailwind no genera la regla
+          400:    'color-mix(in srgb, var(--brand-400) calc(<alpha-value> * 100%), transparent)',
           subtle: 'var(--brand-subtle)',
           border: 'var(--brand-border)',
           dim:    'var(--brand-dim)',

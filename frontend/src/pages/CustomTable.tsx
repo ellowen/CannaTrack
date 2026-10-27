@@ -301,7 +301,7 @@ export default function CustomTable() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-ink-1 leading-tight">
+          <h1 className="text-2xl text-ink-1 leading-tight">
             {isEditing ? t('customTable.edit_title') : t('customTable.create_title')}
           </h1>
           <p className="text-xs text-ink-3 mt-0.5">
@@ -309,6 +309,25 @@ export default function CustomTable() {
           </p>
         </div>
       </div>
+
+      {/* Clonar (solo si no estamos editando) */}
+      {!isEditing && tables.length > 0 && (
+        <section className="bg-app-elevated rounded-2xl border border-app-border p-3.5">
+          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">{t('customTable.clone_shortcut')}</p>
+          <div className="flex flex-wrap gap-2">
+            {tables.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => cloneFrom(t.id)}
+                className="px-3 py-1.5 rounded-lg border border-app-border bg-app-card text-ink-2 text-xs font-medium tap-highlight-none active:scale-95 transition-all"
+              >
+                ↻ {t.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Nombre + notas */}
       <section className="space-y-3">
@@ -348,7 +367,7 @@ export default function CustomTable() {
                 className={clsx(
                   'px-3 py-1.5 rounded-lg border text-sm font-medium tap-highlight-none active:scale-95 transition-all',
                   checked
-                    ? 'bg-brand-400 text-white border-brand-400 shadow-glow-brand'
+                    ? 'bg-brand-400 text-white border-brand-400'
                     : 'bg-app-elevated text-ink-3 border-app-border',
                 )}
               >
@@ -358,25 +377,6 @@ export default function CustomTable() {
           })}
         </div>
       </section>
-
-      {/* Clonar (solo si no estamos editando) */}
-      {!isEditing && tables.length > 0 && (
-        <section className="bg-app-elevated rounded-2xl border border-app-border p-3.5">
-          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-2">{t('customTable.clone_shortcut')}</p>
-          <div className="flex flex-wrap gap-2">
-            {tables.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => cloneFrom(t.id)}
-                className="px-3 py-1.5 rounded-lg border border-app-border bg-app-card text-ink-2 text-xs font-medium tap-highlight-none active:scale-95 transition-all"
-              >
-                ↻ {t.name}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Líneas */}
       <section>
@@ -465,7 +465,7 @@ export default function CustomTable() {
       />
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl px-3.5 py-2.5 text-sm text-red-700 dark:text-red-400">
+        <div role="alert" className="bg-task-harvest/10 border border-task-harvest/30 rounded-xl px-3.5 py-2.5 text-sm text-task-harvest">
           {error}
         </div>
       )}
@@ -710,7 +710,7 @@ function WeekList({
                   <button
                     type="button"
                     onClick={() => onRemove(idx)}
-                    className="w-full py-2 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold tap-highlight-none active:scale-95"
+                    className="w-full py-2 rounded-lg border border-task-harvest/30 text-task-harvest text-xs font-semibold tap-highlight-none active:scale-95"
                   >
                     {t('customTable.delete_week')}
                   </button>
