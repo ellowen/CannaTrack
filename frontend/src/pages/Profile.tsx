@@ -137,34 +137,29 @@ export default function Profile() {
 
       {/* ─── HEADER ─── */}
       <div
-        className="px-4 pt-10 pb-5 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1A0A2E 0%, #0A1A0A 100%)' }}
+        className="px-4 pt-10 pb-5 relative overflow-hidden border-b border-app-border"
+        style={{ background: 'radial-gradient(ellipse 70% 80% at 100% 0%, rgba(217,164,65,0.18) 0%, transparent 70%), linear-gradient(180deg, var(--app-elevated) 0%, var(--app-bg) 100%)' }}
       >
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, #8B5CF6 0%, transparent 70%)' }}
-        />
-
         {/* Avatar + nombre + settings */}
         <div className="relative flex items-center gap-3 mb-4">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' }}
+            style={{ background: 'linear-gradient(135deg, #D9A441, #A97A25)' }}
           >
             {levelInfo.current.emoji}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-black text-white leading-tight truncate">{displayName}</h1>
-            <p className="text-xs font-semibold text-violet-300 mt-0.5">
+            <h1 className="text-xl text-ink-1 leading-tight truncate">{displayName}</h1>
+            <p className="text-xs font-semibold text-flora-text mt-0.5">
               Nivel {levelInfo.current.level} — {levelInfo.current.name}
             </p>
           </div>
           <Link
             to="/settings"
             aria-label="Ajustes"
-            className="shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center tap-highlight-none active:scale-95 transition-all"
+            className="shrink-0 w-10 h-10 rounded-full bg-app-card border border-app-border flex items-center justify-center tap-highlight-none active:scale-95 transition-all"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 text-white/60">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 text-ink-3">
               <circle cx={12} cy={12} r={3} />
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" />
             </svg>
@@ -174,19 +169,19 @@ export default function Profile() {
         {/* Barra XP */}
         <div className="relative mb-4">
           <div className="flex justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-white/60">{displayXP} XP</span>
+            <span className="text-[11px] font-bold text-ink-2">{displayXP} XP</span>
             {levelInfo.next && (
-              <span className="text-[11px] text-white/40">{levelInfo.next.xpRequired} XP</span>
+              <span className="text-[11px] text-ink-4">{levelInfo.next.xpRequired} XP</span>
             )}
           </div>
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-app-border overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${levelInfo.progressToNext * 100}%`, background: 'linear-gradient(90deg,#8B5CF6,#A78BFA)' }}
+              style={{ width: `${levelInfo.progressToNext * 100}%`, background: 'linear-gradient(90deg,#A97A25,#D9A441)' }}
             />
           </div>
           {levelInfo.next && (
-            <p className="text-[10px] text-white/35 mt-1">
+            <p className="text-[10px] text-ink-4 mt-1">
               {levelInfo.next.xpRequired - displayXP} XP para {levelInfo.next.name}
             </p>
           )}
@@ -203,12 +198,12 @@ export default function Profile() {
               key={label}
               className={clsx(
                 'rounded-xl p-2.5 text-center border',
-                hi ? 'bg-amber-500/20 border-amber-500/30' : 'bg-white/8 border-white/10'
+                hi ? 'bg-flora-bg border-flora-border' : 'bg-app-card border-app-border'
               )}
             >
               <p className="text-sm mb-0.5">{icon}</p>
-              <p className={clsx('text-lg font-black tabular leading-none', hi ? 'text-amber-400' : 'text-white')}>{value}</p>
-              <p className="text-[9px] text-white/40 font-semibold mt-0.5 leading-tight">{label}</p>
+              <p className={clsx('text-lg font-black tabular leading-none', hi ? 'text-flora-text' : 'text-ink-1')}>{value}</p>
+              <p className="text-[9px] text-ink-3 font-semibold mt-0.5 leading-tight">{label}</p>
             </div>
           ))}
         </div>
@@ -255,7 +250,7 @@ export default function Profile() {
                       <div
                         className={clsx(
                           'w-8 h-8 rounded-xl flex items-center justify-center text-base relative',
-                          isCurrentLevel ? 'bg-violet-500/20 ring-2 ring-violet-500'
+                          isCurrentLevel ? 'bg-flora-bg ring-2 ring-[#D9A441]'
                             : isPassed    ? 'bg-app-elevated'
                             : 'bg-app-elevated opacity-35'
                         )}
@@ -263,11 +258,11 @@ export default function Profile() {
                       >
                         {lvl.emoji}
                         {isCurrentLevel && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 border-2 border-app-card" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D9A441] border-2 border-app-card" />
                         )}
                       </div>
                       {i < LEVELS.length - 1 && (
-                        <div className={clsx('w-2.5 h-0.5 mx-0.5', isPassed && !isNext ? 'bg-violet-500' : 'bg-app-border')} />
+                        <div className={clsx('w-2.5 h-0.5 mx-0.5', isPassed && !isNext ? 'bg-[#D9A441]' : 'bg-app-border')} />
                       )}
                     </div>
                   )
@@ -342,7 +337,7 @@ export default function Profile() {
                         <p className="text-sm font-bold text-ink-1 truncate">{plant.name}</p>
                         <p className="text-xs text-ink-3 truncate">{plant.genetics}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold text-green-500">{rate}% cumplimiento</span>
+                          <span className="text-[10px] font-bold text-brand-400">{rate}% cumplimiento</span>
                           <span className="text-[10px] text-ink-4">· {format(new Date(plant.startDate), "d MMM yyyy", { locale: es })}</span>
                         </div>
                       </div>
@@ -366,7 +361,7 @@ export default function Profile() {
           <section>
             <div className="flex items-center justify-between mb-2.5">
               <h2 className="text-[10px] font-bold text-ink-4 uppercase tracking-widest">Desbloqueados</h2>
-              <span className="text-xs font-bold text-violet-500">{unlocked.length}/{unlocked.length + locked.length}</span>
+              <span className="text-xs font-bold text-flora-text">{unlocked.length}/{unlocked.length + locked.length}</span>
             </div>
             {unlocked.length === 0 ? (
               <div className="bg-app-card rounded-2xl border border-app-border p-6 text-center">
@@ -378,7 +373,7 @@ export default function Profile() {
                 {unlocked.map((a) => (
                   <div
                     key={a.id}
-                    className="bg-app-card rounded-2xl border border-violet-500/20 p-3 flex items-center gap-3"
+                    className="bg-app-card rounded-2xl border border-flora-border p-3 flex items-center gap-3"
                     style={{ boxShadow: '0 0 12px rgba(139,92,246,0.08)' }}
                   >
                     <span className="text-2xl shrink-0">{a.emoji}</span>

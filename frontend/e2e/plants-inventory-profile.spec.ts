@@ -128,6 +128,30 @@ test.describe('Inventario (historial)', () => {
   })
 })
 
+test.describe('Inventario: ciclo y peso', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+    await createPlantViaUi(page, SODA, 3)
+    await gotoApp(page, '/inventory')
+  })
+
+  test('una auto que todavia no florece no muestra dias de flora negativos', async ({ page }) => {
+    await expect(page.getByText(/Ciclo:\s*3d vege$/)).toBeVisible()
+    await expect(page.getByText(/-\d+d flora/)).toHaveCount(0)
+  })
+
+  test('una planta cosechada con peso lo muestra en su tarjeta', async ({ page, context }) => {
+    await page.getByRole('button', { name: 'Ver detalles →' }).first().click()
+    await page.getByRole('button', { name: /Cosechar/ }).first().click()
+    await page.getByLabel(/Peso cosechado/).fill('45')
+    await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
+    await expect.poll(() => dbPlants(context).find((p) => p.status === 'harvested')?.harvest_weight_g).toBe(45)
+    await gotoApp(page, '/inventory')
+    await page.getByRole('button', { name: 'Cosechadas' }).click()
+    await expect(page.getByText('45 g cosechados')).toBeVisible()
+  })
+})
+
 test.describe('Perfil', () => {
   test.beforeEach(async ({ page, context }) => {
     await setup(page, context)

@@ -56,7 +56,7 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 function weekLabelColor(label: string): string {
-  return label.toUpperCase().includes('F') ? '#F59E0B' : '#52CC64'
+  return label.toUpperCase().includes('F') ? '#D9A441' : '#5CC76C'
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -257,11 +257,9 @@ export default function Diagnose() {
     <div className="px-4 pt-8 pb-10 space-y-5">
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
-        <h1 className="text-2xl font-black text-ink-1 leading-tight">Diario visual</h1>
-        <span className="ml-auto text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-subtle border border-brand-border text-brand-400 tracking-wider">
-          FOTOS
-        </span>
+      <div className="mb-1">
+        <h1 className="text-2xl text-ink-1 leading-tight">Diario visual</h1>
+        <p className="text-xs text-ink-3 mt-1">Una foto por semana alcanza para ver cómo evoluciona cada planta.</p>
       </div>
 
       {/* Plant selector pills */}
@@ -273,7 +271,7 @@ export default function Diagnose() {
             className={clsx(
               'shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all tap-highlight-none active:scale-[0.96]',
               selectedPlantId === p.id
-                ? 'bg-brand-400 border-brand-400 text-white shadow-glow-brand'
+                ? 'bg-brand-400 border-brand-400 text-white'
                 : 'bg-app-card border-app-border text-ink-2'
             )}
           >
@@ -284,10 +282,10 @@ export default function Diagnose() {
 
       {/* Upload row — solo Pro */}
       {!isPro ? (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex items-center gap-3">
+        <div className="rounded-2xl border border-flora-border bg-flora-bg px-4 py-3 flex items-center gap-3">
           <span className="text-xl shrink-0">🔒</span>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-amber-400">Fotos del cultivo — Plan Pro</p>
+            <p className="text-xs font-bold text-flora-text">Fotos del cultivo — Plan Pro</p>
             <p className="text-xs text-ink-3 mt-0.5">Actualizate a Pro para subir fotos desde la camara o galeria.</p>
           </div>
         </div>
@@ -301,7 +299,7 @@ export default function Diagnose() {
           {uploading ? (
             <div className="w-4 h-4 rounded-full border-2 border-brand-400 border-t-transparent animate-spin" />
           ) : (
-            <span className="text-xl">📷</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-brand-400"><path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3L14.5 4z"/><circle cx="12" cy="13" r="3.5"/></svg>
           )}
           Camara
         </button>
@@ -311,7 +309,7 @@ export default function Diagnose() {
           disabled={uploading}
           className="flex items-center justify-center gap-2 glass-card rounded-2xl py-3.5 font-bold text-sm text-ink-2 active:scale-[0.97] transition-all tap-highlight-none disabled:opacity-50"
         >
-          <span className="text-xl">🖼️</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-brand-400"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           Galeria
         </button>
 
@@ -362,23 +360,23 @@ export default function Diagnose() {
       <div className="space-y-3 pt-1">
         <button
           onClick={() => setShowDiagnosis(v => !v)}
-          className="w-full rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4 flex items-center gap-3 tap-highlight-none active:scale-[0.98] transition-all"
+          className="w-full rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-center gap-3 tap-highlight-none active:scale-[0.98] transition-all"
         >
-          <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-xl shrink-0">
             🤖
           </div>
           <div className="flex-1 text-left min-w-0">
-            <p className="font-black text-sm text-violet-300">Diagnostico por IA</p>
-            <p className="text-xs text-violet-600 mt-0.5">Detecta plagas, deficiencias y hongos</p>
+            <p className="font-black text-sm text-amber-300">Diagnostico por IA</p>
+            <p className="text-xs text-amber-600 mt-0.5">Detecta plagas, deficiencias y hongos</p>
           </div>
           {!isPro && (
-            <span className="text-[10px] font-black px-2 py-1 rounded-full bg-violet-500/15 border border-violet-400/30 text-violet-300 shrink-0">
+            <span className="text-[10px] font-black px-2 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 shrink-0">
               PRO
             </span>
           )}
           <svg
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-            className={clsx('w-4 h-4 text-violet-400 transition-transform shrink-0', showDiagnosis && 'rotate-90')}
+            className={clsx('w-4 h-4 text-amber-400 transition-transform shrink-0', showDiagnosis && 'rotate-90')}
           >
             <path d="M9 18l6-6-6-6" strokeLinecap="round" />
           </svg>
@@ -389,9 +387,9 @@ export default function Diagnose() {
 
             {/* Pro gate */}
             {!isPro && (
-              <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 text-center">
-                <p className="text-sm font-bold text-violet-300 mb-1">Funcion Pro</p>
-                <p className="text-xs text-violet-500 leading-relaxed">
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
+                <p className="text-sm font-bold text-amber-300 mb-1">Funcion Pro</p>
+                <p className="text-xs text-amber-500 leading-relaxed">
                   Activa el plan Pro para diagnosticar plagas, deficiencias y enfermedades con IA.
                 </p>
               </div>
@@ -432,7 +430,7 @@ export default function Diagnose() {
               className={clsx(
                 'w-full py-4 rounded-2xl font-black text-sm transition-all tap-highlight-none active:scale-[0.98]',
                 diagFile && !diagLoading && !isAtLimit
-                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/30'
+                  ? 'bg-brand-400 text-white'
                   : 'bg-app-card border border-app-border text-ink-4 cursor-not-allowed'
               )}
             >
