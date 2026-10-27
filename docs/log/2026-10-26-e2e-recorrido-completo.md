@@ -119,3 +119,9 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - **Perfil:** el encabezado era violeta con blancos fijos, lo unico violeta de la app. Ahora usa el hero sobrio (resplandor dorado), el dorado como identidad de nivel/XP (avatar, barra, camino del cultivador, logros) y tokens de tinta en vez de blanco fijo.
 - **Fotos:** sin la etiqueta "FOTOS", con una linea de ayuda, botones Camara/Galeria con iconos de linea en vez de emojis, selector sin brillo, y la seccion de IA (apagada por flag) en dorado en vez de violeta.
 - Tests: 2 E2E nuevos de inventario (dias de flora nunca negativos; peso en la tarjeta).
+
+## Doceava tanda (2026-10-27): Ajustes, login y filtro por tipo
+- **Login / registro / recuperar contrasena:** usaban una paleta propia (negro puro, verdes de Tailwind, boton verde con texto NEGRO de bajo contraste, y el registro con un emoji en vez del logo). Ahora comparten fondo y tokens del resto de la app, el mismo encabezado (logo + nombre en serif + subtitulo), campos `rounded-2xl` y el boton principal en verde de marca con texto blanco. Funcionan en tema claro y oscuro.
+- **Ajustes:** habia DOS campos de nombre (uno con su Guardar propio y otro dentro de "Tu perfil") que escribian lo mismo; ahora es uno solo, con el volumen de maceta y un unico "Guardar cambios". Orden por uso: perfil, plan, apariencia (tema e idioma en una tarjeta), notificaciones, tablas, herramientas, acerca de y zona de peligro. Plan en dorado apagado (el chip PRO era un blanco claro sobre fondo oscuro).
+- **Mis plantas: filtro por tipo** (pedido del usuario): segunda fila "Todos los tipos / Autoflorecientes N / Feminizadas N / Regulares N". Se combina con el estado (activas, flora, cosechadas...) y la busqueda; los numeros cuentan dentro del estado elegido; solo se muestra si hay mas de un tipo para separar.
+- Tests: 2 E2E del filtro; los de Ajustes se adaptaron al guardado unico.

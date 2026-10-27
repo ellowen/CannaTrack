@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { humanizeAuthError } from '@/lib/auth'
+import { LogoMark } from '@/components/ui'
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -65,13 +66,15 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-app-bg px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/landing" className="inline-block mb-3 text-5xl">🌿</Link>
-          <h1 className="text-3xl font-bold text-green-100 mb-1">CultiTrack</h1>
-          <p className="text-neutral-500">Crea tu cuenta gratis</p>
+          <Link to="/landing" className="inline-block mb-4">
+            <LogoMark size={64} />
+          </Link>
+          <h1 className="text-3xl text-ink-1">CultiTrack</h1>
+          <p className="text-sm text-ink-3 mt-1">Crea tu cuenta gratis</p>
         </div>
 
         {/* Error */}
@@ -85,7 +88,7 @@ export default function SignUp() {
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-ink-1 mb-2">
               Nombre
             </label>
             <input
@@ -95,13 +98,13 @@ export default function SignUp() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Tu nombre"
               required
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+              className="w-full px-4 py-3 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-ink-1 mb-2">
               Email
             </label>
             <input
@@ -111,13 +114,13 @@ export default function SignUp() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre@ejemplo.com"
               required
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+              className="w-full px-4 py-3 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-ink-1 mb-2">
               Contraseña
             </label>
             <div className="relative">
@@ -128,13 +131,13 @@ export default function SignUp() {
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 pr-12 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+                className="w-full px-4 py-3 pr-12 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -151,7 +154,7 @@ export default function SignUp() {
               </button>
             </div>
             {password && (
-              <p className={`text-xs mt-2 ${passwordStrength.strength === 'strong' ? 'text-green-500' : 'text-neutral-500'}`}>
+              <p className={`text-xs mt-2 ${passwordStrength.strength === 'strong' ? 'text-brand-400' : 'text-ink-3'}`}>
                 {passwordStrength.message}
               </p>
             )}
@@ -159,7 +162,7 @@ export default function SignUp() {
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink-1 mb-2">
               Confirmar contraseña
             </label>
             <div className="relative">
@@ -170,13 +173,13 @@ export default function SignUp() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 pr-12 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+                className="w-full px-4 py-3 pr-12 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -201,18 +204,18 @@ export default function SignUp() {
           <button
             type="submit"
             disabled={loading || !isFormValid}
-            className="w-full py-3 bg-green-600 hover:bg-green-500 text-neutral-950 font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-brand-400 hover:brightness-110 text-white font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta →'}
           </button>
 
-          <p className="text-center text-neutral-500 text-xs mt-3 leading-relaxed">
+          <p className="text-center text-ink-3 text-xs mt-3 leading-relaxed">
             Al crear una cuenta aceptás nuestros{' '}
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-brand-400 underline">
               Términos
             </a>{' '}
             y nuestra{' '}
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-brand-400 underline">
               Política de Privacidad
             </a>.
           </p>
@@ -220,15 +223,15 @@ export default function SignUp() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-neutral-800" />
-          <span className="text-neutral-600 text-xs">o</span>
-          <div className="flex-1 h-px bg-neutral-800" />
+          <div className="flex-1 h-px bg-app-border" />
+          <span className="text-ink-4 text-xs">o</span>
+          <div className="flex-1 h-px bg-app-border" />
         </div>
 
         {/* Google */}
         <button
           onClick={signInWithGoogle}
-          className="w-full flex items-center justify-center gap-3 py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-green-100 font-medium transition"
+          className="w-full flex items-center justify-center gap-3 py-3 bg-app-card hover:bg-app-elevated border border-app-border rounded-2xl text-ink-1 font-medium transition"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -240,11 +243,11 @@ export default function SignUp() {
         </button>
 
         {/* Login Link */}
-        <p className="text-center text-neutral-500 text-sm mt-5">
+        <p className="text-center text-ink-3 text-sm mt-5">
           Ya tenes cuenta?{' '}
           <button
             onClick={() => navigate('/login')}
-            className="text-green-600 hover:text-green-500 font-medium"
+            className="text-brand-400 font-medium"
           >
             Ingresa
           </button>

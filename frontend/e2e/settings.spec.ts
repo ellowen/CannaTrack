@@ -50,7 +50,7 @@ test.describe('Ajustes', () => {
 
   test('nombre de usuario: no se puede guardar vacio ni pasar de 30 caracteres; se guarda en el servidor', async ({ page, context }) => {
     const input = page.getByPlaceholder('Tu nombre...')
-    const save = page.getByRole('button', { name: 'Guardar', exact: true })
+    const save = page.getByRole('button', { name: 'Guardar cambios' })
 
     await input.fill('')
     await expect(save).toBeDisabled()
@@ -61,7 +61,7 @@ test.describe('Ajustes', () => {
     await input.fill('Luca Grower')
     await expect(save).toBeEnabled()
     await save.click()
-    await expect(page.getByRole('button', { name: '✓', exact: true })).toBeVisible()
+    await expect(page.getByText('✓ Guardado')).toBeVisible()
     await expect.poll(() => dbProfile(context).username).toBe('Luca Grower')
 
     // navegacion interna (sin recargar): el perfil ya muestra el nombre nuevo
@@ -70,7 +70,7 @@ test.describe('Ajustes', () => {
   })
 
   test('perfil: nombre y volumen por defecto se guardan y se usan al crear una planta', async ({ page, context }) => {
-    const nameField = page.locator('label:has-text("Nombre") + input').last()
+    const nameField = page.getByLabel('Nombre')
     await nameField.fill('Cultivador Pro')
     await page.locator('input[type="number"]').first().fill('15')
     await page.getByRole('button', { name: 'Guardar cambios' }).click()

@@ -34,7 +34,7 @@ export default function ForgotPassword() {
           <Link to="/landing" className="mb-4">
             <LogoMark size={64} />
           </Link>
-          <h1 className="text-xl font-black text-ink-1">CultiTrack</h1>
+          <h1 className="text-3xl text-ink-1">CultiTrack</h1>
           <p className="text-sm text-ink-3 mt-1">Recuperar contraseña</p>
         </div>
 

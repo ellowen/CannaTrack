@@ -16,6 +16,7 @@ import { getEstimatedHarvestDate } from '@/lib/nutrition-utils'
 
 const FREE_PLANT_LIMIT = 1
 
+type TypeFilter = 'todos' | 'autoflower' | 'feminized' | 'regular'
 type Filter = 'todas' | 'activas' | 'vege' | 'flora' | 'cosechadas' | 'descartadas'
 
 function currentWeek(plant: Plant): { label: string; num: number } {
@@ -163,6 +164,7 @@ export default function PlantBrowser() {
 
   const [filter, setFilter]   = useState<Filter>('activas')
   const [search, setSearch]   = useState('')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('todos')
 
   // Pending tasks per plant (today, not completed)
   const pendingByPlant = useMemo(() => {
@@ -188,13 +190,29 @@ export default function PlantBrowser() {
     descartadas: plants.filter(p => p.status === 'discarded').length,
   }), [plants])
 
+  // Plantas del estado elegido (activas, flora, cosechadas...), antes de filtrar por tipo
+  const byStatus = useMemo(() => {
+    if (filter === 'activas')     return plants.filter(p => p.status === 'active')
+    if (filter === 'vege')        return plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'vege')
+    if (filter === 'flora')       return plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'flora')
+    if (filter === 'cosechadas')  return plants.filter(p => p.status === 'harvested')
+    if (filter === 'descartadas') return plants.filter(p => p.status === 'discarded')
+    return plants
+  }, [plants, filter])
+
+  // Cuantas hay de cada tipo dentro del estado elegido: los numeros coinciden con lo que se ve al tocar
+  const typeCounts = useMemo(() => ({
+    todos:      byStatus.length,
+    autoflower: byStatus.filter(p => p.geneticType === 'autoflower').length,
+    feminized:  byStatus.filter(p => p.geneticType === 'feminized').length,
+    regular:    byStatus.filter(p => p.geneticType === 'regular').length,
+  }), [byStatus])
+
+  // si el tipo elegido ya no tiene plantas en este estado, se muestran todas (y el chip vuelve a "todos")
+  const typeApplied: TypeFilter = typeFilter !== 'todos' && typeCounts[typeFilter] === 0 ? 'todos' : typeFilter
+
   const filtered = useMemo(() => {
-    let result = plants
-    if (filter === 'activas')     result = plants.filter(p => p.status === 'active')
-    if (filter === 'vege')        result = plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'vege')
-    if (filter === 'flora')       result = plants.filter(p => p.status === 'active' && getActiveCycle(p, new Date()) === 'flora')
-    if (filter === 'cosechadas')  result = plants.filter(p => p.status === 'harvested')
-    if (filter === 'descartadas') result = plants.filter(p => p.status === 'discarded')
+    let result = typeApplied === 'todos' ? byStatus : byStatus.filter(p => p.geneticType === typeApplied)
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -205,7 +223,7 @@ export default function PlantBrowser() {
     }
 
     return [...result].sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
-  }, [plants, filter, search])
+  }, [byStatus, typeApplied, search])
 
   const PILLS: { key: Filter; label: string }[] = [
     { key: 'todas',       label: t('plants.filter_all') },
@@ -217,6 +235,15 @@ export default function PlantBrowser() {
   ]
 
   const activeFilter = ['activas', 'vege', 'flora'].includes(filter)
+
+  const TYPE_PILLS: { key: TypeFilter; label: string }[] = [
+    { key: 'todos',      label: 'Todos los tipos' },
+    { key: 'autoflower', label: 'Autoflorecientes' },
+    { key: 'feminized',  label: 'Feminizadas' },
+    { key: 'regular',    label: 'Regulares' },
+  ]
+  // solo se ofrece el filtro si hay mas de un tipo para separar
+  const showTypeFilter = (['autoflower', 'feminized', 'regular'] as const).filter(k => typeCounts[k] > 0).length > 1
 
   return (
     <div className="min-h-screen bg-app-bg">
@@ -305,6 +332,31 @@ export default function PlantBrowser() {
             )
           })}
         </div>
+
+        {/* Tipo de genetica: solo si hay mas de uno para separar */}
+        {showTypeFilter && (
+          <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto scrollbar-hide" role="group" aria-label="Filtrar por tipo">
+            {TYPE_PILLS.filter(({ key }) => key === 'todos' || typeCounts[key] > 0).map(({ key, label }) => {
+              const active = typeApplied === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTypeFilter(key)}
+                  aria-pressed={active}
+                  className={clsx(
+                    'shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border transition-all tap-highlight-none active:scale-95',
+                    active
+                      ? 'bg-flora-bg border-flora-border text-flora-text'
+                      : 'bg-transparent border-app-border text-ink-3'
+                  )}
+                >
+                  {label}
+                  {key !== 'todos' && <span className="tabular opacity-70">{typeCounts[key]}</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Content */}

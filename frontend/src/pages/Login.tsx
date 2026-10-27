@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { humanizeAuthError } from '@/lib/auth'
-import { LogoFull } from '@/components/ui'
+import { LogoMark } from '@/components/ui'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -39,14 +39,15 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-app-bg px-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="flex flex-col items-center mb-8">
-          <Link to="/landing">
-            <LogoFull iconSize={72} dark showTagline className="mb-4" />
+        <div className="flex flex-col items-center mb-8 text-center">
+          <Link to="/landing" className="mb-4">
+            <LogoMark size={64} />
           </Link>
-          <p className="text-sm text-neutral-500">Ingresa a tu cuenta</p>
+          <h1 className="text-3xl text-ink-1">CultiTrack</h1>
+          <p className="text-sm text-ink-3 mt-1">Ingresa a tu cuenta</p>
         </div>
 
         {/* Error */}
@@ -59,7 +60,7 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-ink-1 mb-2">
               Email
             </label>
             <input
@@ -69,12 +70,12 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre@ejemplo.com"
               required
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+              className="w-full px-4 py-3 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-green-100 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-ink-1 mb-2">
               Contraseña
             </label>
             <div className="relative">
@@ -85,13 +86,13 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 pr-12 bg-neutral-900 border border-neutral-800 rounded-lg text-green-100 placeholder-neutral-600 focus:outline-none focus:border-green-600"
+                className="w-full px-4 py-3 pr-12 bg-app-card border border-app-border rounded-lg text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -108,7 +109,7 @@ export default function Login() {
               </button>
             </div>
             <p className="text-right mt-2">
-              <Link to="/forgot-password" className="text-xs text-green-400 font-semibold">
+              <Link to="/forgot-password" className="text-xs text-brand-400 font-semibold">
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
@@ -117,7 +118,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || !email || !password}
-            className="w-full py-3 bg-green-600 hover:bg-green-500 text-neutral-950 font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-brand-400 hover:brightness-110 text-white font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Ingresando...' : 'Ingresar →'}
           </button>
@@ -125,15 +126,15 @@ export default function Login() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-neutral-800" />
-          <span className="text-neutral-600 text-xs">o</span>
-          <div className="flex-1 h-px bg-neutral-800" />
+          <div className="flex-1 h-px bg-app-border" />
+          <span className="text-ink-4 text-xs">o</span>
+          <div className="flex-1 h-px bg-app-border" />
         </div>
 
         {/* Google */}
         <button
           onClick={signInWithGoogle}
-          className="w-full flex items-center justify-center gap-3 py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-green-100 font-medium transition"
+          className="w-full flex items-center justify-center gap-3 py-3 bg-app-card hover:bg-app-elevated border border-app-border rounded-2xl text-ink-1 font-medium transition"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -145,11 +146,11 @@ export default function Login() {
         </button>
 
         {/* Sign Up Link */}
-        <p className="text-center text-neutral-500 text-sm mt-5">
+        <p className="text-center text-ink-3 text-sm mt-5">
           No tenes cuenta?{' '}
           <Link
             to="/signup"
-            className="text-green-600 hover:text-green-500 font-medium"
+            className="text-brand-400 font-medium"
           >
             Registrate
           </Link>

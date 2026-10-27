@@ -45,7 +45,6 @@ export default function Settings() {
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [usernameInput, setUsernameInput] = useState('')
   const [usernameSaving, setUsernameSaving] = useState(false)
-  const [usernameSaved, setUsernameSaved] = useState(false)
   const [usernameError, setUsernameError] = useState('')
 
   useEffect(() => {
@@ -66,7 +65,6 @@ export default function Settings() {
     if (!confirm(`¿Eliminar la tabla "${tableName}"? No se puede deshacer.`)) return
     removeTable(tableId)
   }
-  const [nameInput, setNameInput] = useState(name)
   const [volumeInput, setVolumeInput] = useState(potVolumeLiters)
   const [saved, setSaved] = useState(false)
   const [regenDone, setRegenDone] = useState(false)
@@ -127,84 +125,67 @@ export default function Settings() {
     }
   }
 
-  async function handleSaveUsername() {
+  async function handleSave() {
     const trimmed = usernameInput.trim()
     if (!trimmed) { setUsernameError(t('settings.username_empty_error')); return }
     if (trimmed.length > 30) { setUsernameError(t('settings.username_max_error')); return }
-    if (!user) return
-    setUsernameSaving(true)
     setUsernameError('')
-    const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
-    if (error) { setUsernameError(t('settings.username_save_error')); setUsernameSaving(false); return }
+    setUsernameSaving(true)
+    setPotVolume(Number(volumeInput) || 11)
+    // El nombre vive en profiles.username: sin guardarlo ahi se pierde en el proximo
+    // reload (AuthContext.loadUserData pisa userStore.name con el del servidor).
+    if (user) {
+      const { error } = await supabase.from('profiles').update({ username: trimmed }).eq('id', user.id)
+      if (error) { setUsernameError(t('settings.username_save_error')); setUsernameSaving(false); return }
+    }
     setName(trimmed)
     setUsernameSaving(false)
-    setUsernameSaved(true)
-    setTimeout(() => setUsernameSaved(false), 2000)
-  }
-
-  async function handleSave() {
-    const trimmedName = nameInput.trim() || 'Cultivador'
-    setName(trimmedName)
-    setPotVolume(Number(volumeInput) || 11)
-    // Sin esto, el nombre guardado aca se pierde en el proximo reload: al
-    // reautenticar, AuthContext pisa userStore.name con profiles.username
-    // del servidor (ver AuthContext.loadUserData -> setUser). El builder de
-    // supabase-js es "lazy" (thenable): sin await, el fetch nunca se dispara.
-    if (user) await supabase.from('profiles').update({ username: trimmedName }).eq('id', user.id)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   return (
     <div className="px-4 pt-8 pb-4 space-y-6">
-      <h1 className="text-2xl font-black text-ink-1">Ajustes ⚙️</h1>
+      <h1 className="text-2xl text-ink-1">Ajustes</h1>
 
-      {/* Apariencia */}
+      {/* Perfil */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</p>
-        <div className="glass-card rounded-2xl p-4">
-          <p className="text-sm font-semibold text-ink-2 mb-3">{t('settings.tema_label')}</p>
-          <div className="grid grid-cols-3 gap-2">
-            {themeOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setTheme(opt.value)}
-                className={clsx(
-                  'flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-semibold transition-all tap-highlight-none active:scale-95',
-                  theme === opt.value
-                    ? 'bg-brand-subtle border-brand-border text-brand-500'
-                    : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
-                )}
-              >
-                <span className="text-xl">{opt.icon}</span>
-                {opt.label}
-              </button>
-            ))}
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Tu perfil</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-4">
+          <div>
+            <label htmlFor="settings-name" className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
+              {t('settings.name_field')}
+            </label>
+            <input
+              id="settings-name"
+              type="text"
+              value={usernameInput}
+              onChange={(e) => { setUsernameInput(e.target.value); setUsernameError('') }}
+              maxLength={30}
+              autoCorrect="off"
+              placeholder={t('settings.username_placeholder')}
+              className={fieldClass}
+            />
+            {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
           </div>
-        </div>
-      </section>
-
-      {/* Idioma */}
-      <section>
-        <div className="glass-card rounded-2xl p-4">
-          <p className="text-sm font-semibold text-ink-2 mb-3">{t('settings.language_label')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => setLanguage(lang.code)}
-                className={clsx(
-                  'flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
-                  language === lang.code
-                    ? 'bg-brand-subtle border-brand-border text-brand-500'
-                    : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
-                )}
-              >
-                <span className="text-lg">{lang.flag}</span>
-                {lang.label}
-              </button>
-            ))}
+          <div>
+            <label htmlFor="settings-volume" className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
+              {t('settings.pot_volume_field')}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="settings-volume"
+                type="number" min={1} max={200} value={volumeInput}
+                onChange={(e) => setVolumeInput(Number(e.target.value))}
+                className={fieldClass}
+              />
+              <span className="text-sm font-semibold text-ink-3 shrink-0">L</span>
+            </div>
+            <p className="text-[11px] text-ink-4 mt-1.5">Litros por defecto al crear una planta nueva.</p>
           </div>
+          <Button className="w-full" onClick={handleSave} disabled={usernameSaving || usernameInput.trim() === ''} variant={saved ? 'secondary' : 'primary'}>
+            {saved ? `✓ ${t('settings.profile_saved')}` : t('settings.save_profile')}
+          </Button>
         </div>
       </section>
 
@@ -226,7 +207,7 @@ export default function Settings() {
               </p>
               {subscription.plan === 'trial' && subscription.trialEndsAt && (
                 <>
-                  <p className="text-xs text-amber-500 font-semibold mt-1">
+                  <p className="text-xs text-flora-text font-semibold mt-1">
                     {subscription.trialDaysLeft === 1
                       ? t('subscription.trial_last_day')
                       : t('subscription.trial_days_left', { days: subscription.trialDaysLeft })}
@@ -241,9 +222,9 @@ export default function Settings() {
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full border shrink-0 ${
               subscription.plan === 'pro'
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                ? 'bg-flora-bg text-flora-text border-flora-border'
                 : subscription.plan === 'trial'
-                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                  ? 'bg-flora-bg text-flora-text border-flora-border'
                   : 'bg-app-elevated text-ink-3 border-app-border'
             }`}>
               {subscription.plan === 'free' && 'FREE'}
@@ -254,7 +235,7 @@ export default function Settings() {
           {!hasProAccess(subscription.plan) && (
             <a
               href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
-              className="block text-center w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
+              className="block text-center w-full py-3 rounded-xl text-[#1A1306] font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all" style={{ background: 'linear-gradient(135deg, #E3B65A, #C99A3E)' }}
             >
               ⭐ {t('settings.upgrade_pro')}
             </a>
@@ -262,7 +243,7 @@ export default function Settings() {
           {subscription.plan === 'trial' && (
             <a
               href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
-              className="block text-center w-full py-3 rounded-xl border border-amber-500/30 text-amber-500 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all mt-2"
+              className="block text-center w-full py-3 rounded-xl border border-flora-border text-flora-text font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all mt-2"
             >
               {t('subscription.subscribe_cta')}
             </a>
@@ -270,63 +251,72 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Nombre de usuario */}
+      {/* Apariencia e idioma */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Nombre de usuario</p>
-        <div className="glass-card rounded-2xl p-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={usernameInput}
-              onChange={(e) => { setUsernameInput(e.target.value); setUsernameError('') }}
-              maxLength={30}
-              autoCorrect="off"
-              autoCapitalize="none"
-              placeholder={t('settings.username_placeholder')}
-              className={fieldClass + ' flex-1'}
-            />
-            <button
-              onClick={handleSaveUsername}
-              disabled={usernameSaving || usernameInput.trim() === ''}
-              className="shrink-0 text-sm font-bold px-4 py-3 rounded-xl transition-all tap-highlight-none active:scale-95 disabled:opacity-40"
-              style={usernameSaved
-                ? { background: 'var(--brand-subtle)', color: 'var(--brand-400)', border: '1px solid var(--brand-border)' }
-                : { background: '#52CC64', color: '#080E09' }
-              }
-            >
-              {usernameSaving ? '...' : usernameSaved ? '✓' : t('common.save')}
-            </button>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Apariencia</p>
+        <div className="glass-card rounded-2xl p-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-ink-2 mb-2">{t('settings.tema_label')}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {themeOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setTheme(opt.value)}
+                  className={clsx(
+                    'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-semibold transition-all tap-highlight-none active:scale-95',
+                    theme === opt.value
+                      ? 'bg-brand-subtle border-brand-border text-brand-400'
+                      : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
+                  )}
+                >
+                  <span>{opt.icon}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
-          {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
+          <div>
+            <p className="text-sm font-semibold text-ink-2 mb-2">{t('settings.language_label')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={clsx(
+                    'flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
+                    language === lang.code
+                      ? 'bg-brand-subtle border-brand-border text-brand-400'
+                      : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
+                  )}
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Perfil */}
+      {/* Notificaciones */}
       <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Tu perfil</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
-              {t('settings.name_field')} 👤
-            </label>
-            <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} className={fieldClass} />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-ink-2 mb-2 uppercase tracking-wide">
-              {t('settings.pot_volume_field')} 🪴
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number" min={1} max={200} value={volumeInput}
-                onChange={(e) => setVolumeInput(Number(e.target.value))}
-                className={fieldClass}
-              />
-              <span className="text-sm font-semibold text-ink-3 shrink-0">L</span>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Notificaciones</p>
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0 pr-4">
+              <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
+              <p className="text-xs text-ink-3 mt-0.5">
+                {notifBlocked
+                  ? t('settings.notif_blocked')
+                  : t('settings.notif_desc')}
+              </p>
             </div>
+            <Toggle
+              enabled={notificationsEnabled}
+              onChange={handleNotifToggle}
+              disabled={notifBlocked}
+            />
           </div>
-          <Button className="w-full" onClick={handleSave} variant={saved ? 'secondary' : 'primary'}>
-            {saved ? `✓ ${t('settings.profile_saved')}` : t('settings.save_profile')}
-          </Button>
         </div>
       </section>
 
@@ -392,45 +382,6 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Notificaciones */}
-      <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Notificaciones</p>
-        <div className="glass-card rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0 pr-4">
-              <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
-              <p className="text-xs text-ink-3 mt-0.5">
-                {notifBlocked
-                  ? t('settings.notif_blocked')
-                  : t('settings.notif_desc')}
-              </p>
-            </div>
-            <Toggle
-              enabled={notificationsEnabled}
-              onChange={handleNotifToggle}
-              disabled={notifBlocked}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Acerca de */}
-      <section>
-        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.about_section')}</p>
-        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
-          {[
-            [`🏷️ ${t('settings.version_label')}`, t('settings.version_value')],
-            ['🌿 Tabla nutricional', 'REVEGETAR v1'],
-            ['💾 Datos', 'Almacenados localmente'],
-          ].map(([label, value]) => (
-            <div key={label} className="flex justify-between items-center">
-              <span className="text-sm text-ink-3">{label}</span>
-              <span className="text-sm text-ink-2 font-semibold">{value}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Herramientas */}
       <section>
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.tools_section')}</p>
@@ -455,6 +406,23 @@ export default function Settings() {
               {regenDone ? '✓ Listo' : `↻ ${t('settings.regen_btn')}`}
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Acerca de */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.about_section')}</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
+          {[
+            [`🏷️ ${t('settings.version_label')}`, t('settings.version_value')],
+            ['🌿 Tabla nutricional', 'REVEGETAR v1'],
+            ['💾 Datos', 'Almacenados localmente'],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between items-center">
+              <span className="text-sm text-ink-3">{label}</span>
+              <span className="text-sm text-ink-2 font-semibold">{value}</span>
+            </div>
+          ))}
         </div>
       </section>
 

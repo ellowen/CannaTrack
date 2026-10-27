@@ -231,3 +231,38 @@ test.describe('Plan Free: limites', () => {
     await expect(page.getByRole('button', { name: 'Nueva planta' })).toBeVisible() // boton con candado
   })
 })
+
+test.describe('Listado: filtro por tipo de genetica', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+    await createPlantViaUi(page, SODA, 3) // autofloreciente
+    await createPlantViaUi(page, BLUE, 3) // feminizada
+    await gotoApp(page, '/plants')
+  })
+
+  test('separar autoflorecientes de feminizadas y volver a ver todas', async ({ page }) => {
+    await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
+    await expect(page.getByText(BLUE.name, { exact: true })).toBeVisible()
+
+    await page.getByRole('button', { name: /^Autoflorecientes 1$/ }).click()
+    await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
+    await expect(page.getByText(BLUE.name, { exact: true })).toHaveCount(0)
+
+    await page.getByRole('button', { name: /^Feminizadas 1$/ }).click()
+    await expect(page.getByText(BLUE.name, { exact: true })).toBeVisible()
+    await expect(page.getByText(SODA.name, { exact: true })).toHaveCount(0)
+
+    // no hay regulares: el chip no se ofrece
+    await expect(page.getByRole('button', { name: /Regulares/ })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Todos los tipos' }).click()
+    await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
+    await expect(page.getByText(BLUE.name, { exact: true })).toBeVisible()
+  })
+
+  test('el filtro de tipo solo aparece si hay mas de un tipo para separar en el estado elegido', async ({ page }) => {
+    await expect(page.getByRole('group', { name: 'Filtrar por tipo' })).toBeVisible()
+    await page.getByRole('button', { name: /^Cosechada/ }).click() // ninguna cosechada: nada que separar
+    await expect(page.getByRole('group', { name: 'Filtrar por tipo' })).toHaveCount(0)
+  })
+})
