@@ -198,3 +198,19 @@ describe('autofloreciente: ciclo activo sin floraStartDate', () => {
     expect(getActiveCycle(planta({ geneticType: 'feminized', floraStartDate: addDays(inicio, 50) }), hoy)).toBe('flora')
   })
 })
+
+describe('autofloreciente: el cronograma termina el dia de cosecha', () => {
+  it('con la floracion por defecto (56 dias) y cosecha al dia 75: nada despues de la cosecha', () => {
+    const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })
+    const tareas = generatePlantSchedule(p, REVEGETAR_TABLE)
+    const cosecha = tareas.find((t) => t.type === 'harvest')!
+    expect(cosecha.scheduledDate.getTime()).toBe(addDays(inicio, 75).getTime())
+    for (const t of tareas) expect(t.scheduledDate.getTime()).toBeLessThanOrEqual(cosecha.scheduledDate.getTime())
+  })
+
+  it('la tarea de cosecha lleva la semana de floracion real (dia 75 = semana 6 de flora), no la ultima de la tabla', () => {
+    const p = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })
+    const cosecha = generatePlantSchedule(p, REVEGETAR_TABLE).find((t) => t.type === 'harvest')!
+    expect(cosecha.week).toBe(6)
+  })
+})

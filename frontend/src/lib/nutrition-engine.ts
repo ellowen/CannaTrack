@@ -1,4 +1,4 @@
-import { addDays } from 'date-fns'
+import { addDays, differenceInDays } from 'date-fns'
 import type {
   Plant,
   NutritionTable,
@@ -240,6 +240,10 @@ export function generatePlantSchedule(
     const floraBase = inicioFlora
     const floraDays = getFloraDays(plant)
     const semanasFlora = scaleFloraWeeks(table.floraWeeks, floraDays)
+    const esAuto = plant.geneticType === 'autoflower'
+    const fechaCosecha = esAuto
+      ? addDays(inicioVege, plant.autoFlowerTotalDays ?? 75)
+      : addDays(floraBase, floraDays)
 
     for (const semana of semanasFlora) {
       const inicioSemana = addDays(floraBase, semana.dayStart)
@@ -248,14 +252,21 @@ export function generatePlantSchedule(
       tareas.push(...generarTareasSemana(plant, semana, inicioSemana, 'flora', limite))
     }
 
-    // Tarea de cosecha al final del ciclo
-    const ultimaSemana = semanasFlora[semanasFlora.length - 1]
-    const fechaCosecha =
-      plant.geneticType === 'autoflower'
-        ? addDays(inicioVege, plant.autoFlowerTotalDays ?? 75)
-        : addDays(floraBase, floraDays)
+    // Una auto se cosecha el dia indicado por autoFlowerTotalDays aunque su ciclo
+    // de floracion (56 dias por defecto) sea mas largo: nada se agenda despues.
+    if (esAuto) {
+      const delCiclo = tareas.filter((t) => t.scheduledDate < fechaCosecha)
+      tareas.length = 0
+      tareas.push(...delCiclo)
+    }
 
-    tareas.push(crearTareaCosecha(plant, ultimaSemana, fechaCosecha, 'flora'))
+    // Tarea de cosecha al final del ciclo, con la semana de floracion real en que cae
+    const ultimaSemana = semanasFlora[semanasFlora.length - 1]
+    const semanaCosecha = esAuto
+      ? { ...ultimaSemana, week: Math.max(1, Math.floor(differenceInDays(fechaCosecha, floraBase) / 7) + 1) }
+      : ultimaSemana
+
+    tareas.push(crearTareaCosecha(plant, semanaCosecha, fechaCosecha, 'flora'))
   }
 
   // Ordenar por fecha

@@ -263,6 +263,13 @@ export default function Dashboard() {
                 {pendingTasks.map((task) => {
                   const plant = plants.find((p) => p.id === task.plantId)
                   const timeRemaining = differenceInHours(new Date(task.scheduledDate), today)
+                  // vencida = dia anterior a hoy; una tarea de hoy no esta vencida
+                  const taskDay = new Date(task.scheduledDate)
+                  taskDay.setHours(0, 0, 0, 0)
+                  const startOfToday = new Date(today)
+                  startOfToday.setHours(0, 0, 0, 0)
+                  const isOverdue = taskDay.getTime() < startOfToday.getTime()
+                  const isToday = taskDay.getTime() === startOfToday.getTime()
 
                   return (
                     <Card
@@ -282,13 +289,16 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                      {timeRemaining > 0 && (
+                      {isOverdue && (
+                        <span className="text-xs text-red-500 font-bold">Vencida</span>
+                      )}
+                      {isToday && (
+                        <span className="text-xs text-brand-400 font-bold">Hoy</span>
+                      )}
+                      {!isOverdue && !isToday && timeRemaining > 0 && (
                         <span className="text-xs text-ink-4 font-medium tabular">
                           en {timeRemaining}h
                         </span>
-                      )}
-                      {timeRemaining <= 0 && (
-                        <span className="text-xs text-red-500 font-bold">Vencida</span>
                       )}
                     </Card>
                   )

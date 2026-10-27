@@ -189,10 +189,16 @@ describe('Autofloreciente', () => {
     // VEGE growth x2 + preflower x2 (con foliar): 5 tareas c/u = 20
     // FLORA stretch x2 (con foliar): 5 tareas c/u = 10
     // FLORA bulking x2 + ripening x2: 4 tareas c/u = 16
-    // FLORA flushing x2: 3 tareas c/u = 6
+    // FLORA flushing (semanas 7-8): empiezan los dias 77 y 84, DESPUES de la
+    //   cosecha (dia 75) -> una auto no agenda nada pasada su cosecha
     // Harvest: 1
-    // Total: 61
-    expect(tareas.length).toBe(61)
+    // Total: 55
+    expect(tareas.length).toBe(55)
+  })
+
+  it('ninguna tarea cae despues del dia de cosecha', () => {
+    const cosecha = tareas.find(t => t.type === 'harvest')!
+    for (const t of tareas) expect(t.scheduledDate.getTime()).toBeLessThanOrEqual(cosecha.scheduledDate.getTime())
   })
 
   it('fecha de cosecha = startDate + 75 días', () => {
