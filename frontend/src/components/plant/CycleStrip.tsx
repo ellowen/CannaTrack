@@ -1,8 +1,7 @@
 import { getCycleStrip } from '@/lib/flora-cycle'
-import type { Plant } from '@/types/plant'
 
 /** Una marca por semana del ciclo: verde = vegetativo, ambar = floracion; llenas las ya transcurridas. */
-export default function CycleStrip({ plant, className = '' }: { plant: Plant; className?: string }) {
+export default function CycleStrip({ plant, className = '' }: { plant: Parameters<typeof getCycleStrip>[0]; className?: string }) {
   const strip = getCycleStrip(plant)
   if (!strip) return null
   const total = strip.vegeWeeks + strip.floraWeeks
