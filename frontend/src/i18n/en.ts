@@ -530,7 +530,7 @@ const en: Translations = {
     faq_section:       'FAQ',
     faq_h2:            'Frequently asked questions',
     faq1_q:            'Do I need an account to get started?',
-    faq1_a:            'No. You can start for free without an account and your data is saved on your device. The account is optional and lets you sync across devices and back up to the cloud.',
+    faq1_a:            'You need a free account to save your plants: it takes under a minute. After that your data lives on your device, works offline and syncs to the cloud so you never lose it.',
     faq2_q:            'Does it work without an internet connection?',
     faq2_a:            'Yes. CultiTrack is offline-first: all your data lives on the device and works without internet. When you get connectivity back, it syncs automatically with the cloud.',
     faq3_q:            'Is it compatible with my nutrient table?',
