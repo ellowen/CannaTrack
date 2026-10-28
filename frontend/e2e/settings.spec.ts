@@ -43,7 +43,7 @@ test.describe('Ajustes', () => {
   })
 
   test('plan Pro: muestra el plan y no ofrece actualizar', async ({ page }) => {
-    await expect(page.getByText('⭐ Plan Pro')).toBeVisible()
+    await expect(page.getByText('Plan Pro', { exact: true })).toBeVisible()
     await expect(page.getByText('Plantas ilimitadas · Todas las tablas')).toBeVisible()
     await expect(page.getByRole('link', { name: /Actualizar a Pro/ })).not.toBeVisible()
   })
@@ -151,7 +151,7 @@ test.describe('Ajustes: plan Free', () => {
   test('muestra el plan Free y el boton para actualizar a Pro', async ({ page, context }) => {
     await setup(page, context, 'free')
     await gotoApp(page, '/settings')
-    await expect(page.getByText('🌱 Plan Free')).toBeVisible()
+    await expect(page.getByText('Plan Free', { exact: true })).toBeVisible()
     await expect(page.getByText('1 planta activa · Tabla REVEGETAR')).toBeVisible()
     await expect(page.getByRole('link', { name: /Actualizar a Pro/ })).toHaveAttribute('href', /^mailto:/)
   })

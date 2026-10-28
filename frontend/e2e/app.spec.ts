@@ -166,7 +166,7 @@ test.describe('Settings', () => {
   test('free: crear tabla custom bloqueado con lock Pro', async ({ page, context }) => {
     await seedApp(page, context, { plan: 'free' })
     await gotoApp(page, '/settings')
-    await expect(page.getByText(/🔒 Pro/)).toBeVisible()
+    await expect(page.getByTestId('tables-pro-lock')).toBeVisible()
   })
 })
 

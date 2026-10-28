@@ -8,11 +8,19 @@ import { usePlantStore } from '@/store/plantStore'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { getLevelInfo, getAchievements, LEVELS, type AchievementData } from '@/lib/gamification'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, updatePushReminderHour } from '@/lib/notifications'
-import { Toggle } from '@/components/ui'
+import { Toggle, Icon, TaskTypeIcon } from '@/components/ui'
 import { supabase } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSubscription } from '@/hooks/useSubscription'
 import { clsx } from 'clsx'
+import type { IconName } from '@/components/ui/Icon'
+
+// Icono por categoria de logro (en vez de un emoji distinto por cada uno)
+const ACH_ICON: Record<'consistencia' | 'cultivo' | 'conocimiento', IconName> = {
+  consistencia: 'flame',
+  cultivo: 'check',
+  conocimiento: 'flask',
+}
 
 const REMINDER_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 function fmtHour(h: number) {
@@ -143,10 +151,11 @@ export default function Profile() {
         {/* Avatar + nombre + settings */}
         <div className="relative flex items-center gap-3 mb-4">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center font-display text-3xl text-[#0D110C] shrink-0"
             style={{ background: 'linear-gradient(135deg, #D9A441, #A97A25)' }}
+            aria-label={`Nivel ${levelInfo.current.level}`}
           >
-            {levelInfo.current.emoji}
+            {levelInfo.current.level}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl text-ink-1 leading-tight truncate">{displayName}</h1>
@@ -190,9 +199,9 @@ export default function Profile() {
         {/* Quick stats */}
         <div className="relative grid grid-cols-3 gap-2">
           {[
-            { value: displayStreak,     label: displayStreak === 1 ? 'Dia racha' : 'Dias racha', icon: '🔥', hi: displayStreak >= 7 },
-            { value: displayBestStreak, label: 'Mejor racha',                                    icon: '⚡', hi: false },
-            { value: completedToday,    label: 'Hoy',                                             icon: '✅', hi: false },
+            { value: displayStreak,     label: displayStreak === 1 ? 'Dia racha' : 'Dias racha', icon: 'flame', hi: displayStreak >= 7 },
+            { value: displayBestStreak, label: 'Mejor racha',                                    icon: 'bolt', hi: false },
+            { value: completedToday,    label: 'Hoy',                                             icon: 'check', hi: false },
           ].map(({ value, label, icon, hi }) => (
             <div
               key={label}
@@ -201,7 +210,7 @@ export default function Profile() {
                 hi ? 'bg-flora-bg border-flora-border' : 'bg-app-card border-app-border'
               )}
             >
-              <p className="text-sm mb-0.5">{icon}</p>
+              <p className={clsx('flex justify-center mb-1', hi ? 'text-flora-text' : 'text-ink-3')}><Icon name={icon as IconName} className="w-4 h-4" /></p>
               <p className={clsx('text-lg font-black tabular leading-none', hi ? 'text-flora-text' : 'text-ink-1')}>{value}</p>
               <p className="text-[9px] text-ink-3 font-semibold mt-0.5 leading-tight">{label}</p>
             </div>
@@ -256,7 +265,7 @@ export default function Profile() {
                         )}
                         title={lvl.name}
                       >
-                        {lvl.emoji}
+                        <span className={clsx('text-xs font-bold tabular', isCurrentLevel ? 'text-flora-text' : 'text-ink-3')}>{lvl.level}</span>
                         {isCurrentLevel && (
                           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D9A441] border-2 border-app-card" />
                         )}
@@ -270,8 +279,8 @@ export default function Profile() {
               </div>
               <p className="text-[10px] text-ink-4 mt-2.5">
                 {levelInfo.next
-                  ? `${levelInfo.next.xpRequired - displayXP} XP para ${levelInfo.next.name} ${levelInfo.next.emoji}`
-                  : 'Nivel maximo alcanzado ⚡'}
+                  ? `${levelInfo.next.xpRequired - displayXP} XP para ${levelInfo.next.name}`
+                  : 'Nivel maximo alcanzado'}
               </p>
             </div>
           </section>
@@ -288,15 +297,15 @@ export default function Profile() {
             ) : (
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { icon: '✅', value: totalTasksCompleted,  label: 'Tareas completadas' },
-                  { icon: '🧪', value: measurementsCount,    label: 'Mediciones EC/pH' },
-                  { icon: '📸', value: totalPhotos,          label: 'Fotos en el diario' },
-                  { icon: '🌿', value: activePlantsCount,    label: 'Plantas activas' },
-                  { icon: '✂️', value: harvestedPlantsCount, label: 'Cosechas' },
-                  { icon: '💎', value: displayXP,            label: 'XP total' },
+                  { icon: <Icon name="check" className="w-5 h-5" />,  value: totalTasksCompleted,  label: 'Tareas completadas' },
+                  { icon: <Icon name="flask" className="w-5 h-5" />,  value: measurementsCount,    label: 'Mediciones EC/pH' },
+                  { icon: <Icon name="camera" className="w-5 h-5" />, value: totalPhotos,          label: 'Fotos en el diario' },
+                  { icon: <TaskTypeIcon type="nutrition" className="w-5 h-5" />, value: activePlantsCount, label: 'Plantas activas' },
+                  { icon: <TaskTypeIcon type="harvest" className="w-5 h-5" />,   value: harvestedPlantsCount, label: 'Cosechas' },
+                  { icon: <Icon name="gem" className="w-5 h-5" />,    value: displayXP,            label: 'XP total' },
                 ].map(({ icon, value, label }) => (
                   <div key={label} className="bg-app-card rounded-2xl border border-app-border p-3.5 flex items-center gap-3">
-                    <span className="text-xl shrink-0">{icon}</span>
+                    <span className="shrink-0 text-flora-text">{icon}</span>
                     <div className="min-w-0">
                       <p className="text-lg font-black text-ink-1 tabular leading-none">{value}</p>
                       <p className="text-[10px] text-ink-3 font-medium mt-0.5 leading-tight">{label}</p>
@@ -332,7 +341,7 @@ export default function Profile() {
                           style={{ backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                         />
                       )}
-                      <div className="relative shrink-0 w-10 h-10 rounded-xl bg-app-elevated flex items-center justify-center text-xl">✂️</div>
+                      <div className="relative shrink-0 w-10 h-10 rounded-xl bg-app-elevated flex items-center justify-center text-ink-3"><TaskTypeIcon type="harvest" className="w-5 h-5" /></div>
                       <div className="relative flex-1 min-w-0">
                         <p className="text-sm font-bold text-ink-1 truncate">{plant.name}</p>
                         <p className="text-xs text-ink-3 truncate">{plant.genetics}</p>
@@ -365,7 +374,7 @@ export default function Profile() {
             </div>
             {unlocked.length === 0 ? (
               <div className="bg-app-card rounded-2xl border border-app-border p-6 text-center">
-                <p className="text-3xl mb-2">🔒</p>
+                <p className="flex justify-center mb-2 text-ink-4"><Icon name="lock" className="w-7 h-7" /></p>
                 <p className="text-sm text-ink-3">Completa tu primera tarea para desbloquear logros</p>
               </div>
             ) : (
@@ -376,7 +385,7 @@ export default function Profile() {
                     className="bg-app-card rounded-2xl border border-flora-border p-3 flex items-center gap-3"
                     style={{ boxShadow: '0 0 12px rgba(139,92,246,0.08)' }}
                   >
-                    <span className="text-2xl shrink-0">{a.emoji}</span>
+                    <span className="shrink-0 text-flora-text"><Icon name={ACH_ICON[a.category]} className="w-6 h-6" /></span>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-ink-1 leading-tight">{a.name}</p>
                       <p className="text-[10px] text-ink-4 mt-0.5 leading-tight">{a.description}</p>
@@ -396,7 +405,7 @@ export default function Profile() {
                     key={a.id}
                     className="bg-app-card rounded-2xl border border-app-border p-3 flex items-center gap-3 opacity-40"
                   >
-                    <span className="text-2xl shrink-0 grayscale">{a.emoji}</span>
+                    <span className="shrink-0 text-ink-3"><Icon name="lock" className="w-5 h-5" /></span>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-ink-1 leading-tight">{a.name}</p>
                       <p className="text-[10px] text-ink-4 mt-0.5 leading-tight">{a.description}</p>
@@ -421,10 +430,10 @@ export default function Profile() {
               {/* Toggle */}
               <div className="flex items-center gap-3">
                 <div className={clsx(
-                  'w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors',
-                  notificationsEnabled ? 'bg-brand-subtle' : 'bg-app-elevated'
+                  'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors',
+                  notificationsEnabled ? 'bg-brand-subtle text-brand-text' : 'bg-app-elevated text-ink-3'
                 )}>
-                  🔔
+                  <Icon name="bell" className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-ink-1">Recordatorio diario</p>
@@ -475,10 +484,10 @@ export default function Profile() {
             <h2 className="text-[10px] font-bold text-ink-4 uppercase tracking-widest mb-2.5">Apariencia</h2>
             <div className="bg-app-card rounded-2xl border border-app-border p-1 flex gap-1">
               {([
-                { value: 'light',  label: 'Claro',   icon: '☀️' },
-                { value: 'system', label: 'Sistema',  icon: '⚙️' },
-                { value: 'dark',   label: 'Oscuro',   icon: '🌙' },
-              ] as { value: ThemePreference; label: string; icon: string }[]).map((opt) => (
+                { value: 'light',  label: 'Claro',   icon: 'sun' },
+                { value: 'system', label: 'Sistema',  icon: 'gear' },
+                { value: 'dark',   label: 'Oscuro',   icon: 'moon' },
+              ] as { value: ThemePreference; label: string; icon: IconName }[]).map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setTheme(opt.value)}
@@ -489,7 +498,7 @@ export default function Profile() {
                       : 'text-ink-3 hover:text-ink-1'
                   )}
                 >
-                  <span>{opt.icon}</span>
+                  <Icon name={opt.icon} className="w-4 h-4" />
                   <span>{opt.label}</span>
                 </button>
               ))}

@@ -216,3 +216,9 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - En Terminos, la linea de renovacion por tienda se reemplazo por "el plan Pro todavia no esta disponible para la compra; antes de cobrarte te informaremos las condiciones de pago, renovacion y cancelacion" (no se invento ninguna condicion de cobro).
 - FAQ de la landing: se saco "una version nativa de React Native esta en el roadmap" (es y en).
 - **Para revisar con quien corresponda (no verificado desde el codigo):** si hay monitoreo de errores en produccion (`sentry.ts` se activa solo con un DSN: si esta configurado, Sentry recibe datos y habria que nombrarlo), el proveedor de hosting (Vercel), y el mecanismo real de cobro del plan Pro cuando se habilite. Son textos legales: conviene que los lea alguien con criterio juridico.
+
+## Veintinueveava tanda (2026-10-28): Perfil y Ajustes sin emojis
+- Nuevo `Icon` (`components/ui/Icon.tsx`): iconos de linea con nombre (llama, rayo, check, matraz, camara, gema, candado, campana, sol, luna, engranaje).
+- **Perfil:** el avatar muestra el numero de nivel en vez de un emoji; el camino del cultivador, nodos numerados; estadisticas y racha con iconos de linea (los de planta y cosecha reutilizan los de tipo de tarea); logros con un icono por categoria (consistencia = llama, cultivo = check, conocimiento = matraz) y candado para los bloqueados, en vez de 17 emojis distintos; campana del recordatorio y selector de tema (sol, engranaje, luna) con iconos. Los campos `emoji` de `lib/gamification.ts` quedan en los datos pero ya no se muestran.
+- **Ajustes:** tema con iconos; el plan sin emoji ("Plan Pro", "PRO", "Actualizar a Pro"); candado de tablas Pro con `data-testid="tables-pro-lock"`; "Acerca de" sin emojis.
+- Tests: `settings`, `app` y `custom-table` ya no buscan emojis dentro de textos. Quedan simbolos de texto (`✓ Guardado`, `✓ Listo`, `↻ Regenerar`) y las banderas del selector de idioma, a proposito.

@@ -158,7 +158,7 @@ test.describe('Tablas propias: plan Free', () => {
   test('Ajustes muestra el candado Pro en lugar del acceso a crear tablas', async ({ page, context }) => {
     await setup(page, context, 'free')
     await gotoApp(page, '/settings')
-    await expect(page.getByText('🔒 Pro')).toBeVisible()
+    await expect(page.getByTestId('tables-pro-lock')).toBeVisible()
     await expect(page.getByRole('link', { name: '+ Nueva' })).not.toBeVisible()
   })
 })

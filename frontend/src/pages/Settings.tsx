@@ -11,7 +11,8 @@ import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/auth'
-import { Button, Toggle } from '@/components/ui'
+import { Button, Toggle, Icon } from '@/components/ui'
+import type { IconName } from '@/components/ui/Icon'
 import { clsx } from 'clsx'
 import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/notifications'
 import { generatePlantSchedule } from '@/lib/nutrition-engine'
@@ -24,10 +25,10 @@ import { mergeRegeneratedSchedule } from '@/lib/schedule-merge'
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
 
-const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
-  { value: 'system', label: 'Sistema', icon: '⚙️' },
-  { value: 'light',  label: 'Claro',   icon: '☀️' },
-  { value: 'dark',   label: 'Oscuro',  icon: '🌙' },
+const themeOptions: { value: ThemePreference; label: string; icon: IconName }[] = [
+  { value: 'system', label: 'Sistema', icon: 'gear' },
+  { value: 'light',  label: 'Claro',   icon: 'sun' },
+  { value: 'dark',   label: 'Oscuro',  icon: 'moon' },
 ]
 
 export default function Settings() {
@@ -196,9 +197,9 @@ export default function Settings() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-bold text-ink-1">
-                {subscription.plan === 'free' && `🌱 ${t('settings.plan_free_label')}`}
-                {subscription.plan === 'trial' && `⏳ ${t('settings.plan_trial_label')}`}
-                {subscription.plan === 'pro' && `⭐ ${t('settings.plan_pro_label')}`}
+                {subscription.plan === 'free' && t('settings.plan_free_label')}
+                {subscription.plan === 'trial' && t('settings.plan_trial_label')}
+                {subscription.plan === 'pro' && t('settings.plan_pro_label')}
               </p>
               <p className="text-xs text-ink-3 mt-0.5">
                 {subscription.plan === 'free' && t('settings.plan_free_desc')}
@@ -229,7 +230,7 @@ export default function Settings() {
             }`}>
               {subscription.plan === 'free' && 'FREE'}
               {subscription.plan === 'trial' && 'TRIAL'}
-              {subscription.plan === 'pro' && 'PRO ⭐'}
+              {subscription.plan === 'pro' && 'PRO'}
             </span>
           </div>
           {!hasProAccess(subscription.plan) && (
@@ -237,7 +238,7 @@ export default function Settings() {
               href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
               className="block text-center w-full py-3 rounded-xl text-[#1A1306] font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all" style={{ background: 'linear-gradient(135deg, #E3B65A, #C99A3E)' }}
             >
-              ⭐ {t('settings.upgrade_pro')}
+              {t('settings.upgrade_pro')}
             </a>
           )}
           {subscription.plan === 'trial' && (
@@ -269,7 +270,7 @@ export default function Settings() {
                       : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
                   )}
                 >
-                  <span>{opt.icon}</span>
+                  <Icon name={opt.icon} className="w-4 h-4" />
                   {opt.label}
                 </button>
               ))}
@@ -332,7 +333,7 @@ export default function Settings() {
               {t('settings.new_table')}
             </Link>
           ) : (
-            <span className="text-xs text-ink-4 flex items-center gap-1">🔒 Pro</span>
+            <span data-testid="tables-pro-lock" className="text-xs text-ink-4 flex items-center gap-1"><Icon name="lock" className="w-3 h-3" /> Pro</span>
           )}
         </div>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card divide-y divide-app-border overflow-hidden">
@@ -414,9 +415,9 @@ export default function Settings() {
         <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.about_section')}</p>
         <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 space-y-3">
           {[
-            [`🏷️ ${t('settings.version_label')}`, t('settings.version_value')],
-            ['🌿 Tabla nutricional', 'REVEGETAR v1'],
-            ['💾 Datos', 'Almacenados localmente'],
+            [t('settings.version_label'), t('settings.version_value')],
+            ['Tabla nutricional', 'REVEGETAR v1'],
+            ['Datos', 'Almacenados localmente'],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between items-center">
               <span className="text-sm text-ink-3">{label}</span>
