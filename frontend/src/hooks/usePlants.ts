@@ -2,7 +2,7 @@ import { usePlantStore } from '@/store/plantStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useNutritionStore } from '@/store/nutritionStore'
 import { generatePlantSchedule, startFloraPhase } from '@/lib/nutrition-engine'
-import { mergeRegeneratedSchedule, scheduleAffectingChange } from '@/lib/schedule-merge'
+import { coverRetroactiveTasks, mergeRegeneratedSchedule, scheduleAffectingChange } from '@/lib/schedule-merge'
 import { supabase } from '@/lib/auth'
 import {
   syncPlantToSupabase,
@@ -138,7 +138,8 @@ export function usePlants() {
     // Lo hecho en vegetativo (completadas, canceladas, movidas) es historial y se conserva;
     // solo se reemplazan las pendientes por el calendario de flora.
     const current = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
-    const merged = mergeRegeneratedSchedule(current, floraTasks)
+    // Si la floracion arranco antes de hoy, esos dias pasados cuentan como cubiertos (no vencidos)
+    const merged = mergeRegeneratedSchedule(current, coverRetroactiveTasks(current, floraTasks, new Date()))
 
     // Actualizar store local primero
     updatePlant(id, { floraStartDate })
@@ -198,7 +199,9 @@ export function usePlants() {
         // (si no, todas sus tareas pasadas reaparecerian como vencidas al editar cualquier dato)
         const generated = generatePlantSchedule(updated, effective)
         const fresh = updated.floraStartDate ? generated.filter((t) => t.cycle === 'flora') : generated
-        const merged = mergeRegeneratedSchedule(current, fresh)
+        // Lo que un cambio de fechas mete en el pasado (floracion que arranco antes, vegetativo mas
+        // largo...) cuenta como cubierto: no aparece como vencido
+        const merged = mergeRegeneratedSchedule(current, coverRetroactiveTasks(current, fresh, new Date()))
         pendingToSave = merged.pending
         setTasks(id, merged.all)
         // Reemplaza solo las pendientes en la DB; borrar todo perdia completed_at/xp_awarded

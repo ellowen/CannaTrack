@@ -52,9 +52,10 @@ export default function PlantDetail() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getPlantById, startFlora, harvestPlant, setHarvestWeight, discardPlant, reactivatePlant } = usePlants()
+  const { getPlantById, editPlant, startFlora, harvestPlant, setHarvestWeight, discardPlant, reactivatePlant } = usePlants()
   const { completeTask: storeCompleteTask } = useTaskStore()
   const [floraPickerOpen, setFloraPickerOpen] = useState(false)
+  const [floraStartEdit, setFloraStartEdit] = useState<string | null>(null) // null = no se esta corrigiendo la fecha de floracion
   const [floraDateInput, setFloraDateInput] = useState(() => formatDateOnly(new Date()))
   const [completingTask, setCompletingTask] = useState<ScheduledTask | null>(null)
   const [harvestSheetOpen, setHarvestSheetOpen] = useState(false)
@@ -758,6 +759,65 @@ export default function PlantDetail() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Inicio de floracion: la fecha real puede diferir de la que se marco */}
+        {plantIsCannabis && plant.floraStartDate && plant.geneticType !== 'autoflower' && plant.status === 'active' && (
+          <section className="glass-card rounded-2xl p-4" data-testid="flora-start-card">
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-2">Inicio de floración</p>
+            {floraStartEdit === null ? (
+              <>
+                <p className="text-base text-ink-1 font-semibold">
+                  {format(plant.floraStartDate, "d 'de' MMMM yyyy", { locale: es })}
+                  <span className="text-xs text-ink-3 font-normal"> · hace {Math.max(0, differenceInDays(today, plant.floraStartDate))} días</span>
+                </p>
+                <p className="text-xs text-ink-3 mt-1 leading-relaxed">
+                  Si la planta floreció antes o después de lo que marcaste, corregí la fecha: el calendario se recalcula desde ahí y la cosecha se corre sola.
+                </p>
+                <button
+                  onClick={() => setFloraStartEdit(formatDateOnly(plant.floraStartDate!))}
+                  className="mt-3 text-xs font-bold text-brand-text tap-highlight-none"
+                >
+                  Cambiar fecha
+                </button>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="date"
+                  aria-label="Nueva fecha de inicio de floración"
+                  value={floraStartEdit}
+                  min={formatDateOnly(plant.startDate)}
+                  max={formatDateOnly(new Date())}
+                  onChange={(e) => setFloraStartEdit(e.target.value)}
+                  className="w-full rounded-xl border border-app-border bg-app-elevated text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-border"
+                />
+                <p className="text-xs text-ink-4 leading-relaxed">
+                  Lo que ya hiciste se conserva. Los días anteriores a hoy que se agregan por este cambio cuentan como cubiertos, no como vencidos.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setFloraStartEdit(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-app-border text-sm font-semibold text-ink-3 bg-app-card tap-highlight-none"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    disabled={!floraStartEdit || floraStartEdit < formatDateOnly(plant.startDate) || floraStartEdit > formatDateOnly(new Date())}
+                    onClick={async () => {
+                      const [y, m, d] = floraStartEdit.split('-').map(Number)
+                      const { id: _id, status: _status, ...rest } = plant
+                      await editPlant(plant.id, { ...rest, floraStartDate: new Date(y, m - 1, d) })
+                      setFloraStartEdit(null)
+                    }}
+                    className="flex-[2] py-2.5 rounded-xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none disabled:opacity-40"
+                  >
+                    Guardar fecha
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         {/* Acciones */}

@@ -33,6 +33,12 @@ function noDuplicates(c: BrowserContext, id: string) {
   expect(keys.length - new Set(keys).size, 'tareas duplicadas (mismo ciclo, semana, tipo y dia)').toBe(0)
 }
 
+/** Las primeras `n` tareas pendientes de flora (por fecha): lo que ya existe y se puede dar por hecho. */
+function firstFlora(c: BrowserContext, id: string, n: number) {
+  const ids = new Set(pending(c, id).filter((t) => t.cycle === 'flora' && t.type !== 'harvest').sort((a, b) => date(a).localeCompare(date(b))).slice(0, n).map((t) => t.id))
+  return (t: Row) => ids.has(t.id)
+}
+
 function markDone(c: BrowserContext, id: string, pred: (t: Row) => boolean) {
   const done: Row[] = []
   for (const t of mine(c, id)) if (pred(t)) { t.completed = true; t.xp_awarded = true; t.completed_at = new Date().toISOString(); done.push(t) }
@@ -92,7 +98,9 @@ test.describe('Fotoperiodica: iniciar la floracion', () => {
     expect(despues.find((t) => t.id === movida.id)!.rescheduled_from).toBeTruthy()
     // lo pendiente de vegetativo desaparece y aparece el calendario de flora
     expect(pending(context, id).filter((t) => t.cycle === 'vege')).toHaveLength(0)
-    expect(pending(context, id).filter((t) => t.cycle === 'flora').length).toBeGreaterThan(20)
+    expect(pending(context, id).filter((t) => t.cycle === 'flora').length).toBeGreaterThan(10)
+    // los dias de flora anteriores a hoy cuentan como cubiertos: no queda nada vencido
+    expect(overdue(context, id)).toBe(0)
     expect(harvests(context, id)).toHaveLength(1)
     noDuplicates(context, id)
   })
@@ -108,7 +116,7 @@ test.describe('Fotoperiodica ya en floracion: editar el plan', () => {
     markDone(context, id, (t) => date(t) < localISO(32))
     await startFlora(page, id, 20)
     // en la flora ya hay lo hecho en los primeros dias
-    const floraHechas = markDone(context, id, (t) => t.cycle === 'flora' && date(t) < localISO(14))
+    const floraHechas = markDone(context, id, firstFlora(context, id, 4))
     await gotoApp(page, `/plants/${id}`)
     const vencidasAntes = overdue(context, id)
     const historial = mine(context, id).filter((t) => t.completed).map((t) => t.id)
@@ -147,6 +155,132 @@ test.describe('Fotoperiodica ya en floracion: editar el plan', () => {
     expect(pending(context, id).filter((t) => t.cycle === 'vege')).toHaveLength(0)
     expect(pending(context, id).filter((t) => t.cycle === 'flora' && t.type === 'irrigation').length).toBeGreaterThan(floraAntes)
     expect(harvests(context, id)).toHaveLength(1)
+    noDuplicates(context, id)
+  })
+})
+
+/** Corrige la fecha de inicio de floracion desde la tab Datos. */
+async function changeFloraStart(page: Page, id: string, daysAgo: number) {
+  await gotoApp(page, `/plants/${id}`)
+  await page.getByRole('tab', { name: 'Datos' }).click()
+  await page.getByRole('button', { name: 'Cambiar fecha' }).click()
+  await page.getByLabel('Nueva fecha de inicio de floración').fill(localISO(daysAgo))
+  await page.getByRole('button', { name: 'Guardar fecha' }).click()
+  await expect(page.getByRole('button', { name: 'Cambiar fecha' })).toBeVisible()
+  await page.waitForTimeout(900)
+}
+
+test.describe('Fotoperiodica: la floracion arranco antes o despues de lo marcado', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+  })
+
+  test('hacia atras: lo hecho se conserva, los dias nuevos del pasado quedan cubiertos y la cosecha se corre', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, BLUE, 45)
+    await startFlora(page, id, 20)
+    const hechas = markDone(context, id, firstFlora(context, id, 3))
+    const vencidasAntes = overdue(context, id)
+    const pendientesAntes = pending(context, id).length
+
+    await changeFloraStart(page, id, 30) // floracion 10 dias antes
+
+    const p = plantRow(context, id)
+    expect(String(p.flora_start_date).slice(0, 10)).toBe(localISO(30))
+    // cosecha = inicio + dias de floracion
+    const hs = harvests(context, id)
+    expect(hs).toHaveLength(1)
+    const floraDays = Number(p.flora_days ?? 56)
+    expect(date(hs[0])).toBe(localISO(30 - floraDays))
+    // lo hecho sigue; los 10 dias nuevos (de hace 30 a hace 20) NO aparecen como pendientes vencidos
+    for (const h of hechas) expect(mine(context, id).find((t) => t.id === h.id)?.completed).toBe(true)
+    expect(overdue(context, id)).toBeLessThanOrEqual(vencidasAntes)
+    expect(pending(context, id).filter((t) => date(t) >= localISO(30) && date(t) < localISO(20))).toHaveLength(0)
+    expect(pending(context, id).filter((t) => t.cycle === 'vege')).toHaveLength(0)
+    // adelantar la floracion acorta lo que queda por delante: no se suman pendientes
+    expect(pending(context, id).length).toBeLessThanOrEqual(pendientesAntes)
+    noDuplicates(context, id)
+  })
+
+  test('hacia adelante: desaparecen las pendientes de los dias que todavia eran vegetativo y la cosecha se corre', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, BLUE, 45)
+    await startFlora(page, id, 20)
+    const hechas = markDone(context, id, firstFlora(context, id, 3))
+    const antes = date(harvests(context, id)[0])
+
+    await changeFloraStart(page, id, 10) // floracion 10 dias despues
+
+    expect(String(plantRow(context, id).flora_start_date).slice(0, 10)).toBe(localISO(10))
+    expect(date(harvests(context, id)[0]) > antes, 'la cosecha se corre hacia adelante').toBe(true)
+    // nada pendiente antes del nuevo inicio de floracion
+    expect(pending(context, id).filter((t) => date(t) < localISO(10))).toHaveLength(0)
+    for (const h of hechas) expect(mine(context, id).find((t) => t.id === h.id)?.completed).toBe(true)
+    noDuplicates(context, id)
+  })
+
+  test('no deja elegir una fecha futura ni anterior a la siembra', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, BLUE, 45)
+    await startFlora(page, id, 20)
+    await gotoApp(page, `/plants/${id}`)
+    await page.getByRole('tab', { name: 'Datos' }).click()
+    await page.getByRole('button', { name: 'Cambiar fecha' }).click()
+    const campo = page.getByLabel('Nueva fecha de inicio de floración')
+    await expect(campo).toHaveAttribute('max', localISO(0))
+    await expect(campo).toHaveAttribute('min', localISO(45))
+  })
+})
+
+test.describe('Productos al estirar o acortar', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+  })
+
+  const nutriciones = (c: BrowserContext, id: string, cycle: string) =>
+    pending(c, id).filter((t) => t.cycle === cycle && t.type === 'nutrition')
+  const conProductos = (rows: Row[]) => rows.filter((t) => (t.products ?? []).length > 0)
+
+  test('estirar la floracion suma semanas con sus productos y la limpieza sigue al final; acortar las quita', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, BLUE, 45)
+    await startFlora(page, id, 5)
+    const base = conProductos(nutriciones(context, id, 'flora')).length
+
+    await edit(page, id, { floraDays: 84 })
+    const larga = conProductos(nutriciones(context, id, 'flora')).length
+    expect(larga, 'mas semanas con productos al estirar').toBeGreaterThan(base)
+    const ultimaSemana = Math.max(...pending(context, id).filter((t) => t.cycle === 'flora' && t.type !== 'harvest').map((t) => Number(t.week)))
+    expect(pending(context, id).filter((t) => t.cycle === 'flora' && Number(t.week) === ultimaSemana).every((t) => t.stage === 'flushing' || t.type === 'harvest')).toBe(true)
+
+    await edit(page, id, { floraDays: 42 })
+    const corta = conProductos(nutriciones(context, id, 'flora')).length
+    expect(corta, 'menos semanas con productos al acortar').toBeLessThan(base)
+    expect(pending(context, id).some((t) => t.cycle === 'flora' && t.stage === 'flushing')).toBe(true)
+  })
+
+  test('vegetativo: estirarlo agrega semanas, acortarlo quita las que sobran, y lo que cae en el pasado queda cubierto', async ({ page, context }) => {
+    const id = await createPlantViaUi(page, BLUE, 45) // sin floracion iniciada
+    const vencidasAntes = overdue(context, id)
+    const semanasAntes = Math.max(...pending(context, id).filter((t) => t.cycle === 'vege').map((t) => Number(t.week)))
+
+    await gotoApp(page, `/plants/${id}/edit`)
+    await page.getByLabel('Días de vegetativo').fill('70')
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(page).toHaveURL(new RegExp(`/plants/${id}$`), { timeout: 10_000 })
+    await page.waitForTimeout(900)
+
+    const semanasLarga = Math.max(...pending(context, id).filter((t) => t.cycle === 'vege').map((t) => Number(t.week)))
+    expect(semanasLarga, 'mas semanas de vegetativo').toBeGreaterThan(semanasAntes)
+    expect(conProductos(nutriciones(context, id, 'vege')).length).toBeGreaterThan(0)
+    expect(overdue(context, id), 'estirar no agrega vencidas').toBeLessThanOrEqual(vencidasAntes)
+    noDuplicates(context, id)
+
+    await gotoApp(page, `/plants/${id}/edit`)
+    await page.getByLabel('Días de vegetativo').fill('28')
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(page).toHaveURL(new RegExp(`/plants/${id}$`), { timeout: 10_000 })
+    await page.waitForTimeout(900)
+
+    const semanasCorta = Math.max(...pending(context, id).filter((t) => t.cycle === 'vege').map((t) => Number(t.week)))
+    expect(semanasCorta, 'menos semanas de vegetativo').toBeLessThan(semanasLarga)
+    expect(pending(context, id).filter((t) => t.cycle === 'vege' && date(t) > localISO(45 - 28))).toHaveLength(0)
     noDuplicates(context, id)
   })
 })

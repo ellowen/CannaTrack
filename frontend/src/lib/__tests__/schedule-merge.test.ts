@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { addDays } from 'date-fns'
-import { mergeRegeneratedSchedule, scheduleAffectingChange } from '../schedule-merge'
+import { coverRetroactiveTasks, mergeRegeneratedSchedule, scheduleAffectingChange } from '../schedule-merge'
 import { generatePlantSchedule } from '../nutrition-engine'
 import { REVEGETAR_TABLE } from '../../data/revegetar-table'
 import type { Plant, ScheduledTask } from '../../types/plant'
@@ -59,5 +59,47 @@ describe('scheduleAffectingChange', () => {
   })
   it('la misma fecha como otro objeto Date no cuenta como cambio', () => {
     expect(scheduleAffectingChange(a, { ...a, startDate: new Date(inicio.getTime()) })).toBe(false)
+  })
+})
+
+describe('coverRetroactiveTasks', () => {
+  const hoy = new Date(2026, 5, 10)
+  const tarea = (cycle: 'vege' | 'flora', week: number, type: ScheduledTask['type'], dias: number, extra: Partial<ScheduledTask> = {}): ScheduledTask => ({
+    id: `${cycle}${week}${type}${dias}`, plantId: 'p', userId: 'u', type, scheduledDate: addDays(hoy, dias), cycle, week, stage: 'stretch',
+    products: [], completed: false, ...extra,
+  } as ScheduledTask)
+
+  it('lo de hoy en adelante siempre se conserva', () => {
+    const nuevas = [tarea('flora', 1, 'nutrition', 0), tarea('flora', 2, 'nutrition', 7)]
+    expect(coverRetroactiveTasks([], nuevas, hoy)).toHaveLength(2)
+  })
+
+  it('una tarea pasada que no existia antes se da por cubierta (no se agrega)', () => {
+    const nuevas = [tarea('flora', 1, 'nutrition', -10), tarea('flora', 2, 'nutrition', 4)]
+    expect(coverRetroactiveTasks([], nuevas, hoy).map((t) => t.week)).toEqual([2])
+  })
+
+  it('una pendiente vieja se conserva (sigue vencida), de a una por ciclo, semana y tipo', () => {
+    const existentes = [tarea('vege', 3, 'irrigation', -3)]
+    const nuevas = [tarea('vege', 3, 'irrigation', -3), tarea('vege', 3, 'irrigation', -1), tarea('vege', 4, 'irrigation', -20)]
+    const r = coverRetroactiveTasks(existentes, nuevas, hoy)
+    expect(r.filter((t) => t.week === 3)).toHaveLength(1) // el segundo riego de esa semana no existia: cubierto
+    expect(r.filter((t) => t.week === 4)).toHaveLength(0)
+  })
+
+  it('una pendiente a futuro que el corrimiento de fechas manda al pasado tambien queda cubierta', () => {
+    const existentes = [tarea('flora', 4, 'nutrition', 3)] // estaba a futuro
+    const nuevas = [tarea('flora', 4, 'nutrition', -7)] // ahora cae 7 dias atras
+    expect(coverRetroactiveTasks(existentes, nuevas, hoy)).toHaveLength(0)
+  })
+
+  it('las completadas, canceladas y movidas no cuentan como pendientes que conservar', () => {
+    const existentes = [
+      tarea('vege', 1, 'nutrition', -5, { completed: true }),
+      tarea('vege', 2, 'nutrition', -5, { skipped: true }),
+      tarea('vege', 3, 'nutrition', -5, { rescheduledFrom: addDays(hoy, -8) }),
+    ]
+    const nuevas = [tarea('vege', 1, 'nutrition', -5), tarea('vege', 2, 'nutrition', -5), tarea('vege', 3, 'nutrition', -5)]
+    expect(coverRetroactiveTasks(existentes, nuevas, hoy)).toHaveLength(0)
   })
 })

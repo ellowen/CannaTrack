@@ -43,7 +43,8 @@ export async function syncPlantToSupabase(plant: Plant): Promise<void> {
       pot_count: plant.potCount,
       pot_volume_liters: plant.potVolumeLiters,
       nutrition_table_id: plant.nutritionTableId,
-      available_products: plant.availableProducts ?? [],
+      // null = usar todos los productos de la tabla; [] solo si se deseleccionaron todos a proposito
+      available_products: plant.availableProducts ?? null,
       status: plant.status,
       notes: plant.notes,
     }])
@@ -91,7 +92,7 @@ export async function loadPlantsFromSupabase(userId: string): Promise<Plant[] | 
       potCount: p.pot_count,
       potVolumeLiters: p.pot_volume_liters,
       nutritionTableId: p.nutrition_table_id,
-      availableProducts: p.available_products ?? [],
+      availableProducts: p.available_products ?? undefined,
       status: p.status,
       notes: p.notes,
       createdAt: new Date(p.created_at),
@@ -144,7 +145,7 @@ export async function updatePlantInSupabase(plantId: string, changes: Record<str
     if ('growMedium' in changes)         row.grow_medium = changes.growMedium
     if ('potCount' in changes)           row.pot_count = changes.potCount
     if ('potVolumeLiters' in changes)    row.pot_volume_liters = changes.potVolumeLiters
-    if ('availableProducts' in changes)  row.available_products = changes.availableProducts
+    if ('availableProducts' in changes)  row.available_products = changes.availableProducts ?? null
     if ('autoFlowerTotalDays' in changes) row.auto_flower_total_days = changes.autoFlowerTotalDays
     // ?? null: volver al valor por defecto debe LIMPIAR la columna (undefined no se envia).
     // Solo se tocan si el cambio las trae, ver comentario en syncPlantToSupabase.

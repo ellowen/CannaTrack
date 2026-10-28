@@ -1,3 +1,4 @@
+import { startOfDay } from 'date-fns'
 import type { Plant, ScheduledTask } from '../types/plant'
 
 /**
@@ -24,6 +25,39 @@ export function mergeRegeneratedSchedule(
 
   const all = [...completed, ...pending].sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
   return { completed, pending, all }
+}
+
+const keyOf = (t: ScheduledTask) => `${t.cycle}|${t.week}|${t.type}`
+
+/**
+ * Descarta, de un calendario recien generado, las tareas que caen ANTES de hoy y que no existian
+ * ya como pendientes. Son los dias que un cambio de fechas mete en el pasado (la floracion
+ * arranco antes, el vegetativo se estiro, la siembra era anterior): se dan por cubiertos y no
+ * aparecen como vencidos. Las pendientes que la planta YA tenia vencidas se conservan (siguen
+ * vencidas hasta que se resuelvan); se descuentan de a una por (ciclo, semana, tipo), igual que el merge.
+ * Lo de hoy en adelante siempre se conserva.
+ */
+export function coverRetroactiveTasks(
+  existing: ScheduledTask[],
+  generated: ScheduledTask[],
+  today: Date,
+): ScheduledTask[] {
+  const start = startOfDay(today).getTime()
+  const budget = new Map<string, number>()
+  for (const t of existing) {
+    if (t.completed || t.skipped || t.rescheduledFrom) continue
+    // solo las que YA estaban vencidas: una pendiente a futuro que el corrimiento de fechas manda al
+    // pasado tambien cuenta como cubierta
+    if (t.scheduledDate.getTime() >= start) continue
+    budget.set(keyOf(t), (budget.get(keyOf(t)) ?? 0) + 1)
+  }
+  return generated.filter((g) => {
+    if (g.scheduledDate.getTime() >= start) return true
+    const left = budget.get(keyOf(g)) ?? 0
+    if (left <= 0) return false
+    budget.set(keyOf(g), left - 1)
+    return true
+  })
 }
 
 /** Campos de la planta que cambian el calendario. Nombre, notas, macetas, etc. no. */
