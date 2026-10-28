@@ -210,3 +210,35 @@ test.describe('Home: tareas agrupadas por planta', () => {
     await expect(page.getByText('Todo al dia!')).toBeVisible({ timeout: 8_000 })
   })
 })
+
+test.describe('Home: plegar tareas por planta', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setup(page, context)
+    await createPlantViaUi(page, SODA, 0)
+    await createPlantViaUi(page, BLUE, 0)
+    await gotoApp(page, '/')
+  })
+
+  test('plegar una planta oculta sus filas, "Plegar todo" las oculta todas y se recuerda al recargar', async ({ page }) => {
+    const rows = page.getByRole('button', { name: /: marcar hecha/ })
+    const total = await rows.count()
+    expect(total).toBeGreaterThanOrEqual(3)
+
+    await page.getByRole('button', { name: `Plegar las tareas de ${SODA.name}` }).click()
+    await expect(page.getByText(/\d+ pendientes?/).first()).toBeVisible()
+    expect(await rows.count()).toBeLessThan(total)
+    await expect(page.getByRole('button', { name: `Expandir las tareas de ${SODA.name}` })).toHaveAttribute('aria-expanded', 'false')
+
+    await page.getByRole('button', { name: 'Plegar todo' }).click()
+    await expect(rows).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Expandir todo' })).toBeVisible()
+    // "Todo" de la planta sigue disponible con el grupo plegado
+    await expect(page.getByRole('button', { name: new RegExp(`Marcar todo hecho en ${BLUE.name}`) })).toBeVisible()
+
+    await gotoApp(page, '/')
+    await expect(rows).toHaveCount(0)
+    await page.getByRole('button', { name: 'Expandir todo' }).click()
+    await expect(rows).toHaveCount(total)
+  })
+})
+

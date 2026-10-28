@@ -7,6 +7,9 @@ interface PlantTaskGroupProps {
   phaseLabel: string
   isFlora: boolean
   completingIds: Set<string>
+  /** Plegado: solo se ve el encabezado de la planta (con cuantas tareas tiene). */
+  collapsed: boolean
+  onToggleCollapsed: () => void
   /** Abre la hoja de la tarea (receta, EC/pH, notas, cancelar/mover). */
   onOpen: (task: ScheduledTask) => void
   /** Marca hecha sin pasar por la hoja. */
@@ -35,7 +38,7 @@ function summary(task: ScheduledTask): string {
  * vez, cada tarea es una fila de un toque (check) y "Todo" resuelve la planta entera.
  */
 export default function PlantTaskGroup({
-  plant, tasks, phaseLabel, isFlora, completingIds,
+  plant, tasks, phaseLabel, isFlora, completingIds, collapsed, onToggleCollapsed,
   onOpen, onQuickComplete, onCompleteAll, onOpenPlant, renderIcon, typeLabel, typeColor,
 }: PlantTaskGroupProps) {
   const name = plant?.name ?? '—'
@@ -45,7 +48,11 @@ export default function PlantTaskGroup({
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isFlora ? '#D9A441' : '#5CC76C' }} />
         <button onClick={onOpenPlant} className="min-w-0 flex-1 text-left tap-highlight-none">
           <h3 className="text-base text-ink-1 leading-tight truncate">{name}</h3>
-          {phaseLabel && <p className="text-[11px] text-ink-3 tracking-wide mt-0.5">{phaseLabel}</p>}
+          {(phaseLabel || collapsed) && (
+            <p className="text-[11px] text-ink-3 tracking-wide mt-0.5">
+              {[phaseLabel, collapsed && `${tasks.length} pendiente${tasks.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </button>
         {tasks.length > 1 && (
           <button
@@ -56,9 +63,19 @@ export default function PlantTaskGroup({
             ✓ Todo
           </button>
         )}
+        <button
+          onClick={onToggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-label={`${collapsed ? 'Expandir' : 'Plegar'} las tareas de ${name}`}
+          className="shrink-0 -mr-1 w-9 h-9 flex items-center justify-center text-ink-4 hover:text-ink-2 tap-highlight-none"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`w-4 h-4 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`} aria-hidden="true">
+            <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
 
-      {tasks.map((task) => {
+      {!collapsed && tasks.map((task) => {
         const line = summary(task)
         return (
           <div

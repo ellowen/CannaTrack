@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { seedApp, blockSupabase, setMockProfile, gotoApp } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 test.describe('Modelo de trial y suscripcion', () => {
   test('trial recien empezado: sin banner, app usable', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -13,6 +15,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('trial vigente: acceso Pro completo (sin limite de plantas, sin lock de fotos/productos)', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }], tasksToday: true })
 
@@ -41,6 +44,7 @@ test.describe('Modelo de trial y suscripcion', () => {
     // (enforce_free_plant_limit) esta verificada por separado contra
     // Supabase real, ver informe de auditoria.
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -49,6 +53,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('trial por vencer (<=7 dias): muestra banner de aviso', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -57,6 +62,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('trial vencido: la app se bloquea con pantalla de suscripcion', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -68,6 +74,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('trial vencido: se puede cerrar sesion desde la pantalla de bloqueo', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -77,6 +84,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('usuario pro: sin banner ni bloqueo aunque el trial este vencido', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: true, trial_ends_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context, { plan: 'pro', plants: [{ id: 'p1' }] })
     await gotoApp(page, '/')
@@ -86,6 +94,7 @@ test.describe('Modelo de trial y suscripcion', () => {
 
   test('Settings muestra los dias de trial restantes', async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     setMockProfile(context, { is_pro: false, trial_ends_at: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString() })
     await seedApp(page, context)
     await gotoApp(page, '/settings')

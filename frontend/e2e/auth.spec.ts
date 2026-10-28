@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { seedAnonymous, seedApp, blockSupabase, gotoApp, simulateAuthFailure } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 test.describe('Proteccion de rutas', () => {
   test.beforeEach(async ({ context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
   })
 
   test('link profundo sin sesion redirige a /login', async ({ page }) => {
@@ -35,6 +37,7 @@ test.describe('Proteccion de rutas', () => {
 test.describe('Sesion: logout y expiracion', () => {
   test.beforeEach(async ({ context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
   })
 
   test('logout real desde Settings limpia la sesion y redirige a /login', async ({ page, context }) => {

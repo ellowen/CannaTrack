@@ -84,6 +84,14 @@ export default function Home() {
   const { plants } = usePlants()
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const [doneExpanded, setDoneExpanded]       = useState(false)
+  // plantas con las tareas plegadas en "Para hacer hoy" (se recuerda entre visitas)
+  const [collapsedPlants, setCollapsedPlants] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('cultitrack-home-collapsed') ?? '[]') as string[]) } catch { return new Set() }
+  })
+  function saveCollapsed(next: Set<string>) {
+    setCollapsedPlants(next)
+    try { localStorage.setItem('cultitrack-home-collapsed', JSON.stringify([...next])) } catch { /* sin storage: no se recuerda */ }
+  }
   const [refreshKey, setRefreshKey]           = useState(0)
   const [completingTask, setCompletingTask]   = useState<ScheduledTask | null>(null)
   const [resolvedAll, setResolvedAll]         = useState(false)
@@ -412,12 +420,25 @@ export default function Home() {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-ink-3">
-                  {done.length > 0
-                    ? `${done.length} de ${todayTasks.length} completada${done.length > 1 ? 's' : ''}`
-                    : `${todayTasks.length} tarea${todayTasks.length > 1 ? 's' : ''} programada${todayTasks.length > 1 ? 's' : ''}`
-                  }
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-ink-3">
+                    {done.length > 0
+                      ? `${done.length} de ${todayTasks.length} completada${done.length > 1 ? 's' : ''}`
+                      : `${todayTasks.length} tarea${todayTasks.length > 1 ? 's' : ''} programada${todayTasks.length > 1 ? 's' : ''}`
+                    }
+                  </p>
+                  {pendingByPlant.length > 1 && (() => {
+                    const allCollapsed = pendingByPlant.every((g) => collapsedPlants.has(g.plantId))
+                    return (
+                      <button
+                        onClick={() => saveCollapsed(allCollapsed ? new Set() : new Set(pendingByPlant.map((g) => g.plantId)))}
+                        className="shrink-0 text-[11px] font-semibold text-ink-3 hover:text-ink-1 tap-highlight-none py-1"
+                      >
+                        {allCollapsed ? 'Expandir todo' : 'Plegar todo'}
+                      </button>
+                    )
+                  })()}
+                </div>
                 {/* Mini progress bar */}
                 <div className="mt-2.5 h-1 rounded-full bg-app-border overflow-hidden">
                   <div
@@ -452,6 +473,12 @@ export default function Home() {
                     phaseLabel={phaseLabel}
                     isFlora={isFlora}
                     completingIds={completingIds}
+                    collapsed={collapsedPlants.has(plantId)}
+                    onToggleCollapsed={() => {
+                      const next = new Set(collapsedPlants)
+                      if (!next.delete(plantId)) next.add(plantId)
+                      saveCollapsed(next)
+                    }}
                     onOpen={handleComplete}
                     onQuickComplete={(task) => handleQuickComplete([task])}
                     onCompleteAll={handleQuickComplete}
