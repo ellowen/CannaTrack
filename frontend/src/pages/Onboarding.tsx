@@ -3,6 +3,7 @@ import { useUserStore } from '@/store/userStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { hapticSuccess, hapticLight } from '@/lib/haptics'
 import { supabase } from '@/lib/auth'
+import { track } from '@/lib/analytics'
 import { LogoMark } from '@/components/ui'
 
 const STEPS: Step[] = ['welcome', 'name', 'ready']
@@ -56,6 +57,7 @@ export default function Onboarding() {
     // Layout detecta el flag y navega a /plants/new
     localStorage.setItem('ct-redirect', '/plants/new')
     setOnboarded(true)
+    track('onboarding_completed')
   }
 
   return (

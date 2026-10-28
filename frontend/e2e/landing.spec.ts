@@ -132,3 +132,37 @@ test.describe('Landing: recorrido del ciclo', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   })
 })
+
+test.describe('Landing: metricas anonimas', () => {
+  type Row = { name: string; session_id: string; props: Record<string, unknown> }
+
+  async function capture(page: import('@playwright/test').Page) {
+    const rows: Row[] = []
+    await page.route(/\/rest\/v1\/analytics_events/, async (route) => {
+      rows.push(JSON.parse(route.request().postData() ?? '{}') as Row)
+      await route.fulfill({ status: 201, body: '' })
+    })
+    return rows
+  }
+
+  test('registra la vista y el click en el CTA, con una sola sesion y sin datos personales', async ({ page }) => {
+    const rows = await capture(page)
+    await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }))
+    await page.goto('/')
+    await expect.poll(() => rows.map((r) => r.name)).toContain('landing_view')
+    await page.locator('[data-cta="hero"]').click()
+    await expect.poll(() => rows.map((r) => r.name)).toContain('landing_cta')
+    const cta = rows.find((r) => r.name === 'landing_cta')!
+    expect(cta.props).toEqual({ where: 'hero' })
+    expect(new Set(rows.map((r) => r.session_id)).size).toBe(1)
+    expect(JSON.stringify(rows)).not.toMatch(/@|email|user_id/)
+  })
+
+  test('con automatizacion (webdriver) no se mide nada', async ({ page }) => {
+    const rows = await capture(page)
+    await page.goto('/')
+    await page.locator('[data-cta="hero"]').click()
+    await expect(page).toHaveURL(/\/signup/)
+    expect(rows).toHaveLength(0)
+  })
+})

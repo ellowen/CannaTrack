@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { humanizeAuthError } from '@/lib/auth'
+import { track } from '@/lib/analytics'
 import { LogoMark } from '@/components/ui'
 
 const PASSWORD_MIN_LENGTH = 8
@@ -53,6 +54,7 @@ export default function SignUp() {
 
     try {
       await signUp({ email: email.trim(), password, name: name.trim() })
+      track('signup_completed')
       // Show confirmation message and redirect to login
       navigate('/login', {
         state: { message: 'Revisa tu correo para confirmar tu cuenta' },

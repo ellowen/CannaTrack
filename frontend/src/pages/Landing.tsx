@@ -8,6 +8,7 @@ import { LandingStem } from '@/components/landing/LandingStem'
 import { AppMockup } from '@/components/landing/AppMockup'
 import { FeatureBento } from '@/components/landing/Bento'
 import '@/components/landing/landing.css'
+import { track } from '@/lib/analytics'
 import { LogoMark } from '@/components/ui'
 import {
   ChartIcon,
@@ -61,6 +62,14 @@ export default function Landing() {
   useEffect(() => {
     document.documentElement.lang = language
   }, [language])
+
+  useEffect(() => { track('landing_view') }, [])
+
+  // Clicks en los CTA de registro: cada link lleva data-cta con su lugar en la pagina.
+  const onCtaClick = (e: React.MouseEvent) => {
+    const cta = (e.target as HTMLElement).closest<HTMLElement>('[data-cta]')?.dataset.cta
+    if (cta) track('landing_cta', { where: cta })
+  }
 
   // Aparicion al scroll: un solo observer para todo lo marcado con .lp-reveal.
   useEffect(() => {
@@ -148,7 +157,7 @@ export default function Landing() {
   ]
 
   return (
-    <div ref={rootRef} className="lp-root">
+    <div ref={rootRef} className="lp-root" onClick={onCtaClick}>
       <div className="lp-tint" aria-hidden="true" />
       <LandingStem />
 
@@ -183,7 +192,7 @@ export default function Landing() {
             <Link to="/login" style={{ color: C.ink2, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }} className="hidden md:block">
               {t('landing.nav_login')}
             </Link>
-            <Link to="/signup" className="lp-btn lp-nav-cta" style={{ fontSize: '13px', padding: '8px 18px', borderRadius: '10px', whiteSpace: 'nowrap' }}>
+            <Link to="/signup" data-cta="nav" className="lp-btn lp-nav-cta" style={{ fontSize: '13px', padding: '8px 18px', borderRadius: '10px', whiteSpace: 'nowrap' }}>
               {t('landing.nav_cta')}
             </Link>
             <button onClick={() => setMenuOpen(v => !v)}
@@ -210,7 +219,7 @@ export default function Landing() {
             ))}
             <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Link to="/login" style={{ color: C.ink2, fontSize: '13px', textDecoration: 'none', flex: 1 }}>{t('landing.nav_login')}</Link>
-              <Link to="/signup" className="lp-btn" style={{ fontSize: '13px', padding: '9px 16px', borderRadius: '10px' }}>
+              <Link to="/signup" data-cta="menu" className="lp-btn" style={{ fontSize: '13px', padding: '9px 16px', borderRadius: '10px' }}>
                 {t('landing.nav_cta')}
               </Link>
             </div>
@@ -242,7 +251,7 @@ export default function Landing() {
               </p>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Link to="/signup" className="lp-btn" style={{ fontSize: '16px', padding: '15px 30px' }}>
+                <Link to="/signup" data-cta="hero" className="lp-btn" style={{ fontSize: '16px', padding: '15px 30px' }}>
                   {t('landing.hero_cta')}
                 </Link>
                 <a href="#como-funciona" className="lp-btn-ghost" style={{ fontSize: '16px', padding: '15px 26px' }}>
@@ -388,7 +397,7 @@ export default function Landing() {
                 </div>
                 <p style={{ color: C.ink3, fontSize: '13px', margin: '8px 0 0' }}>{t('landing.free_note')}</p>
               </div>
-              <Link to="/signup" style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,0.07)', color: C.white, border: `1px solid ${C.border}`, fontWeight: 700, fontSize: '14px', padding: '12px', borderRadius: '12px', textDecoration: 'none', marginBottom: '28px' }}>
+              <Link to="/signup" data-cta="pricing_free" style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,0.07)', color: C.white, border: `1px solid ${C.border}`, fontWeight: 700, fontSize: '14px', padding: '12px', borderRadius: '12px', textDecoration: 'none', marginBottom: '28px' }}>
                 {t('landing.free_cta')}
               </Link>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px' }}>
@@ -412,7 +421,7 @@ export default function Landing() {
                 </div>
                 <p style={{ color: C.ink3, fontSize: '13px', margin: '8px 0 0' }}>{t('landing.pro_note')}</p>
               </div>
-              <Link to="/signup" className="lp-btn" style={{ display: 'block', textAlign: 'center', fontSize: '14px', padding: '12px', borderRadius: '12px', marginBottom: '28px', position: 'relative' }}>
+              <Link to="/signup" data-cta="pricing_pro" className="lp-btn" style={{ display: 'block', textAlign: 'center', fontSize: '14px', padding: '12px', borderRadius: '12px', marginBottom: '28px', position: 'relative' }}>
                 {t('landing.pro_cta')}
               </Link>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px', position: 'relative' }}>
@@ -478,7 +487,7 @@ export default function Landing() {
             <p style={{ color: C.ink2, fontSize: '17px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '500px', display: 'inline-block', position: 'relative' }}>{t('landing.cta_desc')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', position: 'relative' }}>
-              <Link to="/signup" className="lp-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
+              <Link to="/signup" data-cta="final" className="lp-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
                 {t('landing.cta_main')}
               </Link>
               <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>{t('landing.cta_disclaimer')}</p>
@@ -511,7 +520,7 @@ export default function Landing() {
               <div>
                 <p style={{ color: C.white, fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>{t('landing.footer_access')}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <Link to="/signup" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_create')}</Link>
+                  <Link to="/signup" data-cta="footer" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_create')}</Link>
                   <Link to="/login" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_login')}</Link>
                   <a href="mailto:cultitrack@gmail.com" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_contact')}</a>
                   <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi marca" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_b2b')}</a>
@@ -534,7 +543,7 @@ export default function Landing() {
 
       {/* ── CTA fijo (solo mobile) ───────────────────────────────────────── */}
       <div className={`lp-sticky${showSticky ? ' show' : ''}`} data-testid="sticky-cta" aria-hidden={!showSticky}>
-        <Link to="/signup" className="lp-btn" tabIndex={showSticky ? 0 : -1} style={{ display: 'block', textAlign: 'center', fontSize: '15px', padding: '14px' }}>
+        <Link to="/signup" data-cta="sticky" className="lp-btn" tabIndex={showSticky ? 0 : -1} style={{ display: 'block', textAlign: 'center', fontSize: '15px', padding: '14px' }}>
           {t('landing.sticky_cta')}
         </Link>
       </div>
