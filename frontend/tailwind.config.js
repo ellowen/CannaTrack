@@ -11,7 +11,9 @@ export default {
           subtle: 'var(--brand-subtle)',
           border: 'var(--brand-border)',
           dim:    'var(--brand-dim)',
-          // Estáticos (para uso con opacidad: brand-500/20 etc.)
+            // Texto sobre fondo brand-400 (oscuro en ambos temas: blanco sobre el verde da ~2:1)
+          'on':   'var(--on-brand)',
+        // Estáticos (para uso con opacidad: brand-500/20 etc.)
           200: '#A8DAB0',
           300: '#6DC278',
           500: '#2A8E39',
