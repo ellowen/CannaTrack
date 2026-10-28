@@ -1,58 +1,50 @@
-import { useState, useEffect, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/i18n'
 import { useUserStore } from '@/store/userStore'
 import type { Language } from '@/i18n'
 import { GrowthLines } from '@/components/landing/GrowthLines'
+import { LandingStem } from '@/components/landing/LandingStem'
+import { AppMockup } from '@/components/landing/AppMockup'
+import { FeatureBento } from '@/components/landing/Bento'
+import '@/components/landing/landing.css'
 import { LogoMark } from '@/components/ui'
 import {
-  ChartIcon, CalendarIcon, DropletIcon, CameraIcon, FlaskIcon,
-  SproutIcon, SignalOffIcon, SmartphoneIcon, TrophyIcon, ShieldIcon,
-  CheckBadgeIcon, LeafBadgeIcon,
+  ChartIcon,
+  SignalOffIcon, SmartphoneIcon, TrophyIcon, ShieldIcon,
+  CheckBadgeIcon, LeafBadgeIcon, SproutIcon,
 } from '@/components/landing/LandingIcons'
 
-function prefersReducedMotion() {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
+// La demo trae la tabla REVEGETAR completa: va en su propio chunk para no cargarla en el primer paint.
+const CycleDemo = lazy(() => import('@/components/landing/CycleDemo'))
 
 // ─── Colores de la landing (siempre dark) ────────────────────────────────────
 const C = {
-  bg:       '#0D110C',
-  card:     'rgba(255,255,255,0.03)',
-  border:   'rgba(255,255,255,0.07)',
   green:    '#5CC76C',
   greenDim: 'rgba(92,199,108,0.12)',
-  greenGlow:'rgba(92,199,108,0.25)',
   white:    '#FFFFFF',
   ink1:     'rgba(255,255,255,0.92)',
   ink2:     'rgba(255,255,255,0.60)',
   ink3:     'rgba(255,255,255,0.35)',
+  card:     'rgba(255,255,255,0.03)',
+  border:   'rgba(255,255,255,0.07)',
 }
 
-// ─── Fade-in al scroll ───────────────────────────────────────────────────────
-function useFadeIn(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!ref.current) return
-    const el = ref.current
-    if (prefersReducedMotion()) return
-    el.style.opacity = '0'
-    el.style.transform = 'translateY(24px)'
-    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease'
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.style.opacity = '1'
-          el.style.transform = 'translateY(0)'
-          obs.disconnect()
-        }
-      },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-  return ref
+interface SectionHeadProps {
+  eyebrow: string
+  title: ReactNode
+  sub?: string
+  marginBottom?: number
+}
+
+function SectionHead({ eyebrow, title, sub, marginBottom = 56 }: SectionHeadProps) {
+  return (
+    <div style={{ textAlign: 'center', marginBottom }}>
+      <p className="lp-eyebrow">{eyebrow}</p>
+      <h2 className="lp-h2">{title}</h2>
+      {sub && <p className="lp-sub">{sub}</p>}
+    </div>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,33 +55,38 @@ export default function Landing() {
   const setLanguage = useUserStore(s => s.setLanguage)
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
-
-  const heroRef     = useRef<HTMLDivElement>(null)
-  const problemRef  = useFadeIn()
-  const howRef      = useFadeIn()
-  const featuresRef = useFadeIn()
-  const b2bRef      = useFadeIn()
-  const pricingRef  = useFadeIn()
-  const whyRef      = useFadeIn()
-  const faqRef      = useFadeIn()
-  const ctaRef      = useFadeIn()
-
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el) return
-    if (prefersReducedMotion()) return
-    el.style.opacity = '0'
-    el.style.transform = 'translateY(16px)'
-    el.style.transition = 'opacity 0.8s ease, transform 0.8s ease'
-    requestAnimationFrame(() => setTimeout(() => {
-      el.style.opacity = '1'
-      el.style.transform = 'translateY(0)'
-    }, 100))
-  }, [])
+  const [showSticky, setShowSticky] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     document.documentElement.lang = language
   }, [language])
+
+  // Aparicion al scroll: un solo observer para todo lo marcado con .lp-reveal.
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const items = Array.from(root.querySelectorAll<HTMLElement>('.lp-reveal'))
+    if (typeof IntersectionObserver === 'undefined') {
+      items.forEach(el => el.classList.add('in'))
+      return
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+      })
+    }, { threshold: 0.12 })
+    items.forEach(el => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
+  // CTA fijo en mobile: aparece cuando el del hero ya quedo atras.
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 640)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const NAV_LINKS = [
     { label: t('landing.nav_how'),      href: '#como-funciona' },
@@ -98,11 +95,12 @@ export default function Landing() {
     { label: t('landing.nav_faq'),      href: '#faq' },
   ]
 
+  // Cada nota del cuaderno (problema) tiene su respuesta resuelta en la app.
   const PROBLEMS = [
-    { Icon: ChartIcon,    q: t('landing.p1_q'), a: t('landing.p1_a') },
-    { Icon: CalendarIcon, q: t('landing.p2_q'), a: t('landing.p2_a') },
-    { Icon: DropletIcon,  q: t('landing.p3_q'), a: t('landing.p3_a') },
-    { Icon: CameraIcon,   q: t('landing.p4_q'), a: t('landing.p4_a') },
+    { q: t('landing.p1_q'), a: t('landing.p1_a'), fix: t('landing.ba_a1'), rot: -1.4 },
+    { q: t('landing.p2_q'), a: t('landing.p2_a'), fix: t('landing.ba_a2'), rot: 1.1 },
+    { q: t('landing.p3_q'), a: t('landing.p3_a'), fix: t('landing.ba_a3'), rot: -0.8 },
+    { q: t('landing.p4_q'), a: t('landing.p4_a'), fix: t('landing.ba_a4'), rot: 1.5 },
   ]
 
   // Un solo color de marca — la progresion se comunica con opacidad, no con hue.
@@ -111,15 +109,6 @@ export default function Landing() {
     { num: '02', title: t('landing.step2_title'), desc: t('landing.step2_desc'), opacity: 0.85 },
     { num: '03', title: t('landing.step3_title'), desc: t('landing.step3_desc'), opacity: 0.7 },
     { num: '04', title: t('landing.step4_title'), desc: t('landing.step4_desc'), opacity: 0.55 },
-  ]
-
-  const FEATURES = [
-    { Icon: CalendarIcon,   title: t('landing.feat1_title'), desc: t('landing.feat1_desc') },
-    { Icon: SproutIcon,     title: t('landing.feat2_title'), desc: t('landing.feat2_desc') },
-    { Icon: SignalOffIcon,  title: t('landing.feat3_title'), desc: t('landing.feat3_desc') },
-    { Icon: CameraIcon,     title: t('landing.feat4_title'), desc: t('landing.feat4_desc') },
-    { Icon: FlaskIcon,      title: t('landing.feat5_title'), desc: t('landing.feat5_desc') },
-    { Icon: TrophyIcon,     title: t('landing.feat6_title'), desc: t('landing.feat6_desc') },
   ]
 
   const FREE_FEATURES = [
@@ -158,39 +147,12 @@ export default function Landing() {
     { Icon: ShieldIcon,     label: t('landing.trust_privacy') },
   ]
 
-  const B2B_FEATURES = [
-    t('landing.b2b_f1'), t('landing.b2b_f2'),
-    t('landing.b2b_f3'), t('landing.b2b_f4'),
-  ]
-
   return (
-    <div className="lp-root" style={{ background: C.bg, color: C.ink1, fontFamily: "'Inter Variable', Inter, system-ui, sans-serif", overflowX: 'hidden' }}>
+    <div ref={rootRef} className="lp-root">
+      <div className="lp-tint" aria-hidden="true" />
+      <LandingStem />
 
-      <style>{`
-        .lp-glow { box-shadow: 0 6px 24px rgba(92,199,108,0.18); transition: box-shadow 0.2s, transform 0.2s; }
-        .lp-glow:hover { box-shadow: 0 8px 30px rgba(92,199,108,0.3); transform: translateY(-1px); }
-        .lp-root h1, .lp-root h2, .lp-root h3 { font-family: 'Fraunces Variable', Fraunces, 'Iowan Old Style', Georgia, serif !important; font-weight: 600 !important; letter-spacing: -0.01em !important; }
-        .lp-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-        .lp-link:hover { color: #fff; }
-        .lp-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; transition: all 0.2s; }
-        .lp-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(92,199,108,0.2); transform: translateY(-2px); }
-        .faq-content { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; }
-
-        .lp-root :focus-visible {
-          outline: 2px solid rgba(92,199,108,0.65);
-          outline-offset: 3px;
-          border-radius: 4px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .lp-root * {
-            animation-duration: 0.001ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.001ms !important;
-            scroll-behavior: auto !important;
-          }
-        }
-      `}</style>
+      <div className="lp-content">
 
       {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
       <header style={{
@@ -221,7 +183,7 @@ export default function Landing() {
             <Link to="/login" style={{ color: C.ink2, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }} className="hidden md:block">
               {t('landing.nav_login')}
             </Link>
-            <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '13px', padding: '8px 18px', borderRadius: '10px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
+            <Link to="/signup" className="lp-btn lp-nav-cta" style={{ fontSize: '13px', padding: '8px 18px', borderRadius: '10px', whiteSpace: 'nowrap' }}>
               {t('landing.nav_cta')}
             </Link>
             <button onClick={() => setMenuOpen(v => !v)}
@@ -248,7 +210,7 @@ export default function Landing() {
             ))}
             <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Link to="/login" style={{ color: C.ink2, fontSize: '13px', textDecoration: 'none', flex: 1 }}>{t('landing.nav_login')}</Link>
-              <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '13px', padding: '9px 16px', borderRadius: '10px', textDecoration: 'none' }}>
+              <Link to="/signup" className="lp-btn" style={{ fontSize: '13px', padding: '9px 16px', borderRadius: '10px' }}>
                 {t('landing.nav_cta')}
               </Link>
             </div>
@@ -257,48 +219,43 @@ export default function Landing() {
       </header>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 60px', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '600px', background: 'radial-gradient(ellipse, rgba(92,199,108,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <section data-stem style={{ position: 'relative', padding: '72px 24px 64px', minHeight: '88vh', display: 'flex', alignItems: 'center' }}>
         <div style={{ maxWidth: '1120px', margin: '0 auto', width: '100%' }}>
-          <div ref={heroRef} style={{ display: 'flex', gap: '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div style={{ flex: '1', minWidth: '280px', maxWidth: '560px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: C.greenDim, border: '1px solid rgba(92,199,108,0.25)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.green }} />
+          <div style={{ display: 'flex', gap: '56px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="lp-reveal" style={{ flex: '1', minWidth: '280px', maxWidth: '600px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: C.greenDim, border: '1px solid rgba(92,199,108,0.25)', borderRadius: '100px', padding: '5px 12px', marginBottom: '26px' }}>
+                <span className="lp-pulse" style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.green }} />
                 <span style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>{t('landing.badge')}</span>
               </div>
 
-              <h1 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-1.5px', color: C.white, marginBottom: '20px' }}>
+              <h1 style={{ marginBottom: '22px' }}>
                 {t('landing.hero_h1_line1')}
                 <br />
-                <span style={{ color: C.green }}>
+                <span className="lp-em" style={{ color: C.green }}>
                   {t('landing.hero_h1_line2')}
                 </span>
               </h1>
 
-              <p style={{ fontSize: '17px', lineHeight: 1.65, color: C.ink2, maxWidth: '480px', marginBottom: '36px' }}>
+              <p style={{ fontSize: '18px', lineHeight: 1.65, color: C.ink2, maxWidth: '500px', marginBottom: '36px' }}>
                 {t('landing.hero_sub')}{' '}
                 <strong style={{ color: C.ink1 }}>{t('landing.hero_sub_bold')}</strong>
               </p>
 
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '36px' }}>
-                <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 28px', borderRadius: '14px', textDecoration: 'none', letterSpacing: '-0.2px' }} className="lp-glow">
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <Link to="/signup" className="lp-btn" style={{ fontSize: '16px', padding: '15px 30px' }}>
                   {t('landing.hero_cta')}
                 </Link>
-                <a href="#como-funciona" style={{ background: 'rgba(255,255,255,0.06)', color: C.ink1, fontWeight: 600, fontSize: '15px', padding: '14px 24px', borderRadius: '14px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <a href="#como-funciona" className="lp-btn-ghost" style={{ fontSize: '16px', padding: '15px 26px' }}>
                   {t('landing.hero_see_how')}
                 </a>
               </div>
-
             </div>
-            <div style={{ flexShrink: 0, width: '100%', maxWidth: '420px', position: 'relative' }}>
-              <GrowthLines variant="hero" />
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
-                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label1')}</span>
-                <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
-                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label2')}</span>
-                <span aria-hidden="true" style={{ color: C.green, opacity: 0.4, fontSize: '10px' }}>●</span>
-                <span style={{ color: C.ink2, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('landing.hero_visual_label3')}</span>
+
+            <div className="lp-reveal" style={{ '--i': 2, flexShrink: 0, width: '100%', maxWidth: '420px', position: 'relative' } as React.CSSProperties}>
+              <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', opacity: 0.85, pointerEvents: 'none', transform: 'scale(1.6) translateY(-2%)' }}>
+                <GrowthLines variant="hero" draw />
               </div>
+              <AppMockup />
             </div>
           </div>
         </div>
@@ -315,43 +272,55 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* ── PROBLEMA ──────────────────────────────────────────────────────── */}
-      <section style={{ padding: '100px 24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <GrowthLines variant="background" opacity={0.04} />
-        </div>
-        <div ref={problemRef} style={{ maxWidth: '1120px', margin: '0 auto', position: 'relative' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.problem_section')}</p>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1px', color: C.white, margin: '0 0 16px' }}>{t('landing.problem_h2')}</h2>
-            <p style={{ color: C.ink2, fontSize: '16px', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>{t('landing.problem_sub')}</p>
+      {/* ── PROBLEMA: el cuaderno contra la app ───────────────────────────── */}
+      <section data-stem style={{ padding: '110px 24px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="lp-reveal">
+            <SectionHead eyebrow={t('landing.problem_section')} title={t('landing.problem_h2')} sub={t('landing.problem_sub')} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-            {PROBLEMS.map(p => (
-              <div key={p.q} className="lp-card" style={{ padding: '24px' }}>
-                <div style={{ color: C.green, marginBottom: '14px' }}><p.Icon size={26} /></div>
-                <p style={{ color: C.ink1, fontSize: '14px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4 }}>{p.q}</p>
-                <p style={{ color: C.ink2, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{p.a}</p>
-              </div>
-            ))}
+
+          <div className="lp-ba">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <p className="lp-reveal" style={{ color: '#D9A441', fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>{t('landing.ba_before')}</p>
+              {PROBLEMS.map((p, i) => (
+                <div key={p.q} className="lp-note lp-reveal" style={{ '--rot': `${p.rot}deg`, '--i': i } as React.CSSProperties}>
+                  <p style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", fontStyle: 'italic', color: C.white, fontSize: '19px', lineHeight: 1.3, margin: '0 0 8px' }}>{p.q}</p>
+                  <p style={{ color: C.ink2, fontSize: '13px', lineHeight: 1.55, margin: 0 }}>{p.a}</p>
+                </div>
+              ))}
+            </div>
+
+            <svg className="lp-ba-arrow lp-reveal" width="56" height="24" viewBox="0 0 56 24" aria-hidden="true" style={{ '--i': 2 } as React.CSSProperties}>
+              <path d="M2 12h48M40 3l10 9-10 9" fill="none" stroke={C.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <p className="lp-reveal" style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>{t('landing.ba_after')}</p>
+              {PROBLEMS.map((p, i) => (
+                <div key={p.fix} className="lp-reveal" style={{ '--i': i + 1, display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(92,199,108,0.07)', border: '1px solid rgba(92,199,108,0.22)', borderRadius: '16px', padding: '16px 18px', minHeight: '86px' } as React.CSSProperties}>
+                  <span style={{ width: '26px', height: '26px', borderRadius: '50%', background: C.green, color: '#0D110C', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+                  </span>
+                  <p style={{ color: C.ink1, fontSize: '15px', fontWeight: 600, lineHeight: 1.45, margin: 0 }}>{p.fix}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: '64px' }}>
+
+          <div className="lp-reveal" style={{ textAlign: 'center', marginTop: '72px' }}>
             <p style={{ color: C.ink3, fontSize: '14px', marginBottom: '12px' }}>{t('landing.problem_transition')}</p>
-            <h3 style={{ color: C.white, fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 800, letterSpacing: '-0.5px' }}>{t('landing.problem_solution')}</h3>
+            <h3 style={{ fontSize: 'clamp(24px, 3.4vw, 36px)', margin: 0 }}>{t('landing.problem_solution')}</h3>
           </div>
         </div>
       </section>
 
       {/* ── COMO FUNCIONA ─────────────────────────────────────────────────── */}
-      <section id="como-funciona" style={{ padding: '80px 24px 100px', background: 'rgba(255,255,255,0.015)' }}>
-        <div ref={howRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.how_section')}</p>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1px', color: C.white, margin: 0 }}>{t('landing.how_h2')}</h2>
-          </div>
+      <section id="como-funciona" data-stem style={{ padding: '90px 24px 100px', background: 'rgba(255,255,255,0.015)' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.how_section')} title={t('landing.how_h2')} marginBottom={60} /></div>
           <div style={{ position: 'relative', maxWidth: '700px', margin: '0 auto' }}>
             {STEPS.map((step, i) => (
-              <div key={step.num} style={{ display: 'flex', gap: '24px', position: 'relative' }}>
+              <div key={step.num} className="lp-reveal" style={{ display: 'flex', gap: '24px', position: 'relative' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `rgba(92,199,108,${step.opacity * 0.16})`, border: `2px solid rgba(92,199,108,${step.opacity * 0.55})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: C.green, opacity: 0.5 + step.opacity * 0.5, flexShrink: 0 }}>
                     {step.num}
@@ -361,93 +330,60 @@ export default function Landing() {
                   )}
                 </div>
                 <div style={{ paddingBottom: i < STEPS.length - 1 ? '40px' : '0', paddingTop: '10px' }}>
-                  <h3 style={{ color: C.white, fontSize: '17px', fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.3px' }}>{step.title}</h3>
-                  <p style={{ color: C.ink2, fontSize: '14px', lineHeight: 1.65, margin: 0 }}>{step.desc}</p>
+                  <h3 style={{ fontSize: '21px', margin: '0 0 8px' }}>{step.title}</h3>
+                  <p style={{ color: C.ink2, fontSize: '15px', lineHeight: 1.65, margin: 0 }}>{step.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: '60px' }}>
-            <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }}>
-              {t('landing.how_cta')}
-            </Link>
-          </div>
+        </div>
+      </section>
+
+      {/* ── DEMO DEL CICLO ────────────────────────────────────────────────── */}
+      <section id="demo" data-stem style={{ padding: '110px 24px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.demo_section')} title={t('landing.demo_h2')} sub={t('landing.demo_sub')} /></div>
+          <Suspense fallback={<div style={{ minHeight: '420px' }} />}>
+            <CycleDemo />
+          </Suspense>
         </div>
       </section>
 
       {/* ── FUNCIONALIDADES ───────────────────────────────────────────────── */}
-      <section id="funcionalidades" style={{ padding: '100px 24px' }}>
-        <div ref={featuresRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.feat_section')}</p>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1px', color: C.white, margin: '0 0 16px' }}>{t('landing.feat_h2')}</h2>
-            <p style={{ color: C.ink2, fontSize: '16px', maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>{t('landing.feat_sub')}</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-            {FEATURES.map(f => (
-              <div key={f.title} className="lp-card" style={{ padding: '28px' }}>
-                <div style={{ color: C.green, marginBottom: '16px' }}><f.Icon size={30} /></div>
-                <h3 style={{ color: C.white, fontSize: '15px', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.2px' }}>{f.title}</h3>
-                <p style={{ color: C.ink2, fontSize: '13px', lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
+      <section id="funcionalidades" data-stem style={{ padding: '60px 24px 110px', ['--lp-eyebrow' as string]: '#D9A441' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.feat_section')} title={t('landing.feat_h2')} sub={t('landing.feat_sub')} /></div>
+          <FeatureBento />
         </div>
       </section>
 
-      {/* ── B2B ───────────────────────────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={b2bRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, rgba(92,199,108,0.07) 0%, rgba(92,199,108,0.02) 100%)', border: '1px solid rgba(92,199,108,0.15)', borderRadius: '28px', padding: '56px 48px', display: 'flex', gap: '48px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: '280px' }}>
-              <span style={{ background: C.greenDim, color: C.green, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>
-                {t('landing.b2b_badge')}
-              </span>
-              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: '0 0 16px' }}>{t('landing.b2b_h2')}</h2>
-              <p style={{ color: C.ink2, fontSize: '15px', lineHeight: 1.65, margin: '0 0 28px' }}>{t('landing.b2b_desc')}</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {B2B_FEATURES.map(item => (
-                  <li key={item} style={{ display: 'flex', gap: '10px', color: C.ink2, fontSize: '14px' }}>
-                    <span style={{ color: C.green, fontWeight: 700, flexShrink: 0 }}>✓</span>{item}
-                  </li>
-                ))}
-              </ul>
-              <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi tabla en CultiTrack"
-                style={{ display: 'inline-block', background: C.greenDim, color: C.green, border: '1px solid rgba(92,199,108,0.25)', fontWeight: 700, fontSize: '14px', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none' }}>
-                {t('landing.b2b_cta')}
-              </a>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '200px' }}>
-              {[
-                { label: t('landing.b2b_stat1_label'), val: '2+',  note: t('landing.b2b_stat1_note') },
-                { label: t('landing.b2b_stat2_label'), val: '60+', note: t('landing.b2b_stat2_note') },
-                { label: t('landing.b2b_stat3_label'), val: t('landing.b2b_stat3_val'), note: t('landing.b2b_stat3_note') },
-              ].map(s => (
-                <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '20px' }}>
-                  <div style={{ fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 900, color: C.white, letterSpacing: '-1px', marginBottom: '4px' }}>{s.val}</div>
-                  <div style={{ color: C.ink2, fontSize: '13px', fontWeight: 600, marginBottom: '2px' }}>{s.label}</div>
-                  <div style={{ color: C.ink3, fontSize: '11px' }}>{s.note}</div>
-                </div>
-              ))}
-            </div>
+      {/* ── B2B (banda corta: el marketplace todavia no existe) ───────────── */}
+      <section data-stem style={{ padding: '56px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="lp-reveal" style={{ maxWidth: '1120px', margin: '0 auto', display: 'flex', gap: '32px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, minWidth: '280px', maxWidth: '680px' }}>
+            <span style={{ background: 'rgba(217,164,65,0.14)', color: '#D9A441', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '14px' }}>
+              {t('landing.b2b_badge')}
+            </span>
+            <h2 style={{ fontSize: 'clamp(24px, 3.2vw, 34px)', margin: '0 0 10px', lineHeight: 1.15 }}>{t('landing.b2b_h2')}</h2>
+            <p style={{ color: C.ink2, fontSize: '15px', lineHeight: 1.65, margin: 0 }}>{t('landing.b2b_desc')}</p>
           </div>
+          <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi tabla en CultiTrack" className="lp-btn-ghost"
+            style={{ fontSize: '14px', padding: '13px 24px', color: '#D9A441', borderColor: 'rgba(217,164,65,0.35)' }}>
+            {t('landing.b2b_cta')}
+          </a>
         </div>
       </section>
 
       {/* ── PRECIOS ───────────────────────────────────────────────────────── */}
-      <section id="precios" style={{ padding: '100px 24px' }}>
-        <div ref={pricingRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.price_section')}</p>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1px', color: C.white, margin: '0 0 16px' }}>{t('landing.price_h2')}</h2>
-            <p style={{ color: C.ink2, fontSize: '16px', maxWidth: '420px', margin: '0 auto', lineHeight: 1.6 }}>{t('landing.price_sub')}</p>
-          </div>
+      <section id="precios" data-stem style={{ padding: '110px 24px', ['--lp-eyebrow' as string]: '#D9A441' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.price_section')} title={t('landing.price_h2')} sub={t('landing.price_sub')} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '24px', padding: '36px' }}>
+            <div className="lp-reveal" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '24px', padding: '36px' }}>
               <div style={{ marginBottom: '24px' }}>
                 <p style={{ color: C.ink2, fontSize: '13px', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('landing.free_label')}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '42px', fontWeight: 900, color: C.white, letterSpacing: '-2px' }}>{t('landing.free_price')}</span>
+                  <span style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", fontSize: '52px', fontWeight: 500, color: C.white, letterSpacing: '-2px' }}>{t('landing.free_price')}</span>
                   <span style={{ color: C.ink3, fontSize: '14px' }}>{t('landing.free_period')}</span>
                 </div>
                 <p style={{ color: C.ink3, fontSize: '13px', margin: '8px 0 0' }}>{t('landing.free_note')}</p>
@@ -463,26 +399,26 @@ export default function Landing() {
                 ))}
               </ul>
             </div>
-            <div style={{ background: 'linear-gradient(145deg, rgba(92,199,108,0.08), rgba(92,199,108,0.03))', border: '1px solid rgba(92,199,108,0.3)', borderRadius: '24px', padding: '36px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: '20px', right: '20px', background: C.green, color: '#0D110C', fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', padding: '4px 10px', borderRadius: '100px', textTransform: 'uppercase' }}>
+            <div className="lp-reveal" style={{ '--i': 1, background: 'linear-gradient(145deg, rgba(217,164,65,0.10), rgba(92,199,108,0.04))', border: '1px solid rgba(217,164,65,0.35)', borderRadius: '24px', padding: '36px', position: 'relative', overflow: 'hidden' } as React.CSSProperties}>
+              <div style={{ position: 'absolute', top: '20px', right: '20px', background: '#D9A441', color: '#0D110C', fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', padding: '4px 10px', borderRadius: '100px', textTransform: 'uppercase' }}>
                 {t('landing.pro_badge')}
               </div>
-              <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(92,199,108,0.12), transparent 70%)', pointerEvents: 'none' }} />
-              <div style={{ marginBottom: '24px' }}>
-                <p style={{ color: C.green, fontSize: '13px', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('landing.pro_label')}</p>
+              <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(217,164,65,0.16), transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ marginBottom: '24px', position: 'relative' }}>
+                <p style={{ color: '#D9A441', fontSize: '13px', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('landing.pro_label')}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '42px', fontWeight: 900, color: C.white, letterSpacing: '-2px' }}>{t('landing.pro_price')}</span>
+                  <span style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", fontSize: '52px', fontWeight: 500, color: C.white, letterSpacing: '-2px' }}>{t('landing.pro_price')}</span>
                   <span style={{ color: C.ink3, fontSize: '14px' }}>{t('landing.pro_period')}</span>
                 </div>
                 <p style={{ color: C.ink3, fontSize: '13px', margin: '8px 0 0' }}>{t('landing.pro_note')}</p>
               </div>
-              <button disabled style={{ display: 'block', width: '100%', background: 'rgba(92,199,108,0.2)', color: C.green, border: '1px solid rgba(92,199,108,0.3)', fontWeight: 700, fontSize: '14px', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', marginBottom: '28px' }}>
+              <Link to="/signup" className="lp-btn" style={{ display: 'block', textAlign: 'center', fontSize: '14px', padding: '12px', borderRadius: '12px', marginBottom: '28px', position: 'relative' }}>
                 {t('landing.pro_cta')}
-              </button>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px' }}>
+              </Link>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px', position: 'relative' }}>
                 {PRO_FEATURES.map(f => (
                   <li key={f} style={{ display: 'flex', gap: '10px', color: C.ink2, fontSize: '13px' }}>
-                    <span style={{ color: C.green, flexShrink: 0, fontWeight: 700 }}>✓</span>{f}
+                    <span style={{ color: '#D9A441', flexShrink: 0, fontWeight: 700 }}>✓</span>{f}
                   </li>
                 ))}
               </ul>
@@ -492,17 +428,14 @@ export default function Landing() {
       </section>
 
       {/* ── POR QUE CULTITRACK ───────────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={whyRef} style={{ maxWidth: '1120px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.why_section')}</p>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: 0 }}>{t('landing.why_h2')}</h2>
-          </div>
+      <section data-stem style={{ padding: '90px 24px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)', ['--lp-eyebrow' as string]: '#D9A441' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.why_section')} title={t('landing.why_h2')} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-            {WHY_PRINCIPLES.map(p => (
-              <div key={p.title} className="lp-card" style={{ padding: '32px' }}>
-                <div style={{ color: C.green, marginBottom: '16px' }}><p.Icon size={28} /></div>
-                <h3 style={{ color: C.white, fontSize: '16px', fontWeight: 700, marginBottom: '10px', letterSpacing: '-0.2px' }}>{p.title}</h3>
+            {WHY_PRINCIPLES.map((p, i) => (
+              <div key={p.title} className="lp-card lp-reveal" style={{ padding: '32px', '--i': i } as React.CSSProperties}>
+                <div style={{ color: '#D9A441', marginBottom: '16px' }}><p.Icon size={28} /></div>
+                <h3 style={{ fontSize: '21px', margin: '0 0 10px' }}>{p.title}</h3>
                 <p style={{ color: C.ink2, fontSize: '14px', lineHeight: 1.7, margin: 0 }}>{p.desc}</p>
               </div>
             ))}
@@ -511,23 +444,20 @@ export default function Landing() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
-      <section id="faq" style={{ padding: '100px 24px' }}>
-        <div ref={faqRef} style={{ maxWidth: '760px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-            <p style={{ color: C.green, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>{t('landing.faq_section')}</p>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: '-0.8px', color: C.white, margin: 0 }}>{t('landing.faq_h2')}</h2>
-          </div>
+      <section id="faq" data-stem style={{ padding: '110px 24px', ['--lp-eyebrow' as string]: '#D9A441' }}>
+        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          <div className="lp-reveal"><SectionHead eyebrow={t('landing.faq_section')} title={t('landing.faq_h2')} marginBottom={48} /></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {FAQS.map((faq, i) => (
-              <div key={i} style={{ background: openFaq === i ? 'rgba(92,199,108,0.04)' : C.card, border: `1px solid ${openFaq === i ? 'rgba(92,199,108,0.2)' : C.border}`, borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
+              <div key={i} className="lp-reveal" style={{ background: openFaq === i ? 'rgba(217,164,65,0.05)' : C.card, border: `1px solid ${openFaq === i ? 'rgba(217,164,65,0.28)' : C.border}`, borderRadius: '16px', overflow: 'hidden', transition: 'background 0.2s, border-color 0.2s' }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                   aria-controls={`faq-answer-${i}`}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', textAlign: 'left', gap: '12px' }}>
                   <span style={{ color: C.white, fontSize: '15px', fontWeight: 600, lineHeight: 1.4 }}>{faq.q}</span>
-                  <span aria-hidden="true" style={{ color: openFaq === i ? C.green : C.ink3, fontSize: '18px', flexShrink: 0, transition: 'transform 0.3s', transform: openFaq === i ? 'rotate(45deg)' : 'rotate(0deg)', display: 'block', lineHeight: 1 }}>+</span>
+                  <span aria-hidden="true" style={{ color: openFaq === i ? '#D9A441' : C.ink3, fontSize: '18px', flexShrink: 0, transition: 'transform 0.3s', transform: openFaq === i ? 'rotate(45deg)' : 'rotate(0deg)', display: 'block', lineHeight: 1 }}>+</span>
                 </button>
-                <div id={`faq-answer-${i}`} className="faq-content" style={{ maxHeight: openFaq === i ? '200px' : '0', opacity: openFaq === i ? 1 : 0 }}>
+                <div id={`faq-answer-${i}`} className="faq-content" style={{ maxHeight: openFaq === i ? '260px' : '0', opacity: openFaq === i ? 1 : 0 }}>
                   <p style={{ color: C.ink2, fontSize: '14px', lineHeight: 1.7, padding: '0 20px 18px', margin: 0 }}>{faq.a}</p>
                 </div>
               </div>
@@ -536,20 +466,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA FINAL ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px 100px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={ctaRef} style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ width: '200px', height: '200px', margin: '0 auto -140px', background: 'radial-gradient(circle, rgba(92,199,108,0.18), transparent 70%)' }} />
-          <div style={{ background: 'linear-gradient(145deg, rgba(92,199,108,0.07), rgba(10,26,13,0.8))', border: '1px solid rgba(92,199,108,0.2)', borderRadius: '28px', padding: '56px 36px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '160px', height: '160px', opacity: 0.5, pointerEvents: 'none' }}>
+      {/* ── CTA FINAL: la flor ────────────────────────────────────────────── */}
+      <section data-stem style={{ padding: '80px 24px 110px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="lp-reveal" style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ background: 'linear-gradient(145deg, rgba(217,164,65,0.10), rgba(10,26,13,0.8))', border: '1px solid rgba(217,164,65,0.28)', borderRadius: '32px', padding: '60px 36px', position: 'relative', overflow: 'hidden' }}>
+            <div aria-hidden="true" style={{ position: 'absolute', top: '-30px', right: '-10px', width: '200px', height: '200px', opacity: 0.4, pointerEvents: 'none' }}>
               <GrowthLines variant="hero" opacity={0.3} />
             </div>
-            <div style={{ color: C.green, marginBottom: '16px', display: 'flex', justifyContent: 'center', position: 'relative' }}><LeafBadgeIcon size={40} /></div>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 900, letterSpacing: '-1px', color: C.white, margin: '0 0 16px', position: 'relative' }}>{t('landing.cta_h2')}</h2>
-            <p style={{ color: C.ink2, fontSize: '16px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '480px', display: 'inline-block', position: 'relative' }}>{t('landing.cta_desc')}</p>
+            <div style={{ color: '#D9A441', marginBottom: '16px', display: 'flex', justifyContent: 'center', position: 'relative' }}><LeafBadgeIcon size={44} /></div>
+            <h2 style={{ fontSize: 'clamp(30px, 4.4vw, 50px)', lineHeight: 1.08, margin: '0 0 16px', position: 'relative' }}>{t('landing.cta_h2')}</h2>
+            <p style={{ color: C.ink2, fontSize: '17px', lineHeight: 1.65, margin: '0 0 36px', maxWidth: '500px', display: 'inline-block', position: 'relative' }}>{t('landing.cta_desc')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', position: 'relative' }}>
-              <Link to="/signup" style={{ background: C.green, color: '#0D110C', fontWeight: 800, fontSize: '15px', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', display: 'inline-block' }} className="lp-glow">
+              <Link to="/signup" className="lp-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
                 {t('landing.cta_main')}
               </Link>
               <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>{t('landing.cta_disclaimer')}</p>
@@ -582,25 +511,33 @@ export default function Landing() {
               <div>
                 <p style={{ color: C.white, fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>{t('landing.footer_access')}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <Link to="/signup" className="lp-link" style={{ fontSize: '13px', color: C.ink2, textDecoration: 'none' }}>{t('landing.footer_create')}</Link>
-                  <Link to="/login" className="lp-link" style={{ fontSize: '13px', color: C.ink2, textDecoration: 'none' }}>{t('landing.footer_login')}</Link>
+                  <Link to="/signup" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_create')}</Link>
+                  <Link to="/login" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_login')}</Link>
                   <a href="mailto:cultitrack@gmail.com" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_contact')}</a>
                   <a href="mailto:cultitrack@gmail.com?subject=Quiero listar mi marca" className="lp-link" style={{ fontSize: '13px' }}>{t('landing.footer_b2b')}</a>
                 </div>
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px', paddingBottom: '56px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <p style={{ color: C.ink3, fontSize: '12px', margin: 0 }}>© {new Date().getFullYear()} {t('landing.footer_copy')}</p>
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <a href="/privacy.html" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_privacy')}</a>
               <a href="/terms.html" className="lp-link" style={{ fontSize: '12px' }}>{t('landing.footer_terms')}</a>
-              <a href="#" className="lp-link" style={{ fontSize: '12px', color: C.ink3 }}>{t('landing.footer_age')}</a>
+              <span style={{ fontSize: '12px', color: C.ink3 }}>{t('landing.footer_age')}</span>
             </div>
           </div>
         </div>
       </footer>
 
+      </div>
+
+      {/* ── CTA fijo (solo mobile) ───────────────────────────────────────── */}
+      <div className={`lp-sticky${showSticky ? ' show' : ''}`} data-testid="sticky-cta" aria-hidden={!showSticky}>
+        <Link to="/signup" className="lp-btn" tabIndex={showSticky ? 0 : -1} style={{ display: 'block', textAlign: 'center', fontSize: '15px', padding: '14px' }}>
+          {t('landing.sticky_cta')}
+        </Link>
+      </div>
     </div>
   )
 }
