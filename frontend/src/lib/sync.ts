@@ -9,6 +9,7 @@ import type { Plant, ScheduledTask } from '@/types/plant'
 import type { MeasurementLog } from '@/types/measurement'
 import type { WeekLog } from '@/types/weekLog'
 import { parseDateOnly, formatDateOnly } from './date-utils'
+import { track } from './analytics'
 
 // ────────────────────────────────────────────────────────────────────
 // PLANTAS
@@ -337,6 +338,7 @@ export async function completeTaskInSupabase(taskId: string, notes?: string): Pr
       .eq('id', taskId)
 
     if (error) throw error
+    track('task_completed')
     return reward
   } catch (error) {
     console.error('Error completando tarea:', error)

@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n'
 import { useUserStore } from '@/store/userStore'
 import { REVEGETAR_TABLE } from '@/data/revegetar-table'
 import type { NutritionWeek } from '@/types/plant'
+import { track } from '@/lib/analytics'
 
 /** Vegetativo (6 semanas) + floracion (8 semanas) de la tabla REVEGETAR. */
 const VEGE_DAYS = 42
@@ -61,7 +62,11 @@ export default function CycleDemo() {
     return () => { io.disconnect(); if (timer) window.clearInterval(timer) }
   }, [])
 
-  const choose = (n: number) => { touched.current = true; setDay(n) }
+  const choose = (n: number) => {
+    if (!touched.current) track('demo_used')
+    touched.current = true
+    setDay(n)
+  }
 
   const week = weekFor(day)
   const flora = week.cycle === 'flora'
@@ -104,7 +109,7 @@ export default function CycleDemo() {
                 value={day}
                 aria-label={t('landing.demo_slider')}
                 onChange={(e) => choose(Number(e.target.value))}
-                onPointerDown={() => { touched.current = true }}
+                onPointerDown={() => { if (!touched.current) track('demo_used'); touched.current = true }}
                 style={{ background: `linear-gradient(90deg, ${GREEN} 0%, ${GREEN} ${cut}%, ${GOLD} ${cut}%, ${GOLD} 100%)`, opacity: 0.95 }}
               />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>

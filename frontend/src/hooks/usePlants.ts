@@ -15,6 +15,7 @@ import type { Plant, NutritionTable, ScheduledTask } from '@/types/plant'
 import { showErrorToast } from '@/store/toastStore'
 import { formatDateOnly } from '@/lib/date-utils'
 import { enqueueSyncAction } from '@/lib/syncQueue'
+import { track } from '@/lib/analytics'
 
 function applyProductFilter(table: NutritionTable, available: string[]): NutritionTable {
   return {
@@ -61,6 +62,7 @@ export function usePlants() {
       enqueueSyncAction('addPlant', { plant, tasks })
     }
 
+    track('plant_created', { crop: plant.cropType ?? 'cannabis', genetic: plant.geneticType ?? 'none' })
     return plant
   }
 
