@@ -1,0 +1,174 @@
+/* Landing de CultiTrack: siempre oscura. Todo lo de la pagina cuelga de .lp-root. */
+
+.lp-root {
+  --lp-bg: #0D110C;
+  --lp-green: #5CC76C;
+  --lp-gold: #D9A441;
+  --lp-terracotta: #D8715C;
+  --lp-eyebrow: var(--lp-green);
+  --lp-p: 0;
+  position: relative;
+  background: var(--lp-bg);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ── Tipografia ── */
+.lp-root h1, .lp-root h2, .lp-root h3 {
+  font-family: 'Fraunces Variable', Fraunces, 'Iowan Old Style', Georgia, serif;
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.lp-root h1 { font-size: clamp(38px, 5.2vw, 66px); line-height: 1.04; letter-spacing: -0.03em; }
+.lp-h2 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.06; margin: 0 0 16px; }
+.lp-em { font-style: italic; font-weight: 400; }
+.lp-eyebrow {
+  color: var(--lp-eyebrow);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.lp-sub { color: rgba(255, 255, 255, 0.6); font-size: 17px; line-height: 1.6; max-width: 560px; margin: 0 auto; }
+
+/* ── Capa de color que viaja del verde (vegetativo) al dorado (floracion) con el scroll ── */
+.lp-tint {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(900px 620px at 12% 0%, rgba(92, 199, 108, calc(0.13 * (1 - var(--lp-p)))), transparent 70%),
+    radial-gradient(900px 620px at 90% 100%, rgba(217, 164, 65, calc(0.16 * var(--lp-p))), transparent 70%);
+}
+.lp-content { position: relative; z-index: 1; }
+
+/* ── Hilo del ciclo (tallo que crece con el scroll) ── */
+.lp-stem { position: absolute; top: 0; left: 0; width: 28px; pointer-events: none; z-index: 2; }
+.lp-stem-leaf {
+  transform-origin: 0 0;
+  transform: rotate(var(--r)) scale(0);
+  opacity: 0;
+  transition: transform 0.7s cubic-bezier(0.3, 1.5, 0.5, 1), opacity 0.4s ease;
+}
+.lp-stem-leaf.on { transform: rotate(var(--r)) scale(1); opacity: 0.9; }
+@media (max-width: 767px) { .lp-stem { opacity: 0.5; } }
+
+/* ── Aparicion al scroll (escalonada con --i) ── */
+.lp-reveal {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.lp-reveal.in { opacity: 1; transform: none; }
+
+/* ── Planta que se dibuja sola ── */
+.lp-draw { stroke-dasharray: 1; animation: lp-draw 1.9s cubic-bezier(0.4, 0, 0.2, 1) backwards; }
+.lp-pop { transform-box: fill-box; transform-origin: center; animation: lp-pop 0.6s ease 1.5s backwards; }
+@keyframes lp-draw { from { stroke-dashoffset: 1; } }
+@keyframes lp-pop { from { opacity: 0; transform: scale(0.2); } }
+
+/* ── Botones y tarjetas ── */
+.lp-btn {
+  display: inline-block; background: var(--lp-green); color: #0D110C; font-weight: 800;
+  text-decoration: none; letter-spacing: -0.2px; border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(92, 199, 108, 0.18);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.lp-btn:hover { box-shadow: 0 8px 30px rgba(92, 199, 108, 0.32); transform: translateY(-1px); }
+.lp-btn-ghost {
+  display: inline-block; background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.92);
+  font-weight: 600; text-decoration: none; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.2s, border-color 0.2s;
+}
+.lp-btn-ghost:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); }
+.lp-link { color: rgba(255, 255, 255, 0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+.lp-link:hover { color: #fff; }
+.lp-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; transition: background 0.2s, border-color 0.2s, transform 0.2s; }
+.lp-card:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(92, 199, 108, 0.22); transform: translateY(-2px); }
+.faq-content { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; }
+
+.lp-root :focus-visible { outline: 2px solid rgba(92, 199, 108, 0.65); outline-offset: 3px; border-radius: 4px; }
+
+/* ── Hero: mockup de la app ── */
+.lp-phone {
+  width: 100%; max-width: 330px; margin: 0 auto; position: relative;
+  background: linear-gradient(180deg, #141A12, #0F150E);
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 38px; padding: 18px 16px 20px;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55), 0 0 0 6px rgba(255, 255, 255, 0.025), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.lp-float { animation: lp-float 6s ease-in-out infinite; }
+.lp-float-b { animation-duration: 7.5s; animation-delay: -2s; }
+.lp-float-c { animation-duration: 8.5s; animation-delay: -4s; }
+@keyframes lp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.lp-mock-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); display: grid; place-items: center; flex-shrink: 0; color: transparent; }
+.lp-mock-a .lp-mock-check { animation: lp-check-a 10s infinite; }
+.lp-mock-b .lp-mock-check { animation: lp-check-b 10s infinite; }
+.lp-mock-c .lp-mock-check { animation: lp-check-c 10s infinite; }
+.lp-mock-a .lp-mock-label { animation: lp-strike-a 10s infinite; }
+.lp-mock-b .lp-mock-label { animation: lp-strike-b 10s infinite; }
+.lp-mock-c .lp-mock-label { animation: lp-strike-c 10s infinite; }
+@keyframes lp-check-a { 0%, 14% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } 18%, 92% { background: #5CC76C; border-color: #5CC76C; color: #0D110C; } 100% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } }
+@keyframes lp-check-b { 0%, 38% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } 42%, 92% { background: #5CC76C; border-color: #5CC76C; color: #0D110C; } 100% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } }
+@keyframes lp-check-c { 0%, 62% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } 66%, 92% { background: #5CC76C; border-color: #5CC76C; color: #0D110C; } 100% { background: transparent; border-color: rgba(255,255,255,.25); color: transparent; } }
+@keyframes lp-strike-a { 0%, 14% { opacity: 1; } 18%, 92% { opacity: 0.5; } 100% { opacity: 1; } }
+@keyframes lp-strike-b { 0%, 38% { opacity: 1; } 42%, 92% { opacity: 0.5; } 100% { opacity: 1; } }
+@keyframes lp-strike-c { 0%, 62% { opacity: 1; } 66%, 92% { opacity: 0.5; } 100% { opacity: 1; } }
+
+/* ── Problema: antes / despues ── */
+.lp-ba { display: grid; grid-template-columns: 1fr auto 1fr; gap: 28px; align-items: center; }
+.lp-note {
+  background: rgba(217, 164, 65, 0.08); border: 1px dashed rgba(217, 164, 65, 0.35);
+  border-radius: 6px 16px 8px 14px; padding: 16px 18px; transform: rotate(var(--rot, -1deg));
+  transition: transform 0.3s ease;
+}
+.lp-note:hover { transform: rotate(0deg) translateY(-2px); }
+@media (max-width: 860px) {
+  .lp-ba { grid-template-columns: 1fr; }
+  .lp-ba-arrow { transform: rotate(90deg); justify-self: center; }
+}
+
+/* ── Demo del ciclo ── */
+.lp-range { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 99px; outline-offset: 6px; cursor: pointer; }
+.lp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 4px solid var(--demo-accent, #5CC76C); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+.lp-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid var(--demo-accent, #5CC76C); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+.lp-chip { border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.1); transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.lp-chip:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.lp-demo { display: grid; grid-template-columns: 1.05fr 1fr; gap: 20px; }
+@media (max-width: 860px) { .lp-demo { grid-template-columns: 1fr; } }
+
+/* ── Funcionalidades (bento) ── */
+.lp-bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+.lp-b4 { grid-column: span 4; }
+.lp-b2 { grid-column: span 2; }
+.lp-b3 { grid-column: span 3; }
+.lp-b6 { grid-column: span 6; }
+.lp-bento-tile { padding: 26px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; position: relative; }
+.lp-b6.lp-bento-tile { flex-direction: row; align-items: center; gap: 48px; }
+.lp-b6.lp-bento-tile > :first-child { flex: 1; }
+.lp-b6.lp-bento-tile > :last-child { flex: 1.3; }
+@media (max-width: 960px) { .lp-b4, .lp-b2 { grid-column: span 3; } }
+@media (max-width: 760px) { .lp-b6.lp-bento-tile { flex-direction: column; align-items: stretch; gap: 18px; } }
+@media (max-width: 640px) { .lp-bento > * { grid-column: span 6; } }
+@keyframes lp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes lp-grow-x { from { transform: scaleX(0); } }
+.lp-grow { transform-origin: left; animation: lp-grow-x 1.4s ease 0.2s backwards; }
+.lp-reveal:not(.in) .lp-draw, .lp-reveal:not(.in) .lp-pop, .lp-reveal:not(.in) .lp-grow { animation-play-state: paused; }
+.lp-pulse { animation: lp-pulse 2.2s ease-in-out infinite; }
+
+/* ── CTA fijo en mobile ── */
+.lp-sticky {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(13, 17, 12, 0.96) 60%, rgba(13, 17, 12, 0));
+  transform: translateY(110%); transition: transform 0.35s ease;
+}
+.lp-sticky.show { transform: none; }
+@media (min-width: 768px) { .lp-sticky { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-root * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  .lp-reveal { opacity: 1; transform: none; }
+}
+
+/* ── Mobile: el header no se amontona y los chips flotantes no se salen de pantalla ── */
+@media (max-width: 767px) { .lp-root .lp-nav-cta { display: none; } }
+@media (max-width: 520px) { .lp-root .lp-chipf { display: none; } }

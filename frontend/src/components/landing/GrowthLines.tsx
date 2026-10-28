@@ -8,11 +8,13 @@ interface GrowthLinesProps {
   variant?: 'hero' | 'divider' | 'background'
   className?: string
   opacity?: number
+  /** Solo hero: la planta se dibuja sola de la raiz al brote. */
+  draw?: boolean
 }
 
 const GREEN = '#5CC76C'
 
-export function GrowthLines({ variant = 'hero', className, opacity }: GrowthLinesProps) {
+export function GrowthLines({ variant = 'hero', className, opacity, draw = false }: GrowthLinesProps) {
   if (variant === 'divider') {
     return (
       <svg
@@ -69,6 +71,10 @@ export function GrowthLines({ variant = 'hero', className, opacity }: GrowthLine
     )
   }
 
+  // Con `draw`, cada trazo se dibuja en cascada (pathLength=1 normaliza el largo) y los nodos "brotan" al final.
+  const stroke = (n: number) => (draw ? { pathLength: 1, className: 'lp-draw', style: { animationDelay: `${n * 0.16}s` } } : {})
+  const node = draw ? { className: 'lp-pop' } : {}
+
   // variant === 'hero' — composicion principal, mas detallada, con nodos.
   return (
     <svg
@@ -80,60 +86,60 @@ export function GrowthLines({ variant = 'hero', className, opacity }: GrowthLine
       {/* raiz */}
       <path
         d="M 240 540 C 236 500, 244 470, 238 430"
-        fill="none" stroke={GREEN} strokeWidth="3" strokeLinecap="round" opacity="0.55"
+        fill="none" stroke={GREEN} strokeWidth="3" strokeLinecap="round" opacity="0.55" {...stroke(0)}
       />
       <path
         d="M 238 430 C 220 445, 200 448, 180 465"
-        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.32"
+        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.32" {...stroke(1)}
       />
       <path
         d="M 238 430 C 258 442, 272 442, 292 462"
-        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.32"
+        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.32" {...stroke(1)}
       />
 
       {/* tallo */}
       <path
         d="M 240 430 C 236 370, 244 330, 238 270"
-        fill="none" stroke={GREEN} strokeWidth="3" strokeLinecap="round" opacity="0.6"
+        fill="none" stroke={GREEN} strokeWidth="3" strokeLinecap="round" opacity="0.6" {...stroke(2)}
       />
 
       {/* ramificacion 1 */}
       <path
         d="M 238 340 C 200 330, 170 300, 128 288"
-        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.4"
+        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.4" {...stroke(3)}
       />
-      <circle cx="128" cy="288" r="5" fill={GREEN} opacity="0.6" />
+      <circle cx="128" cy="288" r="5" fill={GREEN} opacity="0.6" {...node} />
 
       {/* ramificacion 2 */}
       <path
         d="M 238 300 C 280 288, 316 258, 360 250"
-        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.4"
+        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.4" {...stroke(4)}
       />
-      <circle cx="360" cy="250" r="5" fill={GREEN} opacity="0.6" />
+      <circle cx="360" cy="250" r="5" fill={GREEN} opacity="0.6" {...node} />
 
       {/* crecimiento — tramo superior, mas delicado */}
       <path
         d="M 238 270 C 232 220, 244 190, 236 140"
-        fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" opacity="0.7"
+        fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" opacity="0.7" {...stroke(5)}
       />
       <path
         d="M 236 190 C 210 180, 190 155, 160 148"
-        fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" opacity="0.45"
+        fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" opacity="0.45" {...stroke(6)}
       />
-      <circle cx="160" cy="148" r="4" fill={GREEN} opacity="0.65" />
+      <circle cx="160" cy="148" r="4" fill={GREEN} opacity="0.65" {...node} />
       <path
         d="M 236 170 C 262 158, 284 132, 314 122"
-        fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" opacity="0.45"
+        fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" opacity="0.45" {...stroke(6)}
       />
-      <circle cx="314" cy="122" r="4" fill={GREEN} opacity="0.65" />
+      <circle cx="314" cy="122" r="4" fill={GREEN} opacity="0.65" {...node} />
 
       {/* brote final */}
       <path
         d="M 236 140 C 232 110, 240 90, 236 62"
-        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.85"
+        fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" opacity="0.85" {...stroke(7)}
       />
-      <circle cx="236" cy="56" r="7" fill={GREEN} opacity="0.9" />
-      <circle cx="236" cy="56" r="14" fill={GREEN} opacity="0.15" />
+      <circle cx="236" cy="56" r="7" fill={GREEN} opacity="0.9" {...node} />
+      <circle cx="236" cy="56" r="14" fill={GREEN} opacity="0.15" {...node} />
     </svg>
   )
 }
