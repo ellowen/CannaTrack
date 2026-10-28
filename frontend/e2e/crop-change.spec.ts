@@ -29,7 +29,7 @@ test('Cannabis -> Tomate: la tarea completada se conserva, ninguna se duplica ni
   await page.getByRole('button', { name: /Marcar como completada/i }).first().click()
   await page.getByRole('button', { name: /Confirmar/i }).click()
   await expect(page.getByText(/\+\d+ XP/)).not.toBeVisible({ timeout: 5_000 })
-  await expect(page.getByText('✅ Completada')).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByText('Completada', { exact: true })).toBeVisible({ timeout: 5_000 })
 
   const pendingCountBefore = await page.getByRole('button', { name: /Marcar como completada/i }).count()
 
@@ -48,8 +48,8 @@ test('Cannabis -> Tomate: la tarea completada se conserva, ninguna se duplica ni
   await gotoApp(page, '/plants/p1')
 
   // La tarea completada sigue completada, exactamente una vez.
-  await expect(page.getByText('✅ Completada')).toBeVisible({ timeout: 10_000 })
-  expect(await page.getByText('✅ Completada').count()).toBe(1)
+  await expect(page.getByText('Completada', { exact: true })).toBeVisible({ timeout: 10_000 })
+  expect(await page.getByText('Completada', { exact: true }).count()).toBe(1)
 
   // Las pendientes no se duplicaron ni se regeneraron de mas.
   const pendingCountAfter = await page.getByRole('button', { name: /Marcar como completada/i }).count()

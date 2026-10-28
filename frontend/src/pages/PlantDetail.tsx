@@ -1,3 +1,4 @@
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState } from 'react'
 import { compareToSheet, harvestStats, isValidHarvestWeight, sheetYieldFor } from '@/lib/harvest-stats'
 import { useTranslation } from 'react-i18next'
@@ -70,8 +71,7 @@ export default function PlantDetail() {
   if (!plant) {
     return (
       <div className="px-4 pt-16 text-center">
-        <p className="text-4xl mb-4">🔍</p>
-        <p className="text-ink-3 mb-6">Planta no encontrada.</p>
+                <p className="text-ink-3 mb-6">Planta no encontrada.</p>
         <Button variant="secondary" onClick={() => navigate('/')}>{t('plantDetail.back_home')}</Button>
       </div>
     )
@@ -195,7 +195,7 @@ export default function PlantDetail() {
           )}
           {!planned && daysToHarvest !== null && daysToHarvest <= 0 && (
             <div className="mt-5 inline-flex items-center gap-2 bg-app-card border border-app-border rounded-2xl px-4 py-2">
-              <span className="text-xl">✂️</span>
+              <span className="text-task-harvest"><TaskTypeIcon type="harvest" className="w-5 h-5" /></span>
               <span className="text-sm font-bold text-ink-1">{t('plantDetail.ready_harvest')}</span>
             </div>
           )}
@@ -212,12 +212,12 @@ export default function PlantDetail() {
           {/* Datos de la planta */}
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 text-xs text-ink-3">
             {[
-              { icon: '📅', label: format(plant.startDate, "d MMM yyyy", { locale: es }) },
-              { icon: plant.location === 'indoor' ? '🏠' : '☀️', label: plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor') },
-              { icon: '🪴', label: `${plant.potCount} ${plant.potCount > 1 ? t('plantDetail.pots_plural') : t('plantDetail.pots')} · ${potLiters}L` },
+              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true"><path d="M3 6a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 10h18M8 2v4M16 2v4" /></svg>, label: format(plant.startDate, "d MMM yyyy", { locale: es }) },
+              { icon: plant.location === 'indoor' ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10" /></svg> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></svg>, label: plant.location === 'indoor' ? t('plantDetail.location_indoor') : t('plantDetail.location_outdoor') },
+              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 8h14l-1.5 12h-11zM4 8h16M9 8V5a3 3 0 016 0v3" /></svg>, label: `${plant.potCount} ${plant.potCount > 1 ? t('plantDetail.pots_plural') : t('plantDetail.pots')} · ${potLiters}L` },
             ].map(({ icon, label }) => (
               <span key={label} className="inline-flex items-center gap-1.5">
-                <span>{icon}</span>
+                <span className="text-ink-4">{icon}</span>
                 {label}
               </span>
             ))}
@@ -254,7 +254,7 @@ export default function PlantDetail() {
         {needsFlora && (
           <div className="bg-flora-bg rounded-2xl border border-flora-border p-4">
             <div className="flex items-start gap-3 mb-4">
-              <span className="text-3xl">🌸</span>
+              <span className="text-flora-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8" aria-hidden="true"><path d="M12 22V12M12 12c0-5 4-8 8-8 0 4-3 8-8 8zM12 12c0-5-4-8-8-8 0 4 3 8 8 8z" /></svg></span>
               <div>
                 <p className="text-sm font-bold text-flora-text mb-0.5">{t('plantDetail.vege_complete')}</p>
                 <p className="text-sm text-ink-3">
@@ -306,7 +306,7 @@ export default function PlantDetail() {
                     }}
                     className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
                   >
-                    🌸 Confirmar floración
+                    Confirmar floración
                   </button>
                 </div>
               </div>
@@ -332,7 +332,7 @@ export default function PlantDetail() {
                   onClick={() => setFloraPickerOpen(true)}
                   className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
                 >
-                  🌸 {t('plantDetail.choose_date')}
+                  {t('plantDetail.choose_date')}
                 </button>
               </div>
             )}
@@ -367,8 +367,8 @@ export default function PlantDetail() {
         {/* Tareas vencidas */}
         {overdueTasks.length > 0 && (
           <section className="space-y-2">
-            <p className="text-xs font-bold text-red-500 uppercase tracking-widest">⚠️ Vencidas · {overdueTasks.length}</p>
-            <div className="bg-app-card rounded-2xl border border-red-200 dark:border-red-900/50 shadow-card divide-y divide-app-border px-2">
+            <p className="text-xs font-bold text-task-harvest uppercase tracking-widest">Vencidas · {overdueTasks.length}</p>
+            <div className="bg-app-card rounded-2xl border border-task-harvest/30 shadow-card divide-y divide-app-border px-2">
               {overdueTasks.map((task) => (
                 <TaskItem
                   key={task.id}
@@ -404,7 +404,7 @@ export default function PlantDetail() {
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-brand-400">✅ {t('plantDetail.task_completed')}</span>
+                    <span className="text-sm font-semibold text-brand-400">{t('plantDetail.task_completed')}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {task.completionNotes && (
                         <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
@@ -433,11 +433,11 @@ export default function PlantDetail() {
                     onClick={() => setCompletingTask(task)}
                     className="mt-2 w-full py-3 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
                   >
-                    💧 {t('plantDetail.irrigation_done')}
+                    {t('plantDetail.irrigation_done')}
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
+                    <span className="text-sm font-semibold text-ink-3">Completado</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {task.completionNotes && (
                         <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
@@ -466,11 +466,11 @@ export default function PlantDetail() {
                     onClick={() => setCompletingTask(task)}
                     className="mt-2 w-full py-3 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
                   >
-                    🌫️ {t('plantDetail.foliar_done')}
+                    {t('plantDetail.foliar_done')}
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-app-elevated border border-app-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-ink-3">✅ Completado</span>
+                    <span className="text-sm font-semibold text-ink-3">Completado</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {task.completionNotes && (
                         <span className="text-xs text-ink-4 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
@@ -508,8 +508,7 @@ export default function PlantDetail() {
         {/* Sin tareas */}
         {selectedDayTasks.length === 0 && (
           <div className="glass-card rounded-2xl p-5 text-center">
-            <p className="text-2xl mb-2">🌤️</p>
-            <p className="text-sm text-ink-3">
+                        <p className="text-sm text-ink-3">
               {isSelectedToday ? t('plantDetail.no_tasks_today') : t('plantDetail.no_tasks_day')}
             </p>
           </div>
@@ -621,9 +620,9 @@ export default function PlantDetail() {
 
         {/* Callout hidroponia */}
         {plant.growMedium === 'hydro' && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl px-4 py-3 flex gap-3 items-start">
-            <span className="text-base shrink-0">💧</span>
-            <p className="text-xs text-blue-300 leading-relaxed">
+          <div className="bg-task-irrigation/10 border border-task-irrigation/25 rounded-2xl px-4 py-3 flex gap-3 items-start">
+            <span className="shrink-0 text-task-irrigation"><TaskTypeIcon type="irrigation" className="w-4 h-4" /></span>
+            <p className="text-xs text-ink-2 leading-relaxed">
               Monitoreá EC y pH diariamente. Cambiá el reservorio cada 7-10 dias.
             </p>
           </div>
@@ -632,7 +631,7 @@ export default function PlantDetail() {
         {/* Notas de la planta */}
         {plant.notes && (
           <div className="glass-card rounded-2xl px-4 py-3 flex gap-3">
-            <span className="text-base shrink-0">📝</span>
+            <span className="shrink-0 text-ink-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3" /></svg></span>
             <p className="text-sm text-ink-3 leading-relaxed">{plant.notes}</p>
           </div>
         )}
@@ -642,7 +641,7 @@ export default function PlantDetail() {
         {/* Próximas */}
         {upcoming.length > 0 && (
           <section>
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">📅 Próximas tareas</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Próximas tareas</p>
             <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
               {upcoming.map((task) => (
                 <TaskItem key={task.id} task={task} showDate />
@@ -656,7 +655,7 @@ export default function PlantDetail() {
         {/* Tareas canceladas: historial con su motivo y opcion de restaurar */}
         {skippedTasks.length > 0 && (
           <section data-testid="skipped-tasks">
-            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">🚫 Canceladas · {skippedTasks.length}</p>
+            <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Canceladas · {skippedTasks.length}</p>
             <div className="glass-card rounded-2xl divide-y divide-app-border px-2">
               {[...skippedTasks]
                 .sort((a, b) => b.scheduledDate.getTime() - a.scheduledDate.getTime())
@@ -699,7 +698,7 @@ export default function PlantDetail() {
             style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '1px solid rgba(245,158,11,0.5)' }}
           >
             <span className="flex flex-col items-center gap-0.5">
-              <span className="flex items-center gap-2 text-[15px]">🌸 {t('plantDetail.start_flora_btn')}</span>
+              <span className="flex items-center gap-2 text-[15px]">{t('plantDetail.start_flora_btn')}</span>
               <span className="text-xs font-normal text-white/70">{t('plantDetail.start_flora_hint')}</span>
             </span>
           </button>
@@ -709,7 +708,7 @@ export default function PlantDetail() {
         {floraPickerOpen && !needsFlora && (
           <div className="glass-card rounded-2xl p-4 space-y-3">
             <div className="flex items-start gap-3 mb-1">
-              <span className="text-2xl">🌸</span>
+              <span className="text-flora-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7" aria-hidden="true"><path d="M12 22V12M12 12c0-5 4-8 8-8 0 4-3 8-8 8zM12 12c0-5-4-8-8-8 0 4 3 8 8 8z" /></svg></span>
               <div>
                 <p className="text-sm font-bold text-ink-1 mb-0.5">Iniciar floración</p>
                 <p className="text-sm text-ink-3">Elegí la fecha en que cambiaste el fotoperiodo.</p>
@@ -754,7 +753,7 @@ export default function PlantDetail() {
                 }}
                 className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-card-md"
               >
-                🌸 Confirmar floración
+                Confirmar floración
               </button>
             </div>
           </div>
@@ -773,22 +772,22 @@ export default function PlantDetail() {
                   discardPlant(plant.id)
                   navigate('/')
                 }}
-                className="flex-1 py-3 rounded-2xl border border-red-900/40 bg-red-950/30 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+                className="flex-1 py-3 rounded-2xl border border-task-harvest/30 bg-task-harvest/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
               >
-                <span className="text-xl">🗑️</span>
-                <span className="text-xs font-bold text-red-400">{t('plants.discard')}</span>
-                <span className="text-[10px] text-red-900">{t('plantDetail.discard_hint')}</span>
+                <span className="text-task-harvest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg></span>
+                <span className="text-xs font-bold text-task-harvest">{t('plants.discard')}</span>
+                <span className="text-[10px] text-ink-4">{t('plantDetail.discard_hint')}</span>
               </button>
 
               {/* Cosechar */}
               {(!plantIsCannabis || plant.floraStartDate || plant.geneticType === 'autoflower') && (
                 <button
                   onClick={() => setHarvestSheetOpen(true)}
-                  className="flex-1 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
+                  className="flex-1 py-3 rounded-2xl border border-flora-border bg-flora-bg flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
                 >
-                  <span className="text-xl">🌾</span>
-                  <span className="text-xs font-bold text-amber-400">{t('plants.harvest')}</span>
-                  <span className="text-[10px] text-amber-700">{t('plantDetail.harvest_hint')}</span>
+                  <span className="text-flora-text"><TaskTypeIcon type="harvest" className="w-5 h-5" /></span>
+                  <span className="text-xs font-bold text-flora-text">{t('plants.harvest')}</span>
+                  <span className="text-[10px] text-ink-4">{t('plantDetail.harvest_hint')}</span>
                 </button>
               )}
 
@@ -797,7 +796,7 @@ export default function PlantDetail() {
                 to={`/plants/${plant.id}/edit`}
                 className="flex-1 py-3 rounded-2xl border border-app-border bg-app-card flex flex-col items-center gap-1 tap-highlight-none active:scale-95 transition-all"
               >
-                <span className="text-xl">⚙️</span>
+                <span className="text-ink-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M17.6 3.6a2 2 0 112.8 2.8L11.8 15H9v-2.8z" /></svg></span>
                 <span className="text-xs font-bold text-ink-3">{t('common.edit')}</span>
                 <span className="text-[10px] text-ink-4">{t('plantDetail.edit_hint')}</span>
               </Link>
@@ -809,7 +808,7 @@ export default function PlantDetail() {
                 onClick={() => setHarvestSheetOpen(true)}
                 className="mt-3 w-full py-3 rounded-2xl border border-amber-500/20 text-sm font-bold text-amber-400 bg-amber-500/5 tap-highlight-none active:scale-95 transition-all"
               >
-                ✂️ Finalizar cultivo
+                Finalizar cultivo
               </button>
             )}
           </section>
@@ -824,7 +823,7 @@ export default function PlantDetail() {
           const invalid = weightInput !== null && !isValidHarvestWeight(parsed as number)
           return (
             <section className="glass-card rounded-2xl p-4" data-testid="harvest-weight">
-              <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-2">⚖️ Peso cosechado</p>
+              <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-2">Peso cosechado</p>
               {weightInput === null ? (
                 <>
                   {plant.harvestWeightG != null ? (
@@ -889,7 +888,7 @@ export default function PlantDetail() {
         {(plant.status === 'harvested' || plant.status === 'discarded') && (
           <section className="pt-2 border-t border-app-border">
             <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">
-              {plant.status === 'harvested' ? `🌾 ${t('plantDetail.harvested_status')}` : `🗑️ ${t('plantDetail.discarded_status')}`}
+              {plant.status === 'harvested' ? t('plantDetail.harvested_status') : t('plantDetail.discarded_status')}
             </p>
             <button
               onClick={() => {
@@ -905,7 +904,7 @@ export default function PlantDetail() {
 
         {table && (
           <p className="text-[11px] text-center text-ink-4 pb-2">
-            📊 {table.name.split('—')[0].trim()} · {potLiters}L por maceta
+            {table.name.split('—')[0].trim()} · {potLiters}L por maceta
           </p>
         )}
         </>)}

@@ -113,7 +113,7 @@ test.describe('Offline-first', () => {
     await expect(page.getByRole('heading', { name: 'Auto Strawberry Soda' })).toBeVisible()
     await page.getByRole('button', { name: /Marcar como completada/i }).first().click()
     await page.getByRole('button', { name: /Confirmar/ }).click()
-    await expect(page.getByText('✅ Completada')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('Completada', { exact: true })).toBeVisible({ timeout: 8_000 })
     expect(dbTasks(context).some((t) => t.completed === true)).toBe(false)
 
     await setOffline(context, false)

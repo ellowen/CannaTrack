@@ -44,7 +44,7 @@ test.describe('Tareas: completar, nota, EC/pH, saltar y deshacer', () => {
     await page.getByRole('button', { name: /Confirmar/i }).click()
     await expect(page.getByText(/\+\d+ XP/)).toBeVisible()
     expect(getXpAwardedCalls(context)).toHaveLength(1)
-    await expect(page.getByText('✅ Completada')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('Completada', { exact: true })).toBeVisible({ timeout: 5_000 })
     expect(dbTasks(context).some((t) => t.plant_id === plantId && t.completed === true)).toBe(true)
   })
 
@@ -91,7 +91,7 @@ test.describe('Tareas: completar, nota, EC/pH, saltar y deshacer', () => {
     await markDone(page).first().click()
     await page.getByRole('button', { name: /Confirmar/i }).click()
     await expect(page.getByText(/\+\d+ XP/)).toBeVisible()
-    await expect(page.getByText('✅ Completada')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('Completada', { exact: true })).toBeVisible({ timeout: 5_000 })
     await page.getByRole('button', { name: /Deshacer/i }).first().click()
     await expect(markDone(page).first()).toBeVisible()
     await expect.poll(() => dbTasks(context).some((t) => t.plant_id === plantId && t.completed === true)).toBe(false)

@@ -160,3 +160,8 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - Hoja de tarea completada: el ✅ gigante pasa a un circulo verde con check y la racha usa una llama de linea.
 - Home, Mis plantas e Inventario: estados vacios y de error con el logo o un triangulo de aviso de linea en vez de 🌱/⚠️; aviso de vencidas en terracota; racha con llama; sin emoji en "En Nd", "N hoy", estado del inventario, peso cosechado y tarjetas del historial.
 - No se tocaron los emojis que los E2E usan como parte de un texto de boton o chip ("🌧️ Cancelar tarea", "📅 Mover a otro dia", "✅ Completada", "☀️ 18/6", "🥥 Coco", "🔒 Pro", "⭐ Plan Pro"): cambiarlos implica reescribir esos tests y se hace aparte si se quiere.
+
+## Veinteava tanda (2026-10-28): emojis del detalle de planta
+- Detalle de planta sin emojis decorativos: datos del hero (fecha, ubicacion, maceta) con iconos de linea; alerta de floracion con flor de linea (los botones pierden el 🌸 del texto); "Vencidas" en terracota; Descartar/Cosechar/Editar de "Zona de peligro" con iconos de linea y los colores de la paleta (antes rojo y ambar oscuros); callout de hidroponia con el color de riego; notas, proximas, canceladas, peso y estado sin emoji.
+- Tests: `✅ Completada` pasa a `Completada` (match exacto) en 3 specs. Siguen con emoji, a proposito, los chips que los E2E leen tal cual: `☀️ 18/6`, `🌙 12/12`, `🥥 Coco`, `⚡ Hoy`.
+- Quedan emojis en Perfil (iconos de estadisticas y logros), Ajustes (tema, plan), hojas de cosecha y diario, y en la hoja de tarea los botones "🌧️ Cancelar tarea" / "📅 Mover a otro dia" / "💧 Medicion".
