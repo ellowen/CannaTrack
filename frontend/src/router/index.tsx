@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import Layout from '@/components/ui/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -22,6 +22,7 @@ const Profile      = lazy(() => import('@/pages/Profile'))
 const CustomTable  = lazy(() => import('@/pages/CustomTable'))
 const PlantBrowser = lazy(() => import('@/pages/PlantBrowser'))
 const Inventory    = lazy(() => import('@/pages/Inventory'))
+const SharedDiary  = lazy(() => import('@/pages/SharedDiary'))
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +36,11 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignUp />,
+  },
+  {
+    // Publica: la ve quien recibe el link, sin cuenta
+    path: '/d/:token',
+    element: <Suspense fallback={null}><SharedDiary /></Suspense>,
   },
   {
     path: '/forgot-password',

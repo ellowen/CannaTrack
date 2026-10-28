@@ -10,6 +10,9 @@ export type AnalyticsEvent =
   | 'plant_created'
   | 'task_completed'
   | 'data_exported'
+  | 'diary_shared'
+  | 'shared_diary_view'
+  | 'shared_diary_cta'
 
 let memoSession: string | undefined
 
