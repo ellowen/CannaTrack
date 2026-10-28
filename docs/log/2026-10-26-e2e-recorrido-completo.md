@@ -154,3 +154,9 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - **Prueba vencida / aviso de prueba:** la pantalla de bloqueo usa el logo en vez del emoji, titulo en serif, checks de linea, boton sin brillo; el aviso de "dias de prueba" usa los tokens de flora con un reloj de linea en vez de ⏳. Mismos textos.
 - **Calendario:** los dias pasados con tareas pendientes se pintaban en rojo saturado (en un mes con atrasos quedaba una columna roja que gritaba mas que el resto de la app). Ahora usan el terracota de la paleta; numeros en negrita normal y el dia elegido sin brillo.
 - Con esto quedan restyleadas todas las pantallas de la app salvo detalles menores (emojis en algunos chips).
+
+## Diecinueveava tanda (2026-10-28): emojis -> iconos de linea
+- Nuevo `TaskTypeIcon` (nutricion, riego, observacion, foliar, cosecha) en `components/ui`, con el color de la paleta por tipo. Reemplaza los emojis 🍃💧🔍🌫️✂️ en Calendario (tarjeta, linea de tiempo, item), la hoja de completar tarea y las tarjetas de riego/foliar (que ademas pasan de azul/violeta de Tailwind a los tokens de tarea).
+- Hoja de tarea completada: el ✅ gigante pasa a un circulo verde con check y la racha usa una llama de linea.
+- Home, Mis plantas e Inventario: estados vacios y de error con el logo o un triangulo de aviso de linea en vez de 🌱/⚠️; aviso de vencidas en terracota; racha con llama; sin emoji en "En Nd", "N hoy", estado del inventario, peso cosechado y tarjetas del historial.
+- No se tocaron los emojis que los E2E usan como parte de un texto de boton o chip ("🌧️ Cancelar tarea", "📅 Mover a otro dia", "✅ Completada", "☀️ 18/6", "🥥 Coco", "🔒 Pro", "⭐ Plan Pro"): cambiarlos implica reescribir esos tests y se hace aparte si se quiere.

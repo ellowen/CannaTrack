@@ -1,3 +1,5 @@
+import { LogoMark } from '@/components/ui'
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { differenceInDays, format } from 'date-fns'
@@ -125,7 +127,7 @@ function HistoryPlantCard({ plant, t }: { plant: Plant; t: (key: string) => stri
       className="flex items-center gap-3 glass-card rounded-2xl p-4 active:scale-[0.97] transition-all tap-highlight-none"
     >
       <div className="w-10 h-10 rounded-xl bg-app-elevated border border-app-border flex items-center justify-center text-xl shrink-0">
-        {isHarvested ? '✂️' : '🗑️'}
+        {isHarvested ? <TaskTypeIcon type="harvest" className="w-5 h-5" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>}
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="font-bold text-sm text-ink-1 truncate">{plant.name}</h3>
@@ -365,7 +367,7 @@ export default function PlantBrowser() {
           /* Falla de red al cargar -- distinto de "no tenes plantas
              todavia" (ver mismo patron en Home.tsx). */
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
-            <div className="text-5xl mb-4 opacity-60">⚠️</div>
+            <div className="mb-4 text-task-harvest opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg></div>
             <h2 className="text-lg font-black text-ink-1 mb-2">No pudimos cargar tus datos</h2>
             <p className="text-sm text-ink-3 mb-6 max-w-xs leading-relaxed">
               Revisá tu conexión e intentá de nuevo.
@@ -379,7 +381,7 @@ export default function PlantBrowser() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
-            <div className="text-5xl mb-4 opacity-60 float">🌱</div>
+            <div className="mb-4 float"><LogoMark size={64} /></div>
             <h2 className="text-lg font-black text-ink-1 mb-2">
               {search ? t('plants.no_results') : t('plants.no_plants')}
             </h2>

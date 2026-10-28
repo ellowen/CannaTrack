@@ -2,13 +2,14 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 
-const typeIcon: Record<string, string> = {
-  nutrition:   '🍃',
-  irrigation:  '💧',
-  observation: '🔍',
-  foliar:      '🌫️',
-  harvest:     '✂️',
+const typeColor: Record<string, string> = {
+  nutrition:   'text-task-nutrition',
+  irrigation:  'text-task-irrigation',
+  observation: 'text-task-observation',
+  foliar:      'text-task-foliar',
+  harvest:     'text-task-harvest',
 }
 const typeLabel: Record<string, string> = {
   nutrition:   'Nutrición',
@@ -26,7 +27,7 @@ interface TaskItemProps {
 
 function getMainLabel(task: ScheduledTask): string {
   if (task.type === 'nutrition') {
-    if (task.products.length === 0) return 'Solo agua 💧'
+    if (task.products.length === 0) return 'Solo agua'
     return task.products.map((p) => p.name).join(' · ')
   }
   return typeLabel[task.type] ?? task.type
@@ -38,7 +39,7 @@ export default function TaskItem({ task, onComplete, showDate = false }: TaskIte
       'flex items-center gap-3 py-3 px-1',
       task.completed && 'opacity-50'
     )}>
-      <span className="text-xl shrink-0">{typeIcon[task.type] ?? '📌'}</span>
+      <span className={clsx('shrink-0', typeColor[task.type] ?? 'text-ink-3')}><TaskTypeIcon type={task.type} className="w-5 h-5" /></span>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 min-w-0">
@@ -68,7 +69,7 @@ export default function TaskItem({ task, onComplete, showDate = false }: TaskIte
         </button>
       )}
       {task.completed && (
-        <span className="text-base shrink-0">✅</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-400" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
       )}
     </div>
   )

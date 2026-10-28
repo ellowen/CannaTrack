@@ -1,3 +1,4 @@
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { format, differenceInDays, addDays } from 'date-fns'
@@ -250,7 +251,7 @@ export default function Home() {
             streak >= 7 ? 'bg-amber-500/15 border border-amber-500/30'
                         : 'bg-app-card border border-app-border'
           }`}>
-            <span className={`text-base ${streak >= 7 ? 'streak-fire' : ''}`}>🔥</span>
+            <span className={`${streak >= 7 ? 'streak-fire text-amber-500' : 'text-flora-text'}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.5 8 11 5.5 12 3z" /></svg></span>
             <div className="text-right">
               <p className={`text-sm font-black tabular leading-none ${streak >= 7 ? 'text-amber-500' : 'text-ink-1'}`}>{streak}</p>
               <p className="text-[8px] font-bold text-ink-4 leading-none mt-0.5">{streak === 1 ? t('home.streak_day') : t('home.streak_days')}</p>
@@ -278,14 +279,14 @@ export default function Home() {
           <div className="glass-card glass-red rounded-2xl overflow-hidden">
             {/* Primera tarea — CTA principal */}
             <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">
-                <span className="text-lg">⚠️</span>
+              <div className="w-9 h-9 rounded-xl bg-task-harvest/15 text-task-harvest flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-red-400">
+                <p className="text-sm font-black text-task-harvest">
                   {overdueTasks.length} tarea{overdueTasks.length > 1 ? 's' : ''} vencida{overdueTasks.length > 1 ? 's' : ''}
                 </p>
-                <p className="text-xs text-red-900 mt-0.5 truncate">
+                <p className="text-xs text-ink-3 mt-0.5 truncate">
                   {overdueTasks.map((t) => getPlant(t.plantId)?.name).filter(Boolean).join(', ')}
                 </p>
               </div>
@@ -355,7 +356,7 @@ export default function Home() {
            sin esto, una falla de red al abrir la app se veia identica al
            estado de usuario nuevo. */
         <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
-          <div className="text-7xl mb-4 select-none">⚠️</div>
+          <div className="mb-4 text-task-harvest opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg></div>
           <h2 className="text-xl font-black text-ink-1 mb-2">No pudimos cargar tus datos</h2>
           <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
             Revisá tu conexión e intentá de nuevo.
@@ -370,7 +371,7 @@ export default function Home() {
       ) : plants.length === 0 ? (
         /* Sin plantas */
         <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
-          <div className="text-7xl mb-4 select-none float">🌱</div>
+          <div className="mb-5 float"><LogoMark size={72} /></div>
           <h2 className="text-xl font-black text-ink-1 mb-2">{t('home.empty_title')}</h2>
           <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
             {t('home.empty_desc')}
@@ -392,7 +393,7 @@ export default function Home() {
         /* Dia libre */
         <div className="bg-app-card rounded-3xl border border-app-border p-6 flex flex-col items-center mb-5">
           <div className="mb-3">
-            <ProgressRing progress={1} size={64} strokeWidth={5} color="var(--brand-400)" centerEmoji="🌿" />
+            <ProgressRing progress={1} size={64} strokeWidth={5} color="var(--brand-400)" centerEmoji="✓" />
           </div>
           <p className="text-base font-black text-brand-400">{t('home.free_day_title')}</p>
           <p className="text-xs text-ink-3 mt-1">{t('home.free_day_subtitle')}</p>
@@ -609,7 +610,7 @@ export default function Home() {
                     isFlora && plantIsCannabis ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-brand-subtle border border-brand-border'
                   }`}>
                     {planned ? (
-                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>🌱 En {daysUntilSowing(plant, today)}d</span>
+                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>En {daysUntilSowing(plant, today)}d</span>
                     ) : (
                       <>
                         {plantIsCannabis && (
@@ -625,7 +626,7 @@ export default function Home() {
                     <div className={`mt-2 inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg border ${
                       isFlora ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-brand-subtle border-brand-border text-brand-400'
                     }`}>
-                      ⚡ {plantPending} hoy
+                      {plantPending} hoy
                     </div>
                   )}
                 </Link>
@@ -715,7 +716,7 @@ export default function Home() {
                     to={`/plants/${plant.id}`}
                     className="flex items-center gap-3 bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 tap-highlight-none active:scale-[0.987] transition-all"
                   >
-                    <span className="text-2xl shrink-0">{isHarvested ? '✂️' : '🗑️'}</span>
+                    <span className="shrink-0 text-ink-3">{isHarvested ? <TaskTypeIcon type="harvest" className="w-6 h-6" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-ink-2 truncate">{plant.name}</p>
                       <p className="text-xs text-ink-4 truncate">{plant.genetics}</p>

@@ -1,3 +1,5 @@
+import { LogoMark } from '@/components/ui'
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { differenceInDays } from 'date-fns'
@@ -85,7 +87,7 @@ export default function Inventory() {
     <div className="min-h-screen bg-app-bg pb-20">
       {!hasProAccess(plan) && (
         <div className="mx-4 mt-4 bg-flora-bg border border-flora-border rounded-2xl px-4 py-3 flex items-center gap-3">
-          <span className="text-xl shrink-0">⭐</span>
+          <span className="shrink-0 text-flora-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg></span>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-flora-text">Plan Pro</p>
             <p className="text-xs text-ink-3 mt-0.5">Accede a estadisticas avanzadas, exportacion y historial completo con el plan Pro.</p>
@@ -106,7 +108,7 @@ export default function Inventory() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-2.5 pl-10 rounded-2xl bg-app-card border border-app-border text-ink-1 placeholder:text-ink-4 focus:outline-none focus:border-brand-400"
             />
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-4 text-sm">🔍</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true"><path d="M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.3-4.3" /></svg></span>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
@@ -153,7 +155,7 @@ export default function Inventory() {
       <div className="px-4 py-4">
         {filteredPlants.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-4xl mb-3">🌱</div>
+            <div className="mb-3 flex justify-center"><LogoMark size={56} /></div>
             <p className="text-ink-3 mb-4">{t('inventory.empty')}</p>
             {searchQuery && (
               <Button variant="secondary" size="sm" onClick={() => setSearchQuery('')}>
@@ -219,10 +221,10 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
     }
   }
 
-  const STATUS_BADGES: Record<PlantStatus, { label: string; emoji: string; color: string }> = {
-    active: { label: t('plants.status_active'), emoji: '🌱', color: 'bg-brand-subtle text-brand-400 border-brand-border' },
-    harvested: { label: t('plants.status_harvested'), emoji: '✂️', color: 'bg-flora-bg text-flora-text border-flora-border' },
-    discarded: { label: t('plants.status_discarded'), emoji: '✖', color: 'bg-app-elevated text-ink-3 border-app-border' },
+  const STATUS_BADGES: Record<PlantStatus, { label: string; color: string }> = {
+    active: { label: t('plants.status_active'), color: 'bg-brand-subtle text-brand-400 border-brand-border' },
+    harvested: { label: t('plants.status_harvested'), color: 'bg-flora-bg text-flora-text border-flora-border' },
+    discarded: { label: t('plants.status_discarded'), color: 'bg-app-elevated text-ink-3 border-app-border' },
   }
   const statusBadge = STATUS_BADGES[plant.status]
   const cycleText = endDate || plant.status !== 'active'
@@ -240,13 +242,13 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
             className="w-16 h-16 rounded-2xl shrink-0 bg-app-elevated border border-app-border bg-cover bg-center flex items-center justify-center text-2xl"
             style={latestPhoto ? { backgroundImage: `url(${latestPhoto})` } : undefined}
           >
-            {!latestPhoto && '🌿'}
+            {!latestPhoto && <span className="text-ink-4"><TaskTypeIcon type="nutrition" className="w-7 h-7" /></span>}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="text-base text-ink-1 leading-tight truncate">{plant.name}</h3>
               <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadge.color}`}>
-                {statusBadge.emoji} {statusBadge.label}
+                {statusBadge.label}
               </span>
             </div>
             <p className="text-xs text-ink-3 truncate mt-0.5">{plant.genetics}</p>
@@ -262,7 +264,7 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
           <div>{t('inventory.start_label')} {startDate.toLocaleDateString('es-AR')}{endDate ? ` · ${t('inventory.end_label')} ${endDate.toLocaleDateString('es-AR')}` : ''}</div>
           <div><span className="font-semibold text-ink-2">{t('inventory.cycle_label')}</span> {cycleText}</div>
           {plant.status === 'harvested' && plant.harvestWeightG != null && (
-            <div className="font-semibold text-flora-text">⚖️ {plant.harvestWeightG} g cosechados</div>
+            <div className="font-semibold text-flora-text">{plant.harvestWeightG} g cosechados</div>
           )}
         </div>
 

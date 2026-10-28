@@ -1,3 +1,4 @@
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import type { ScheduledTask } from '@/types/plant'
 
 interface FoliarCardProps {
@@ -16,11 +17,11 @@ export default function FoliarCard({ task, potCount = 1 }: FoliarCardProps) {
   return (
     <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-3.5 pb-3 flex items-center justify-between bg-gradient-to-r from-violet-50/60 to-app-card dark:from-violet-950/20">
+      <div className="px-4 pt-3.5 pb-3 flex items-center justify-between bg-task-foliar/10">
         <div className="flex items-center gap-2.5">
-          <span className="text-2xl">🌫️</span>
+          <span className="text-task-foliar"><TaskTypeIcon type="foliar" className="w-6 h-6" /></span>
           <div>
-            <p className="text-xs font-black text-violet-600 dark:text-violet-400 uppercase tracking-wide">
+            <p className="text-xs font-black text-task-foliar uppercase tracking-wide">
               Foliar
             </p>
             <p className="text-xs text-ink-3 mt-0.5">

@@ -1,14 +1,15 @@
 import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 
-const TYPE_CONFIG: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-  nutrition:   { icon: '🍃', label: 'Nutrición',   color: '#6BBF78', bg: 'rgba(107,191,120,0.12)'  },
-  irrigation:  { icon: '💧', label: 'Riego',        color: '#6BA3D6', bg: 'rgba(107,163,214,0.12)' },
-  observation: { icon: '🔍', label: 'Observación',  color: '#D9A441', bg: 'rgba(217,164,65,0.12)' },
-  foliar:      { icon: '🌫️', label: 'Foliar',       color: '#A98BD0', bg: 'rgba(169,139,208,0.12)' },
-  harvest:     { icon: '✂️', label: 'Cosecha',      color: '#D8715C', bg: 'rgba(216,113,92,0.12)'  },
+const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  nutrition:   { label: 'Nutrición',   color: '#6BBF78', bg: 'rgba(107,191,120,0.12)'  },
+  irrigation:  { label: 'Riego',        color: '#6BA3D6', bg: 'rgba(107,163,214,0.12)' },
+  observation: { label: 'Observación',  color: '#D9A441', bg: 'rgba(217,164,65,0.12)' },
+  foliar:      { label: 'Foliar',       color: '#A98BD0', bg: 'rgba(169,139,208,0.12)' },
+  harvest:     { label: 'Cosecha',      color: '#D8715C', bg: 'rgba(216,113,92,0.12)'  },
 }
-const FALLBACK = { icon: '📌', label: 'Tarea', color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)' }
+const FALLBACK = { label: 'Tarea', color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)' }
 
 function getDetail(task: ScheduledTask): string | null {
   if (task.type === 'irrigation') {
@@ -85,7 +86,7 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete, onUncomp
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-base leading-none shrink-0">{cfg.icon}</span>
+                        <span className="shrink-0" style={{ color: cfg.color }}><TaskTypeIcon type={task.type} className="w-4 h-4" /></span>
                         <span className={clsx(
                           'text-sm font-bold',
                           isDone ? 'line-through text-ink-4' : 'text-ink-1'
@@ -98,7 +99,7 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete, onUncomp
                         'text-xs font-semibold mt-0.5 ml-7 truncate',
                         isDone ? 'text-ink-4' : 'text-ink-2'
                       )}>
-                        🌿 {getPlantName(task.plantId)}
+                        {getPlantName(task.plantId)}
                       </p>
                     </div>
 

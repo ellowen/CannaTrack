@@ -1,3 +1,4 @@
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import type { ScheduledTask } from '@/types/plant'
 
 interface IrrigationCardProps {
@@ -13,11 +14,11 @@ export default function IrrigationCard({ task, potVolumeLiters, potCount = 1 }: 
   return (
     <div className="bg-app-card rounded-2xl border border-app-border shadow-card overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-3.5 pb-3 flex items-center justify-between bg-gradient-to-r from-blue-50/60 to-app-card dark:from-blue-950/20">
+      <div className="px-4 pt-3.5 pb-3 flex items-center justify-between bg-task-irrigation/10">
         <div className="flex items-center gap-2.5">
-          <span className="text-2xl">💧</span>
+          <span className="text-task-irrigation"><TaskTypeIcon type="irrigation" className="w-6 h-6" /></span>
           <div>
-            <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+            <p className="text-xs font-black text-task-irrigation uppercase tracking-wide">
               {isFlushing ? 'Limpieza' : 'Riego'}
             </p>
             <p className="text-xs text-ink-3 mt-0.5">

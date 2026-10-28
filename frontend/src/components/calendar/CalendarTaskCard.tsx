@@ -1,16 +1,17 @@
 import { clsx } from 'clsx'
 import type { ScheduledTask } from '@/types/plant'
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 
 // Configuración visual por tipo — clases completas para que Tailwind las incluya
-const TYPE_CONFIG: Record<string, { icon: string; label: string; accent: string; bg: string; text: string }> = {
-  nutrition:   { icon: '🍃', label: 'Nutrición',   accent: 'border-l-task-nutrition',   bg: 'bg-task-nutrition/8',   text: 'text-task-nutrition' },
-  irrigation:  { icon: '💧', label: 'Riego',        accent: 'border-l-task-irrigation',  bg: 'bg-task-irrigation/8',  text: 'text-task-irrigation' },
-  observation: { icon: '🔍', label: 'Observación',  accent: 'border-l-task-observation', bg: 'bg-task-observation/8', text: 'text-task-observation' },
-  foliar:      { icon: '🌫️', label: 'Foliar',       accent: 'border-l-task-foliar',      bg: 'bg-task-foliar/8',      text: 'text-task-foliar' },
-  harvest:     { icon: '✂️', label: 'Cosecha',      accent: 'border-l-task-harvest',     bg: 'bg-task-harvest/8',     text: 'text-task-harvest' },
+const TYPE_CONFIG: Record<string, { label: string; accent: string; bg: string; text: string }> = {
+  nutrition:   { label: 'Nutrición',   accent: 'border-l-task-nutrition',   bg: 'bg-task-nutrition/8',   text: 'text-task-nutrition' },
+  irrigation:  { label: 'Riego',        accent: 'border-l-task-irrigation',  bg: 'bg-task-irrigation/8',  text: 'text-task-irrigation' },
+  observation: { label: 'Observación',  accent: 'border-l-task-observation', bg: 'bg-task-observation/8', text: 'text-task-observation' },
+  foliar:      { label: 'Foliar',       accent: 'border-l-task-foliar',      bg: 'bg-task-foliar/8',      text: 'text-task-foliar' },
+  harvest:     { label: 'Cosecha',      accent: 'border-l-task-harvest',     bg: 'bg-task-harvest/8',     text: 'text-task-harvest' },
 }
 
-const FALLBACK = { icon: '📌', label: 'Tarea', accent: 'border-l-app-border-strong', bg: '', text: 'text-ink-2' }
+const FALLBACK = { label: 'Tarea', accent: 'border-l-app-border-strong', bg: '', text: 'text-ink-2' }
 
 function getDetail(task: ScheduledTask): string {
   if (task.type === 'nutrition') {
@@ -44,7 +45,7 @@ export default function CalendarTaskCard({ task, plantName, onComplete }: Calend
       <div className={clsx('flex-1 px-4 py-3.5 bg-app-card')}>
         {/* Top row */}
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-lg leading-none">{cfg.icon}</span>
+          <span className={cfg.text}><TaskTypeIcon type={task.type} className="w-[18px] h-[18px]" /></span>
           <span className={clsx(
             'text-sm font-bold',
             task.completed ? 'line-through text-ink-4' : 'text-ink-1'
@@ -72,7 +73,6 @@ export default function CalendarTaskCard({ task, plantName, onComplete }: Calend
         {/* Bottom row */}
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs">🌿</span>
             <span className="text-xs font-semibold text-ink-3 truncate max-w-[140px]">{plantName}</span>
           </div>
 

@@ -104,11 +104,11 @@ export default function PlantCard({ plant }: PlantCardProps) {
           {daysToHarvest !== null && daysToHarvest > 0 && (
             <div className="text-right">
               <span className="text-2xl font-black text-ink-1 tabular">{daysToHarvest}</span>
-              <span className="text-xs text-ink-3 ml-1">días 🌸</span>
+              <span className="text-xs text-ink-3 ml-1">días</span>
             </div>
           )}
           {daysToHarvest !== null && daysToHarvest <= 0 && (
-            <span className="text-sm font-bold text-task-harvest">Lista ✂️</span>
+            <span className="text-sm font-bold text-task-harvest">Lista para cosechar</span>
           )}
         </div>
 
@@ -166,8 +166,8 @@ export default function PlantCard({ plant }: PlantCardProps) {
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
           {overdueCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold glass-pill glass-red text-red-500 px-2.5 py-1 rounded-full">
-              ⚠️ {overdueCount} vencida{overdueCount > 1 ? 's' : ''}
+            <span className="inline-flex items-center gap-1 text-xs font-semibold glass-pill glass-red text-task-harvest px-2.5 py-1 rounded-full">
+              {overdueCount} vencida{overdueCount > 1 ? 's' : ''}
             </span>
           )}
           {pendingToday > 0 && (
@@ -178,7 +178,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
           )}
           {needsFlora && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold glass-pill glass-amber text-flora-text px-2.5 py-1 rounded-full">
-              🌸 Iniciar floración
+              Iniciar floración
             </span>
           )}
           {overdueCount === 0 && pendingToday === 0 && !needsFlora && (

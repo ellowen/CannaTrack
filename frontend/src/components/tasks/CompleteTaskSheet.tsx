@@ -1,3 +1,4 @@
+import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { clsx } from 'clsx'
@@ -22,12 +23,12 @@ const TYPE_LABEL: Record<string, string> = {
   foliar:      'Foliar',
   harvest:     'Cosecha',
 }
-const TYPE_ICON: Record<string, string> = {
-  nutrition:   '🍃',
-  irrigation:  '💧',
-  observation: '🔍',
-  foliar:      '🌫️',
-  harvest:     '✂️',
+const TYPE_COLOR: Record<string, string> = {
+  nutrition:   'text-task-nutrition',
+  irrigation:  'text-task-irrigation',
+  observation: 'text-task-observation',
+  foliar:      'text-task-foliar',
+  harvest:     'text-task-harvest',
 }
 
 /** Tipos de tarea donde tiene sentido registrar EC/pH */
@@ -155,7 +156,6 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
 
   if (!isOpen) return null
 
-  const icon = TYPE_ICON[task.type] ?? '📌'
   const label     = TYPE_LABEL[task.type] ?? task.type
   const weekBadge = task.cycle === 'vege' ? `V${task.week}` : `F${task.week}`
 
@@ -206,7 +206,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
               className="absolute inset-0 flex flex-col items-center justify-center bg-app-card rounded-t-3xl xp-reward-in z-10 cursor-pointer"
               onClick={onClose}
             >
-              <div className="text-5xl mb-3 animate-bounce-once">✅</div>
+              <div className="w-16 h-16 rounded-full bg-brand-400 text-white flex items-center justify-center mb-4 animate-bounce-once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} className="w-8 h-8" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
               <p className="text-2xl font-black text-ink-1 mb-1">Tarea completada</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-3xl font-black text-brand-400 xp-pop">
@@ -214,13 +214,13 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
                 </span>
               </div>
               {(xpReward.newStreak === 7 || xpReward.newStreak === 30) && (
-                <p className="text-sm font-bold text-amber-500 mt-2">
-                  🔥 ¡Racha de {xpReward.newStreak} dias!
+                <p className="text-sm font-bold text-flora-text mt-2">
+                  ¡Racha de {xpReward.newStreak} dias!
                 </p>
               )}
               {xpReward.newStreak != null && (
                 <div className="flex items-center gap-1.5 mt-3 bg-app-elevated rounded-full px-4 py-2">
-                  <span className="text-lg">🔥</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-flora-text" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.5 8 11 5.5 12 3z" /></svg>
                   <span className="text-sm font-bold text-ink-1">
                     {xpReward.newStreak} {xpReward.newStreak === 1 ? 'día' : 'días'} seguidos
                   </span>
@@ -239,7 +239,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
           >
             {/* Título */}
             <div className="flex items-center gap-3 mb-5">
-              <span className="text-2xl">{icon}</span>
+              <span className={TYPE_COLOR[task.type] ?? 'text-ink-3'}><TaskTypeIcon type={task.type} className="w-7 h-7" /></span>
               <div>
                 <p className="text-base font-black text-ink-1">{label} completada ✓</p>
                 <div className="flex items-center gap-2 mt-0.5">
