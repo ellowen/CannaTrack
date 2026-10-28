@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { blockSupabase, seedApp, gotoApp } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 test.describe('Editar planta', () => {
   test.beforeEach(async ({ page, context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
     await seedApp(page, context, { plants: [{ id: 'p1', name: 'Nombre Original', growMedium: 'soil' }] })
     await gotoApp(page, '/plants/p1/edit')
   })

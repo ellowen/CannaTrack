@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
 import { seedApp, seedAnonymous, blockSupabase, gotoApp } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 test.beforeEach(async ({ context }) => {
   await blockSupabase(context)
+  await installFakeBackend(context)
 })
 
 test.describe('Accesibilidad basica', () => {

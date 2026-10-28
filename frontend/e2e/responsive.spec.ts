@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { plantTab } from './helpers/journey'
 import { seedApp, seedAnonymous, blockSupabase, hasHorizontalScroll, gotoApp, getSmallTouchTargets } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 /**
  * Corre en TODOS los proyectos (desktop + iPhone SE/15/Pro Max, Pixel, Galaxy).
@@ -10,6 +11,7 @@ import { seedApp, seedAnonymous, blockSupabase, hasHorizontalScroll, gotoApp, ge
 
 test.beforeEach(async ({ context }) => {
   await blockSupabase(context)
+  await installFakeBackend(context)
 })
 
 test('landing: sin scroll horizontal y CTA visible', async ({ page }) => {

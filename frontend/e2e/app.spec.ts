@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { plantTab } from './helpers/journey'
 import { seedApp, blockSupabase, gotoApp, getXpAwardedCalls } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 test.beforeEach(async ({ context }) => {
   await blockSupabase(context)
+  // sin el backend simulado, las tablas no mockeadas (mediciones, diario) responden 503 y la app
+  // reintenta ~8 s en cada navegacion: el archivo entero se volvia lento y propenso a timeouts
+  await installFakeBackend(context)
 })
 
 test.describe('Home', () => {
@@ -261,6 +265,8 @@ test.describe('Perfil local (sin backend)', () => {
     // esta misma page (comportamiento de Playwright, no del browser real) y
     // volveria a sembrar el volumen de maceta original, dando un falso
     // negativo para un dato que es local-only (no sincroniza con el backend).
+    // el guardado es asincrono (actualiza el perfil en el servidor): se espera la confirmacion antes de leer el storage
+    await expect(page.getByText('✓ Guardado')).toBeVisible()
     await expect(page.locator('input[type="number"]').first()).toHaveValue('19')
     const persisted = await page.evaluate(() => {
       const raw = localStorage.getItem('cultitrack-user')

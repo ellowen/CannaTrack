@@ -19,11 +19,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><App /></React.StrictMode>
 )
 
-// Registrar Service Worker para soporte offline
+// Service Worker para soporte offline: solo en produccion. En desarrollo
+// interceptaba los pedidos de Vite y, si el servidor se caia o reiniciaba,
+// la pagina quedaba en blanco; ademas se limpia el que haya quedado de
+// visitas anteriores.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .catch(() => { /* silencioso en dev */ })
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .catch(() => { /* sin SW: la app sigue funcionando online */ })
+    } else {
+      void navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => void r.unregister())
+        if ('caches' in window) void caches.keys().then((keys) => keys.forEach((k) => void caches.delete(k)))
+      })
+    }
   })
 }

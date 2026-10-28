@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { plantTab } from './helpers/journey'
 import { seedApp, blockSupabase, gotoApp } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 
 /**
  * Cambio de tipo de cultivo (Cannabis <-> Tomate) sobre una planta existente.
@@ -16,6 +17,7 @@ import { seedApp, blockSupabase, gotoApp } from './helpers/seed'
 
 test.beforeEach(async ({ context }) => {
   await blockSupabase(context)
+  await installFakeBackend(context)
 })
 
 test('Cannabis -> Tomate: la tarea completada se conserva, ninguna se duplica ni queda huerfana', async ({ page, context }) => {

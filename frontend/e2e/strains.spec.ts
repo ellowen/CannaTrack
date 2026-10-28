@@ -3,6 +3,7 @@ import { plantTab } from './helpers/journey'
 import { addDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { seedApp, blockSupabase, gotoApp } from './helpers/seed'
+import { installFakeBackend } from './helpers/fakeBackend'
 import { STRAINS, STRAIN_BY_SLUG, type StrainFixture } from './fixtures/strains'
 import { generatePlantSchedule } from '../src/lib/nutrition-engine'
 import { getCurrentWeek, getEstimatedHarvestDate } from '../src/lib/nutrition-utils'
@@ -178,6 +179,7 @@ test.describe('Catalogo de variedades de la app', () => {
 test.describe('UI: las 6 variedades reales', () => {
   test.beforeEach(async ({ context }) => {
     await blockSupabase(context)
+    await installFakeBackend(context)
   })
 
   const seedAll = (page: Parameters<typeof seedApp>[0], context: Parameters<typeof seedApp>[1]) =>
