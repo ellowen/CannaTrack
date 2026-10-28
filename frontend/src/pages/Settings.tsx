@@ -22,6 +22,7 @@ import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useSubscription } from '@/hooks/useSubscription'
 import { mergeRegeneratedSchedule } from '@/lib/schedule-merge'
 import { buildExport, downloadExport } from '@/lib/export-data'
+import { track } from '@/lib/analytics'
 import { useWeekLogStore } from '@/store/weekLogStore'
 import { useMeasurementStore } from '@/store/measurementStore'
 
@@ -444,7 +445,10 @@ export default function Settings() {
             variant="secondary"
             size="sm"
             data-testid="export-data"
-            onClick={() => downloadExport(buildExport({ plants, tasks, weekLogs, measurements, profile: { name, language } }))}
+            onClick={() => {
+              downloadExport(buildExport({ plants, tasks, weekLogs, measurements, profile: { name, language } }))
+              track('data_exported')
+            }}
           >
             {t('settings.export_btn')}
           </Button>
