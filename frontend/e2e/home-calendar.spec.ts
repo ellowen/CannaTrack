@@ -110,7 +110,7 @@ test.describe('Home con las plantas reales', () => {
 
   test('una planta cosechada sale de Inicio y aparece en Plantas > Cosechadas', async ({ page, context }) => {
     await page.getByRole('link', { name: new RegExp(SODA.name) }).first().click()
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect(page).toHaveURL(/\/$/)

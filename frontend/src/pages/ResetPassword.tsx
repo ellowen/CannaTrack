@@ -131,7 +131,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={!sessionReady || loading || !isFormValid}
-                className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full py-4 rounded-2xl bg-brand-400 text-brand-on font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
                 {!sessionReady ? 'Verificando link...' : loading ? 'Guardando...' : 'Guardar contraseña →'}
               </button>

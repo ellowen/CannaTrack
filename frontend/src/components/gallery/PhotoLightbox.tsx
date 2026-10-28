@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { clsx } from 'clsx'
@@ -100,7 +101,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onEdit }:
                    : slideDir === 'right' ? 'cal-slide-right'
                    : ''
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex flex-col bg-black lightbox-in"
       style={{ touchAction: 'pan-y' }}
@@ -232,6 +233,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onEdit }:
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

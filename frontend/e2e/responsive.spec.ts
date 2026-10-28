@@ -39,7 +39,7 @@ test('home: sin scroll horizontal y nav inferior visible', async ({ page, contex
 test('detalle de planta: sin scroll horizontal', async ({ page, context }) => {
   await seedApp(page, context, { plants: [{ id: 'p1', growMedium: 'hydro' }], tasksToday: true })
   await gotoApp(page, '/plants/p1')
-  await plantTab(page, 'Ficha')
+  await plantTab(page, 'Datos')
   await expect(page.getByText('Hidro')).toBeVisible()
   expect(await hasHorizontalScroll(page)).toBe(false)
 })
@@ -47,7 +47,7 @@ test('detalle de planta: sin scroll horizontal', async ({ page, context }) => {
 test('harvest sheet: el boton confirmar queda dentro del viewport', async ({ page, context }) => {
   await seedApp(page, context, { plants: [{ id: 'p1' }] })
   await gotoApp(page, '/plants/p1')
-  await plantTab(page, 'Ficha')
+  await plantTab(page, 'Datos')
   await page.getByRole('button', { name: /Finalizar cultivo/i }).click()
   const confirm = page.getByRole('button', { name: /Confirmar cosecha/i })
   // El sheet tiene scroll interno: el boton debe ser alcanzable y quedar

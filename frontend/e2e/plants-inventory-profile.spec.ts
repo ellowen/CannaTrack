@@ -42,7 +42,7 @@ test.describe('Listado de plantas: filtros y busqueda', () => {
 
     const blue = dbPlants(context).find((p) => p.name === BLUE.name)!
     await gotoApp(page, `/plants/${blue.id}`)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Iniciar floraci/i }).click()
     await page.getByRole('button', { name: /Confirmar floraci/i }).click()
     await expect(page.getByText(/FLORA F1/).first()).toBeVisible({ timeout: 10_000 })
@@ -117,7 +117,7 @@ test.describe('Inventario (historial)', () => {
 
   test('una planta cosechada pasa a la pestaña Cosechadas y "Ver detalles" abre su ficha', async ({ page, context }) => {
     await page.getByRole('button', { name: 'Ver detalles →' }).first().click()
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect.poll(() => dbPlants(context).filter((p) => p.status === 'harvested').length).toBe(1)
@@ -144,7 +144,7 @@ test.describe('Inventario: ciclo y peso', () => {
 
   test('una planta cosechada con peso lo muestra en su tarjeta', async ({ page, context }) => {
     await page.getByRole('button', { name: 'Ver detalles →' }).first().click()
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByLabel(/Peso cosechado/).fill('45')
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()

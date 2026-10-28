@@ -28,12 +28,13 @@ import { formatDateOnly } from '@/lib/date-utils'
 import { daysUntilSowing, getVegeDays, isPlanned, vegeWeekCount } from '@/lib/flora-cycle'
 import { useTaskActions } from '@/hooks/useTaskActions'
 
-type PlantTab = 'hoy' | 'seg' | 'ficha'
+type PlantTab = 'hoy' | 'med' | 'diario' | 'ficha'
 
 const TABS: { key: PlantTab; label: string }[] = [
   { key: 'hoy', label: 'Hoy' },
-  { key: 'seg', label: 'Seguimiento' },
-  { key: 'ficha', label: 'Ficha' },
+  { key: 'med', label: 'Mediciones' },
+  { key: 'diario', label: 'Diario' },
+  { key: 'ficha', label: 'Datos' },
 ]
 
 const tabKey = (id?: string) => `cultitrack-plant-tab-${id}`
@@ -41,7 +42,7 @@ const tabKey = (id?: string) => `cultitrack-plant-tab-${id}`
 function readTab(id?: string): PlantTab | null {
   try {
     const v = localStorage.getItem(tabKey(id))
-    return v === 'hoy' || v === 'seg' || v === 'ficha' ? v : null
+    return v === 'hoy' || v === 'med' || v === 'diario' || v === 'ficha' ? v : null
   } catch {
     return null
   }
@@ -90,7 +91,7 @@ export default function PlantDetail() {
   const isFlora = currentWeek?.cycle === 'flora'
   const plantIsCannabis = isCannabisPlant(plant)
 
-  // Sin tab guardada: las plantas activas abren en "Hoy"; las cosechadas o descartadas, en "Ficha"
+  // Sin tab guardada: las plantas activas abren en "Hoy"; las cosechadas o descartadas, en "Datos"
   const tab: PlantTab = tabState ?? (plant.status === 'active' ? 'hoy' : 'ficha')
   const setTab = (next: PlantTab) => {
     setTabState(next)
@@ -398,7 +399,7 @@ export default function PlantDetail() {
                 {!task.completed ? (
                   <button
                     onClick={() => setCompletingTask(task)}
-                    className="mt-2 w-full py-3 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
+                    className="mt-2 w-full py-3 rounded-xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
                   >
                     ✓ {t('plantDetail.mark_complete')}
                   </button>
@@ -585,7 +586,7 @@ export default function PlantDetail() {
         )}
         </>)}
 
-        {tab === 'seg' && (<>
+        {tab === 'med' && (<>
         {/* Mediciones EC / pH */}
         <MeasurementSection
           plantId={plant.id}
@@ -651,7 +652,7 @@ export default function PlantDetail() {
         )}
         </>)}
 
-        {tab === 'seg' && (<>
+        {tab === 'hoy' && (<>
         {/* Tareas canceladas: historial con su motivo y opcion de restaurar */}
         {skippedTasks.length > 0 && (
           <section data-testid="skipped-tasks">
@@ -684,7 +685,7 @@ export default function PlantDetail() {
         )}
         </>)}
 
-        {tab === 'seg' && (<>
+        {tab === 'diario' && (<>
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={planned ? '' : cycleTag} />
         </>)}
@@ -759,10 +760,10 @@ export default function PlantDetail() {
           </div>
         )}
 
-        {/* Zona de peligro */}
+        {/* Acciones */}
         {plant.status === 'active' && (
           <section className="pt-2 border-t border-app-border">
-            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">Zona de peligro</p>
+            <p className="text-[11px] font-bold text-ink-4 uppercase tracking-widest mb-3">Acciones</p>
             <div className="flex gap-3">
               {/* Descartar */}
               <button
@@ -870,7 +871,7 @@ export default function PlantDetail() {
                     <button
                       disabled={invalid}
                       onClick={() => { setHarvestWeight(plant.id, parsed); setWeightInput(null) }}
-                      className="flex-1 py-2 rounded-xl bg-brand-400 text-white text-sm font-bold disabled:opacity-40"
+                      className="flex-1 py-2 rounded-xl bg-brand-400 text-brand-on text-sm font-bold disabled:opacity-40"
                     >
                       Guardar peso
                     </button>

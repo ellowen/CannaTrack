@@ -329,7 +329,7 @@ export default function Home() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center gap-2 bg-brand-400 text-white font-bold px-7 py-4 rounded-2xl shadow-glow-brand transition-all active:scale-[0.97] tap-highlight-none text-base"
+            className="inline-flex items-center gap-2 bg-brand-400 text-brand-on font-bold px-7 py-4 rounded-2xl shadow-glow-brand transition-all active:scale-[0.97] tap-highlight-none text-base"
           >
             Reintentar
           </button>
@@ -344,7 +344,7 @@ export default function Home() {
           </p>
           <Link
             to="/plants/new"
-            className="inline-flex items-center gap-2 bg-brand-400 text-white font-bold px-7 py-4 rounded-2xl shadow-glow-brand transition-all active:scale-[0.97] tap-highlight-none text-base"
+            className="inline-flex items-center gap-2 bg-brand-400 text-brand-on font-bold px-7 py-4 rounded-2xl shadow-glow-brand transition-all active:scale-[0.97] tap-highlight-none text-base"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />

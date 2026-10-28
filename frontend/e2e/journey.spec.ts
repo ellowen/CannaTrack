@@ -106,7 +106,7 @@ test.describe('Recorrido completo: las 6 variedades reales (usuario Pro simulado
           await expect(page.getByText(expected).first()).toBeVisible()
         } else {
           await expect(page.getByText('Cosecha est.')).not.toBeVisible()
-          await plantTab(page, 'Ficha')
+          await plantTab(page, 'Datos')
           await expect(page.getByRole('button', { name: /Iniciar floraci/i })).toBeVisible()
         }
       }

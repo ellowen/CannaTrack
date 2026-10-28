@@ -134,7 +134,7 @@ export default function HarvestSheet({
               onClick={() => setTab('harvest')}
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all tap-highlight-none active:scale-95 ${
                 tab === 'harvest'
-                  ? 'bg-brand-400 text-white shadow-glow-brand'
+                  ? 'bg-brand-400 text-brand-on shadow-glow-brand'
                   : 'bg-app-elevated border border-app-border text-ink-3'
               }`}
             >
@@ -185,7 +185,7 @@ export default function HarvestSheet({
             onClick={confirm}
             className={`w-full py-3.5 rounded-2xl font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all ${
               tab === 'harvest'
-                ? 'bg-brand-400 text-white shadow-glow-brand'
+                ? 'bg-brand-400 text-brand-on shadow-glow-brand'
                 : 'bg-red-500 text-white'
             }`}
           >

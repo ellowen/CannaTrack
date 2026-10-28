@@ -55,7 +55,7 @@ export default function WeekView({ tasks, weekStart, today, selectedDate, onDayC
             <span className={clsx(
               'w-9 h-9 flex items-center justify-center rounded-full text-sm font-black transition-all duration-150',
               isSelected
-                ? 'bg-brand-400 text-white shadow-glow-brand'
+                ? 'bg-brand-400 text-brand-on shadow-glow-brand'
                 : isToday
                 ? 'text-brand-400 ring-2 ring-brand-400'
                 : 'text-ink-1'

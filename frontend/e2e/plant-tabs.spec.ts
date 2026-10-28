@@ -17,29 +17,32 @@ test.describe('Detalle de planta: tabs', () => {
     const id = await createPlantViaUi(page, SODA, 0)
     await expect(page.getByRole('tab', { name: /^Hoy/ })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByText('⚡ Hoy')).toBeVisible()
-    await expect(page.getByText('Zona de peligro')).toHaveCount(0)
-    await expect(page.getByText('Mediciones')).toHaveCount(0)
+    await expect(page.getByText('Acciones')).toHaveCount(0)
+    await expect(page.getByText('Sin mediciones aún')).toHaveCount(0)
 
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Mediciones')
     await expect(page.getByText('Sin mediciones aún')).toBeVisible()
     await expect(page.getByText('⚡ Hoy')).toHaveCount(0)
 
-    await plantTab(page, 'Ficha')
-    await expect(page.getByText('Zona de peligro')).toBeVisible()
+    await plantTab(page, 'Diario')
+    await expect(page.getByText('Agregá tu primera entrada')).toBeVisible()
+
+    await plantTab(page, 'Datos')
+    await expect(page.getByText('Acciones')).toBeVisible()
 
     await gotoApp(page, `/plants/${id}`)
-    await expect(page.getByRole('tab', { name: 'Ficha' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Datos' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  test('una planta cosechada abre directo en "Ficha" (sin tab guardada)', async ({ page, context }) => {
+  test('una planta cosechada abre directo en "Datos" (sin tab guardada)', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect.poll(() => dbPlants(context).find((p) => p.id === id)?.status).toBe('harvested')
     await page.evaluate((key) => localStorage.removeItem(key), `cultitrack-plant-tab-${id}`)
     await gotoApp(page, `/plants/${id}`)
-    await expect(page.getByRole('tab', { name: 'Ficha' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Datos' })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByTestId('harvest-weight')).toBeVisible()
   })
 })

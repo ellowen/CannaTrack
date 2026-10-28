@@ -214,7 +214,7 @@ test.describe('UI: las 6 variedades reales', () => {
       await seedAll(page, context)
       await gotoApp(page, `/plants/e2e-${s.slug}`)
       await expect(page.getByText(s.genetics).first()).toBeVisible()
-      await plantTab(page, 'Ficha')
+      await plantTab(page, 'Datos')
       await expect(page.getByText(s.plant.notes)).toBeVisible()
     })
   }
@@ -283,7 +283,7 @@ test.describe('UI: las 6 variedades reales', () => {
   test('Blue Applez en semana 4 de floracion: badge 12/12', async ({ page, context }) => {
     await seedAll(page, context)
     await gotoApp(page, `/plants/e2e-${STRAIN_BY_SLUG['blue-applez'].slug}`)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await expect(page.getByText('12/12')).toBeVisible()
   })
 })

@@ -268,7 +268,7 @@ export default function PlantBrowser() {
             <Link
               to="/plants/new"
               aria-label={t('plants.add')}
-              className="w-9 h-9 rounded-xl bg-brand-400 flex items-center justify-center text-white shadow-glow-brand active:scale-90 transition-all tap-highlight-none"
+              className="w-9 h-9 rounded-xl bg-brand-400 flex items-center justify-center text-brand-on shadow-glow-brand active:scale-90 transition-all tap-highlight-none"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
@@ -317,7 +317,7 @@ export default function PlantBrowser() {
                 className={clsx(
                   'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all tap-highlight-none active:scale-95',
                   active
-                    ? 'bg-brand-400 border-brand-400 text-white shadow-glow-brand'
+                    ? 'bg-brand-400 border-brand-400 text-brand-on shadow-glow-brand'
                     : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
                 )}
               >
@@ -374,7 +374,7 @@ export default function PlantBrowser() {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 rounded-2xl bg-brand-400 text-white font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
+              className="px-6 py-3 rounded-2xl bg-brand-400 text-brand-on font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
             >
               Reintentar
             </button>
@@ -396,7 +396,7 @@ export default function PlantBrowser() {
             {(filter === 'activas' || filter === 'todas') && !search && (
               <Link
                 to="/plants/new"
-                className="px-6 py-3 rounded-2xl bg-brand-400 text-white font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
+                className="px-6 py-3 rounded-2xl bg-brand-400 text-brand-on font-black text-sm shadow-glow-brand active:scale-95 transition-all tap-highlight-none"
               >
                 {t('plants.add_first_plant')}
               </Link>

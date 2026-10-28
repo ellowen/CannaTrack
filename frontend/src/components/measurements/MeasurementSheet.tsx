@@ -160,7 +160,7 @@ export default function MeasurementSheet({
             <div className="space-y-2 pb-2">
               <button
                 type="button" onClick={handleSave} disabled={!canSave}
-                className="w-full py-3.5 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full py-3.5 rounded-xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand disabled:opacity-40 disabled:pointer-events-none"
               >
                 Guardar medición
               </button>

@@ -127,7 +127,7 @@ export default function Inventory() {
               onClick={() => setActiveTab(tab as TabType)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all tap-highlight-none ${
                 activeTab === tab
-                  ? 'bg-brand-400 text-white'
+                  ? 'bg-brand-400 text-brand-on'
                   : 'bg-app-card border border-app-border text-ink-3'
               }`}
             >

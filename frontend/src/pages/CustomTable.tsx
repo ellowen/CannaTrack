@@ -367,7 +367,7 @@ export default function CustomTable() {
                 className={clsx(
                   'px-3 py-1.5 rounded-lg border text-sm font-medium tap-highlight-none active:scale-95 transition-all',
                   checked
-                    ? 'bg-brand-400 text-white border-brand-400'
+                    ? 'bg-brand-400 text-brand-on border-brand-400'
                     : 'bg-app-elevated text-ink-3 border-app-border',
                 )}
               >

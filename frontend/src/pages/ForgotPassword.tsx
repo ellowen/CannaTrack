@@ -84,7 +84,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full py-4 rounded-2xl bg-brand-400 text-brand-on font-bold text-base shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
                 {loading ? 'Enviando...' : 'Enviar link de recuperación →'}
               </button>

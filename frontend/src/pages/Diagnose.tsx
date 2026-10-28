@@ -271,7 +271,7 @@ export default function Diagnose() {
             className={clsx(
               'shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all tap-highlight-none active:scale-[0.96]',
               selectedPlantId === p.id
-                ? 'bg-brand-400 border-brand-400 text-white'
+                ? 'bg-brand-400 border-brand-400 text-brand-on'
                 : 'bg-app-card border-app-border text-ink-2'
             )}
           >
@@ -430,7 +430,7 @@ export default function Diagnose() {
               className={clsx(
                 'w-full py-4 rounded-2xl font-black text-sm transition-all tap-highlight-none active:scale-[0.98]',
                 diagFile && !diagLoading && !isAtLimit
-                  ? 'bg-brand-400 text-white'
+                  ? 'bg-brand-400 text-brand-on'
                   : 'bg-app-card border border-app-border text-ink-4 cursor-not-allowed'
               )}
             >

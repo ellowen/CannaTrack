@@ -204,7 +204,7 @@ export default function SignUp() {
           <button
             type="submit"
             disabled={loading || !isFormValid}
-            className="w-full py-3 bg-brand-400 hover:brightness-110 text-white font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-brand-400 hover:brightness-110 text-brand-on font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta →'}
           </button>

@@ -52,7 +52,7 @@ test.describe('Cancelar una tarea', () => {
 
     // detalle: el boton del riego ya no esta y aparece en "Canceladas" con su motivo
     await expect(page.getByRole('button', { name: /Riego completado/ })).toHaveCount(0)
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Hoy')
     const canceladas = page.getByTestId('skipped-tasks')
     await expect(canceladas).toContainText('Canceladas · 1')
     await expect(canceladas).toContainText('Llovió')
@@ -85,7 +85,7 @@ test.describe('Cancelar una tarea', () => {
     await openRiegoSheet(page)
     await page.getByRole('button', { name: '🌧️ Cancelar tarea' }).click()
     await page.getByRole('button', { name: 'Confirmar cancelación' }).click()
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Hoy')
     await expect(page.getByTestId('skipped-tasks')).toBeVisible()
 
     await page.getByRole('button', { name: /Restaurar Riego/ }).click()
@@ -174,7 +174,7 @@ test.describe('Sin conexion', () => {
     await page.getByRole('button', { name: '🌧️ Cancelar tarea' }).click()
     await page.getByRole('button', { name: 'Llovió', exact: true }).click()
     await page.getByRole('button', { name: 'Confirmar cancelación' }).click()
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Hoy')
     await expect(page.getByTestId('skipped-tasks')).toContainText('Llovió')
     expect(dbTasks(context).find((t) => t.id === riego.id)!.skipped).toBe(false)
 

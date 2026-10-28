@@ -206,7 +206,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
               className="absolute inset-0 flex flex-col items-center justify-center bg-app-card rounded-t-3xl xp-reward-in z-10 cursor-pointer"
               onClick={onClose}
             >
-              <div className="w-16 h-16 rounded-full bg-brand-400 text-white flex items-center justify-center mb-4 animate-bounce-once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} className="w-8 h-8" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+              <div className="w-16 h-16 rounded-full bg-brand-400 text-brand-on flex items-center justify-center mb-4 animate-bounce-once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} className="w-8 h-8" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
               <p className="text-2xl font-black text-ink-1 mb-1">Tarea completada</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-3xl font-black text-brand-400 xp-pop">
@@ -453,7 +453,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
                 <button
                   onClick={handleMoveConfirm}
                   disabled={confirming || !moveTo}
-                  className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   Mover tarea
                 </button>
@@ -469,7 +469,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
+                className="flex-[2] py-3.5 rounded-2xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand"
               >
                 {hasMeasure ? 'Guardar EC/pH ✓' : notes.trim() ? 'Guardar nota ✓' : 'Confirmar ✓'}
               </button>

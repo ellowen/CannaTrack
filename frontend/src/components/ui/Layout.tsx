@@ -62,7 +62,7 @@ export default function Layout() {
       <nav className="fixed bottom-0 left-0 right-0 z-20" style={{ transform: 'translateZ(0)' }}>
         <div className="max-w-lg mx-auto">
           <div className="glass-heavy">
-            <div className="grid grid-cols-5 safe-bottom">
+            <div className="grid grid-cols-4 safe-bottom">
 
               <NavLink to="/" end className="tap-highlight-none">
                 {({ isActive }) => (
@@ -100,18 +100,6 @@ export default function Layout() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
                       <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-                    </svg>
-                  </NavItem>
-                )}
-              </NavLink>
-
-              <NavLink to="/diagnose" className="tap-highlight-none">
-                {({ isActive }) => (
-                  <NavItem active={isActive} label={t('nav.photos')}>
-                    {/* Camera */}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isActive ? 2.5 : 1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                      <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3L14.5 4z"/>
-                      <circle cx="12" cy="13" r="3"/>
                     </svg>
                   </NavItem>
                 )}

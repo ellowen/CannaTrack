@@ -1016,7 +1016,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                         className={clsx(
                           'px-3.5 text-sm font-semibold transition-colors tap-highlight-none',
                           newProduct.unit === u
-                            ? 'bg-brand-400 text-white'
+                            ? 'bg-brand-400 text-brand-on'
                             : 'bg-app-card text-ink-3'
                         )}
                       >
@@ -1050,7 +1050,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                       setNewProduct({ name: '', dose: '', unit: 'ml' })
                       setAddingProduct(false)
                     }}
-                    className="flex-[2] py-2 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-95 transition-all disabled:opacity-40"
+                    className="flex-[2] py-2 rounded-xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-95 transition-all disabled:opacity-40"
                   >
                     Agregar
                   </button>

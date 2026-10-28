@@ -81,7 +81,7 @@ export default function Calendar() {
         </p>
         <Link
           to="/plants/new"
-          className="inline-flex items-center gap-2 bg-brand-400 text-white font-bold px-6 py-3.5 rounded-2xl shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all"
+          className="inline-flex items-center gap-2 bg-brand-400 text-brand-on font-bold px-6 py-3.5 rounded-2xl shadow-glow-brand tap-highlight-none active:scale-[0.97] transition-all"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />

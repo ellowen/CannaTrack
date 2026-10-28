@@ -8,6 +8,7 @@
     color-scheme: light;
 
     --brand-400: #3AAF4A;
+    --on-brand: #0D110C;
     --brand-subtle: #E8F5EB;
     --brand-border: #A8DAB0;
     --brand-dim: rgba(58, 175, 74, 0.15);
@@ -21,8 +22,8 @@
 
     --ink-1: #162718;
     --ink-2: #2D4A2F;
-    --ink-3: #6B8F6E;
-    --ink-4: #A8C4AA;
+    --ink-3: #55775A;
+    --ink-4: #6B8F6E;
 
     --flora-bg: #FFF3E8;
     --flora-text: #C05500;
@@ -58,6 +59,7 @@
     color-scheme: dark;
 
     --brand-400: #5CC76C;
+    --on-brand: #0D110C;
     --brand-subtle: #0F1D11;
     --brand-border: #1E3A21;
     --brand-dim: rgba(82, 204, 100, 0.12);

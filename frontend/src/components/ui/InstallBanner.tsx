@@ -74,7 +74,7 @@ export default function InstallBanner() {
           {!isIos && (
             <button
               onClick={install}
-              className="text-xs font-bold bg-brand-400 text-white px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all shadow-glow-brand"
+              className="text-xs font-bold bg-brand-400 text-brand-on px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all shadow-glow-brand"
             >
               Instalar
             </button>

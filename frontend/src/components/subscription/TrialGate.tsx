@@ -63,7 +63,7 @@ export function TrialExpired() {
 
       <a
         href="mailto:cultitrack@gmail.com?subject=Quiero%20suscribirme%20a%20CultiTrack"
-        className="w-full max-w-sm py-3.5 rounded-2xl bg-brand-400 text-white font-bold text-sm text-center tap-highlight-none active:scale-[0.98] transition-all"
+        className="w-full max-w-sm py-3.5 rounded-2xl bg-brand-400 text-brand-on font-bold text-sm text-center tap-highlight-none active:scale-[0.98] transition-all"
       >
         {t('subscription.subscribe_cta')}
       </a>

@@ -122,66 +122,10 @@ export default function WeekLogSheet({
           </div>
 
           <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-            {/* Photo picker */}
-            <div>
-              <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">Foto de la semana</p>
-              {!hasProAccess(plan) ? (
-                <div className="w-full rounded-2xl border border-amber-500/20 bg-amber-500/10 aspect-[4/3] flex flex-col items-center justify-center gap-2 text-center px-4">
-                  <span className="text-3xl">🔒</span>
-                  <p className="text-sm font-bold text-amber-400">Fotos — Plan Pro</p>
-                  <p className="text-xs text-ink-3">Actualizate a Pro para adjuntar fotos a tu diario</p>
-                </div>
-              ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="w-full rounded-2xl border-2 border-dashed overflow-hidden tap-highlight-none active:scale-[0.98] transition-all"
-                style={{ borderColor: photo ? 'transparent' : 'var(--app-border)' }}
-              >
-                {loadingPhoto ? (
-                  <div className="aspect-[4/3] flex items-center justify-center bg-app-elevated">
-                    <span className="text-2xl animate-pulse">📷</span>
-                  </div>
-                ) : photo ? (
-                  <div className="relative aspect-[4/3]">
-                    <img src={photo} alt="Foto semana" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <span className="opacity-0 hover:opacity-100 text-white text-xs font-semibold bg-black/40 px-3 py-1.5 rounded-xl transition-opacity">
-                        Cambiar foto
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="aspect-[4/3] flex flex-col items-center justify-center gap-2 bg-app-elevated">
-                    <span className="text-3xl">📷</span>
-                    <span className="text-xs text-ink-3 font-medium">Tocar para agregar foto</span>
-                  </div>
-                )}
-              </button>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              {photo && (
-                <button
-                  type="button"
-                  onClick={() => setPhoto(undefined)}
-                  className="mt-1.5 text-xs text-ink-4 hover:text-red-500 transition-colors"
-                >
-                  Quitar foto
-                </button>
-              )}
-            </div>
-
             {/* Notes */}
             <div>
               <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2 block">
-                Notas de la semana
+                Notas
               </label>
               <textarea
                 value={notes}
@@ -192,13 +136,65 @@ export default function WeekLogSheet({
               />
             </div>
 
+            {/* Foto: opcional */}
+            <div>
+              <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">
+                Foto <span className="normal-case font-normal text-ink-4">(opcional)</span>
+              </p>
+              {!hasProAccess(plan) ? (
+                <p className="text-xs text-ink-3 rounded-xl border border-app-border bg-app-elevated px-3 py-2.5">
+                  Fotos — Plan Pro. Podés guardar la entrada solo con notas.
+                </p>
+              ) : photo || loadingPhoto ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    aria-label="Cambiar foto"
+                    className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-app-elevated tap-highlight-none"
+                  >
+                    {loadingPhoto
+                      ? <span className="absolute inset-0 flex items-center justify-center text-ink-4 text-xs animate-pulse">Cargando</span>
+                      : <img src={photo} alt="Foto semana" className="w-full h-full object-cover" />}
+                  </button>
+                  <div className="flex flex-col items-start gap-1.5">
+                    <button type="button" onClick={() => fileRef.current?.click()} className="text-xs font-semibold text-brand-400 tap-highlight-none">
+                      Cambiar foto
+                    </button>
+                    <button type="button" onClick={() => setPhoto(undefined)} className="text-xs text-ink-4 hover:text-task-harvest transition-colors tap-highlight-none">
+                      Quitar foto
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-app-border py-3 text-sm font-medium text-ink-3 hover:border-brand-border hover:text-ink-2 transition-colors tap-highlight-none active:scale-[0.98]"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3L14.5 4z" /><circle cx="12" cy="13" r="3" />
+                  </svg>
+                  Agregar foto
+                </button>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
             {/* Actions */}
             <div className="space-y-2 pb-2">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={!notes.trim() && !photo}
-                className="w-full py-3.5 rounded-xl bg-brand-400 text-white font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full py-3.5 rounded-xl bg-brand-400 text-brand-on font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all shadow-glow-brand disabled:opacity-40 disabled:pointer-events-none"
               >
                 {existing ? '✓ Guardar cambios' : '✓ Guardar entrada'}
               </button>

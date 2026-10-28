@@ -94,7 +94,7 @@ export default function Onboarding() {
 
           <button
             onClick={() => goStep('name')}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-brand-on font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
           >
             Empezar →
           </button>
@@ -133,7 +133,7 @@ export default function Onboarding() {
           <button
             onClick={() => goStep('ready')}
             disabled={!nameInput.trim()}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-brand-on font-bold text-base tap-highlight-none active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
           >
             Continuar →
           </button>
@@ -177,7 +177,7 @@ export default function Onboarding() {
 
           <button
             onClick={handleFinish}
-            className="w-full py-4 rounded-2xl bg-brand-400 text-white font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
+            className="w-full py-4 rounded-2xl bg-brand-400 text-brand-on font-bold text-base tap-highlight-none active:scale-[0.97] transition-all"
           >
             Crear primera planta
           </button>

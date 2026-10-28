@@ -102,7 +102,7 @@ test.describe('Mediciones EC/pH', () => {
   test.beforeEach(async ({ page, context }) => {
     await setup(page, context)
     await createPlantViaUi(page, SODA, 0)
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Mediciones')
   })
 
   test('registrar, ver el historial y borrar una medicion', async ({ page, context }) => {
@@ -152,7 +152,7 @@ test.describe('Diario de cultivo (con fotos: Pro)', () => {
   test.beforeEach(async ({ page, context }) => {
     await setup(page, context)
     await createPlantViaUi(page, SODA, 0)
-    await plantTab(page, 'Seguimiento')
+    await plantTab(page, 'Diario')
   })
 
   test('nueva entrada con nota y foto: sube la foto y la abre en el visor', async ({ page, context }) => {
@@ -212,7 +212,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
   test('fotoperiodica: "Iniciar floración" con fecha de hoy genera el calendario de flora de la ficha', async ({ page, context }) => {
     const id = await createPlantViaUi(page, BLUE, 5)
     await expect(page.getByText('Cosecha est.')).not.toBeVisible()
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Iniciar floraci/i }).click()
     await page.getByRole('button', { name: /Confirmar floraci/i }).click()
     await expect(page.getByText(/FLORA F1/).first()).toBeVisible({ timeout: 10_000 })
@@ -240,7 +240,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
 
   test('cosechar una auto: el sheet muestra estadisticas y la planta pasa a Cosechadas', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).click()
     await expect(page.getByText('Grow total')).toBeVisible()
     await expect(page.getByText('3d')).toBeVisible()
@@ -255,7 +255,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
 
   test('cosechar guarda la fecha de cierre: el Inventario muestra el ciclo real tras recargar', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect(page).toHaveURL(/\/$/)
@@ -269,7 +269,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
 
   test('reactivar limpia la fecha de cierre', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect.poll(() => dbPlants(context).find((p) => p.id === id)!.end_date).toBeTruthy()
@@ -281,7 +281,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
 
   test('descartar desde el sheet (pestaña Descartar) y reactivar', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     await page.getByRole('button', { name: /Cosechar/ }).click()
     await page.getByRole('button', { name: '🗑️ Descartar', exact: true }).click()
     await expect(page.getByText(/No se puede deshacer/)).toBeVisible()
@@ -297,7 +297,7 @@ test.describe('Floración, cosecha, descarte y edición', () => {
 
   test('descartar desde la zona de peligro pide confirmacion (cancelar no hace nada)', async ({ page, context }) => {
     const id = await createPlantViaUi(page, SODA, 3)
-    await plantTab(page, 'Ficha')
+    await plantTab(page, 'Datos')
     page.once('dialog', (d) => d.dismiss())
     await page.getByRole('button', { name: /Descartar/ }).first().click()
     expect(dbPlants(context).find((p) => p.id === id)!.status).toBe('active')

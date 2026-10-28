@@ -455,7 +455,7 @@ export default function Profile() {
                         className={clsx(
                           'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all tap-highlight-none active:scale-90',
                           reminderHour === h
-                            ? 'bg-brand-400 text-white shadow-glow-brand'
+                            ? 'bg-brand-400 text-brand-on shadow-glow-brand'
                             : 'bg-app-elevated border border-app-border text-ink-3'
                         )}
                       >

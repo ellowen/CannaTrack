@@ -59,7 +59,7 @@ export async function createPlantViaUi(page: Page, s: StrainFixture, daysAgo: nu
 }
 
 
-/** El detalle de planta organiza su contenido en tres tabs (Hoy, Seguimiento, Ficha). */
-export async function plantTab(page: Page, name: 'Hoy' | 'Seguimiento' | 'Ficha') {
+/** El detalle de planta organiza su contenido en tres tabs (Hoy, Mediciones, Diario, Datos). */
+export async function plantTab(page: Page, name: 'Hoy' | 'Mediciones' | 'Diario' | 'Datos') {
   await page.getByRole('tab', { name }).click()
 }
