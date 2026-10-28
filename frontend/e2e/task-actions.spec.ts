@@ -36,7 +36,7 @@ async function openRiegoSheet(page: Page) {
 }
 
 test.describe('Cancelar una tarea', () => {
-  test('con motivo: sale de Home, Dashboard y Calendario, queda en "Canceladas" y no da XP', async ({ page, context }) => {
+  test('con motivo: sale de Home y Calendario, queda en "Canceladas" y no da XP', async ({ page, context }) => {
     const id = await setup(page, context)
     const riego = riegoDeHoy(context, id)
     await openRiegoSheet(page)
@@ -60,8 +60,6 @@ test.describe('Cancelar una tarea', () => {
     // el resto de las pantallas (recarga completa: el dato viene "del servidor")
     await gotoApp(page, '/')
     await expect(page.getByText('Riego', { exact: true })).toHaveCount(0)
-    await gotoApp(page, '/dashboard')
-    await expect(page.getByText('Riego')).toHaveCount(0)
     await gotoApp(page, '/calendar')
     await expect(page.getByRole('button', { name: /Hecho ✓/ })).toHaveCount(0)
   })

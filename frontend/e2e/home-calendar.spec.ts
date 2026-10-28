@@ -49,6 +49,13 @@ test.describe('Home con las plantas reales', () => {
     await expect(page).toHaveURL(/\/plants\/new$/)
   })
 
+  test('Inicio queda enfocado en hoy: tira de plantas y sin proxima semana, nivel ni historial', async ({ page }) => {
+    await expect(page.getByText('Mis plantas')).toBeVisible()
+    await expect(page.getByText('Proxima semana')).toHaveCount(0)
+    await expect(page.getByText(/Historial/)).toHaveCount(0)
+    await expect(page.getByText('Semilla')).toHaveCount(0)
+  })
+
   test('la tarjeta de proxima cosecha lleva a la auto', async ({ page }) => {
     await page.getByRole('link', { name: /Proxima cosecha/ }).click()
     await expect(page.getByRole('heading', { name: SODA.name })).toBeVisible()
@@ -101,15 +108,17 @@ test.describe('Home con las plantas reales', () => {
     await expect(page.getByText('Todo al dia!')).toBeVisible({ timeout: 8_000 })
   })
 
-  test('historial: una planta cosechada aparece en el archivo de Home', async ({ page, context }) => {
+  test('una planta cosechada sale de Inicio y aparece en Plantas > Cosechadas', async ({ page, context }) => {
     await page.getByRole('link', { name: new RegExp(SODA.name) }).first().click()
     await plantTab(page, 'Ficha')
     await page.getByRole('button', { name: /Cosechar/ }).first().click()
     await page.getByRole('button', { name: /Confirmar cosecha/ }).click()
     await expect(page).toHaveURL(/\/$/)
-    await page.getByRole('button', { name: /Historial · 1/ }).click()
-    await expect(page.getByText('Cosechada').first()).toBeVisible()
-    expect(dbPlants(context).find((p) => p.name === SODA.name)!.status).toBe('harvested')
+    await expect.poll(() => dbPlants(context).find((p) => p.name === SODA.name)!.status).toBe('harvested')
+    await expect(page.getByRole('link', { name: new RegExp(SODA.name) })).toHaveCount(0)
+    await gotoApp(page, '/plants')
+    await page.getByRole('button', { name: /Cosechada/ }).click()
+    await expect(page.getByText(SODA.name, { exact: true })).toBeVisible()
   })
 })
 
@@ -165,20 +174,6 @@ test.describe('Calendario', () => {
       await page.getByRole('button', { name: new RegExp(`^${other}\\b`) }).first().click()
       await expect(page.getByText(/Sin tareas|pendientes|Completado/).first()).toBeVisible()
     })
-  })
-})
-
-test.describe('Dashboard (/dashboard)', () => {
-  test('una tarea de hoy dice "Hoy" y solo las de dias anteriores dicen "Vencida"', async ({ page, context }) => {
-    await setup(page, context)
-    await createPlantViaUi(page, SODA, 0)  // tareas de hoy
-    await createPlantViaUi(page, BLUE, 3)  // tareas atrasadas
-    await gotoApp(page, '/dashboard')
-    const todayCard = page.locator('div', { hasText: SODA.name }).filter({ hasText: 'Hoy' }).first()
-    await expect(todayCard).toBeVisible()
-    await expect(todayCard).not.toContainText('Vencida')
-    const overdue = page.locator('div', { hasText: BLUE.name }).filter({ hasText: 'Vencida' }).first()
-    await expect(overdue).toBeVisible()
   })
 })
 

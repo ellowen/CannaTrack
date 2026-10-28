@@ -1,7 +1,6 @@
-import TaskTypeIcon from '@/components/ui/TaskTypeIcon'
 import { useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { format, differenceInDays, addDays } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePlants } from '@/hooks/usePlants'
 import { useTasks } from '@/hooks/useTasks'
@@ -11,7 +10,6 @@ import { ProgressRing } from '@/components/plant'
 import { CompleteTaskSheet } from '@/components/tasks'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
-import { getLevelInfo } from '@/lib/gamification'
 import { getEstimatedHarvestDate, getCycleProgress } from '@/lib/nutrition-utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogoMark } from '@/components/ui'
@@ -81,11 +79,9 @@ export default function Home() {
   const { t } = useTranslation()
 
   const navigate  = useNavigate()
-  const { name, streak, totalXP, applyTaskReward } = useUserStore()
-  const levelInfo = getLevelInfo(totalXP)
+  const { name, streak, applyTaskReward } = useUserStore()
   const { isLoading, dataLoadError } = useAuth()
-  const { plants, allPlants } = usePlants()
-  const [historialOpen, setHistorialOpen]     = useState(false)
+  const { plants } = usePlants()
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const [doneExpanded, setDoneExpanded]       = useState(false)
   const [refreshKey, setRefreshKey]           = useState(0)
@@ -95,7 +91,7 @@ export default function Home() {
   const [bulkConfirm, setBulkConfirm]         = useState<'today' | 'overdue' | null>(null)
   const [completingIds, setCompletingIds]     = useState<Set<string>>(new Set())
 
-  const { tasks: allActiveTasks, todayTasks, overdueTasks, completeTask, uncompleteTask } = useTasks()
+  const { todayTasks, overdueTasks, completeTask, uncompleteTask } = useTasks()
 
   function handleComplete(task: ScheduledTask) {
     hapticLight()
@@ -137,23 +133,6 @@ export default function Home() {
   const pending = todayTasks.filter((t) => !t.completed)
   const done    = todayTasks.filter((t) => t.completed)
   const allDone = todayTasks.length > 0 && pending.length === 0
-
-  // Proxima semana — contar tareas por dia
-  const upcomingDays = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(today, i + 1)
-      d.setHours(0, 0, 0, 0)
-      const count = allActiveTasks.filter((t) => {
-        if (t.completed) return false
-        const td = new Date(t.scheduledDate)
-        td.setHours(0, 0, 0, 0)
-        return td.getTime() === d.getTime()
-      }).length
-      return { date: d, count }
-    })
-  }, [allActiveTasks]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const archivedPlants  = allPlants.filter((p) => p.status === 'harvested' || p.status === 'discarded')
 
   const nearestHarvest = useMemo(() => {
     return plants
@@ -238,38 +217,25 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <LogoMark size={30} />
             <span className="text-sm font-light text-ink-2 tracking-tight">
-              Culti<span className="font-black text-brand-400">Track</span>
+              Culti<span className="font-bold text-brand-400">Track</span>
             </span>
           </div>
         </div>
         <p className="text-[10px] text-ink-4 uppercase tracking-widest mb-1 first-letter:capitalize">{dateLabel}</p>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-black text-ink-1 leading-tight">
+          <h1 className="text-2xl font-bold text-ink-1 leading-tight">
             {greeting}{name ? `, ${name.split(' ')[0]}` : ''}
           </h1>
           <div className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shrink-0 ${
-            streak >= 7 ? 'bg-amber-500/15 border border-amber-500/30'
+            streak >= 7 ? 'bg-flora-bg border border-flora-border'
                         : 'bg-app-card border border-app-border'
           }`}>
-            <span className={`${streak >= 7 ? 'streak-fire text-amber-500' : 'text-flora-text'}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.5 8 11 5.5 12 3z" /></svg></span>
+            <span className={`${streak >= 7 ? 'streak-fire text-flora-text' : 'text-flora-text'}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.5 8 11 5.5 12 3z" /></svg></span>
             <div className="text-right">
-              <p className={`text-sm font-black tabular leading-none ${streak >= 7 ? 'text-amber-500' : 'text-ink-1'}`}>{streak}</p>
+              <p className={`text-sm font-bold tabular leading-none ${streak >= 7 ? 'text-flora-text' : 'text-ink-1'}`}>{streak}</p>
               <p className="text-[8px] font-bold text-ink-4 leading-none mt-0.5">{streak === 1 ? t('home.streak_day') : t('home.streak_days')}</p>
             </div>
           </div>
-        </div>
-        {/* Nivel */}
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm">{levelInfo.current.emoji}</span>
-          <span className="text-xs font-semibold text-ink-3">{levelInfo.current.name}</span>
-          {levelInfo.next && (
-            <>
-              <div className="flex-1 h-1.5 rounded-full bg-app-border overflow-hidden max-w-[120px]">
-                <div className="h-full rounded-full bg-brand-400 transition-all duration-700" style={{ width: `${levelInfo.progressToNext * 100}%` }} />
-              </div>
-              <span className="text-[10px] text-ink-4">{levelInfo.next.name}</span>
-            </>
-          )}
         </div>
       </div>
 
@@ -283,7 +249,7 @@ export default function Home() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-task-harvest">
+                <p className="text-sm font-bold text-task-harvest">
                   {overdueTasks.length} tarea{overdueTasks.length > 1 ? 's' : ''} vencida{overdueTasks.length > 1 ? 's' : ''}
                 </p>
                 <p className="text-xs text-ink-3 mt-0.5 truncate">
@@ -294,14 +260,14 @@ export default function Home() {
                 {overdueTasks.length > 1 && (
                   <button
                     onClick={() => setBulkConfirm('overdue')}
-                    className="text-xs font-black text-red-300 border border-red-700/60 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                    className="text-xs font-bold text-task-harvest border border-task-harvest/40 px-3 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
                   >
                     {resolvedAll ? '✓ Listo' : 'Todas'}
                   </button>
                 )}
                 <button
                   onClick={() => { hapticLight(); setCompletingTask(overdueTasks[0]) }}
-                  className="text-xs font-black text-white bg-red-600 px-4 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                  className="text-xs font-bold text-white bg-task-harvest px-4 py-2 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Resolver
                 </button>
@@ -313,26 +279,26 @@ export default function Home() {
                 <button
                   key={task.id}
                   onClick={() => { hapticLight(); setCompletingTask(task) }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 border-t border-red-900/30 bg-black/20 tap-highlight-none"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 border-t border-task-harvest/20 bg-task-harvest/5 tap-highlight-none"
                 >
                   <TaskIcon type={task.type} size="sm" />
-                  <span className="text-sm text-red-300/80 flex-1 text-left font-medium truncate">
+                  <span className="text-sm text-ink-2 flex-1 text-left font-medium truncate">
                     {TYPE_LABEL[task.type]} — {p?.name ?? '—'}
                   </span>
-                  <span className="text-xs text-red-500/60 shrink-0">{t('home.mark_done')}</span>
+                  <span className="text-xs text-ink-4 shrink-0">{t('home.mark_done')}</span>
                 </button>
               )
             })}
             {overdueTasks.length > 4 && (
               <button
                 onClick={() => setOverdueExpanded(v => !v)}
-                className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-red-900/30 bg-black/10 tap-highlight-none"
+                className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-task-harvest/20 tap-highlight-none"
               >
-                <span className="text-xs font-bold text-red-500/70">
+                <span className="text-xs font-bold text-task-harvest">
                   {overdueExpanded ? t('home.view_less') : `Ver ${overdueTasks.length - 4} mas`}
                 </span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                  className={`w-3 h-3 text-red-500/70 transition-transform ${overdueExpanded ? 'rotate-180' : ''}`}>
+                  className={`w-3 h-3 text-task-harvest transition-transform ${overdueExpanded ? 'rotate-180' : ''}`}>
                   <path d="M19 9l-7 7-7-7" strokeLinecap="round" />
                 </svg>
               </button>
@@ -357,7 +323,7 @@ export default function Home() {
            estado de usuario nuevo. */
         <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
           <div className="mb-4 text-task-harvest opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg></div>
-          <h2 className="text-xl font-black text-ink-1 mb-2">No pudimos cargar tus datos</h2>
+          <h2 className="text-xl font-bold text-ink-1 mb-2">No pudimos cargar tus datos</h2>
           <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
             Revisá tu conexión e intentá de nuevo.
           </p>
@@ -372,7 +338,7 @@ export default function Home() {
         /* Sin plantas */
         <div className="flex flex-col items-center justify-center py-16 text-center mb-6">
           <div className="mb-5 float"><LogoMark size={72} /></div>
-          <h2 className="text-xl font-black text-ink-1 mb-2">{t('home.empty_title')}</h2>
+          <h2 className="text-xl font-bold text-ink-1 mb-2">{t('home.empty_title')}</h2>
           <p className="text-sm text-ink-3 mb-8 max-w-[240px] leading-relaxed">
             {t('home.empty_desc')}
           </p>
@@ -395,7 +361,7 @@ export default function Home() {
           <div className="mb-3">
             <ProgressRing progress={1} size={64} strokeWidth={5} color="var(--brand-400)" centerEmoji="✓" />
           </div>
-          <p className="text-base font-black text-brand-400">{t('home.free_day_title')}</p>
+          <p className="text-base font-bold text-brand-400">{t('home.free_day_title')}</p>
           <p className="text-xs text-ink-3 mt-1">{t('home.free_day_subtitle')}</p>
         </div>
       ) : allDone ? (
@@ -411,7 +377,7 @@ export default function Home() {
               sublabel="listas"
             />
           </div>
-          <p className="text-base font-black text-brand-400">{t('home.all_done_title')}</p>
+          <p className="text-base font-bold text-brand-400">{t('home.all_done_title')}</p>
           <p className="text-sm text-ink-3 mt-1">
             {done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''} hoy
           </p>
@@ -436,11 +402,11 @@ export default function Home() {
               {/* Texto + boton */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="text-base font-black text-ink-1 leading-tight">{t('home.pending_title')}</p>
+                  <p className="text-base font-bold text-ink-1 leading-tight">{t('home.pending_title')}</p>
                   {pending.length > 1 && (
                     <button
                       onClick={() => setBulkConfirm('today')}
-                      className="shrink-0 text-xs font-black text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                      className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                     >
                       ✓ {t('home.complete_all')}
                     </button>
@@ -506,7 +472,7 @@ export default function Home() {
                   className="w-full flex items-center gap-2.5 px-5 py-3 bg-app-elevated/50 tap-highlight-none"
                 >
                   <div className="w-5 h-5 rounded-full bg-brand-subtle border border-brand-border flex items-center justify-center shrink-0">
-                    <span className="text-[10px] font-black text-brand-400">✓</span>
+                    <span className="text-[10px] font-bold text-brand-400">✓</span>
                   </div>
                   <span className="text-xs font-semibold text-ink-3 flex-1 text-left">
                     {done.length} completada{done.length > 1 ? 's' : ''} hoy
@@ -553,21 +519,21 @@ export default function Home() {
               sublabel={nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-flora-text opacity-70 uppercase tracking-widest mb-0.5">{t('home.next_harvest')}</p>
-              <p className="text-xl font-black text-flora-text leading-tight">
+              <p className="text-[10px] font-bold text-flora-text opacity-70 uppercase tracking-widest mb-0.5">{t('home.next_harvest')}</p>
+              <p className="text-xl font-bold text-flora-text leading-tight">
                 {nearestHarvest.days} {nearestHarvest.days === 1 ? t('common.day_one') : t('common.day_other')}
               </p>
               <p className="text-sm text-flora-text opacity-70 truncate mt-0.5">{nearestHarvest.plant.name}</p>
               {nearestHarvest.progress && (
-                <div className="mt-2 h-1 rounded-full bg-amber-900/40 overflow-hidden">
+                <div className="mt-2 h-1 rounded-full bg-flora-border/40 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-amber-400 transition-all duration-700"
+                    className="h-full rounded-full bg-flora-text transition-all duration-700"
                     style={{ width: `${nearestHarvest.progress.progress * 100}%` }}
                   />
                 </div>
               )}
             </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-amber-700 shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-flora-text opacity-60 shrink-0">
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </Link>
@@ -595,9 +561,9 @@ export default function Home() {
               const weekNum  = Math.ceil(phaseDay / 7)
               const planned  = isPlanned(plant, today)
               const plantPending = pending.filter((t) => t.plantId === plant.id).length
-              const accent = isFlora ? 'text-amber-500' : 'text-brand-400'
-              const borderColor = isFlora && plantIsCannabis ? 'border-amber-500/20' : 'border-app-border'
-              const bgColor = isFlora && plantIsCannabis ? 'bg-amber-500/5' : 'bg-app-card'
+              const accent = isFlora ? 'text-flora-text' : 'text-brand-400'
+              const borderColor = isFlora && plantIsCannabis ? 'border-flora-border' : 'border-app-border'
+              const bgColor = isFlora && plantIsCannabis ? 'bg-flora-bg' : 'bg-app-card'
 
               return (
                 <Link
@@ -607,24 +573,24 @@ export default function Home() {
                 >
                   {/* Fase badge */}
                   <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg mb-2.5 ${
-                    isFlora && plantIsCannabis ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-brand-subtle border border-brand-border'
+                    isFlora && plantIsCannabis ? 'bg-flora-bg border border-flora-border' : 'bg-brand-subtle border border-brand-border'
                   }`}>
                     {planned ? (
-                      <span className={`text-[10px] font-black tracking-wider ${accent}`}>En {daysUntilSowing(plant, today)}d</span>
+                      <span className={`text-[10px] font-bold tracking-wider ${accent}`}>En {daysUntilSowing(plant, today)}d</span>
                     ) : (
                       <>
                         {plantIsCannabis && (
-                          <span className={`text-[10px] font-black tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
+                          <span className={`text-[10px] font-bold tracking-wider ${accent}`}>{isFlora ? 'F' : 'V'}{weekNum}</span>
                         )}
                         <span className="text-[10px] text-ink-4">D{phaseDay}</span>
                       </>
                     )}
                   </div>
-                  <p className="text-sm font-black text-ink-1 truncate">{plant.name}</p>
+                  <p className="text-sm font-bold text-ink-1 truncate">{plant.name}</p>
                   <p className="text-xs text-ink-3 mt-0.5 truncate">{plant.genetics}</p>
                   {plantPending > 0 && (
-                    <div className={`mt-2 inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg border ${
-                      isFlora ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-brand-subtle border-brand-border text-brand-400'
+                    <div className={`mt-2 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${
+                      isFlora ? 'bg-flora-bg border-flora-border text-flora-text' : 'bg-brand-subtle border-brand-border text-brand-400'
                     }`}>
                       {plantPending} hoy
                     </div>
@@ -645,101 +611,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* PROXIMA SEMANA */}
-      {plants.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Proxima semana</h2>
-          <div className="flex gap-1.5">
-            {upcomingDays.map((day, i) => {
-              const hasTask   = day.count > 0
-              const dayAbbr   = format(day.date, 'EEE', { locale: es }).slice(0, 2)
-              const dayNum    = format(day.date, 'd')
-
-              return (
-                <Link
-                  key={i}
-                  to="/calendar"
-                  className="flex-1 tap-highlight-none active:scale-[0.97] transition-all"
-                >
-                  <div className={`rounded-2xl py-2.5 flex flex-col items-center ${
-                    hasTask
-                      ? 'bg-app-card border border-app-border'
-                      : 'bg-app-elevated border border-app-border/50'
-                  }`}>
-                    <span className={`text-[10px] font-bold uppercase ${hasTask ? 'text-ink-3' : 'text-ink-4'}`}>
-                      {dayAbbr}
-                    </span>
-                    <span className={`text-base font-black mt-0.5 ${hasTask ? 'text-ink-1' : 'text-ink-4'}`}>
-                      {dayNum}
-                    </span>
-                    {hasTask ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-brand-400 mt-1" />
-                        <span className="text-[10px] font-black text-brand-400 mt-0.5">{day.count}</span>
-                      </>
-                    ) : (
-                      <div className="h-6 mt-1" />
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* HISTORIAL */}
-      {archivedPlants.length > 0 && (
-        <section className="mt-2">
-          <button
-            onClick={() => setHistorialOpen((v) => !v)}
-            className="w-full flex items-center justify-between mb-3 tap-highlight-none"
-          >
-            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-widest">
-              {t('home.history')} · {archivedPlants.length}
-            </h2>
-            <svg
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-              className={`w-4 h-4 text-ink-4 transition-transform duration-200 ${historialOpen ? 'rotate-180' : ''}`}
-            >
-              <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {historialOpen && (
-            <div className="space-y-2 task-in">
-              {archivedPlants.map((plant) => {
-                const isHarvested = plant.status === 'harvested'
-                const growDays    = differenceInDays(new Date(), plant.startDate)
-                return (
-                  <Link
-                    key={plant.id}
-                    to={`/plants/${plant.id}`}
-                    className="flex items-center gap-3 bg-app-card rounded-2xl border border-app-border shadow-card px-4 py-3 tap-highlight-none active:scale-[0.987] transition-all"
-                  >
-                    <span className="shrink-0 text-ink-3">{isHarvested ? <TaskTypeIcon type="harvest" className="w-6 h-6" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-ink-2 truncate">{plant.name}</p>
-                      <p className="text-xs text-ink-4 truncate">{plant.genetics}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        isHarvested
-                          ? 'bg-vege-bg text-vege-text border-vege-border'
-                          : 'bg-app-elevated text-ink-4 border-app-border'
-                      }`}>
-                        {isHarvested ? t('plants.status_harvested') : t('plants.status_discarded')}
-                      </span>
-                      <p className="text-[11px] text-ink-4 mt-1">
-                        {growDays}d · {format(plant.startDate, "d MMM yyyy", { locale: es })}
-                      </p>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </section>
-      )}
     </div>
 
     {bulkConfirm && (

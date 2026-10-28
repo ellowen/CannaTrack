@@ -1,5 +1,4 @@
 export { default as Home } from './Home'
-export { default as Dashboard } from './Dashboard'
 export { default as NewPlant } from './NewPlant'
 export { default as PlantDetail } from './PlantDetail'
 export { default as PlantBrowser } from './PlantBrowser'

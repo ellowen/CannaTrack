@@ -13,7 +13,6 @@ import ResetPassword from '@/pages/ResetPassword'
 // el bundle principal. El resto de la app se carga bajo demanda — Layout
 // envuelve el <Outlet/> en un <Suspense>, asi que estas rutas muestran el
 // PageLoader mientras baja su chunk la primera vez que se visitan.
-const Dashboard    = lazy(() => import('@/pages/Dashboard'))
 const NewPlant     = lazy(() => import('@/pages/NewPlant'))
 const PlantDetail  = lazy(() => import('@/pages/PlantDetail'))
 const EditPlant    = lazy(() => import('@/pages/EditPlant'))
@@ -55,7 +54,6 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Home /> },
-      { path: 'dashboard', element: <Dashboard /> },
       { path: 'plants', element: <PlantBrowser /> },
       { path: 'plants/new', element: <NewPlant /> },
       { path: 'plants/:id', element: <PlantDetail /> },
