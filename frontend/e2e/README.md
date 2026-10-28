@@ -50,6 +50,8 @@ curl -X POST "$SUPABASE_URL/auth/v1/admin/users" \
 
 Esta cuenta NO se recrea en cada corrida — es una cuenta persistente de testing. Si el trial vence (30 dias desde su creacion), hay que extenderlo manualmente con SQL (`update profiles set trial_ends_at = now() + interval '30 days' where id = '<user_id>'`) o marcarla `is_pro = true` si se prefiere una cuenta de testing sin vencimiento.
 
+> **Historial:** el trial de esta cuenta vencio el 2026-09-06 y el test fallaba en cada corrida del CI ("TRIAL" no aparecia). El 2026-10-28 se extendio a 5 anios (`now() + interval '5 years'`). Si vuelve a vencer, repetir el SQL de arriba.
+
 ### Como correr el flujo real localmente
 
 ```bash

@@ -8,7 +8,7 @@ Siempre leé este archivo antes de hacer cualquier cambio al código.
 
 ## QUÉ ES ESTE PROYECTO
 
-**CannaTrack** es una web app (y futura app mobile) para el seguimiento
+**CannaTrack** es una web app (instalable como PWA) para el seguimiento
 completo de cultivos de cannabis. Permite gestionar el ciclo de vida de
 una o varias plantas con calendario nutricional automático, recordatorios,
 historial fotográfico (diario de cultivo).
@@ -27,7 +27,7 @@ historica).*
 - [x] Etapa 0 — Estructura monorepo + motor nutricional
 - [x] Etapa 1 — UI React completa con Zustand + localStorage
 - [x] Etapa 2 — Backend Supabase conectado (auth, RLS, Storage, Edge Functions)
-- [x] Etapa 3 — App mobile Expo/React Native (tabs: home, plants, tasks, diagnose, profile)
+- [x] Etapa 3 — App mobile Expo/React Native: ELIMINADA del repo (oct 2026). La web sigue en beta y se enfoca solo en la webapp; la parte mobile se retoma mas adelante con otro enfoque y otras herramientas. El codigo anterior esta en el historial de git (ultimo commit que la incluye: `e7056ce`).
 - [x] Landing rebrandeada a **Cultitrack**, deploy en Vercel
 - [x] Modelo comercial: trial Pro de 30 dias + suscripcion (RevenueCat webhook)
 - [x] Soporte multi-cultivo (`cropType` opcional en `Plant`, no solo cannabis)
@@ -76,7 +76,7 @@ CannaTrack/
    sin conexión. Sync con Supabase cuando hay internet.
 
 4. **Motor portátil** — `src/lib/` y `src/data/` sin dependencias de
-   React ni del browser. Deben funcionar en Vite, Next.js y Expo sin cambios.
+   React ni del browser. Deben funcionar sin cambios en Vite, Next.js o una futura app mobile.
 
 5. **TypeScript estricto** — `strict: true` siempre. Sin `any`. Sin
    fechas como strings. Sin dosis como strings.
@@ -180,7 +180,7 @@ uno de estos roles según lo que necesités:
 Usar cuando necesitás decisiones de arquitectura, stack, escalabilidad.
 ```
 Actuá como CTO de CannaTrack. Tenés experiencia en productos SaaS móviles,
-arquitectura React Native + Supabase, y modelos de negocio freemium B2C + B2B.
+arquitectura web (React + Supabase), y modelos de negocio freemium B2C + B2B.
 El proyecto está en: [describir estado actual].
 Necesito tu opinión sobre: [pregunta].
 ```
@@ -270,7 +270,7 @@ el usuario antes de asumir prioridad:*
 | Supabase (no Firebase) | Open source, PostgreSQL real, más barato a escala |
 | date-fns (no dayjs/moment) | Tree-shakeable, TypeScript nativo, sin side effects |
 | Tailwind (no CSS Modules) | Velocidad de desarrollo, consistencia, fácil de mantener solo |
-| Motor como lógica pura | Portátil a Expo sin cambios, testeable sin browser |
+| Motor como lógica pura | Portátil (p. ej. a una futura app mobile) y testeable sin browser |
 
 ---
 

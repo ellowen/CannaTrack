@@ -67,7 +67,7 @@ export default function PlantTaskGroup({
           onClick={onToggleCollapsed}
           aria-expanded={!collapsed}
           aria-label={`${collapsed ? 'Expandir' : 'Plegar'} las tareas de ${name}`}
-          className="shrink-0 -mr-1 w-9 h-9 flex items-center justify-center text-ink-4 hover:text-ink-2 tap-highlight-none"
+          className="shrink-0 -mr-2 w-11 h-11 flex items-center justify-center text-ink-4 hover:text-ink-2 tap-highlight-none"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`w-4 h-4 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`} aria-hidden="true">
             <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />

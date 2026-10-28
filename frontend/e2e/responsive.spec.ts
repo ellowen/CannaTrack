@@ -9,9 +9,24 @@ import { installFakeBackend } from './helpers/fakeBackend'
  * y las acciones criticas dentro del viewport.
  */
 
-test.beforeEach(async ({ context }) => {
+// Diagnostico: en WebKit (CI) estos tests fallaban sin dar pistas. Si un test falla, se imprimen
+// los errores de pagina y de consola para saber que rompe la app en ese navegador.
+const pageProblems = new WeakMap<object, string[]>()
+
+test.beforeEach(async ({ page, context }) => {
+  const problems: string[] = []
+  pageProblems.set(page, problems)
+  page.on('pageerror', (e) => problems.push(`pageerror: ${e.message.slice(0, 300)}`))
+  page.on('console', (m) => { if (m.type() === 'error') problems.push(`console.error: ${m.text().slice(0, 300)}`) })
   await blockSupabase(context)
   await installFakeBackend(context)
+})
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) {
+    const body = await page.locator('body').innerText().catch(() => '(sin body)')
+    console.log(`[diagnostico] ${testInfo.project.name} › ${testInfo.title}\n  errores: ${JSON.stringify(pageProblems.get(page) ?? [])}\n  texto visible: ${body.replace(/\s+/g, ' ').slice(0, 300)}`)
+  }
 })
 
 test('landing: sin scroll horizontal y CTA visible', async ({ page }) => {

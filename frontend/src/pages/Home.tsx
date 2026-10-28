@@ -432,7 +432,7 @@ export default function Home() {
                     return (
                       <button
                         onClick={() => saveCollapsed(allCollapsed ? new Set() : new Set(pendingByPlant.map((g) => g.plantId)))}
-                        className="shrink-0 text-[11px] font-semibold text-ink-3 hover:text-ink-1 tap-highlight-none py-1"
+                        className="shrink-0 text-[11px] font-semibold text-ink-3 hover:text-ink-1 tap-highlight-none min-h-[44px] px-1 -my-2.5 inline-flex items-center"
                       >
                         {allCollapsed ? 'Expandir todo' : 'Plegar todo'}
                       </button>

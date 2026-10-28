@@ -5,8 +5,7 @@ const ENV = (import.meta.env.MODE ?? 'development') as string
 
 // Sin observabilidad de errores en produccion, un fallo silencioso
 // (sync fallida, RPC rechazado, componente que crashea) no lo ve nadie
-// del equipo salvo que el usuario lo reporte manualmente. Mismo patron
-// que mobile/src/lib/sentry.ts para consistencia entre plataformas.
+// del equipo salvo que el usuario lo reporte manualmente.
 export function initSentry(): void {
   if (!DSN || ENV === 'development') return
 
