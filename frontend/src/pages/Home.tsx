@@ -216,8 +216,8 @@ export default function Home() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <LogoMark size={30} />
-            <span className="text-sm font-light text-ink-2 tracking-tight">
-              Culti<span className="font-bold text-brand-text">Track</span>
+            <span className="font-display text-lg font-semibold text-ink-1 tracking-tight">
+              Culti<span className="text-brand-text">Track</span>
             </span>
           </div>
         </div>

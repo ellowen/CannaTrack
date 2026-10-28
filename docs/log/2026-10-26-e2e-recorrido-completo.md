@@ -187,3 +187,11 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - En Free la hoja del diario ya no renderiza el campo de archivo oculto (antes quedaba aunque no hubiera acceso a fotos).
 - Tema claro: el verde de marca usado como texto (`text-brand-400`) pasa a un token `brand-text` (`#2B7D38` en claro, 4.8:1 sobre el fondo; en oscuro no cambia). 71 usos.
 - `CLAUDE.md`: se marca la IA como descartada y se anota el rediseno.
+
+## Veinticuatroava tanda (2026-10-28): logo nuevo (variante A, "Ciclo")
+- Nuevo logo: hoja de cannabis mas grande y de folíolos largos y finos, dentro de un cuadrado con borde (se ve sobre fondo oscuro) y un arco grueso que pasa de verde (vegetativo) a dorado (floracion). Se eligio sobre la variante B (marcas por semana, como la tira del ciclo) porque a 32 y 20 px la B se vuelve ruido. Ambas quedan en `docs/logo-variantes/` con una comparacion.
+- Un solo componente: `LogoMark` en `components/ui/Logo.tsx`; la landing ya no tiene su propia copia. El nombre va en Fraunces (como los titulos) con "Track" en el verde de marca.
+- Assets regenerados desde el mismo SVG: `icon.svg` (favicon), `icon-180/192/512.png`, un `icon-maskable-512.png` nuevo (a sangre, marca dentro de la zona segura) separado del icono "any", y la imagen para compartir `og-cultitrack.png` (1200x630, con fuentes embebidas). Las redes no leen SVG, asi que las metas `og:image` y `twitter:image` apuntan al PNG y se borra `og-cultitrack.svg`.
+- `theme-color` y `manifest`: se reemplaza el verde viejo `#2A8E39` por el fondo de la app (`#0D110C` en oscuro, `#F3F8EF` en claro, segun el tema del sistema) para que la barra de estado no desentone.
+- La app movil (`mobile/assets`) no se toco: esta pausada.
+- Aprendizaje: un `vite` viejo (de hace horas) atendia el puerto 5173 y Playwright lo reutilizaba (`reuseExistingServer`): no recargaba `tailwind.config.js`, asi que los colores nuevos (`brand-on`, `brand-text`) no existian para los tests ni las capturas. Si se toca la config de Tailwind, hay que reiniciar el servidor de desarrollo.

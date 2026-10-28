@@ -1,4 +1,4 @@
-/** Marca de CultiTrack — hoja geometrica con arco de tracking. */
+/** Marca de CultiTrack: hoja con un arco de ciclo (verde = vegetativo, dorado = floracion). */
 import { useTranslation } from '@/i18n'
 
 interface LogoMarkProps {
@@ -16,44 +16,13 @@ export function LogoMark({ size = 40, className }: LogoMarkProps) {
       className={className}
     >
       <defs>
-        <radialGradient id="ct-bg" cx="50%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="#142B18" />
-          <stop offset="100%" stopColor="#050E07" />
-        </radialGradient>
-        <linearGradient id="ct-leaf" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#CBEDCF" />
-        </linearGradient>
+      <radialGradient id="ct-bg" cx="50%" cy="32%" r="75%"><stop offset="0" stopColor="#1D2D1B"/><stop offset="1" stopColor="#0F160E"/></radialGradient>
+      <linearGradient id="ct-leaf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F4F8EF"/><stop offset="1" stopColor="#BFE3C4"/></linearGradient>
       </defs>
-      {/* Fondo redondeado */}
-      <rect width="180" height="180" rx="42" fill="url(#ct-bg)" />
-      {/* Halo central */}
-      <ellipse cx="90" cy="88" rx="62" ry="55" fill="#2EBD52" opacity="0.07" />
-      {/* Arco de tracking (270° horario, de arriba hacia izquierda) */}
-      <path
-        d="M 90 28 A 62 62 0 1 1 28 90"
-        fill="none"
-        stroke="#3DCC63"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.38"
-      />
-      {/* Dot al final del arco */}
-      <circle cx="28" cy="90" r="4" fill="#3DCC63" opacity="0.6" />
-      {/* Hojas */}
-      <g transform="translate(90,108)" fill="url(#ct-leaf)">
-        <path d="M 0 0 C -7.5 -10, -7.5 -33, 0 -44 C 7.5 -33, 7.5 -10, 0 0 Z" />
-        <path transform="rotate(27)"  d="M 0 0 C -6.5 -9, -6.5 -28, 0 -37 C 6.5 -28, 6.5 -9, 0 0 Z" />
-        <path transform="rotate(-27)" d="M 0 0 C -6.5 -9, -6.5 -28, 0 -37 C 6.5 -28, 6.5 -9, 0 0 Z" />
-        <path transform="rotate(56)"  d="M 0 0 C -5 -6.5, -5 -19, 0 -26 C 5 -19, 5 -6.5, 0 0 Z" />
-        <path transform="rotate(-56)" d="M 0 0 C -5 -6.5, -5 -19, 0 -26 C 5 -19, 5 -6.5, 0 0 Z" />
-        <path transform="rotate(82)"  d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
-        <path transform="rotate(-82)" d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
-        {/* Vena central */}
-        <line x1="0" y1="-2" x2="0" y2="-38" stroke="rgba(5,14,7,0.18)" strokeWidth="1.2" strokeLinecap="round" />
-        {/* Tallo */}
-        <rect x="-2.8" y="0" width="5.6" height="12" rx="2.8" />
-      </g>
+      <rect x="1.5" y="1.5" width="177" height="177" rx="41" fill="url(#ct-bg)" stroke="#31402B" strokeWidth="3"/>
+      <path d="M 90.00 28.00 A 62 62 0 0 1 113.23 147.49" fill="none" stroke="#5CC76C" strokeWidth="8" strokeLinecap="round"/>
+      <path d="M 105.00 150.16 A 62 62 0 0 1 28.00 90.00" fill="none" stroke="#D9A441" strokeWidth="8" strokeLinecap="round"/>
+      <g transform="translate(90,113) scale(1.42)" fill="url(#ct-leaf)"><path transform="rotate(0)" d="M 0 0 C -4.8 -13.8, -4.8 -33.1, 0 -46 C 4.8 -33.1, 4.8 -13.8, 0 0 Z"/><path transform="rotate(27)" d="M 0 0 C -4.2 -12.0, -4.2 -28.8, 0 -40 C 4.2 -28.8, 4.2 -12.0, 0 0 Z"/><path transform="rotate(-27)" d="M 0 0 C -4.2 -12.0, -4.2 -28.8, 0 -40 C 4.2 -28.8, 4.2 -12.0, 0 0 Z"/><path transform="rotate(55)" d="M 0 0 C -3.4 -9.0, -3.4 -21.6, 0 -30 C 3.4 -21.6, 3.4 -9.0, 0 0 Z"/><path transform="rotate(-55)" d="M 0 0 C -3.4 -9.0, -3.4 -21.6, 0 -30 C 3.4 -21.6, 3.4 -9.0, 0 0 Z"/><path transform="rotate(80)" d="M 0 0 C -3.4 -5.7, -3.4 -13.7, 0 -19 C 3.4 -13.7, 3.4 -5.7, 0 0 Z"/><path transform="rotate(-80)" d="M 0 0 C -3.4 -5.7, -3.4 -13.7, 0 -19 C 3.4 -13.7, 3.4 -5.7, 0 0 Z"/><line x1="0" y1="-3" x2="0" y2="-40" stroke="#0D110C" strokeOpacity=".16" strokeWidth="1.1" strokeLinecap="round"/><rect x="-2.6" y="-1" width="5.2" height="13" rx="2.6"/></g>
     </svg>
   )
 }
@@ -78,15 +47,15 @@ export function LogoFull({ iconSize = 48, dark = true, showTagline = false, clas
         <div
           style={{
             fontSize: iconSize * 0.58,
-            fontWeight: 300,
+            fontWeight: 500,
             color: textColor,
             lineHeight: 1,
             letterSpacing: '-0.3px',
-            fontFamily: 'Inter, -apple-system, sans-serif',
+            fontFamily: "'Fraunces Variable', Fraunces, 'Iowan Old Style', Georgia, serif",
           }}
         >
           Culti
-          <span style={{ fontWeight: 800, color: '#3DCC63' }}>Track</span>
+          <span style={{ fontWeight: 700, color: dark ? '#5CC76C' : '#2B7D38' }}>Track</span>
         </div>
         {showTagline && (
           <div

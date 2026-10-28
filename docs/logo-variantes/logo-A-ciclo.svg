@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs>
+<radialGradient id="bgA" cx="50%" cy="32%" r="75%"><stop offset="0" stop-color="#1D2D1B"/><stop offset="1" stop-color="#0F160E"/></radialGradient>
+<linearGradient id="leafA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F8EF"/><stop offset="1" stop-color="#BFE3C4"/></linearGradient>
+</defs>
+<rect x="1.5" y="1.5" width="177" height="177" rx="41" fill="url(#bgA)" stroke="#31402B" stroke-width="3"/>
+<path d="M 90.00 28.00 A 62 62 0 0 1 113.23 147.49" fill="none" stroke="#5CC76C" stroke-width="8" stroke-linecap="round"/>
+<path d="M 105.00 150.16 A 62 62 0 0 1 28.00 90.00" fill="none" stroke="#D9A441" stroke-width="8" stroke-linecap="round"/>
+<g transform="translate(90,113) scale(1.42)" fill="url(#leafA)"><path transform="rotate(0)" d="M 0 0 C -4.8 -13.8, -4.8 -33.1, 0 -46 C 4.8 -33.1, 4.8 -13.8, 0 0 Z"/><path transform="rotate(27)" d="M 0 0 C -4.2 -12.0, -4.2 -28.8, 0 -40 C 4.2 -28.8, 4.2 -12.0, 0 0 Z"/><path transform="rotate(-27)" d="M 0 0 C -4.2 -12.0, -4.2 -28.8, 0 -40 C 4.2 -28.8, 4.2 -12.0, 0 0 Z"/><path transform="rotate(55)" d="M 0 0 C -3.4 -9.0, -3.4 -21.6, 0 -30 C 3.4 -21.6, 3.4 -9.0, 0 0 Z"/><path transform="rotate(-55)" d="M 0 0 C -3.4 -9.0, -3.4 -21.6, 0 -30 C 3.4 -21.6, 3.4 -9.0, 0 0 Z"/><path transform="rotate(80)" d="M 0 0 C -3.4 -5.7, -3.4 -13.7, 0 -19 C 3.4 -13.7, 3.4 -5.7, 0 0 Z"/><path transform="rotate(-80)" d="M 0 0 C -3.4 -5.7, -3.4 -13.7, 0 -19 C 3.4 -13.7, 3.4 -5.7, 0 0 Z"/><line x1="0" y1="-3" x2="0" y2="-40" stroke="#0D110C" stroke-opacity=".16" stroke-width="1.1" stroke-linecap="round"/><rect x="-2.6" y="-1" width="5.2" height="13" rx="2.6"/></g></svg>

@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n'
 import { useUserStore } from '@/store/userStore'
 import type { Language } from '@/i18n'
 import { GrowthLines } from '@/components/landing/GrowthLines'
+import { LogoMark } from '@/components/ui'
 import {
   ChartIcon, CalendarIcon, DropletIcon, CameraIcon, FlaskIcon,
   SproutIcon, SignalOffIcon, SmartphoneIcon, TrophyIcon, ShieldIcon,
@@ -52,39 +53,6 @@ function useFadeIn(threshold = 0.12) {
     return () => obs.disconnect()
   }, [])
   return ref
-}
-
-// ─── LogoMark ────────────────────────────────────────────────────────────────
-function LogoMark({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="lp-bg" cx="50%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="#142B18" />
-          <stop offset="100%" stopColor="#0D110C" />
-        </radialGradient>
-        <linearGradient id="lp-leaf" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#CBEDCF" />
-        </linearGradient>
-      </defs>
-      <rect width="180" height="180" rx="42" fill="url(#lp-bg)" />
-      <ellipse cx="90" cy="88" rx="62" ry="55" fill="#2EBD52" opacity="0.07" />
-      <path d="M 90 28 A 62 62 0 1 1 28 90" fill="none" stroke="#5CC76C" strokeWidth="2.5" strokeLinecap="round" opacity="0.38" />
-      <circle cx="28" cy="90" r="4" fill="#5CC76C" opacity="0.6" />
-      <g transform="translate(90,108)" fill="url(#lp-leaf)">
-        <path d="M 0 0 C -7.5 -10, -7.5 -33, 0 -44 C 7.5 -33, 7.5 -10, 0 0 Z" />
-        <path transform="rotate(27)" d="M 0 0 C -6.5 -9, -6.5 -28, 0 -37 C 6.5 -28, 6.5 -9, 0 0 Z" />
-        <path transform="rotate(-27)" d="M 0 0 C -6.5 -9, -6.5 -28, 0 -37 C 6.5 -28, 6.5 -9, 0 0 Z" />
-        <path transform="rotate(56)" d="M 0 0 C -5 -6.5, -5 -19, 0 -26 C 5 -19, 5 -6.5, 0 0 Z" />
-        <path transform="rotate(-56)" d="M 0 0 C -5 -6.5, -5 -19, 0 -26 C 5 -19, 5 -6.5, 0 0 Z" />
-        <path transform="rotate(82)" d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
-        <path transform="rotate(-82)" d="M 0 0 C -3.5 -4.5, -3.5 -11, 0 -15 C 3.5 -11, 3.5 -4.5, 0 0 Z" />
-        <line x1="0" y1="-2" x2="0" y2="-38" stroke="rgba(13,17,12,0.18)" strokeWidth="1.2" strokeLinecap="round" />
-        <rect x="-2.8" y="0" width="5.6" height="12" rx="2.8" />
-      </g>
-    </svg>
-  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -233,7 +201,7 @@ export default function Landing() {
         <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <LogoMark size={32} />
-            <span style={{ fontWeight: 800, fontSize: '17px', color: C.white, letterSpacing: '-0.3px' }}>
+            <span style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", fontWeight: 600, fontSize: '20px', color: C.white, letterSpacing: '-0.2px' }}>
               Culti<span style={{ color: C.green }}>Track</span>
             </span>
           </a>
@@ -597,7 +565,7 @@ export default function Landing() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                 <LogoMark size={32} />
-                <span style={{ fontWeight: 800, fontSize: '17px', color: C.white, letterSpacing: '-0.3px' }}>Culti<span style={{ color: C.green }}>Track</span></span>
+                <span style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", fontWeight: 600, fontSize: '20px', color: C.white, letterSpacing: '-0.2px' }}>Culti<span style={{ color: C.green }}>Track</span></span>
               </div>
               <p style={{ color: C.ink3, fontSize: '13px', maxWidth: '220px', lineHeight: 1.6, margin: 0 }}>{t('landing.footer_tagline')}</p>
             </div>
