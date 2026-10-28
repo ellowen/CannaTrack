@@ -553,7 +553,7 @@ const en: Translations = {
     faq6_q:            'What happens when I harvest?',
     faq6_a:            'You mark it as harvested and it moves to your history with the full cycle, photos, readings and notes. You can check that history any time to replicate or improve your results.',
     faq7_q:            'Is it available as a mobile app?',
-    faq7_a:            'CultiTrack is a PWA (Progressive Web App). You can install it from the browser just like a native app — works on iOS and Android. A native React Native version is on the roadmap.',
+    faq7_a:            'CultiTrack is a PWA (Progressive Web App). You can install it from the browser just like a native app — works on iOS and Android.',
 
     cta_h2:            'Your first perfect harvest starts today.',
     cta_desc:          'Sign up free, add your first plant and in 30 seconds you have the complete nutrition calendar all the way to harvest.',

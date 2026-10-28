@@ -550,7 +550,7 @@ const es = {
     faq6_q:            'Que pasa cuando cosecho la planta?',
     faq6_a:            'La marcas como cosechada y pasa a tu historial con el ciclo completo, fotos, mediciones y notas. Podes consultar ese historial cuando quieras para replicar o mejorar resultados.',
     faq7_q:            'Esta disponible como app movil?',
-    faq7_a:            'CultiTrack es una PWA (Progressive Web App). Podes instalarla desde el navegador como si fuera una app nativa — funciona en iOS y Android. Una version nativa de React Native esta en el roadmap.',
+    faq7_a:            'CultiTrack es una PWA (Progressive Web App). Podes instalarla desde el navegador como si fuera una app nativa — funciona en iOS y Android.',
 
     cta_h2:            'Tu primera cosecha perfecta empieza hoy.',
     cta_desc:          'Registrate gratis, carga tu primera planta y en 30 segundos tenes el calendario nutricional completo hasta la cosecha.',
