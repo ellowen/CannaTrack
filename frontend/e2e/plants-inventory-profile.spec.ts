@@ -199,30 +199,6 @@ test.describe('Perfil', () => {
   })
 })
 
-test.describe('Fotos por planta', () => {
-  const PNG = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-    'base64',
-  )
-
-  test('selector de planta, galeria y subida de una foto (Pro)', async ({ page, context }) => {
-    await setup(page, context)
-    await createPlantViaUi(page, SODA, 2)
-    await createPlantViaUi(page, BLUE, 2)
-    await gotoApp(page, '/diagnose')
-    await expect(page.getByText('Diario visual')).toBeVisible()
-    await expect(page.getByText('Sin fotos todavia')).toBeVisible()
-    await page.getByRole('button', { name: BLUE.name }).click()
-    await page.locator('input[type="file"]').first().setInputFiles({ name: 'blue.png', mimeType: 'image/png', buffer: PNG })
-    await expect(page.getByText('Sin fotos todavia')).not.toBeVisible({ timeout: 10_000 })
-    // la planta Soda sigue sin fotos
-    await page.getByRole('button', { name: SODA.name }).click()
-    await expect(page.getByText('Sin fotos todavia')).toBeVisible()
-    // diagnostico por IA deshabilitado en esta version
-    await expect(page.getByText('Diagnostico por IA')).not.toBeVisible()
-  })
-})
-
 test.describe('Plan Free: limites', () => {
   test('con 1 planta activa no se puede crear otra y se ofrece Pro', async ({ page, context }) => {
     await setup(page, context, 'free')

@@ -114,7 +114,7 @@ export default function Calendar() {
               {!isThisMonth && (
                 <button
                   onClick={goToToday}
-                  className="text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                  className="text-xs font-bold text-brand-text bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                 >
                   Hoy
                 </button>
@@ -169,7 +169,7 @@ export default function Calendar() {
                 {pending.length > 0
                   ? <span className="text-ink-3">{pending.length} pendiente{pending.length > 1 ? 's' : ''}</span>
                   : selectedTasks.length > 0
-                  ? <span className="text-brand-400">✓ Todo completado</span>
+                  ? <span className="text-brand-text">✓ Todo completado</span>
                   : <span className="text-ink-4">Sin tareas</span>
                 }
               </p>

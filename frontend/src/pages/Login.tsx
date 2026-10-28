@@ -109,7 +109,7 @@ export default function Login() {
               </button>
             </div>
             <p className="text-right mt-2">
-              <Link to="/forgot-password" className="text-xs text-brand-400 font-semibold">
+              <Link to="/forgot-password" className="text-xs text-brand-text font-semibold">
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
@@ -150,7 +150,7 @@ export default function Login() {
           No tenes cuenta?{' '}
           <Link
             to="/signup"
-            className="text-brand-400 font-medium"
+            className="text-brand-text font-medium"
           >
             Registrate
           </Link>

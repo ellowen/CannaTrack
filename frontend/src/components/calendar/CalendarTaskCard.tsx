@@ -77,7 +77,7 @@ export default function CalendarTaskCard({ task, plantName, onComplete }: Calend
           </div>
 
           {task.completed ? (
-            <span className="flex items-center gap-1 text-xs font-semibold text-brand-400">
+            <span className="flex items-center gap-1 text-xs font-semibold text-brand-text">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
                 <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -88,7 +88,7 @@ export default function CalendarTaskCard({ task, plantName, onComplete }: Calend
               onClick={() => onComplete(task.id)}
               className={clsx(
                 'text-xs font-bold px-3 py-1.5 rounded-xl border transition-all tap-highlight-none active:scale-95',
-                'bg-brand-subtle text-brand-400 border-brand-border hover:bg-brand-dim'
+                'bg-brand-subtle text-brand-text border-brand-border hover:bg-brand-dim'
               )}
             >
               Marcar hecho

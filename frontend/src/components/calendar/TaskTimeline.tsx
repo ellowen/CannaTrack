@@ -137,7 +137,7 @@ export default function TaskTimeline({ tasks, getPlantName, onComplete, onUncomp
                     </div>
                   ) : isDone ? (
                     <div className="flex justify-end mt-2.5 gap-2">
-                      <span className="text-[11px] font-semibold text-brand-400">Completado</span>
+                      <span className="text-[11px] font-semibold text-brand-text">Completado</span>
                       {onUncomplete && (
                         <button
                           onClick={() => onUncomplete(task.id)}

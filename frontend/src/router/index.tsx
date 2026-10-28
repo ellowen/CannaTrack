@@ -21,7 +21,6 @@ const Settings     = lazy(() => import('@/pages/Settings'))
 const Profile      = lazy(() => import('@/pages/Profile'))
 const CustomTable  = lazy(() => import('@/pages/CustomTable'))
 const PlantBrowser = lazy(() => import('@/pages/PlantBrowser'))
-const Diagnose     = lazy(() => import('@/pages/Diagnose'))
 const Inventory    = lazy(() => import('@/pages/Inventory'))
 
 export const router = createBrowserRouter([
@@ -60,7 +59,6 @@ export const router = createBrowserRouter([
       { path: 'plants/:id/edit', element: <EditPlant /> },
       { path: 'inventory', element: <Inventory /> },
       { path: 'calendar', element: <Calendar /> },
-      { path: 'diagnose', element: <Diagnose /> },
       { path: 'settings', element: <Settings /> },
       { path: 'profile', element: <Profile /> },
       { path: 'nutrition/new', element: <CustomTable /> },

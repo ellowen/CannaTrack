@@ -5,7 +5,6 @@ const en: Translations = {
     home:     'Home',
     calendar: 'Calendar',
     plants:   'Plants',
-    photos:   'Photos',
     profile:  'Profile',
   },
 
@@ -325,24 +324,6 @@ const en: Translations = {
     first_plant_desc:     'Add your grow details to generate the calendar',
   },
 
-  diagnose: {
-    title:           'Visual diary',
-    photos_tab:      'Photos',
-    camera_tab:      'Camera',
-    gallery_tab:     'Gallery',
-    no_photos:       'No photos yet',
-    ai_title:        'AI Diagnosis',
-    ai_desc:         'Detect pests, deficiencies and mold',
-    pro_feature:     'Pro feature',
-    select_photo:    'Select a photo to analyze',
-    analyzing:       'Analyzing...',
-    analyze:         'Analyze with AI',
-    health:          'Plant health',
-    problems:        'Detected issues',
-    recommendations: 'Recommendations',
-    new_diagnosis:   'New diagnosis',
-    limit_reached:   'Limit reached',
-  },
 
   newPlant: {
     title:               'New plant',
@@ -353,7 +334,6 @@ const en: Translations = {
     coming_soon:         'COMING SOON',
     pro_unlimited_plants:'Unlimited plants',
     pro_all_tables:      'All nutrition tables',
-    pro_ai_diagnosis:    'AI photo diagnosis',
     pro_advanced_stats:  'Advanced statistics',
     pro_pricing:         '~USD 5/mo — Coming soon',
     manage_active:       'Manage my active plant',
@@ -544,7 +524,6 @@ const en: Translations = {
     pp1:               'Everything in Free',
     pp2:               'Unlimited plants',
     pp3:               'All nutrition tables',
-    pp4:               'AI photo diagnosis (coming soon)',
     pp5:               'Custom nutrition tables',
     pp6:               'Advanced analytics',
     pp7:               'Export history as PDF',
@@ -575,8 +554,6 @@ const en: Translations = {
     faq6_a:            'You mark it as harvested and it moves to your history with the full cycle, photos, readings and notes. You can check that history any time to replicate or improve your results.',
     faq7_q:            'Is it available as a mobile app?',
     faq7_a:            'CultiTrack is a PWA (Progressive Web App). You can install it from the browser just like a native app — works on iOS and Android. A native React Native version is on the roadmap.',
-    faq8_q:            'When does AI diagnosis launch?',
-    faq8_a:            'AI photo diagnosis (deficiency, pest and disease analysis with Claude AI) is in development. Sign up today and you will have guaranteed access when it launches.',
 
     cta_h2:            'Your first perfect harvest starts today.',
     cta_desc:          'Sign up free, add your first plant and in 30 seconds you have the complete nutrition calendar all the way to harvest.',

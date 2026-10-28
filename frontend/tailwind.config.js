@@ -13,6 +13,8 @@ export default {
           dim:    'var(--brand-dim)',
             // Texto sobre fondo brand-400 (oscuro en ambos temas: blanco sobre el verde da ~2:1)
           'on':   'var(--on-brand)',
+          // Texto verde de marca sobre fondo de pagina: contraste >= 4.5:1 en claro
+          text:   'var(--brand-text)',
         // Estáticos (para uso con opacidad: brand-500/20 etc.)
           200: '#A8DAB0',
           300: '#6DC278',

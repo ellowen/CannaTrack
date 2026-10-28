@@ -48,7 +48,7 @@ export default function MeasurementSheet({
     return phNum >= phMin && phNum <= phMax ? 'ok' : phNum < phMin - 0.3 || phNum > phMax + 0.3 ? 'bad' : 'warn'
   }
 
-  const statusColor = { ok: 'text-brand-400', warn: 'text-amber-500', bad: 'text-red-500' }
+  const statusColor = { ok: 'text-brand-text', warn: 'text-amber-500', bad: 'text-red-500' }
   const statusIcon  = { ok: '✓', warn: '~', bad: '✕' }
 
   function handleSave() {

@@ -222,7 +222,7 @@ function PlantInventoryCard({ plant, tasks, photos, onNavigate }: PlantInventory
   }
 
   const STATUS_BADGES: Record<PlantStatus, { label: string; color: string }> = {
-    active: { label: t('plants.status_active'), color: 'bg-brand-subtle text-brand-400 border-brand-border' },
+    active: { label: t('plants.status_active'), color: 'bg-brand-subtle text-brand-text border-brand-border' },
     harvested: { label: t('plants.status_harvested'), color: 'bg-flora-bg text-flora-text border-flora-border' },
     discarded: { label: t('plants.status_discarded'), color: 'bg-app-elevated text-ink-3 border-app-border' },
   }

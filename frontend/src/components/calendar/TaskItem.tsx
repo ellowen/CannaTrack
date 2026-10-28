@@ -69,7 +69,7 @@ export default function TaskItem({ task, onComplete, showDate = false }: TaskIte
         </button>
       )}
       {task.completed && (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-400" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-text" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
       )}
     </div>
   )

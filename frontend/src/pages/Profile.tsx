@@ -224,7 +224,7 @@ export default function Profile() {
             onClick={() => setActiveTab(tab.id)}
             className={clsx(
               'flex-1 py-3 text-xs font-bold tracking-wide transition-colors tap-highlight-none',
-              activeTab === tab.id ? 'text-brand-400' : 'text-ink-4'
+              activeTab === tab.id ? 'text-brand-text' : 'text-ink-4'
             )}
           >
             {tab.label}
@@ -337,7 +337,7 @@ export default function Profile() {
                         <p className="text-sm font-bold text-ink-1 truncate">{plant.name}</p>
                         <p className="text-xs text-ink-3 truncate">{plant.genetics}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold text-brand-400">{rate}% cumplimiento</span>
+                          <span className="text-[10px] font-bold text-brand-text">{rate}% cumplimiento</span>
                           <span className="text-[10px] text-ink-4">· {format(new Date(plant.startDate), "d MMM yyyy", { locale: es })}</span>
                         </div>
                       </div>
@@ -485,7 +485,7 @@ export default function Profile() {
                   className={clsx(
                     'flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all tap-highlight-none',
                     theme === opt.value
-                      ? 'bg-brand-400/15 text-brand-400 border border-brand-400/30'
+                      ? 'bg-brand-400/15 text-brand-text border border-brand-400/30'
                       : 'text-ink-3 hover:text-ink-1'
                   )}
                 >
@@ -510,7 +510,7 @@ export default function Profile() {
                     {plan === 'pro' ? 'Pro' : plan === 'trial' ? 'Trial Pro' : 'Free'}
                   </p>
                 </div>
-                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-subtle border border-brand-border text-brand-400">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-subtle border border-brand-border text-brand-text">
                   {plan === 'pro' ? 'PRO' : plan === 'trial' ? 'PRUEBA' : 'GRATIS'}
                 </span>
               </div>

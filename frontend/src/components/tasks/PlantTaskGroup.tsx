@@ -51,7 +51,7 @@ export default function PlantTaskGroup({
           <button
             onClick={() => onCompleteAll(tasks)}
             aria-label={`Marcar todo hecho en ${name}`}
-            className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-full tap-highlight-none active:scale-95 transition-all"
+            className="shrink-0 text-xs font-bold text-brand-text bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-full tap-highlight-none active:scale-95 transition-all"
           >
             ✓ Todo
           </button>
@@ -81,7 +81,7 @@ export default function PlantTaskGroup({
             <button
               onClick={() => onQuickComplete(task)}
               aria-label={`${typeLabel[task.type] ?? task.type} de ${name}: marcar hecha`}
-              className="shrink-0 w-11 h-11 rounded-full border border-brand-border bg-brand-subtle text-brand-400 flex items-center justify-center tap-highlight-none active:scale-90 transition-all"
+              className="shrink-0 w-11 h-11 rounded-full border border-brand-border bg-brand-subtle text-brand-text flex items-center justify-center tap-highlight-none active:scale-90 transition-all"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                 <path d="M5 12.5l4.5 4.5L19 7.5" />

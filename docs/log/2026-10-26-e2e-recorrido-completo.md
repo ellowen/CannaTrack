@@ -178,3 +178,12 @@ Tests: 4 unit (`getCycleStrip`), 5 E2E nuevos (home agrupada x2, formulario x3);
 - **Visor de fotos:** la barra de navegacion tapaba la nota; ahora el visor va en un portal al body y queda por encima.
 - **Barra de navegacion:** se saca "Fotos" (quedan Inicio, Calendario, Plantas y Perfil). La ruta `/diagnose` sigue existiendo pero no esta enlazada; el diagnostico por IA se descarta.
 - **Demo de datos:** `e2e/demo-seguimiento.spec.ts` arma una planta con 6 entradas de diario con fotos dibujadas en un canvas y 5 mediciones, sobre el backend simulado; con `DEMO=1 ... --headed` queda abierto para recorrerlo. Ademas se cargo en la base de test una planta "Demo seguimiento (borrar)" con los mismos datos para verla en la app real.
+
+## Veintitresava tanda (2026-10-28): se descarta el diagnostico por IA
+- Decision de producto: el diagnostico por IA no se va a hacer. Se saco del front todo lo que lo prometia: "Diagnostico IA por foto (proximamente)" y la pregunta de FAQ "Cuando sale el diagnostico por IA?" de la landing, la linea del plan Pro en Nueva planta y las claves de i18n.
+- Codigo muerto eliminado: la pagina Fotos/Diagnose (`/diagnose`, sin enlace desde que salio de la barra), `PhotoGallery` (reemplazada por el diario compacto) y sus ejemplos/docs. Tests: se quitaron los de la pagina Fotos y el de "seccion de IA oculta"; el de Free/Pro de fotos ahora se hace en la hoja de nueva entrada del diario.
+- **Backend sin tocar a proposito**: `diagnose-plant`, `diagnosis_logs` y sus limites siguen en Supabase, sin usar.
+- **Pendiente (no se toco):** `public/terms.html` y `public/privacy.html` siguen hablando del diagnostico IA (limites de 5/30 por mes, fotos enviadas a Anthropic). Son textos legales: hay que revisarlos y sacarlos con quien corresponda.
+- En Free la hoja del diario ya no renderiza el campo de archivo oculto (antes quedaba aunque no hubiera acceso a fotos).
+- Tema claro: el verde de marca usado como texto (`text-brand-400`) pasa a un token `brand-text` (`#2B7D38` en claro, 4.8:1 sobre el fondo; en oscuro no cambia). 71 usos.
+- `CLAUDE.md`: se marca la IA como descartada y se anota el rediseno.

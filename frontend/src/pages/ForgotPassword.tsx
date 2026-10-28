@@ -47,7 +47,7 @@ export default function ForgotPassword() {
             </div>
             <Link
               to="/login"
-              className="inline-block text-brand-400 font-semibold text-sm"
+              className="inline-block text-brand-text font-semibold text-sm"
             >
               ← Volver a ingresar
             </Link>
@@ -91,7 +91,7 @@ export default function ForgotPassword() {
             </form>
 
             <p className="text-center text-ink-3 text-sm">
-              <Link to="/login" className="text-brand-400 font-semibold">
+              <Link to="/login" className="text-brand-text font-semibold">
                 ← Volver a ingresar
               </Link>
             </p>

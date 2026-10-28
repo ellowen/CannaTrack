@@ -78,7 +78,7 @@ export default function ResetPassword() {
                 El link de recuperación venció o ya se usó. Pedí uno nuevo.
               </p>
             </div>
-            <Link to="/forgot-password" className="inline-block text-brand-400 font-semibold text-sm">
+            <Link to="/forgot-password" className="inline-block text-brand-text font-semibold text-sm">
               Pedir un nuevo link
             </Link>
           </div>

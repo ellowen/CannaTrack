@@ -81,7 +81,7 @@ export default function MonthCalendar({
               <div className={clsx(
                 'w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all duration-150',
                 isSel  ? 'bg-brand-400 text-brand-on scale-110'
-                : isToday ? 'ring-2 ring-brand-400 text-brand-400'
+                : isToday ? 'ring-2 ring-brand-400 text-brand-text'
                 : isOverdue ? 'text-task-harvest'
                 : inMonth ? 'text-ink-1'
                 : 'text-ink-4 opacity-30',

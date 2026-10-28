@@ -11,7 +11,7 @@ Siempre leé este archivo antes de hacer cualquier cambio al código.
 **CannaTrack** es una web app (y futura app mobile) para el seguimiento
 completo de cultivos de cannabis. Permite gestionar el ciclo de vida de
 una o varias plantas con calendario nutricional automático, recordatorios,
-historial fotográfico y diagnóstico por IA.
+historial fotográfico (diario de cultivo).
 
 **Repositorio:** https://github.com/ellowen/CannaTrack.git
 **Stack:** Monorepo — `/frontend` (Vite + React 18 + TypeScript) + `/backend` (Supabase)
@@ -31,7 +31,8 @@ historica).*
 - [x] Landing rebrandeada a **Cultitrack**, deploy en Vercel
 - [x] Modelo comercial: trial Pro de 30 dias + suscripcion (RevenueCat webhook)
 - [x] Soporte multi-cultivo (`cropType` opcional en `Plant`, no solo cannabis)
-- [x] Diagnostico IA por foto (`diagnose-plant` edge function, gateado a Pro, rate limit 30/mes Pro - 5/mes Free)
+- [x] Diagnostico IA por foto: DESCARTADO (oct 2026). No se va a hacer; el front ya no lo menciona. El backend (`diagnose-plant`, `diagnosis_logs`) quedo sin usar a proposito, sin borrar.
+- [x] Rediseno de la webapp (oct 2026): paleta y tipografia propias (Fraunces + Inter), Inicio enfocado en "que hago hoy", detalle de planta en tabs (Hoy, Mediciones, Diario, Datos), diario compacto con foto opcional
 - [x] Hardening de seguridad: RLS de `profiles`/`diagnosis_logs`, exploits de XP/racha/rate-limit cerrados
 - [x] Suite E2E Playwright + CI
 - [ ] Etapa 4 — Marketplace de tablas nutricionales (B2B)
@@ -87,7 +88,7 @@ CannaTrack/
 ### Usuarios finales (B2C)
 - **Free**: 1 planta activa, tabla REVEGETAR, notificaciones básicas
 - **Pro (~USD 5/mes)**: plantas ilimitadas, todas las tablas,
-  diagnóstico IA por foto, estadísticas, exportar historial
+  estadísticas, exportar historial
 
 ### Marcas de fertilizantes (B2B)
 - **Listing (~USD 100/mes)**: la marca paga para que su tabla

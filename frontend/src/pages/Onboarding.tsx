@@ -86,7 +86,7 @@ export default function Onboarding() {
           <div className="space-y-2 mb-10 text-left">
             {FEATURES.map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-3 bg-app-card border border-app-border rounded-2xl px-4 py-3">
-                <span className="shrink-0 text-brand-400">{icon}</span>
+                <span className="shrink-0 text-brand-text">{icon}</span>
                 <span className="text-sm text-ink-2 font-medium">{text}</span>
               </div>
             ))}
@@ -169,7 +169,7 @@ export default function Onboarding() {
               'Registrar EC y pH de cada riego',
             ].map((item) => (
               <p key={item} className="text-sm text-ink-2 font-medium flex items-center gap-2.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-400" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-4 h-4 shrink-0 text-brand-text" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 {item}
               </p>
             ))}

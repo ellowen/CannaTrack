@@ -173,7 +173,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
          : 'bad'
   }
 
-  const statusColors = { ok: 'text-brand-400', warn: 'text-amber-500', bad: 'text-red-500' }
+  const statusColors = { ok: 'text-brand-text', warn: 'text-amber-500', bad: 'text-red-500' }
   const statusIcons  = { ok: '✓', warn: '~', bad: '✕' }
 
   const ec_st = ecStatus()
@@ -209,7 +209,7 @@ export default function CompleteTaskSheet({ task, onConfirm, onClose }: Complete
               <div className="w-16 h-16 rounded-full bg-brand-400 text-brand-on flex items-center justify-center mb-4 animate-bounce-once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} className="w-8 h-8" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
               <p className="text-2xl font-black text-ink-1 mb-1">Tarea completada</p>
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-3xl font-black text-brand-400 xp-pop">
+                <span className="text-3xl font-black text-brand-text xp-pop">
                   +{xpReward.xpGained} XP
                 </span>
               </div>

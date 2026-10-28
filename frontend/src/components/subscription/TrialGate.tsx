@@ -54,7 +54,7 @@ export function TrialExpired() {
         <ul className="space-y-2 text-xs text-ink-2">
           {['pro_feature_unlimited', 'pro_feature_tables', 'pro_feature_photos', 'pro_feature_history'].map((k) => (
             <li key={k} className="flex items-center gap-2.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-3.5 h-3.5 shrink-0 text-brand-400" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-3.5 h-3.5 shrink-0 text-brand-text" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {t(`subscription.${k}`)}
             </li>
           ))}

@@ -135,7 +135,7 @@ function NavItem({ label, icon, active, badge, children }: {
   return (
     <div className={clsx(
       'flex flex-col items-center pt-1.5 pb-2 gap-0.5 transition-colors duration-150',
-      active ? 'text-brand-400' : 'text-ink-4'
+      active ? 'text-brand-text' : 'text-ink-4'
     )}>
       <div className={clsx(
         'relative p-1.5 rounded-2xl transition-all duration-200',
@@ -150,7 +150,7 @@ function NavItem({ label, icon, active, badge, children }: {
       </div>
       <span className={clsx(
         'text-[10px] tracking-wide transition-all duration-150',
-        active ? 'font-bold text-brand-400' : 'font-medium text-ink-4'
+        active ? 'font-bold text-brand-text' : 'font-medium text-ink-4'
       )}>
         {label}
       </span>

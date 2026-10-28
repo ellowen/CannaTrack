@@ -22,7 +22,7 @@ function getRangeStatus(value: number, min: number, max: number): RangeStatus {
 }
 
 const statusClasses: Record<RangeStatus, string> = {
-  ok:   'bg-brand-subtle text-brand-400 border-brand-border',
+  ok:   'bg-brand-subtle text-brand-text border-brand-border',
   warn: 'bg-amber-50 text-amber-600 border-amber-200',
   bad:  'bg-red-50 text-red-500 border-red-200',
 }
@@ -56,7 +56,7 @@ export default function MeasurementSection({ plantId, ecMin, ecMax, phMin, phMax
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest">💧 EC / pH</p>
           <button
             onClick={() => setSheetOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+            className="flex items-center gap-1.5 text-xs font-semibold text-brand-text bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />

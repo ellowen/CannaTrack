@@ -162,7 +162,7 @@ export default function Landing() {
 
   const PRO_FEATURES = [
     t('landing.pp1'), t('landing.pp2'), t('landing.pp3'),
-    t('landing.pp4'), t('landing.pp5'), t('landing.pp6'),
+    t('landing.pp5'), t('landing.pp6'),
     t('landing.pp7'), t('landing.pp8'),
   ]
 
@@ -180,7 +180,6 @@ export default function Landing() {
     { q: t('landing.faq5_q'), a: t('landing.faq5_a') },
     { q: t('landing.faq6_q'), a: t('landing.faq6_a') },
     { q: t('landing.faq7_q'), a: t('landing.faq7_a') },
-    { q: t('landing.faq8_q'), a: t('landing.faq8_a') },
   ]
 
   const TRUST_BADGES = [

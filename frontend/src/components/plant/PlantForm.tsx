@@ -94,7 +94,7 @@ function ToggleGroup<T extends string>({
           className={clsx(
             'flex-1 py-3 px-3 rounded-xl border text-sm font-medium transition-all tap-highlight-none active:scale-95',
             value === opt
-              ? 'bg-brand-dim border-brand-subtle text-brand-400'
+              ? 'bg-brand-dim border-brand-subtle text-brand-text'
               : 'bg-app-card border-app-border text-ink-3 hover:border-app-border-strong shadow-card'
           )}
         >
@@ -136,7 +136,7 @@ function StepIndicator({ current, onSelect }: { current: number; onSelect?: (ste
                 done
                   ? 'bg-brand-400 border-brand-400 text-app-bg'
                   : active
-                  ? 'bg-brand-dim border-brand-subtle text-brand-400 shadow-glow-brand'
+                  ? 'bg-brand-dim border-brand-subtle text-brand-text shadow-glow-brand'
                   : 'bg-app-elevated border-app-border text-ink-4'
               )}>
                 {done ? (
@@ -147,7 +147,7 @@ function StepIndicator({ current, onSelect }: { current: number; onSelect?: (ste
               </div>
               <span className={clsx(
                 'text-[10px] font-semibold uppercase tracking-wide transition-colors',
-                active ? 'text-brand-400' : done ? 'text-brand-600' : 'text-ink-4'
+                active ? 'text-brand-text' : done ? 'text-brand-600' : 'text-ink-4'
               )}>
                 {label}
               </span>
@@ -825,7 +825,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                     e.preventDefault()
                   }
                 }}
-                className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+                className="text-xs font-semibold text-brand-text tap-highlight-none active:scale-95"
               >
                 + Crear propia
               </Link>
@@ -896,7 +896,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
                   <span className={clsx(
                     'text-xs font-semibold px-2 py-0.5 rounded-full border',
                     allSelected
-                      ? 'text-brand-400 bg-brand-dim border-brand-subtle'
+                      ? 'text-brand-text bg-brand-dim border-brand-subtle'
                       : 'text-amber-400 bg-amber-950/50 border-amber-900/50'
                   )}>
                     {allSelected ? 'Todos' : `${selected.length}/${allProductNames.length}`}
@@ -1060,7 +1060,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
               <button
                 type="button"
                 onClick={() => setAddingProduct(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-app-border-strong text-sm font-semibold text-ink-3 hover:border-brand-border hover:text-brand-400 tap-highlight-none active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-app-border-strong text-sm font-semibold text-ink-3 hover:border-brand-border hover:text-brand-text tap-highlight-none active:scale-[0.98] transition-all"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
                   <path d="M12 5v14M5 12h14" strokeLinecap="round" />
@@ -1093,7 +1093,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
               {showSchedule && (
                 <div className="border-t border-app-border bg-app-card px-4 py-4 space-y-5">
                   <div>
-                    <p className="text-[11px] font-bold text-brand-400 uppercase tracking-widest mb-3">
+                    <p className="text-[11px] font-bold text-brand-text uppercase tracking-widest mb-3">
                       Vegetativo · {vegeWeeks.length} semanas
                     </p>
                     <div className="space-y-2.5">
@@ -1199,7 +1199,7 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
             type="button"
             disabled={!isStepValid() || loading}
             onClick={submitNow}
-            className="block mx-auto text-sm font-bold text-brand-400 tap-highlight-none disabled:opacity-40"
+            className="block mx-auto text-sm font-bold text-brand-text tap-highlight-none disabled:opacity-40"
           >
             Omitir nutrición y crear
           </button>

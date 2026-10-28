@@ -158,7 +158,7 @@ export default function WeekLogSheet({
                       : <img src={photo} alt="Foto semana" className="w-full h-full object-cover" />}
                   </button>
                   <div className="flex flex-col items-start gap-1.5">
-                    <button type="button" onClick={() => fileRef.current?.click()} className="text-xs font-semibold text-brand-400 tap-highlight-none">
+                    <button type="button" onClick={() => fileRef.current?.click()} className="text-xs font-semibold text-brand-text tap-highlight-none">
                       Cambiar foto
                     </button>
                     <button type="button" onClick={() => setPhoto(undefined)} className="text-xs text-ink-4 hover:text-task-harvest transition-colors tap-highlight-none">
@@ -178,14 +178,16 @@ export default function WeekLogSheet({
                   Agregar foto
                 </button>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              {hasProAccess(plan) && (
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              )}
             </div>
 
             {/* Actions */}

@@ -202,7 +202,7 @@ export default function Home() {
             style={{ opacity: pullProgress, transform: `rotate(${pullProgress * 180}deg)` }}
           >
             {!refreshing && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4 text-brand-400">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4 text-brand-text">
                 <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
@@ -217,7 +217,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <LogoMark size={30} />
             <span className="text-sm font-light text-ink-2 tracking-tight">
-              Culti<span className="font-bold text-brand-400">Track</span>
+              Culti<span className="font-bold text-brand-text">Track</span>
             </span>
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function Home() {
           <div className="mb-3">
             <ProgressRing progress={1} size={64} strokeWidth={5} color="var(--brand-400)" centerEmoji="✓" />
           </div>
-          <p className="text-base font-bold text-brand-400">{t('home.free_day_title')}</p>
+          <p className="text-base font-bold text-brand-text">{t('home.free_day_title')}</p>
           <p className="text-xs text-ink-3 mt-1">{t('home.free_day_subtitle')}</p>
         </div>
       ) : allDone ? (
@@ -377,7 +377,7 @@ export default function Home() {
               sublabel="listas"
             />
           </div>
-          <p className="text-base font-bold text-brand-400">{t('home.all_done_title')}</p>
+          <p className="text-base font-bold text-brand-text">{t('home.all_done_title')}</p>
           <p className="text-sm text-ink-3 mt-1">
             {done.length} tarea{done.length > 1 ? 's' : ''} completada{done.length > 1 ? 's' : ''} hoy
           </p>
@@ -406,7 +406,7 @@ export default function Home() {
                   {pending.length > 1 && (
                     <button
                       onClick={() => setBulkConfirm('today')}
-                      className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
+                      className="shrink-0 text-xs font-bold text-brand-text bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-xl tap-highlight-none active:scale-95 transition-all"
                     >
                       ✓ {t('home.complete_all')}
                     </button>
@@ -472,7 +472,7 @@ export default function Home() {
                   className="w-full flex items-center gap-2.5 px-5 py-3 bg-app-elevated/50 tap-highlight-none"
                 >
                   <div className="w-5 h-5 rounded-full bg-brand-subtle border border-brand-border flex items-center justify-center shrink-0">
-                    <span className="text-[10px] font-bold text-brand-400">✓</span>
+                    <span className="text-[10px] font-bold text-brand-text">✓</span>
                   </div>
                   <span className="text-xs font-semibold text-ink-3 flex-1 text-left">
                     {done.length} completada{done.length > 1 ? 's' : ''} hoy
@@ -561,7 +561,7 @@ export default function Home() {
               const weekNum  = Math.ceil(phaseDay / 7)
               const planned  = isPlanned(plant, today)
               const plantPending = pending.filter((t) => t.plantId === plant.id).length
-              const accent = isFlora ? 'text-flora-text' : 'text-brand-400'
+              const accent = isFlora ? 'text-flora-text' : 'text-brand-text'
               const borderColor = isFlora && plantIsCannabis ? 'border-flora-border' : 'border-app-border'
               const bgColor = isFlora && plantIsCannabis ? 'bg-flora-bg' : 'bg-app-card'
 
@@ -590,7 +590,7 @@ export default function Home() {
                   <p className="text-xs text-ink-3 mt-0.5 truncate">{plant.genetics}</p>
                   {plantPending > 0 && (
                     <div className={`mt-2 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${
-                      isFlora ? 'bg-flora-bg border-flora-border text-flora-text' : 'bg-brand-subtle border-brand-border text-brand-400'
+                      isFlora ? 'bg-flora-bg border-flora-border text-flora-text' : 'bg-brand-subtle border-brand-border text-brand-text'
                     }`}>
                       {plantPending} hoy
                     </div>

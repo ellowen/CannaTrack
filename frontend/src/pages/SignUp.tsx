@@ -154,7 +154,7 @@ export default function SignUp() {
               </button>
             </div>
             {password && (
-              <p className={`text-xs mt-2 ${passwordStrength.strength === 'strong' ? 'text-brand-400' : 'text-ink-3'}`}>
+              <p className={`text-xs mt-2 ${passwordStrength.strength === 'strong' ? 'text-brand-text' : 'text-ink-3'}`}>
                 {passwordStrength.message}
               </p>
             )}
@@ -211,11 +211,11 @@ export default function SignUp() {
 
           <p className="text-center text-ink-3 text-xs mt-3 leading-relaxed">
             Al crear una cuenta aceptás nuestros{' '}
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-brand-400 underline">
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-brand-text underline">
               Términos
             </a>{' '}
             y nuestra{' '}
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-brand-400 underline">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-brand-text underline">
               Política de Privacidad
             </a>.
           </p>
@@ -247,7 +247,7 @@ export default function SignUp() {
           Ya tenes cuenta?{' '}
           <button
             onClick={() => navigate('/login')}
-            className="text-brand-400 font-medium"
+            className="text-brand-text font-medium"
           >
             Ingresa
           </button>

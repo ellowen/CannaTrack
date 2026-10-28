@@ -95,7 +95,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
             <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${
               isFlora
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                : 'bg-brand-subtle text-brand-400 border border-brand-border'
+                : 'bg-brand-subtle text-brand-text border border-brand-border'
             }`}>
               {cycleTag}
             </span>
@@ -171,7 +171,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
             </span>
           )}
           {pendingToday > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold glass-pill glass-brand text-brand-400 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold glass-pill glass-brand text-brand-text px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
               {pendingToday} tarea{pendingToday > 1 ? 's' : ''} hoy
             </span>

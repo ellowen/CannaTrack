@@ -265,7 +265,7 @@ export default function Settings() {
                   className={clsx(
                     'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-semibold transition-all tap-highlight-none active:scale-95',
                     theme === opt.value
-                      ? 'bg-brand-subtle border-brand-border text-brand-400'
+                      ? 'bg-brand-subtle border-brand-border text-brand-text'
                       : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
                   )}
                 >
@@ -285,7 +285,7 @@ export default function Settings() {
                   className={clsx(
                     'flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all tap-highlight-none active:scale-95',
                     language === lang.code
-                      ? 'bg-brand-subtle border-brand-border text-brand-400'
+                      ? 'bg-brand-subtle border-brand-border text-brand-text'
                       : 'bg-app-elevated border-app-border text-ink-3 hover:border-app-border-strong'
                   )}
                 >
@@ -327,7 +327,7 @@ export default function Settings() {
           {hasProAccess(subscription.plan) ? (
             <Link
               to="/nutrition/new?returnTo=/settings"
-              className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95 min-h-[40px] flex items-center px-1 -mx-1"
+              className="text-xs font-semibold text-brand-text tap-highlight-none active:scale-95 min-h-[40px] flex items-center px-1 -mx-1"
             >
               {t('settings.new_table')}
             </Link>

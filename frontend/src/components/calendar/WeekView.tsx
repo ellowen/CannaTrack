@@ -46,7 +46,7 @@ export default function WeekView({ tasks, weekStart, today, selectedDate, onDayC
             {/* Día de la semana */}
             <span className={clsx(
               'text-[10px] font-bold uppercase tracking-wider',
-              isSelected ? 'text-brand-400' : 'text-ink-4'
+              isSelected ? 'text-brand-text' : 'text-ink-4'
             )}>
               {format(day, 'EEE', { locale: es }).slice(0, 2)}
             </span>
@@ -57,7 +57,7 @@ export default function WeekView({ tasks, weekStart, today, selectedDate, onDayC
               isSelected
                 ? 'bg-brand-400 text-brand-on shadow-glow-brand'
                 : isToday
-                ? 'text-brand-400 ring-2 ring-brand-400'
+                ? 'text-brand-text ring-2 ring-brand-400'
                 : 'text-ink-1'
             )}>
               {format(day, 'd')}

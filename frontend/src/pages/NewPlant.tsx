@@ -89,12 +89,12 @@ export default function NewPlant() {
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-400 to-emerald-400" />
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-black text-ink-1">{t('newPlant.pro_label')}</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-subtle border border-brand-border text-brand-400">{t('newPlant.coming_soon')}</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-subtle border border-brand-border text-brand-text">{t('newPlant.coming_soon')}</span>
               </div>
               <ul className="space-y-1.5 text-left mb-4">
-                {[t('newPlant.pro_unlimited_plants'), t('newPlant.pro_all_tables'), t('newPlant.pro_ai_diagnosis'), t('newPlant.pro_advanced_stats')].map((f) => (
+                {[t('newPlant.pro_unlimited_plants'), t('newPlant.pro_all_tables'), t('newPlant.pro_advanced_stats')].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-xs text-ink-2">
-                    <span className="text-brand-400 font-black">✓</span> {f}
+                    <span className="text-brand-text font-black">✓</span> {f}
                   </li>
                 ))}
               </ul>

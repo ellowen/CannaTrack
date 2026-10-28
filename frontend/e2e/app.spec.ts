@@ -110,34 +110,28 @@ test.describe('Gates del plan Free vs Pro', () => {
     await expect(page.getByText('Growth')).toBeVisible()
   })
 
-  test('free: subir fotos bloqueado en el diario y en Fotos', async ({ page, context }) => {
+  test('free: subir fotos bloqueado en el diario', async ({ page, context }) => {
     await seedApp(page, context, { plan: 'free', plants: [{ id: 'p1' }] })
     await gotoApp(page, '/plants/p1')
     await plantTab(page, 'Diario')
     await page.getByRole('button', { name: /Nueva entrada/ }).click()
     await expect(page.getByText(/Fotos — Plan Pro/).first()).toBeVisible()
-    await gotoApp(page, '/diagnose')
-    await expect(page.getByText(/Plan Pro/).first()).toBeVisible()
     expect(await page.locator('input[type="file"]').count()).toBe(0)
   })
 
   test('pro: subir fotos disponible', async ({ page, context }) => {
     await seedApp(page, context, { plan: 'pro', plants: [{ id: 'p1' }] })
-    await gotoApp(page, '/diagnose')
-    await expect(page.getByRole('button', { name: /Camara/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Galeria/i })).toBeVisible()
+    await gotoApp(page, '/plants/p1')
+    await plantTab(page, 'Diario')
+    await page.getByRole('button', { name: /Nueva entrada/ }).click()
+    await expect(page.getByRole('button', { name: 'Agregar foto' })).toBeVisible()
+    await expect(page.getByText(/Fotos — Plan Pro/)).toHaveCount(0)
   })
 
   test('free con 1 planta activa: crear otra muestra el limite', async ({ page, context }) => {
     await seedApp(page, context, { plan: 'free', plants: [{ id: 'p1' }] })
     await gotoApp(page, '/plants/new')
     await expect(page.getByText(/Limite del plan Free/i)).toBeVisible()
-  })
-
-  test('la seccion de diagnostico IA esta oculta (flag apagado)', async ({ page, context }) => {
-    await seedApp(page, context, { plan: 'pro', plants: [{ id: 'p1' }] })
-    await gotoApp(page, '/diagnose')
-    await expect(page.getByText(/Diagnostico por IA/i)).not.toBeVisible()
   })
 })
 

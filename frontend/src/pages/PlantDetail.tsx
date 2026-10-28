@@ -241,7 +241,7 @@ export default function PlantDetail() {
               className={`relative flex-1 py-3 text-sm font-semibold tap-highlight-none transition-colors ${active ? 'text-ink-1' : 'text-ink-4 hover:text-ink-2'}`}
             >
               {label}
-              {pending > 0 && <span className="ml-1.5 text-[11px] font-bold text-brand-400 tabular">{pending}</span>}
+              {pending > 0 && <span className="ml-1.5 text-[11px] font-bold text-brand-text tabular">{pending}</span>}
               {active && <span className="absolute left-3 right-3 -bottom-px h-0.5 rounded-full bg-brand-400" />}
             </button>
           )
@@ -348,7 +348,7 @@ export default function PlantDetail() {
               <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${
                 isFlora
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'bg-brand-subtle text-brand-400 border border-brand-border'
+                  : 'bg-brand-subtle text-brand-text border border-brand-border'
               }`}>
                 {stageEmoji} {cycleTag}
               </span>
@@ -405,7 +405,7 @@ export default function PlantDetail() {
                   </button>
                 ) : (
                   <div className="mt-2 px-4 py-2.5 rounded-xl bg-brand-subtle border border-brand-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-brand-400">{t('plantDetail.task_completed')}</span>
+                    <span className="text-sm font-semibold text-brand-text">{t('plantDetail.task_completed')}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {task.completionNotes && (
                         <span className="text-xs text-ink-3 italic truncate max-w-[120px]">"{task.completionNotes}"</span>
@@ -602,7 +602,7 @@ export default function PlantDetail() {
         {((plant.location === 'indoor' && plantIsCannabis) || (plant.growMedium && plant.growMedium !== 'soil')) && (
           <div className="flex flex-wrap gap-2">
             {plant.location === 'indoor' && plantIsCannabis && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 glass px-3 py-1.5 rounded-xl">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-text glass px-3 py-1.5 rounded-xl">
                 {isFlora ? '🌙 12/12' : '☀️ 18/6'}
               </span>
             )}
@@ -673,7 +673,7 @@ export default function PlantDetail() {
                       <button
                         onClick={() => taskActions.restore(task)}
                         aria-label={`Restaurar ${nombre} del ${format(task.scheduledDate, 'd MMM', { locale: es })}`}
-                        className="shrink-0 text-xs font-bold text-brand-400 bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-lg tap-highlight-none active:scale-95 transition-all"
+                        className="shrink-0 text-xs font-bold text-brand-text bg-brand-subtle border border-brand-border px-3 py-1.5 rounded-lg tap-highlight-none active:scale-95 transition-all"
                       >
                         Restaurar
                       </button>
@@ -838,7 +838,7 @@ export default function PlantDetail() {
                         </p>
                       )}
                       {sheet && verdict && (
-                        <p className={`text-xs font-bold mt-2 ${verdict === 'below' ? 'text-amber-400' : 'text-brand-400'}`}>
+                        <p className={`text-xs font-bold mt-2 ${verdict === 'below' ? 'text-amber-400' : 'text-brand-text'}`}>
                           {verdict === 'within' && `Dentro del rango de la ficha (${sheet.min}-${sheet.max} g por planta)`}
                           {verdict === 'below' && `Por debajo de la ficha (${sheet.min}-${sheet.max} g por planta)`}
                           {verdict === 'above' && `Por encima de la ficha (${sheet.min}-${sheet.max} g por planta)`}
@@ -850,7 +850,7 @@ export default function PlantDetail() {
                   )}
                   <button
                     onClick={() => setWeightInput(plant.harvestWeightG != null ? String(plant.harvestWeightG) : '')}
-                    className="mt-3 text-xs font-bold text-brand-400 tap-highlight-none"
+                    className="mt-3 text-xs font-bold text-brand-text tap-highlight-none"
                   >
                     {plant.harvestWeightG != null ? 'Editar peso' : 'Registrar peso'}
                   </button>
@@ -896,7 +896,7 @@ export default function PlantDetail() {
                 if (!window.confirm(`¿Reactivar "${plant.name}"? ${t('plantDetail.reactivate_confirm')}`)) return
                 reactivatePlant(plant.id)
               }}
-              className="w-full py-3 rounded-2xl border border-brand-border bg-brand-subtle text-brand-400 font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
+              className="w-full py-3 rounded-2xl border border-brand-border bg-brand-subtle text-brand-text font-bold text-sm tap-highlight-none active:scale-[0.98] transition-all"
             >
               ↩ {t('plants.reactivate')}
             </button>

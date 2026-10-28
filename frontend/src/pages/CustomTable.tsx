@@ -385,7 +385,7 @@ export default function CustomTable() {
           <button
             type="button"
             onClick={addLine}
-            className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+            className="text-xs font-semibold text-brand-text tap-highlight-none active:scale-95"
           >
             {t('customTable.add_line')}
           </button>
@@ -517,7 +517,7 @@ function WeekList({
         <button
           type="button"
           onClick={onAdd}
-          className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+          className="text-xs font-semibold text-brand-text tap-highlight-none active:scale-95"
         >
           {t('customTable.add_week')}
         </button>
@@ -647,7 +647,7 @@ function WeekList({
                       <button
                         type="button"
                         onClick={() => onAddProduct(idx)}
-                        className="text-xs font-semibold text-brand-400 tap-highlight-none active:scale-95"
+                        className="text-xs font-semibold text-brand-text tap-highlight-none active:scale-95"
                       >
                         {t('customTable.add_product')}
                       </button>
