@@ -48,7 +48,12 @@ export function normalizeFormValuesForSubmit(values: PlantFormValues): PlantForm
     sex: isCannabis ? (values.sex ?? 'unknown') : undefined,
     // El ciclo de floracion es biologia de cannabis; el dia de floracion
     // automatica solo aplica a autoflorecientes.
-    floraDays: isCannabis ? values.floraDays : undefined,
+    // en autos la floracion es lo que queda entre el inicio de floracion y la cosecha (ver getFloraDays)
+    floraDays: !isCannabis
+      ? undefined
+      : (values.geneticType ?? 'feminized') === 'autoflower'
+        ? Math.max(7, values.autoFlowerTotalDays - (values.autoFloraStartDay ?? 35))
+        : values.floraDays,
     autoFloraStartDay:
       isCannabis && (values.geneticType ?? 'feminized') === 'autoflower' ? values.autoFloraStartDay : undefined,
     // las autos florecen solas (autoFloraStartDay): no tienen un vegetativo configurable

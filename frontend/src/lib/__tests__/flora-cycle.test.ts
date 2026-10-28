@@ -54,6 +54,27 @@ describe('defaults', () => {
   })
 })
 
+describe('getFloraDays de una autofloreciente', () => {
+  it('es lo que queda entre el inicio de floracion y la cosecha, ignorando un floraDays viejo guardado', () => {
+    expect(getFloraDays({ geneticType: 'autoflower', autoFlowerTotalDays: 75 })).toBe(40)
+    expect(getFloraDays({ geneticType: 'autoflower', autoFlowerTotalDays: 90, autoFloraStartDay: 35, floraDays: 40 })).toBe(55)
+    expect(getFloraDays({ geneticType: 'autoflower', autoFlowerTotalDays: 84, autoFloraStartDay: 42, floraDays: 99 })).toBe(42)
+  })
+
+  it('una fotoperiodica sigue usando su floraDays', () => {
+    expect(getFloraDays({ geneticType: 'feminized', floraDays: 70, autoFlowerTotalDays: 75 })).toBe(70)
+  })
+
+  it('estirar el total de una auto con un floraDays viejo no deja dias sin tareas antes de la cosecha', () => {
+    const auto = planta({ geneticType: 'autoflower', autoFlowerTotalDays: 90, floraDays: 40 })
+    const tareas = generatePlantSchedule(auto, REVEGETAR_TABLE)
+    const cosecha = tareas.find((t) => t.type === 'harvest')!
+    const ultima = tareas.filter((t) => t.type !== 'harvest').reduce((m, t) => Math.max(m, t.scheduledDate.getTime()), 0)
+    expect(cosecha.scheduledDate.getTime()).toBe(addDays(inicio, 90).getTime())
+    expect((cosecha.scheduledDate.getTime() - ultima) / 86_400_000).toBeLessThanOrEqual(7)
+  })
+})
+
 describe('stageForFloraWeek', () => {
   it('con 8 semanas reproduce las etapas historicas', () => {
     const etapas = [1, 2, 3, 4, 5, 6, 7, 8].map((w) => stageForFloraWeek(w, 8))

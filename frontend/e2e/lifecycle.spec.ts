@@ -337,7 +337,8 @@ test.describe('Floración, cosecha, descarte y edición', () => {
     const floraAntes = Math.max(...dbTasks(context).filter((t) => t.plant_id === id && t.cycle === 'flora' && t.type !== 'harvest').map((t) => Number(t.week)))
 
     await gotoApp(page, `/plants/${id}/edit`)
-    await page.getByLabel('Días de floración').fill('28')
+    // en autos la floracion se acorta bajando el total del ciclo (75 -> 63 = 28 dias de floracion)
+    await page.locator('label:has-text("Días totales del ciclo") + input').fill('63')
     await page.getByRole('button', { name: /Continuar/ }).click()
     await page.getByRole('button', { name: /Continuar/ }).click()
     await page.getByRole('button', { name: /Guardar cambios/ }).click()

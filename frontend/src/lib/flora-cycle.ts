@@ -5,6 +5,8 @@ import type { CyclePhase, NutritionWeek, Plant, PlantStage } from '../types/plan
 export const DEFAULT_FLORA_DAYS = 56
 /** Dia en que una autofloreciente entra en floracion por defecto. */
 export const DEFAULT_AUTO_FLORA_START_DAY = 35
+/** Dias totales de una autofloreciente sin valor propio (siembra a cosecha). */
+export const DEFAULT_AUTO_TOTAL_DAYS = 75
 /** Vegetativo por defecto (6 semanas): el de las tablas nutricionales. */
 export const DEFAULT_VEGE_DAYS = 42
 /** Semanas de vegetativo de la plantilla (rooting/growth/preflower). */
@@ -12,8 +14,20 @@ const VEGE_TEMPLATE_WEEKS = 6
 /** Semanas de floracion de la plantilla de etapas (stretch/bulking/ripening/flushing). */
 const TEMPLATE_WEEKS = 8
 
-/** Duracion de floracion de la planta en dias. Sin valor propio usa 56 (8 semanas). */
-export function getFloraDays(plant: Pick<Plant, 'floraDays'>): number {
+/**
+ * Duracion de floracion de la planta en dias. Sin valor propio usa 56 (8 semanas).
+ *
+ * Una autofloreciente se cosecha el dia `autoFlowerTotalDays` y entra en floracion el dia
+ * `autoFloraStartDay`: su floracion es lo que queda entre ambos. Se deriva siempre de esos dos
+ * datos (el `floraDays` guardado se ignora) para que cambiar el total estire o acorte tambien
+ * las tareas, y no queden dias sin calendario antes de la cosecha.
+ */
+export function getFloraDays(
+  plant: Pick<Plant, 'floraDays'> & Partial<Pick<Plant, 'geneticType' | 'autoFlowerTotalDays' | 'autoFloraStartDay'>>,
+): number {
+  if (plant.geneticType === 'autoflower') {
+    return Math.max(7, (plant.autoFlowerTotalDays ?? DEFAULT_AUTO_TOTAL_DAYS) - getAutoFloraStartDay(plant))
+  }
   return plant.floraDays ?? DEFAULT_FLORA_DAYS
 }
 

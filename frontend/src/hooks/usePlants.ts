@@ -135,9 +135,14 @@ export function usePlants() {
     const allTasks = startFloraPhase(plant, floraStartDate, effective)
     const floraTasks = allTasks.filter((t) => t.cycle === 'flora')
 
+    // Lo hecho en vegetativo (completadas, canceladas, movidas) es historial y se conserva;
+    // solo se reemplazan las pendientes por el calendario de flora.
+    const current = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
+    const merged = mergeRegeneratedSchedule(current, floraTasks)
+
     // Actualizar store local primero
     updatePlant(id, { floraStartDate })
-    setTasks(id, floraTasks)
+    setTasks(id, merged.all)
 
     // Operacion atomica en Supabase via RPC. La identidad la resuelve
     // el propio RPC via auth.uid() -- no se envia userId como parametro
@@ -145,7 +150,7 @@ export function usePlants() {
     const { error } = await supabase.rpc('start_flora_phase', {
       p_plant_id:         id,
       p_flora_start_date: formatDateOnly(floraStartDate),
-      p_tasks: floraTasks.map((t) => ({
+      p_tasks: merged.pending.map((t) => ({
         type:           t.type,
         scheduled_date: t.scheduledDate instanceof Date
           ? formatDateOnly(t.scheduledDate)
@@ -189,7 +194,11 @@ export function usePlants() {
           : table
         const current = useTaskStore.getState().tasks.filter((t) => t.plantId === id)
         // Las completadas son historial (y guardan xp_awarded): se conservan siempre
-        const merged = mergeRegeneratedSchedule(current, generatePlantSchedule(updated, effective))
+        // Con la floracion ya iniciada el vegetativo esta cerrado: no se vuelve a generar
+        // (si no, todas sus tareas pasadas reaparecerian como vencidas al editar cualquier dato)
+        const generated = generatePlantSchedule(updated, effective)
+        const fresh = updated.floraStartDate ? generated.filter((t) => t.cycle === 'flora') : generated
+        const merged = mergeRegeneratedSchedule(current, fresh)
         pendingToSave = merged.pending
         setTasks(id, merged.all)
         // Reemplaza solo las pendientes en la DB; borrar todo perdia completed_at/xp_awarded

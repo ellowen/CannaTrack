@@ -150,7 +150,7 @@ test.describe('Mover una tarea a otro dia', () => {
     await expect.poll(() => dbTasks(context).find((t) => t.id === riego.id)!.skipped).toBe(true)
 
     await page.getByRole('link', { name: 'Editar' }).first().click()
-    await page.getByLabel('Días de floración').fill('30') // cambia el ciclo: regenera lo pendiente
+    await page.locator('label:has-text("Días totales del ciclo") + input').fill('65') // cambia el ciclo: regenera lo pendiente
     await page.getByRole('button', { name: /Continuar/ }).click()
     await page.getByRole('button', { name: /Continuar/ }).click()
     await page.getByRole('button', { name: /Guardar cambios/ }).click()

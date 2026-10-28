@@ -168,11 +168,15 @@ export async function installFakeBackend(context: BrowserContext): Promise<FakeB
         state.plants = state.plants.map((p) =>
           p.id === body.p_plant_id ? { ...p, flora_start_date: body.p_flora_start_date } : p,
         )
-        state.tasks = state.tasks.filter((t) => !(t.plant_id === body.p_plant_id && t.cycle === 'flora'))
+        // Igual que el SQL real (start_flora_phase): reemplaza solo las pendientes; el historial
+        // (completadas, canceladas, reprogramadas) se conserva
+        state.tasks = state.tasks.filter((t) => t.plant_id !== body.p_plant_id || t.completed === true || t.skipped === true || t.rescheduled_from)
         for (const t of body.p_tasks) {
           state.tasks.push({
             id: crypto.randomUUID(), plant_id: body.p_plant_id, user_id: USER_ID,
+            // valores por defecto de las columnas reales (si no, los filtros eq('skipped', false) no las encuentran)
             completed: false, completed_at: null, completion_notes: null, xp_awarded: false,
+            skipped: false, skip_reason: null, rescheduled_from: null,
             created_at: new Date().toISOString(), ...t,
           })
         }

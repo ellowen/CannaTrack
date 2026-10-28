@@ -369,6 +369,17 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
       }
     }
 
+    // autos: tiene que quedar una floracion razonable entre el inicio de floracion y la cosecha
+    if (field === 'autoFlowerTotalDays' || field === 'autoFloraStartDay') {
+      const total = field === 'autoFlowerTotalDays' ? value : values.autoFlowerTotalDays
+      const start = (field === 'autoFloraStartDay' ? value : values.autoFloraStartDay) ?? 35
+      if (typeof total === 'number' && total - start < 28 && !newErrors.autoFloraStartDay) {
+        newErrors.autoFloraStartDay = 'Tienen que quedar al menos 28 días de floración (días totales − día de inicio)'
+      } else if (newErrors.autoFloraStartDay === 'Tienen que quedar al menos 28 días de floración (días totales − día de inicio)') {
+        delete newErrors.autoFloraStartDay
+      }
+    }
+
     if (field === 'potCount') {
       if (value < 1 || value > 100) {
         newErrors.potCount = 'Debe tener entre 1 y 100 macetas'
@@ -639,22 +650,40 @@ export default function PlantForm({ onSubmit, initialValues, submitLabel, loadin
         {isCannabis && (
           <div>
             <label htmlFor="flora-days" className={labelClass}>Días de floración</label>
-            <input
-              id="flora-days"
-              type="number"
-              min={28}
-              max={140}
-              placeholder="56 (por defecto, 8 semanas)"
-              value={values.floraDays ?? ''}
-              onChange={(e) => set('floraDays', e.target.value === '' ? undefined : Number(e.target.value))}
-              className={clsx(fieldClass, errors.floraDays && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
-            />
-            {errors.floraDays && <p className="text-xs text-red-500 mt-2">{errors.floraDays}</p>}
-            <p className="text-xs text-ink-4 mt-2">
-              {values.floraDays
-                ? `≈ ${Math.ceil(values.floraDays / 7)} semanas: el cronograma y la cosecha estimada se ajustan a este ciclo`
-                : 'Vacío: se usa el ciclo estándar de 8 semanas'}
-            </p>
+            {values.geneticType === 'autoflower' ? (
+              <>
+                {/* autos: no se carga, se calcula (total del ciclo - dia de inicio de floracion) */}
+                <input
+                  id="flora-days"
+                  type="number"
+                  readOnly
+                  value={Math.max(7, values.autoFlowerTotalDays - (values.autoFloraStartDay ?? 35))}
+                  className={clsx(fieldClass, 'opacity-70 cursor-not-allowed')}
+                />
+                <p className="text-xs text-ink-4 mt-2">
+                  Se calcula solo: días totales del ciclo − día de inicio de floración. Para estirar o acortar la floración, cambiá esos dos datos.
+                </p>
+              </>
+            ) : (
+              <>
+                <input
+                  id="flora-days"
+                  type="number"
+                  min={28}
+                  max={140}
+                  placeholder="56 (por defecto, 8 semanas)"
+                  value={values.floraDays ?? ''}
+                  onChange={(e) => set('floraDays', e.target.value === '' ? undefined : Number(e.target.value))}
+                  className={clsx(fieldClass, errors.floraDays && 'border-red-600 focus:ring-red-500/20 focus:border-red-600')}
+                />
+                {errors.floraDays && <p className="text-xs text-red-500 mt-2">{errors.floraDays}</p>}
+                <p className="text-xs text-ink-4 mt-2">
+                  {values.floraDays
+                    ? `≈ ${Math.ceil(values.floraDays / 7)} semanas: el cronograma y la cosecha estimada se ajustan a este ciclo`
+                    : 'Vacío: se usa el ciclo estándar de 8 semanas'}
+                </p>
+              </>
+            )}
           </div>
         )}
 

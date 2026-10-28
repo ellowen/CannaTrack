@@ -185,15 +185,11 @@ describe('Autofloreciente', () => {
   })
 
   it('cantidad de tareas correcta para 75 días', () => {
-    // VEGE rooting x2: 4 tareas c/u = 8
-    // VEGE growth x2 + preflower x2 (con foliar): 5 tareas c/u = 20
-    // FLORA stretch x2 (con foliar): 5 tareas c/u = 10
-    // FLORA bulking x2 + ripening x2: 4 tareas c/u = 16
-    // FLORA flushing (semanas 7-8): empiezan los dias 77 y 84, DESPUES de la
-    //   cosecha (dia 75) -> una auto no agenda nada pasada su cosecha
-    // Harvest: 1
-    // Total: 55
-    expect(tareas.length).toBe(55)
+    // La floracion de una auto es lo que queda entre su inicio (dia 35) y la cosecha (dia 75):
+    // 40 dias, que la plantilla de 8 semanas comprime a 6. Asi la limpieza (flushing) cae ANTES de
+    // la cosecha en vez de quedar fuera del calendario como pasaba al usar siempre 56 dias.
+    // Total: 54 (vege 28 + flora 25 + 1 cosecha)
+    expect(tareas.length).toBe(54)
   })
 
   it('ninguna tarea cae despues del dia de cosecha', () => {

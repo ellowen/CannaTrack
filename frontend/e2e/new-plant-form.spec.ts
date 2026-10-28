@@ -44,15 +44,16 @@ test.describe('Formulario: pasos y validaciones', () => {
     await total.fill('80')
     await expect(page.getByText('Los días deben estar entre 60 y 120')).not.toBeVisible()
 
-    await page.getByLabel('Días de floración').fill('20')
-    await expect(page.getByText('La floración debe durar entre 28 y 140 días')).toBeVisible()
-    await page.getByLabel('Días de floración').fill('45')
-    await expect(page.getByText(/≈ 7 semanas/)).toBeVisible()
+    // en autos los dias de floracion no se cargan: son el total menos el dia de inicio de floracion (80 - 35)
+    const floraDias = page.getByLabel('Días de floración')
+    await expect(floraDias).toHaveValue('45')
+    await expect(floraDias).toHaveAttribute('readonly', '')
 
     await page.getByLabel('Día de inicio de floración').fill('5')
     await expect(page.getByText('El día de floración debe estar entre 14 y 90')).toBeVisible()
     await page.getByLabel('Día de inicio de floración').fill('30')
     await expect(page.getByText('El día de floración debe estar entre 14 y 90')).not.toBeVisible()
+    await expect(floraDias).toHaveValue('50') // 80 - 30
   })
 
   test('feminizada no muestra campos de auto; regular pide sexo', async ({ page }) => {
