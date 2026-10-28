@@ -21,6 +21,9 @@ import { showErrorToast } from '@/store/toastStore'
 import { enqueueSyncAction } from '@/lib/syncQueue'
 import { useSubscription } from '@/hooks/useSubscription'
 import { mergeRegeneratedSchedule } from '@/lib/schedule-merge'
+import { buildExport, downloadExport } from '@/lib/export-data'
+import { useWeekLogStore } from '@/store/weekLogStore'
+import { useMeasurementStore } from '@/store/measurementStore'
 
 const fieldClass =
   'w-full rounded-xl border border-app-border bg-app-card text-ink-1 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-border placeholder:text-ink-4 transition-colors shadow-card'
@@ -38,6 +41,8 @@ export default function Settings() {
   const { name, potVolumeLiters, theme, language, notificationsEnabled, reminderHour, setName, setPotVolume, setTheme, setLanguage, setNotificationsEnabled } = useUserStore()
   const { plants } = usePlantStore()
   const { tasks, setTasks } = useTaskStore()
+  const weekLogs = useWeekLogStore((st) => st.logs)
+  const measurements = useMeasurementStore((st) => st.logs)
   const { tables, removeTable } = useNutritionStore()
   const customTables = tables.filter((tbl) => !tbl.isOfficial)
   const officialTables = tables.filter((tbl) => tbl.isOfficial)
@@ -424,6 +429,25 @@ export default function Settings() {
               <span className="text-sm text-ink-2 font-semibold">{value}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Mis datos */}
+      <section>
+        <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">{t('settings.my_data_title')}</p>
+        <div className="bg-app-card rounded-2xl border border-app-border shadow-card p-4 flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-ink-1">{t('settings.export_title')}</p>
+            <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">{t('settings.export_desc')}</p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            data-testid="export-data"
+            onClick={() => downloadExport(buildExport({ plants, tasks, weekLogs, measurements, profile: { name, language } }))}
+          >
+            {t('settings.export_btn')}
+          </Button>
         </div>
       </section>
 
