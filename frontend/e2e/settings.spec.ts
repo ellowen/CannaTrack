@@ -25,6 +25,22 @@ test.describe('Ajustes', () => {
     await gotoApp(page, '/settings')
   })
 
+  test('exportar mis datos: descarga un JSON con la planta y el calendario', async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTestId('export-data').click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^cultitrack-export-\d{4}-\d{2}-\d{2}\.json$/)
+    const fs = await import('node:fs/promises')
+    const data = JSON.parse(await fs.readFile((await download.path())!, 'utf8')) as {
+      app: string; version: number; plants: { name: string }[]; tasks: unknown[]
+    }
+    expect(data.app).toBe('CultiTrack')
+    expect(data.version).toBe(1)
+    expect(data.plants.map((p) => p.name)).toContain(SODA.name)
+    expect(data.tasks.length).toBeGreaterThan(10)
+  })
+
   test('tema: Claro, Oscuro y Sistema cambian la clase del documento', async ({ page }) => {
     const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'))
     await page.getByRole('button', { name: /Claro/ }).click()
