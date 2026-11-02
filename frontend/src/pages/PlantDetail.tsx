@@ -16,6 +16,7 @@ import { NutritionCard } from '@/components/nutrition'
 import { TaskItem, WeekView } from '@/components/calendar'
 import { CompleteTaskSheet, IrrigationCard, FoliarCard } from '@/components/tasks'
 import { DiarySection } from '@/components/diary'
+import ShareDiaryCard from '@/components/diary/ShareDiaryCard'
 import { MeasurementSection } from '@/components/measurements'
 import { CycleStrip, HarvestSheet, ProgressRing } from '@/components/plant'
 import { calculatePlantHealth, healthColor } from '@/lib/gamification'
@@ -689,6 +690,7 @@ export default function PlantDetail() {
         {tab === 'diario' && (<>
         {/* Diario de cultivo */}
         <DiarySection plantId={plant.id} currentWeekLabel={planned ? '' : cycleTag} />
+        <div className="mt-4"><ShareDiaryCard plantId={plant.id} /></div>
         </>)}
 
         {tab === 'ficha' && (<>

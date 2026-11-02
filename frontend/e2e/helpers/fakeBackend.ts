@@ -206,7 +206,7 @@ export async function installFakeBackend(context: BrowserContext): Promise<FakeB
     const name = m[1]
     // profiles y todo lo no listado lo resuelve blockSupabase.
     const MANAGED = new Set([
-      'plants', 'scheduled_tasks', 'measurements', 'week_logs', 'push_subscriptions', 'ai_usage',
+      'plants', 'scheduled_tasks', 'measurements', 'week_logs', 'push_subscriptions', 'ai_usage', 'plant_shares',
     ])
     if (!MANAGED.has(name)) return route.fallback()
     fake.log.push(`${method} ${name}`)
@@ -248,14 +248,17 @@ export async function installFakeBackend(context: BrowserContext): Promise<FakeB
           saved.push(existing)
         } else {
           // defaults de columna de la base real (el cliente solo manda skipped cuando es true)
-          const defaults = name === 'scheduled_tasks' ? { skipped: false, skip_reason: null, rescheduled_from: null } : {}
+          const defaults = name === 'scheduled_tasks' ? { skipped: false, skip_reason: null, rescheduled_from: null }
+            : name === 'plant_shares' ? { token: crypto.randomUUID() } : {}
           const row = { id: crypto.randomUUID(), created_at: now, ...defaults, ...item }
           rows.push(row)
           saved.push(row)
         }
       }
       setTable(name, rows)
-      return wantsRepresentation ? json(route, 201, saved) : route.fulfill({ status: 201, body: '' })
+      // .insert().select().single() pide un objeto, no una lista
+      const single = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object')
+      return wantsRepresentation ? json(route, 201, single ? saved[0] : saved) : route.fulfill({ status: 201, body: '' })
     }
 
     if (method === 'PATCH') {

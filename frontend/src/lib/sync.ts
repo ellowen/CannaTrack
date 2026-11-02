@@ -483,7 +483,7 @@ export async function uploadPhotoToStorage(
 // Acepta tanto un path nuevo (userId/plantId/logId.ext) como, por
 // compatibilidad con filas viejas de antes de este fix, una URL publica
 // completa ya guardada -- le extrae el path real en ese caso.
-function extractPhotoStoragePath(pathOrLegacyUrl: string): string {
+export function extractPhotoStoragePath(pathOrLegacyUrl: string): string {
   const marker = '/plant-photos/'
   const idx = pathOrLegacyUrl.indexOf(marker)
   return idx >= 0 ? pathOrLegacyUrl.slice(idx + marker.length).split('?')[0] : pathOrLegacyUrl
