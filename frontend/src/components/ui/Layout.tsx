@@ -43,7 +43,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen min-h-dvh bg-app-bg flex flex-col">
-      <main key={locationKey} className={clsx('flex-1 pb-24 max-w-lg mx-auto w-full', animClass)}>
+      <main key={locationKey} className={clsx('flex-1 pb-24 pt-safe-top max-w-lg mx-auto w-full', animClass)}>
         {isBlocked ? (
           <TrialExpired />
         ) : (
