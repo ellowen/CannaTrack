@@ -172,7 +172,7 @@ test.describe('Calendario', () => {
       const today = new Date().getDate()
       const other = today > 10 ? 3 : 25
       await page.getByRole('button', { name: new RegExp(`^${other}\\b`) }).first().click()
-      await expect(page.getByText(/Sin tareas|pendientes|Completado/).first()).toBeVisible()
+      await expect(page.getByText(/Sin tareas|pendientes?|Completado/).first()).toBeVisible()
     })
   })
 })
